@@ -76,7 +76,8 @@ This plan outlines the structure and implementation of the Compiled AI benchmark
                                  ▼
                     ┌────────────────────────┐
                     │   VALIDATED ARTIFACT   │
-                    │   • Executable code    │
+                    │   • Temporal Activity  │
+                    │   • Production-ready   │
                     │   • Zero runtime LLM   │
                     │   • Deterministic      │
                     └───────────┬────────────┘

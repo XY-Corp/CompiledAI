@@ -83,7 +83,8 @@ Instead of calling LLMs at runtime, Compiled AI:
                                                                                  ▼
                                                                     ┌────────────────────────┐
                                                                     │   VALIDATED ARTIFACT   │
-                                                                    │   • Executable code    │
+                                                                    │   • Temporal Activity  │
+                                                                    │   • Production-ready   │
                                                                     │   • Zero runtime LLM   │
                                                                     │   • Deterministic      │
                                                                     └────────────────────────┘
