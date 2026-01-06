@@ -1,0 +1,79 @@
+[project]
+name = "compiled-ai"
+version = "0.1.0"
+description = "Benchmark suite for Compiled AI: Deterministic Code Generation for LLM-Based Workflow Automation"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [
+    { name = "XY.AI Labs", email = "foundation@xy.ai" }
+]
+keywords = ["llm", "code-generation", "workflow-automation", "benchmark"]
+
+dependencies = [
+    # LLM APIs
+    "anthropic>=0.40.0",
+    "openai>=1.50.0",
+
+    # Validation tools
+    "bandit>=1.8.0",
+    "mypy>=1.13.0",
+    "ruff>=0.8.0",
+    "radon>=6.0.0",
+
+    # Workflow/Agent frameworks (for baselines)
+    "langchain>=0.3.0",
+    "langchain-anthropic>=0.3.0",
+    "langchain-openai>=0.3.0",
+
+    # Data handling
+    "pyyaml>=6.0",
+    "pydantic>=2.10.0",
+    "jsonschema>=4.23.0",
+
+    # Testing & metrics
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.24.0",
+    "numpy>=2.0.0",
+    "pandas>=2.2.0",
+
+    # Reporting
+    "rich>=13.9.0",
+    "plotly>=5.24.0",
+    "jinja2>=3.1.0",
+
+    # Utilities
+    "python-dotenv>=1.0.0",
+    "httpx>=0.28.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest-cov>=6.0.0",
+    "pre-commit>=4.0.0",
+]
+
+[tool.uv]
+dev-dependencies = [
+    "pytest-cov>=6.0.0",
+    "pre-commit>=4.0.0",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP"]
+ignore = ["E501"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_return_any = true
+warn_unused_ignores = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
