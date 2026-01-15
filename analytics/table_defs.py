@@ -42,4 +42,5 @@ class MetricResultRow(BaseModel):
     name: str
     value: str | float
     unit: str
+    category: str
     timestamp: datetime.datetime
