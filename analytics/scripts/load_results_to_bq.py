@@ -2,13 +2,14 @@ import logging
 import sys
 from pathlib import Path
 from typing import List
+from google.cloud import bigquery
 import pyarrow as pa
 import json
 import uuid
+from pydantic import BaseModel
 
 # Add project root to path for development
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
-
 from analytics.table_defs import ConfigRow, SummaryRow, TaskRow, MetricRow, MetricResultRow
 from analytics.utils.logger import get_logger
 from analytics.utils.bigquery_helper import BigQueryHelper
@@ -36,11 +37,38 @@ def load_result_file(result_file: Path) -> dict:
         result: dict = json.load(f)
     return result
 
-def build_config_table(rows: List[dict]) -> pa.Table:
-    """Build the config table from the rows."""
-    return pa.Table.from_pydict(rows)
+def convert_uuids_to_strings(obj):
+    """Recursively convert UUID objects to strings in a dict."""
+    if isinstance(obj, uuid.UUID):
+        return str(obj)
+    elif isinstance(obj, dict):
+        return {key: convert_uuids_to_strings(value) for key, value in obj.items()}
+    else:
+        return obj
 
-def build_tables(files: List[dict]) -> List[pa.Table]:
+def build_arrow_table(rows: List[BaseModel]) -> pa.Table:
+    """Build the arrow table from a list of Pydantic BaseModel instances.
+    
+    Args:
+        rows: List of Pydantic BaseModel instances from table_defs.py
+    """
+    if not rows:
+        return pa.Table.from_pylist([])
+    
+    # Convert Pydantic models to dicts and UUIDs to strings
+    rows_dict = [convert_uuids_to_strings(row.model_dump()) for row in rows]
+    
+    # Handle mixed type columns (e.g., value field in MetricResultRow can be str | float)
+    # Convert mixed numeric/string columns to strings to avoid PyArrow type inference issues
+    if rows_dict and 'value' in rows_dict[0]:
+        for row in rows_dict:
+            if 'value' in row and isinstance(row['value'], (int, float)):
+                row['value'] = str(row['value'])
+    
+    # Use from_pylist which handles mixed types better than from_pydict
+    return pa.Table.from_pylist(rows_dict)
+
+def build_and_load_tables(files: List[dict]):
     """Build the tables from the results files."""
     tables: List[pa.Table] = []
     config_rows: dict[uuid.UUID, ConfigRow] = {}
@@ -53,7 +81,7 @@ def build_tables(files: List[dict]) -> List[pa.Table]:
         key: str = f"{config_data['dataset']}_{config_data['baseline']}"
         config_id: uuid.UUID = build_uuid_from_string(key)
         if config_id not in config_rows:
-            config_rows[config_id] = config_data
+            config_rows[config_id] = ConfigRow(id=config_id, **config_data)
 
         # --- Summary ---
         summary_data = file["summary"]
@@ -80,13 +108,19 @@ def build_tables(files: List[dict]) -> List[pa.Table]:
             metric_result_id: uuid.UUID = build_uuid_from_string(f"{metric_metadata_id}_metric_result_{metric_result['name']}")
             metric_result_rows.append(MetricResultRow(id=metric_result_id, metric_id=metric_metadata_id, **metric_result))
 
+    config_table = build_arrow_table(list(config_rows.values()))
+    summary_table = build_arrow_table(summary_rows)
+    task_table = build_arrow_table(task_rows)
+    metric_table = build_arrow_table(metric_rows)
+    metric_result_table = build_arrow_table(metric_result_rows)
 
-    print(f"config_rows: {config_rows}")
-    print(f"summary_rows: {summary_rows}")
-    print(f"task_rows: {task_rows}")
-    print(f"metric_rows: {metric_rows}")
-    print(f"metric_result_rows: {metric_result_rows}")
-    return tables
+    bigquery_helper = BigQueryHelper(BIGQUERY_PROJECT_ID, BIGQUERY_DATASET_ID, LOGGER)
+    bigquery_helper.ensure_dataset()
+    bigquery_helper.upload("config", config_table, write_disposition=bigquery.WriteDisposition.WRITE_TRUNCATE)
+    bigquery_helper.upload("summary", summary_table, write_disposition=bigquery.WriteDisposition.WRITE_TRUNCATE)
+    bigquery_helper.upload("task", task_table, write_disposition=bigquery.WriteDisposition.WRITE_TRUNCATE)
+    bigquery_helper.upload("metric", metric_table, write_disposition=bigquery.WriteDisposition.WRITE_TRUNCATE)
+    bigquery_helper.upload("metric_result", metric_result_table, write_disposition=bigquery.WriteDisposition.WRITE_TRUNCATE)
 
 def main() -> None:
     """Main function."""
@@ -98,10 +132,8 @@ def main() -> None:
         LOGGER.info(f"🔍 Processing {result_file}...")
         result = load_result_file(result_file)
         results.append(result)
-    build_tables(results)
+    build_and_load_tables(results)
     LOGGER.info("🎉 Attempting to connect to BigQuery...")
-    bigquery_helper = BigQueryHelper(BIGQUERY_PROJECT_ID, BIGQUERY_DATASET_ID, LOGGER)
-    bigquery_helper.ensure_dataset()
 
 if __name__ == "__main__":
     main()
