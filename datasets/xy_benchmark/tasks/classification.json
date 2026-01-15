@@ -1,0 +1,40 @@
+{
+  "id": "classification_01",
+  "name": "Support Ticket Classification",
+  "description": "Classify support tickets into categories",
+  "category": "decision_logic",
+  "difficulty": "simple",
+  "prompt_template": "Classify this support ticket into one of these categories:\n- billing\n- technical\n- account\n- general\n\nTicket:\n{ticket_text}\n\nReturn only the category name.",
+  "evaluation_type": "exact_match",
+  "tags": ["classification", "support", "simple"],
+  "instances": [
+    {
+      "id": "ticket_001",
+      "input": {
+        "ticket_text": "I was charged twice for my subscription this month. Please refund the duplicate charge."
+      },
+      "expected_output": "billing"
+    },
+    {
+      "id": "ticket_002",
+      "input": {
+        "ticket_text": "The application crashes when I try to upload files larger than 10MB."
+      },
+      "expected_output": "technical"
+    },
+    {
+      "id": "ticket_003",
+      "input": {
+        "ticket_text": "I need to change the email address associated with my account."
+      },
+      "expected_output": "account"
+    },
+    {
+      "id": "ticket_004",
+      "input": {
+        "ticket_text": "What are your business hours for phone support?"
+      },
+      "expected_output": "general"
+    }
+  ]
+}

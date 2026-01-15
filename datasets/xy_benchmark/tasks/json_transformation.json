@@ -1,0 +1,35 @@
+{
+  "id": "json_transform_01",
+  "name": "JSON Schema Mapping",
+  "description": "Transform JSON from source schema to target schema",
+  "category": "data_transformation",
+  "difficulty": "medium",
+  "prompt_template": "Transform this JSON from the source format to the target format.\n\nSource:\n{source_json}\n\nTarget Schema:\n{target_schema}\n\nReturn only the transformed JSON.",
+  "evaluation_type": "schema",
+  "tags": ["transformation", "json", "schema"],
+  "instances": [
+    {
+      "id": "transform_001",
+      "input": {
+        "source_json": {"first_name": "John", "last_name": "Doe", "email_address": "john@example.com"},
+        "target_schema": {"fullName": "string", "email": "string"}
+      },
+      "expected_output": {
+        "fullName": "John Doe",
+        "email": "john@example.com"
+      }
+    },
+    {
+      "id": "transform_002",
+      "input": {
+        "source_json": {"product_id": "SKU-123", "product_name": "Widget", "price_usd": 29.99, "qty": 5},
+        "target_schema": {"id": "string", "name": "string", "total": "number"}
+      },
+      "expected_output": {
+        "id": "SKU-123",
+        "name": "Widget",
+        "total": 149.95
+      }
+    }
+  ]
+}

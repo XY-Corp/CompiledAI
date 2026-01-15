@@ -1,0 +1,23 @@
+name: XY_Benchmark
+description: |
+  Custom benchmark for evaluating Compiled AI systems.
+  Focuses on deterministic data transformation tasks.
+version: "1.0"
+author: CompiledAI Team
+license: MIT
+
+categories:
+  - document_processing
+  - data_transformation
+  - decision_logic
+  - function_calling
+
+metrics:
+  primary: exact_match_rate
+  secondary:
+    - latency_p50
+    - token_efficiency
+    - consistency
+
+task_count: 5
+instance_count: 12
