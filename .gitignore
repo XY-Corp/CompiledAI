@@ -181,8 +181,7 @@ cython_debug/
 .cursorindexingignore
 .DS_Store
 
-# Benchmark results
-results/
+
 
 # LaTeX auxiliary files
 *.aux
