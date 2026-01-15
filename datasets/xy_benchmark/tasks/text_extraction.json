@@ -1,0 +1,46 @@
+{
+  "id": "text_extraction_01",
+  "name": "Email Field Extraction",
+  "description": "Extract structured fields from email headers",
+  "category": "document_processing",
+  "difficulty": "simple",
+  "prompt_template": "Extract the following fields from this email:\n- sender\n- recipient\n- subject\n- date\n\nEmail:\n{email_text}\n\nReturn as JSON.",
+  "evaluation_type": "schema",
+  "schema": {
+    "type": "object",
+    "properties": {
+      "sender": {"type": "string"},
+      "recipient": {"type": "string"},
+      "subject": {"type": "string"},
+      "date": {"type": "string"}
+    },
+    "required": ["sender", "recipient", "subject", "date"]
+  },
+  "tags": ["extraction", "email", "simple"],
+  "instances": [
+    {
+      "id": "email_001",
+      "input": {
+        "email_text": "From: john.doe@example.com\nTo: jane.smith@company.org\nSubject: Q4 Report Review\nDate: 2025-01-15\n\nPlease review the attached Q4 report."
+      },
+      "expected_output": {
+        "sender": "john.doe@example.com",
+        "recipient": "jane.smith@company.org",
+        "subject": "Q4 Report Review",
+        "date": "2025-01-15"
+      }
+    },
+    {
+      "id": "email_002",
+      "input": {
+        "email_text": "From: support@service.io\nTo: user@domain.com\nSubject: Your ticket #12345 has been resolved\nDate: 2025-01-10\n\nYour support ticket has been closed."
+      },
+      "expected_output": {
+        "sender": "support@service.io",
+        "recipient": "user@domain.com",
+        "subject": "Your ticket #12345 has been resolved",
+        "date": "2025-01-10"
+      }
+    }
+  ]
+}

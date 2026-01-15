@@ -180,3 +180,18 @@ cython_debug/
 .cursorignore
 .cursorindexingignore
 .DS_Store
+
+# Benchmark results
+results/
+
+# LaTeX auxiliary files
+*.aux
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.lof
+*.lot
+*.out
+*.synctex.gz
+*.toc

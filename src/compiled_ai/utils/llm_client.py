@@ -1,4 +1,4 @@
-"""Unified LLM client abstraction for Claude and OpenAI APIs."""
+"""Unified LLM client abstraction for Claude, OpenAI, and Gemini APIs."""
 
 import hashlib
 import json
@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any
 
 import anthropic
+import google.generativeai as genai
 import openai
 from dotenv import load_dotenv
 
@@ -226,7 +227,7 @@ class OpenAIClient(LLMClient):
         super().__init__(config, enable_cache, cache_dir)
 
         self.client = openai.OpenAI(
-            api_key=api_key or os.getenv("OPENAI_API_KEY")
+            api_key=api_key or os.getenv("OPENAI_API_KEY") or os.getenv("OPEN_AI_API_KEY")
         )
 
     def generate(self, prompt: str, **kwargs: Any) -> LLMResponse:
@@ -281,6 +282,78 @@ class OpenAIClient(LLMClient):
         return result
 
 
+class GeminiClient(LLMClient):
+    """Google Gemini API client."""
+
+    def __init__(
+        self,
+        config: LLMConfig | None = None,
+        api_key: str | None = None,
+        enable_cache: bool = False,
+        cache_dir: str | None = None,
+    ) -> None:
+        """Initialize the Gemini client.
+
+        Args:
+            config: LLM configuration. Defaults to Gemini 2.0 Flash.
+            api_key: Gemini API key. Defaults to GEMINI_API_KEY env var.
+            enable_cache: Whether to cache responses
+            cache_dir: Directory for cache files
+        """
+        config = config or LLMConfig(model="gemini-2.0-flash")
+        super().__init__(config, enable_cache, cache_dir)
+
+        genai.configure(api_key=api_key or os.getenv("GEMINI_API_KEY"))
+        self.model = genai.GenerativeModel(
+            self.config.model,
+            generation_config=genai.GenerationConfig(
+                temperature=self.config.temperature,
+                max_output_tokens=self.config.max_tokens,
+            ),
+        )
+
+    def generate(self, prompt: str, **kwargs: Any) -> LLMResponse:
+        """Generate a response using Gemini.
+
+        Args:
+            prompt: The user prompt
+            **kwargs: Additional arguments for the API call
+
+        Returns:
+            LLMResponse with content and metadata
+        """
+        cache_key = self._get_cache_key(prompt, **kwargs)
+        cached = self._get_cached_response(cache_key)
+        if cached:
+            log_tokens(cached.input_tokens, cached.output_tokens, cached=True)
+            return cached
+
+        system_prompt = kwargs.get("system_prompt", self.config.system_prompt)
+        full_prompt = f"{system_prompt}\n\n{prompt}" if system_prompt else prompt
+
+        start_time = time.perf_counter()
+        response = self.model.generate_content(full_prompt)
+        latency_ms = (time.perf_counter() - start_time) * 1000
+
+        content = response.text if response.text else ""
+        usage = response.usage_metadata
+
+        result = LLMResponse(
+            content=content,
+            input_tokens=usage.prompt_token_count if usage else 0,
+            output_tokens=usage.candidates_token_count if usage else 0,
+            model=self.config.model,
+            latency_ms=latency_ms,
+            cached=False,
+        )
+
+        log_tokens(result.input_tokens, result.output_tokens)
+        log_latency(latency_ms, "Gemini API")
+
+        self._cache_response(cache_key, result)
+        return result
+
+
 @dataclass
 class TokenTracker:
     """Tracks cumulative token usage across multiple LLM calls."""
@@ -322,7 +395,7 @@ def create_client(
     """Factory function to create an LLM client.
 
     Args:
-        provider: "anthropic" or "openai"
+        provider: "anthropic", "openai", or "gemini"
         config: LLM configuration
         enable_cache: Whether to cache responses
 
@@ -333,5 +406,7 @@ def create_client(
         return AnthropicClient(config=config, enable_cache=enable_cache)
     elif provider == "openai":
         return OpenAIClient(config=config, enable_cache=enable_cache)
+    elif provider == "gemini":
+        return GeminiClient(config=config, enable_cache=enable_cache)
     else:
         raise ValueError(f"Unknown provider: {provider}")
