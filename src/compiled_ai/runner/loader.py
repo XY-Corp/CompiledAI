@@ -99,9 +99,16 @@ class BFCLAdapter(DatasetAdapter):
             config = self.CATEGORIES[category]
             instances: list[TaskInstance] = []
 
+            # Load ground truth from possible_answer directory if available
+            ground_truth_map = self._load_ground_truth(path, category)
+
             # Find matching files (search recursively)
             for pattern in config["file_patterns"]:
                 for jsonl_file in path.glob(f"**/{pattern}"):
+                    # Skip files in possible_answer directory
+                    if "possible_answer" in str(jsonl_file):
+                        continue
+
                     with open(jsonl_file) as f:
                         for i, line in enumerate(f):
                             if max_per_category and len(instances) >= max_per_category:
@@ -132,14 +139,20 @@ class BFCLAdapter(DatasetAdapter):
                             functions = data.get("function", [])
                             functions_str = json.dumps(functions, indent=2)
 
+                            # Get ground truth from map or inline
+                            instance_id = data.get("id", f"{category}_{i}")
+                            ground_truth = ground_truth_map.get(
+                                instance_id, data.get("ground_truth", {})
+                            )
+
                             instances.append(
                                 TaskInstance(
-                                    instance_id=data.get("id", f"{category}_{i}"),
+                                    instance_id=instance_id,
                                     input_data={
                                         "user_query": question,
                                         "functions": functions_str,
                                     },
-                                    expected_output=data.get("ground_truth", {}),
+                                    expected_output=ground_truth,
                                     metadata={
                                         "category": category,
                                         "execution_result_type": data.get(
@@ -171,6 +184,39 @@ class BFCLAdapter(DatasetAdapter):
                 dataset.tasks.append(task)
 
         return dataset
+
+    def _load_ground_truth(self, path: Path, category: str) -> dict[str, Any]:
+        """Load ground truth from possible_answer directory.
+
+        Args:
+            path: Base BFCL dataset path
+            category: Category name
+
+        Returns:
+            Dictionary mapping instance IDs to ground truth
+        """
+        ground_truth_map: dict[str, Any] = {}
+
+        # Try to find matching ground truth file
+        possible_answer_dir = path / "possible_answer"
+        if not possible_answer_dir.exists():
+            return ground_truth_map
+
+        # Map category to file name
+        file_patterns = self.CATEGORIES.get(category, {}).get("file_patterns", [])
+
+        for pattern in file_patterns:
+            # Convert pattern to expected answer file name
+            answer_file = possible_answer_dir / pattern.replace("*.jsonl", ".json")
+            if answer_file.exists():
+                with open(answer_file) as f:
+                    for line in f:
+                        data = json.loads(line)
+                        instance_id = data.get("id")
+                        if instance_id:
+                            ground_truth_map[instance_id] = data.get("ground_truth", {})
+
+        return ground_truth_map
 
     def is_compatible(self, path: Path) -> bool:
         """Check for BFCL-style files (JSONL or BFCL_v3_*.json)."""

@@ -15,40 +15,34 @@ dependencies = [
     "anthropic>=0.40.0",
     "openai>=1.50.0",
     "google-generativeai>=0.8.0",
-
     # Validation tools
     "bandit>=1.8.0",
     "mypy>=1.13.0",
     "ruff>=0.8.0",
     "radon>=6.0.0",
-
     # Workflow/Agent frameworks (for baselines)
     "langchain>=0.3.0",
     "langchain-anthropic>=0.3.0",
     "langchain-openai>=0.3.0",
-
     # Data handling
     "pyyaml>=6.0",
     "pydantic>=2.10.0",
     "jsonschema>=4.23.0",
-
     # Dataset downloads
     "huggingface-hub>=0.20.0",
-
     # Testing & metrics
     "pytest>=8.0.0",
     "pytest-asyncio>=0.24.0",
     "numpy>=2.0.0",
     "pandas>=2.2.0",
-
     # Reporting
     "rich>=13.9.0",
     "plotly>=5.24.0",
     "jinja2>=3.1.0",
-
     # Utilities
     "python-dotenv>=1.0.0",
     "httpx>=0.28.0",
+    "questionary>=2.1.1",
 ]
 
 [dependency-groups]
