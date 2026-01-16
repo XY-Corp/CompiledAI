@@ -1,0 +1,1264 @@
+{
+  "config": {
+    "dataset": "xy_benchmark",
+    "baseline": "autogen"
+  },
+  "summary": {
+    "duration_seconds": 57.00434708595276,
+    "overall_success_rate": 1.0,
+    "total_tasks": 5,
+    "total_instances": 10
+  },
+  "tasks": [
+    {
+      "task_id": "classification_01",
+      "name": "Support Ticket Classification",
+      "category": "decision_logic",
+      "difficulty": "simple",
+      "success_rate": 1.0,
+      "avg_latency_ms": 5674.921375015401,
+      "instance_count": 2
+    },
+    {
+      "task_id": "normalize_01",
+      "name": "Address Normalization",
+      "category": "data_transformation",
+      "difficulty": "medium",
+      "success_rate": 1.0,
+      "avg_latency_ms": 5931.830396002624,
+      "instance_count": 2
+    },
+    {
+      "task_id": "function_call_01",
+      "name": "API Function Selection",
+      "category": "function_calling",
+      "difficulty": "medium",
+      "success_rate": 1.0,
+      "avg_latency_ms": 5888.9509580039885,
+      "instance_count": 2
+    },
+    {
+      "task_id": "json_transform_01",
+      "name": "JSON Schema Mapping",
+      "category": "data_transformation",
+      "difficulty": "medium",
+      "success_rate": 1.0,
+      "avg_latency_ms": 5632.895083006588,
+      "instance_count": 2
+    },
+    {
+      "task_id": "text_extraction_01",
+      "name": "Email Field Extraction",
+      "category": "document_processing",
+      "difficulty": "simple",
+      "success_rate": 1.0,
+      "avg_latency_ms": 5372.363229005714,
+      "instance_count": 2
+    }
+  ],
+  "metrics": {
+    "metadata": {
+      "benchmark_id": "20260116_152151",
+      "timestamp": "2026-01-16T15:21:51.881541",
+      "task_name": "",
+      "method": "",
+      "model": "",
+      "notes": ""
+    },
+    "results": [
+      {
+        "name": "p50_latency",
+        "value": 5674.921375015401,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-16T15:22:03.232299"
+      },
+      {
+        "name": "p90_latency",
+        "value": 6670.855007812497,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-16T15:22:03.232305"
+      },
+      {
+        "name": "p95_latency",
+        "value": 6795.346711912134,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-16T15:22:03.232310"
+      },
+      {
+        "name": "p99_latency",
+        "value": 6894.940075191844,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-16T15:22:03.232313"
+      },
+      {
+        "name": "jitter",
+        "value": 1220.0187001764425,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-16T15:22:03.232316"
+      },
+      {
+        "name": "mean_latency",
+        "value": 5674.921375015401,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-16T15:22:03.232385"
+      },
+      {
+        "name": "stdev_latency",
+        "value": 1760.5785634064487,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-16T15:22:03.232426"
+      },
+      {
+        "name": "min_latency",
+        "value": 4430.004334019031,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-16T15:22:03.232428"
+      },
+      {
+        "name": "max_latency",
+        "value": 6919.838416011771,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-16T15:22:03.232430"
+      },
+      {
+        "name": "cold_start",
+        "value": 0.0,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-16T15:22:03.232431"
+      },
+      {
+        "name": "measurement_count",
+        "value": 2,
+        "unit": "count",
+        "category": "latency",
+        "timestamp": "2026-01-16T15:22:03.232433"
+      },
+      {
+        "name": "ttft",
+        "value": 0.0,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-16T15:22:03.232435"
+      },
+      {
+        "name": "ttft_p99",
+        "value": 0.0,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-16T15:22:03.232436"
+      },
+      {
+        "name": "tpot",
+        "value": 0.0,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-16T15:22:03.232437"
+      },
+      {
+        "name": "tpot_p99",
+        "value": 0.0,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-16T15:22:03.232439"
+      },
+      {
+        "name": "has_sufficient_samples",
+        "value": false,
+        "unit": "bool",
+        "category": "latency",
+        "timestamp": "2026-01-16T15:22:03.232440"
+      },
+      {
+        "name": "rating",
+        "value": "excellent",
+        "unit": "category",
+        "category": "latency",
+        "timestamp": "2026-01-16T15:22:03.232449"
+      },
+      {
+        "name": "gen_tokens",
+        "value": 0,
+        "unit": "tokens",
+        "category": "token_efficiency",
+        "timestamp": "2026-01-16T15:22:03.232457"
+      },
+      {
+        "name": "prompt_tokens",
+        "value": 0,
+        "unit": "tokens",
+        "category": "token_efficiency",
+        "timestamp": "2026-01-16T15:22:03.232458"
+      },
+      {
+        "name": "output_code_tokens",
+        "value": 0,
+        "unit": "tokens",
+        "category": "token_efficiency",
+        "timestamp": "2026-01-16T15:22:03.232459"
+      },
+      {
+        "name": "runtime_tokens_per_tx",
+        "value": 0.0,
+        "unit": "tokens/tx",
+        "category": "token_efficiency",
+        "timestamp": "2026-01-16T15:22:03.232460"
+      },
+      {
+        "name": "generated_loc",
+        "value": 0,
+        "unit": "lines",
+        "category": "token_efficiency",
+        "timestamp": "2026-01-16T15:22:03.232462"
+      },
+      {
+        "name": "compression_ratio",
+        "value": 0.0,
+        "unit": "ratio",
+        "category": "token_efficiency",
+        "timestamp": "2026-01-16T15:22:03.232465"
+      },
+      {
+        "name": "loc_per_token",
+        "value": 0.0,
+        "unit": "loc/token",
+        "category": "token_efficiency",
+        "timestamp": "2026-01-16T15:22:03.232466"
+      },
+      {
+        "name": "token_amortization_factor",
+        "value": 0.0,
+        "unit": "tokens/exec",
+        "category": "token_efficiency",
+        "timestamp": "2026-01-16T15:22:03.232468"
+      },
+      {
+        "name": "is_competitive",
+        "value": false,
+        "unit": "bool",
+        "category": "token_efficiency",
+        "timestamp": "2026-01-16T15:22:03.232470"
+      },
+      {
+        "name": "is_excellent",
+        "value": false,
+        "unit": "bool",
+        "category": "token_efficiency",
+        "timestamp": "2026-01-16T15:22:03.232472"
+      },
+      {
+        "name": "success_rate",
+        "value": 1.0,
+        "unit": "ratio",
+        "category": "reliability",
+        "timestamp": "2026-01-16T15:22:03.232474"
+      },
+      {
+        "name": "total_llm_calls",
+        "value": 4,
+        "unit": "count",
+        "category": "cost",
+        "timestamp": "2026-01-16T15:22:03.232475"
+      },
+      {
+        "name": "p50_latency",
+        "value": 5931.830396002624,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-16T15:22:15.096208"
+      },
+      {
+        "name": "p90_latency",
+        "value": 6168.662946403492,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-16T15:22:15.096215"
+      },
+      {
+        "name": "p95_latency",
+        "value": 6198.267015203601,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-16T15:22:15.096218"
+      },
+      {
+        "name": "p99_latency",
+        "value": 6221.950270243688,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-16T15:22:15.096220"
+      },
+      {
+        "name": "jitter",
+        "value": 290.11987424106337,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-16T15:22:15.096223"
+      },
+      {
+        "name": "mean_latency",
+        "value": 5931.830396002624,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-16T15:22:15.096266"
+      },
+      {
+        "name": "stdev_latency",
+        "value": 418.6647559853965,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-16T15:22:15.096320"
+      },
+      {
+        "name": "min_latency",
+        "value": 5635.789708001539,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-16T15:22:15.096324"
+      },
+      {
+        "name": "max_latency",
+        "value": 6227.871084003709,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-16T15:22:15.096326"
+      },
+      {
+        "name": "cold_start",
+        "value": 0.0,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-16T15:22:15.096328"
+      },
+      {
+        "name": "measurement_count",
+        "value": 2,
+        "unit": "count",
+        "category": "latency",
+        "timestamp": "2026-01-16T15:22:15.096331"
+      },
+      {
+        "name": "ttft",
+        "value": 0.0,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-16T15:22:15.096333"
+      },
+      {
+        "name": "ttft_p99",
+        "value": 0.0,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-16T15:22:15.096334"
+      },
+      {
+        "name": "tpot",
+        "value": 0.0,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-16T15:22:15.096337"
+      },
+      {
+        "name": "tpot_p99",
+        "value": 0.0,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-16T15:22:15.096339"
+      },
+      {
+        "name": "has_sufficient_samples",
+        "value": false,
+        "unit": "bool",
+        "category": "latency",
+        "timestamp": "2026-01-16T15:22:15.096341"
+      },
+      {
+        "name": "rating",
+        "value": "excellent",
+        "unit": "category",
+        "category": "latency",
+        "timestamp": "2026-01-16T15:22:15.096346"
+      },
+      {
+        "name": "gen_tokens",
+        "value": 0,
+        "unit": "tokens",
+        "category": "token_efficiency",
+        "timestamp": "2026-01-16T15:22:15.096353"
+      },
+      {
+        "name": "prompt_tokens",
+        "value": 0,
+        "unit": "tokens",
+        "category": "token_efficiency",
+        "timestamp": "2026-01-16T15:22:15.096354"
+      },
+      {
+        "name": "output_code_tokens",
+        "value": 0,
+        "unit": "tokens",
+        "category": "token_efficiency",
+        "timestamp": "2026-01-16T15:22:15.096356"
+      },
+      {
+        "name": "runtime_tokens_per_tx",
+        "value": 0.0,
+        "unit": "tokens/tx",
+        "category": "token_efficiency",
+        "timestamp": "2026-01-16T15:22:15.096358"
+      },
+      {
+        "name": "generated_loc",
+        "value": 0,
+        "unit": "lines",
+        "category": "token_efficiency",
+        "timestamp": "2026-01-16T15:22:15.096359"
+      },
+      {
+        "name": "compression_ratio",
+        "value": 0.0,
+        "unit": "ratio",
+        "category": "token_efficiency",
+        "timestamp": "2026-01-16T15:22:15.096362"
+      },
+      {
+        "name": "loc_per_token",
+        "value": 0.0,
+        "unit": "loc/token",
+        "category": "token_efficiency",
+        "timestamp": "2026-01-16T15:22:15.096363"
+      },
+      {
+        "name": "token_amortization_factor",
+        "value": 0.0,
+        "unit": "tokens/exec",
+        "category": "token_efficiency",
+        "timestamp": "2026-01-16T15:22:15.096366"
+      },
+      {
+        "name": "is_competitive",
+        "value": false,
+        "unit": "bool",
+        "category": "token_efficiency",
+        "timestamp": "2026-01-16T15:22:15.096368"
+      },
+      {
+        "name": "is_excellent",
+        "value": false,
+        "unit": "bool",
+        "category": "token_efficiency",
+        "timestamp": "2026-01-16T15:22:15.096370"
+      },
+      {
+        "name": "success_rate",
+        "value": 1.0,
+        "unit": "ratio",
+        "category": "reliability",
+        "timestamp": "2026-01-16T15:22:15.096372"
+      },
+      {
+        "name": "total_llm_calls",
+        "value": 4,
+        "unit": "count",
+        "category": "cost",
+        "timestamp": "2026-01-16T15:22:15.096375"
+      },
+      {
+        "name": "p50_latency",
+        "value": 5888.9509580039885,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-16T15:22:26.874465"
+      },
+      {
+        "name": "p90_latency",
+        "value": 6502.726124407491,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-16T15:22:26.874475"
+      },
+      {
+        "name": "p95_latency",
+        "value": 6579.4480202079285,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-16T15:22:26.874478"
+      },
+      {
+        "name": "p99_latency",
+        "value": 6640.825536848279,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-16T15:22:26.874481"
+      },
+      {
+        "name": "jitter",
+        "value": 751.8745788442902,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-16T15:22:26.874486"
+      },
+      {
+        "name": "mean_latency",
+        "value": 5888.9509580039885,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-16T15:22:26.874582"
+      },
+      {
+        "name": "stdev_latency",
+        "value": 1085.0114557195452,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-16T15:22:26.874651"
+      },
+      {
+        "name": "min_latency",
+        "value": 5121.731999999611,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-16T15:22:26.874655"
+      },
+      {
+        "name": "max_latency",
+        "value": 6656.169916008366,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-16T15:22:26.874658"
+      },
+      {
+        "name": "cold_start",
+        "value": 0.0,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-16T15:22:26.874660"
+      },
+      {
+        "name": "measurement_count",
+        "value": 2,
+        "unit": "count",
+        "category": "latency",
+        "timestamp": "2026-01-16T15:22:26.874663"
+      },
+      {
+        "name": "ttft",
+        "value": 0.0,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-16T15:22:26.874666"
+      },
+      {
+        "name": "ttft_p99",
+        "value": 0.0,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-16T15:22:26.874668"
+      },
+      {
+        "name": "tpot",
+        "value": 0.0,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-16T15:22:26.874670"
+      },
+      {
+        "name": "tpot_p99",
+        "value": 0.0,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-16T15:22:26.874672"
+      },
+      {
+        "name": "has_sufficient_samples",
+        "value": false,
+        "unit": "bool",
+        "category": "latency",
+        "timestamp": "2026-01-16T15:22:26.874675"
+      },
+      {
+        "name": "rating",
+        "value": "excellent",
+        "unit": "category",
+        "category": "latency",
+        "timestamp": "2026-01-16T15:22:26.874683"
+      },
+      {
+        "name": "gen_tokens",
+        "value": 0,
+        "unit": "tokens",
+        "category": "token_efficiency",
+        "timestamp": "2026-01-16T15:22:26.874698"
+      },
+      {
+        "name": "prompt_tokens",
+        "value": 0,
+        "unit": "tokens",
+        "category": "token_efficiency",
+        "timestamp": "2026-01-16T15:22:26.874700"
+      },
+      {
+        "name": "output_code_tokens",
+        "value": 0,
+        "unit": "tokens",
+        "category": "token_efficiency",
+        "timestamp": "2026-01-16T15:22:26.874702"
+      },
+      {
+        "name": "runtime_tokens_per_tx",
+        "value": 0.0,
+        "unit": "tokens/tx",
+        "category": "token_efficiency",
+        "timestamp": "2026-01-16T15:22:26.874704"
+      },
+      {
+        "name": "generated_loc",
+        "value": 0,
+        "unit": "lines",
+        "category": "token_efficiency",
+        "timestamp": "2026-01-16T15:22:26.874707"
+      },
+      {
+        "name": "compression_ratio",
+        "value": 0.0,
+        "unit": "ratio",
+        "category": "token_efficiency",
+        "timestamp": "2026-01-16T15:22:26.874710"
+      },
+      {
+        "name": "loc_per_token",
+        "value": 0.0,
+        "unit": "loc/token",
+        "category": "token_efficiency",
+        "timestamp": "2026-01-16T15:22:26.874712"
+      },
+      {
+        "name": "token_amortization_factor",
+        "value": 0.0,
+        "unit": "tokens/exec",
+        "category": "token_efficiency",
+        "timestamp": "2026-01-16T15:22:26.874715"
+      },
+      {
+        "name": "is_competitive",
+        "value": false,
+        "unit": "bool",
+        "category": "token_efficiency",
+        "timestamp": "2026-01-16T15:22:26.874719"
+      },
+      {
+        "name": "is_excellent",
+        "value": false,
+        "unit": "bool",
+        "category": "token_efficiency",
+        "timestamp": "2026-01-16T15:22:26.874722"
+      },
+      {
+        "name": "success_rate",
+        "value": 1.0,
+        "unit": "ratio",
+        "category": "reliability",
+        "timestamp": "2026-01-16T15:22:26.874726"
+      },
+      {
+        "name": "total_llm_calls",
+        "value": 4,
+        "unit": "count",
+        "category": "cost",
+        "timestamp": "2026-01-16T15:22:26.874728"
+      },
+      {
+        "name": "p50_latency",
+        "value": 5632.895083006588,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-16T15:22:38.140669"
+      },
+      {
+        "name": "p90_latency",
+        "value": 5813.313882998773,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-16T15:22:38.140677"
+      },
+      {
+        "name": "p95_latency",
+        "value": 5835.866232997796,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-16T15:22:38.140680"
+      },
+      {
+        "name": "p99_latency",
+        "value": 5853.9081129970145,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-16T15:22:38.140684"
+      },
+      {
+        "name": "jitter",
+        "value": 221.01302999042673,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-16T15:22:38.140688"
+      },
+      {
+        "name": "mean_latency",
+        "value": 5632.895083006588,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-16T15:22:38.140743"
+      },
+      {
+        "name": "stdev_latency",
+        "value": 318.93839232003376,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-16T15:22:38.140799"
+      },
+      {
+        "name": "min_latency",
+        "value": 5407.371583016356,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-16T15:22:38.140804"
+      },
+      {
+        "name": "max_latency",
+        "value": 5858.418582996819,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-16T15:22:38.140806"
+      },
+      {
+        "name": "cold_start",
+        "value": 0.0,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-16T15:22:38.140809"
+      },
+      {
+        "name": "measurement_count",
+        "value": 2,
+        "unit": "count",
+        "category": "latency",
+        "timestamp": "2026-01-16T15:22:38.140812"
+      },
+      {
+        "name": "ttft",
+        "value": 0.0,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-16T15:22:38.140814"
+      },
+      {
+        "name": "ttft_p99",
+        "value": 0.0,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-16T15:22:38.140817"
+      },
+      {
+        "name": "tpot",
+        "value": 0.0,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-16T15:22:38.140818"
+      },
+      {
+        "name": "tpot_p99",
+        "value": 0.0,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-16T15:22:38.140821"
+      },
+      {
+        "name": "has_sufficient_samples",
+        "value": false,
+        "unit": "bool",
+        "category": "latency",
+        "timestamp": "2026-01-16T15:22:38.140823"
+      },
+      {
+        "name": "rating",
+        "value": "excellent",
+        "unit": "category",
+        "category": "latency",
+        "timestamp": "2026-01-16T15:22:38.140829"
+      },
+      {
+        "name": "gen_tokens",
+        "value": 0,
+        "unit": "tokens",
+        "category": "token_efficiency",
+        "timestamp": "2026-01-16T15:22:38.140838"
+      },
+      {
+        "name": "prompt_tokens",
+        "value": 0,
+        "unit": "tokens",
+        "category": "token_efficiency",
+        "timestamp": "2026-01-16T15:22:38.140840"
+      },
+      {
+        "name": "output_code_tokens",
+        "value": 0,
+        "unit": "tokens",
+        "category": "token_efficiency",
+        "timestamp": "2026-01-16T15:22:38.140842"
+      },
+      {
+        "name": "runtime_tokens_per_tx",
+        "value": 0.0,
+        "unit": "tokens/tx",
+        "category": "token_efficiency",
+        "timestamp": "2026-01-16T15:22:38.140844"
+      },
+      {
+        "name": "generated_loc",
+        "value": 0,
+        "unit": "lines",
+        "category": "token_efficiency",
+        "timestamp": "2026-01-16T15:22:38.140847"
+      },
+      {
+        "name": "compression_ratio",
+        "value": 0.0,
+        "unit": "ratio",
+        "category": "token_efficiency",
+        "timestamp": "2026-01-16T15:22:38.140850"
+      },
+      {
+        "name": "loc_per_token",
+        "value": 0.0,
+        "unit": "loc/token",
+        "category": "token_efficiency",
+        "timestamp": "2026-01-16T15:22:38.140852"
+      },
+      {
+        "name": "token_amortization_factor",
+        "value": 0.0,
+        "unit": "tokens/exec",
+        "category": "token_efficiency",
+        "timestamp": "2026-01-16T15:22:38.140855"
+      },
+      {
+        "name": "is_competitive",
+        "value": false,
+        "unit": "bool",
+        "category": "token_efficiency",
+        "timestamp": "2026-01-16T15:22:38.140857"
+      },
+      {
+        "name": "is_excellent",
+        "value": false,
+        "unit": "bool",
+        "category": "token_efficiency",
+        "timestamp": "2026-01-16T15:22:38.140861"
+      },
+      {
+        "name": "success_rate",
+        "value": 1.0,
+        "unit": "ratio",
+        "category": "reliability",
+        "timestamp": "2026-01-16T15:22:38.140864"
+      },
+      {
+        "name": "total_llm_calls",
+        "value": 4,
+        "unit": "count",
+        "category": "cost",
+        "timestamp": "2026-01-16T15:22:38.140866"
+      },
+      {
+        "name": "p50_latency",
+        "value": 5372.363229005714,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-16T15:22:48.885710"
+      },
+      {
+        "name": "p90_latency",
+        "value": 5509.126378610381,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-16T15:22:48.885717"
+      },
+      {
+        "name": "p95_latency",
+        "value": 5526.221772310964,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-16T15:22:48.885720"
+      },
+      {
+        "name": "p99_latency",
+        "value": 5539.898087271431,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-16T15:22:48.885722"
+      },
+      {
+        "name": "jitter",
+        "value": 167.53485826571705,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-16T15:22:48.885726"
+      },
+      {
+        "name": "mean_latency",
+        "value": 5372.363229005714,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-16T15:22:48.885774"
+      },
+      {
+        "name": "stdev_latency",
+        "value": 241.7653762547258,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-16T15:22:48.885823"
+      },
+      {
+        "name": "min_latency",
+        "value": 5201.40929199988,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-16T15:22:48.885827"
+      },
+      {
+        "name": "max_latency",
+        "value": 5543.317166011548,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-16T15:22:48.885829"
+      },
+      {
+        "name": "cold_start",
+        "value": 0.0,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-16T15:22:48.885831"
+      },
+      {
+        "name": "measurement_count",
+        "value": 2,
+        "unit": "count",
+        "category": "latency",
+        "timestamp": "2026-01-16T15:22:48.885834"
+      },
+      {
+        "name": "ttft",
+        "value": 0.0,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-16T15:22:48.885836"
+      },
+      {
+        "name": "ttft_p99",
+        "value": 0.0,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-16T15:22:48.885838"
+      },
+      {
+        "name": "tpot",
+        "value": 0.0,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-16T15:22:48.885840"
+      },
+      {
+        "name": "tpot_p99",
+        "value": 0.0,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-16T15:22:48.885841"
+      },
+      {
+        "name": "has_sufficient_samples",
+        "value": false,
+        "unit": "bool",
+        "category": "latency",
+        "timestamp": "2026-01-16T15:22:48.885843"
+      },
+      {
+        "name": "rating",
+        "value": "excellent",
+        "unit": "category",
+        "category": "latency",
+        "timestamp": "2026-01-16T15:22:48.885848"
+      },
+      {
+        "name": "gen_tokens",
+        "value": 0,
+        "unit": "tokens",
+        "category": "token_efficiency",
+        "timestamp": "2026-01-16T15:22:48.885856"
+      },
+      {
+        "name": "prompt_tokens",
+        "value": 0,
+        "unit": "tokens",
+        "category": "token_efficiency",
+        "timestamp": "2026-01-16T15:22:48.885858"
+      },
+      {
+        "name": "output_code_tokens",
+        "value": 0,
+        "unit": "tokens",
+        "category": "token_efficiency",
+        "timestamp": "2026-01-16T15:22:48.885860"
+      },
+      {
+        "name": "runtime_tokens_per_tx",
+        "value": 0.0,
+        "unit": "tokens/tx",
+        "category": "token_efficiency",
+        "timestamp": "2026-01-16T15:22:48.885862"
+      },
+      {
+        "name": "generated_loc",
+        "value": 0,
+        "unit": "lines",
+        "category": "token_efficiency",
+        "timestamp": "2026-01-16T15:22:48.885864"
+      },
+      {
+        "name": "compression_ratio",
+        "value": 0.0,
+        "unit": "ratio",
+        "category": "token_efficiency",
+        "timestamp": "2026-01-16T15:22:48.885867"
+      },
+      {
+        "name": "loc_per_token",
+        "value": 0.0,
+        "unit": "loc/token",
+        "category": "token_efficiency",
+        "timestamp": "2026-01-16T15:22:48.885869"
+      },
+      {
+        "name": "token_amortization_factor",
+        "value": 0.0,
+        "unit": "tokens/exec",
+        "category": "token_efficiency",
+        "timestamp": "2026-01-16T15:22:48.885871"
+      },
+      {
+        "name": "is_competitive",
+        "value": false,
+        "unit": "bool",
+        "category": "token_efficiency",
+        "timestamp": "2026-01-16T15:22:48.885873"
+      },
+      {
+        "name": "is_excellent",
+        "value": false,
+        "unit": "bool",
+        "category": "token_efficiency",
+        "timestamp": "2026-01-16T15:22:48.885876"
+      },
+      {
+        "name": "success_rate",
+        "value": 1.0,
+        "unit": "ratio",
+        "category": "reliability",
+        "timestamp": "2026-01-16T15:22:48.885878"
+      },
+      {
+        "name": "total_llm_calls",
+        "value": 4,
+        "unit": "count",
+        "category": "cost",
+        "timestamp": "2026-01-16T15:22:48.885881"
+      }
+    ]
+  },
+  "logs": [
+    {
+      "task_id": "classification_01",
+      "instances": [
+        {
+          "instance_id": "ticket_001",
+          "prompt": "Classify this support ticket into one of these categories:\n- billing\n- technical\n- account\n- general\n\nTicket:\nI was charged twice for my subscription this month. Please refund the duplicate charge.\n\nReturn only the category name.",
+          "output": "billing",
+          "expected_output": "billing",
+          "success": true,
+          "error": null,
+          "latency_ms": 4430.004334019031,
+          "input_tokens": 0,
+          "output_tokens": 0
+        },
+        {
+          "instance_id": "ticket_002",
+          "prompt": "Classify this support ticket into one of these categories:\n- billing\n- technical\n- account\n- general\n\nTicket:\nThe application crashes when I try to upload files larger than 10MB.\n\nReturn only the category name.",
+          "output": "technical",
+          "expected_output": "technical",
+          "success": true,
+          "error": null,
+          "latency_ms": 6919.838416011771,
+          "input_tokens": 0,
+          "output_tokens": 0
+        }
+      ]
+    },
+    {
+      "task_id": "normalize_01",
+      "instances": [
+        {
+          "instance_id": "addr_001",
+          "prompt": "Normalize this address to the standard format:\n123 Main St., Apt 4B, New York, NY 10001\n\nReturn JSON with: street, city, state, zip, country",
+          "output": "```json\n{\n  \"street\": \"123 Main St., Apt 4B\",\n  \"city\": \"New York\",\n  \"state\": \"NY\",\n  \"zip\": \"10001\",\n  \"country\": \"USA\"\n}\n```",
+          "expected_output": {
+            "street": "123 Main St Apt 4B",
+            "city": "New York",
+            "state": "NY",
+            "zip": "10001",
+            "country": "USA"
+          },
+          "success": true,
+          "error": null,
+          "latency_ms": 6227.871084003709,
+          "input_tokens": 0,
+          "output_tokens": 0
+        },
+        {
+          "instance_id": "addr_002",
+          "prompt": "Normalize this address to the standard format:\n456 Oak Avenue, Suite 100, Los Angeles, California, 90001, United States\n\nReturn JSON with: street, city, state, zip, country",
+          "output": "```json\n{\n  \"street\": \"456 Oak Avenue, Suite 100\",\n  \"city\": \"Los Angeles\",\n  \"state\": \"California\",\n  \"zip\": \"90001\",\n  \"country\": \"United States\"\n}\n```",
+          "expected_output": {
+            "street": "456 Oak Ave Suite 100",
+            "city": "Los Angeles",
+            "state": "CA",
+            "zip": "90001",
+            "country": "USA"
+          },
+          "success": true,
+          "error": null,
+          "latency_ms": 5635.789708001539,
+          "input_tokens": 0,
+          "output_tokens": 0
+        }
+      ]
+    },
+    {
+      "task_id": "function_call_01",
+      "instances": [
+        {
+          "instance_id": "func_001",
+          "prompt": "Given these available functions:\n[{'name': 'get_weather', 'params': {'location': 'string', 'unit': 'celsius|fahrenheit'}}, {'name': 'send_email', 'params': {'to': 'string', 'subject': 'string', 'body': 'string'}}, {'name': 'create_reminder', 'params': {'title': 'string', 'time': 'datetime'}}]\n\nUser request: What's the weather in Paris in Celsius?\n\nReturn the function call as JSON with 'function' and 'parameters' keys.",
+          "output": "```json\n{\n  \"function\": \"get_weather\",\n  \"parameters\": {\n    \"location\": \"Paris\",\n    \"unit\": \"celsius\"\n  }\n}\n```",
+          "expected_output": {
+            "function": "get_weather",
+            "parameters": {
+              "location": "Paris",
+              "unit": "celsius"
+            }
+          },
+          "success": true,
+          "error": null,
+          "latency_ms": 5121.731999999611,
+          "input_tokens": 0,
+          "output_tokens": 0
+        },
+        {
+          "instance_id": "func_002",
+          "prompt": "Given these available functions:\n[{'name': 'get_weather', 'params': {'location': 'string', 'unit': 'celsius|fahrenheit'}}, {'name': 'send_email', 'params': {'to': 'string', 'subject': 'string', 'body': 'string'}}, {'name': 'create_reminder', 'params': {'title': 'string', 'time': 'datetime'}}]\n\nUser request: Remind me to call mom tomorrow at 3pm\n\nReturn the function call as JSON with 'function' and 'parameters' keys.",
+          "output": "```json\n{\n  \"function\": \"create_reminder\",\n  \"parameters\": {\n    \"title\": \"call mom\",\n    \"time\": \"tomorrow 15:00\"\n  }\n}\n```",
+          "expected_output": {
+            "function": "create_reminder",
+            "parameters": {
+              "title": "call mom",
+              "time": "tomorrow 3pm"
+            }
+          },
+          "success": true,
+          "error": null,
+          "latency_ms": 6656.169916008366,
+          "input_tokens": 0,
+          "output_tokens": 0
+        }
+      ]
+    },
+    {
+      "task_id": "json_transform_01",
+      "instances": [
+        {
+          "instance_id": "transform_001",
+          "prompt": "Transform this JSON from the source format to the target format.\n\nSource:\n{'first_name': 'John', 'last_name': 'Doe', 'email_address': 'john@example.com'}\n\nTarget Schema:\n{'fullName': 'string', 'email': 'string'}\n\nReturn only the transformed JSON.",
+          "output": "{\"fullName\": \"John Doe\", \"email\": \"john@example.com\"}",
+          "expected_output": {
+            "fullName": "John Doe",
+            "email": "john@example.com"
+          },
+          "success": true,
+          "error": null,
+          "latency_ms": 5407.371583016356,
+          "input_tokens": 0,
+          "output_tokens": 0
+        },
+        {
+          "instance_id": "transform_002",
+          "prompt": "Transform this JSON from the source format to the target format.\n\nSource:\n{'product_id': 'SKU-123', 'product_name': 'Widget', 'price_usd': 29.99, 'qty': 5}\n\nTarget Schema:\n{'id': 'string', 'name': 'string', 'total': 'number'}\n\nReturn only the transformed JSON.",
+          "output": "```json\n{\n  \"id\": \"SKU-123\",\n  \"name\": \"Widget\",\n  \"total\": 149.95\n}\n```",
+          "expected_output": {
+            "id": "SKU-123",
+            "name": "Widget",
+            "total": 149.95
+          },
+          "success": true,
+          "error": null,
+          "latency_ms": 5858.418582996819,
+          "input_tokens": 0,
+          "output_tokens": 0
+        }
+      ]
+    },
+    {
+      "task_id": "text_extraction_01",
+      "instances": [
+        {
+          "instance_id": "email_001",
+          "prompt": "Extract the following fields from this email:\n- sender\n- recipient\n- subject\n- date\n\nEmail:\nFrom: john.doe@example.com\nTo: jane.smith@company.org\nSubject: Q4 Report Review\nDate: 2025-01-15\n\nPlease review the attached Q4 report.\n\nReturn as JSON.",
+          "output": "```json\n{\n  \"sender\": \"john.doe@example.com\",\n  \"recipient\": \"jane.smith@company.org\",\n  \"subject\": \"Q4 Report Review\",\n  \"date\": \"2025-01-15\"\n}\n```",
+          "expected_output": {
+            "sender": "john.doe@example.com",
+            "recipient": "jane.smith@company.org",
+            "subject": "Q4 Report Review",
+            "date": "2025-01-15"
+          },
+          "success": true,
+          "error": null,
+          "latency_ms": 5201.40929199988,
+          "input_tokens": 0,
+          "output_tokens": 0
+        },
+        {
+          "instance_id": "email_002",
+          "prompt": "Extract the following fields from this email:\n- sender\n- recipient\n- subject\n- date\n\nEmail:\nFrom: support@service.io\nTo: user@domain.com\nSubject: Your ticket #12345 has been resolved\nDate: 2025-01-10\n\nYour support ticket has been closed.\n\nReturn as JSON.",
+          "output": "```json\n{\n  \"sender\": \"support@service.io\",\n  \"recipient\": \"user@domain.com\",\n  \"subject\": \"Your ticket #12345 has been resolved\",\n  \"date\": \"2025-01-10\"\n}\n```",
+          "expected_output": {
+            "sender": "support@service.io",
+            "recipient": "user@domain.com",
+            "subject": "Your ticket #12345 has been resolved",
+            "date": "2025-01-10"
+          },
+          "success": true,
+          "error": null,
+          "latency_ms": 5543.317166011548,
+          "input_tokens": 0,
+          "output_tokens": 0
+        }
+      ]
+    }
+  ]
+}
