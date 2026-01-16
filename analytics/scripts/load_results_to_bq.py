@@ -1,4 +1,3 @@
-from itertools import chain
 import logging
 import sys
 from pathlib import Path
@@ -120,12 +119,10 @@ def build_and_load_tables(files: List[dict]):
                 log_rows.add(task_id)
             instances = log["instances"]
             for instance in instances:
-                expected_output = instance["expected_output"]
-                if isinstance(expected_output, dict):
-                    expected_output = json.dumps(expected_output)
-                logInstanceRowId: uuid.UUID = build_uuid_from_string(f"{task_id}_instance_{instance['instance_id']}")
-                del instance["expected_output"]
-                log_instance_rows.append(LogInstanceRow(id=logInstanceRowId, task_id=task_id, expected_output=expected_output, **instance))
+                expected_output_raw = instance.pop("expected_output")
+                expected_output = json.dumps(expected_output_raw) if isinstance(expected_output_raw, dict) else expected_output_raw
+                log_instance_row_id: uuid.UUID = build_uuid_from_string(f"{task_id}_instance_{instance['instance_id']}")
+                log_instance_rows.append(LogInstanceRow(id=log_instance_row_id, task_id=task_id, expected_output=expected_output, **instance))
 
     config_table = build_arrow_table(list(config_rows.values()))
     summary_table = build_arrow_table(summary_rows)
