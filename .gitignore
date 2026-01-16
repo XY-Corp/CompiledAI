@@ -194,3 +194,14 @@ cython_debug/
 *.out
 *.synctex.gz
 *.toc
+
+# Downloaded external datasets (large files, downloadable via scripts/)
+datasets/bfcl_v4/
+datasets/agentbench/
+datasets/docile/
+
+# Keep internal benchmark tracked
+!datasets/xy_benchmark/
+
+# Benchmark results
+results/

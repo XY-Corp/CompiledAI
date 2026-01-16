@@ -43,62 +43,125 @@ class BFCLAdapter(DatasetAdapter):
     """Adapter for Berkeley Function Calling Leaderboard v4.
 
     BFCL v4 focuses on function calling accuracy:
-    - 2000+ test cases
-    - Multiple categories: simple, parallel, multiple, irrelevance
-    - AST-based evaluation
+    - 5000+ test cases across multiple categories
+    - Categories: simple, parallel, multiple, irrelevance, java, javascript
+    - AST-based and executable evaluation
 
-    High relevance: Tests deterministic function parameter extraction.
+    Source: https://github.com/ShishirPatil/gorilla
+    HuggingFace: gorilla-llm/Berkeley-Function-Calling-Leaderboard
     """
 
     name = "bfcl"
+
+    # BFCL categories and their configurations
+    # Note: HuggingFace version uses BFCL_v3_*.json files (JSONL format with .json extension)
+    CATEGORIES: dict[str, dict[str, Any]] = {
+        "simple": {"difficulty": "simple", "file_patterns": ["BFCL_v3_simple.json", "simple*.jsonl"]},
+        "multiple": {"difficulty": "medium", "file_patterns": ["BFCL_v3_multiple.json", "multiple*.jsonl"]},
+        "parallel": {"difficulty": "medium", "file_patterns": ["BFCL_v3_parallel.json", "parallel*.jsonl"]},
+        "parallel_multiple": {
+            "difficulty": "complex",
+            "file_patterns": ["BFCL_v3_parallel_multiple.json", "parallel_multiple*.jsonl"],
+        },
+        "irrelevance": {"difficulty": "complex", "file_patterns": ["BFCL_v3_irrelevance.json", "irrelevance*.jsonl"]},
+        "java": {"difficulty": "medium", "file_patterns": ["BFCL_v3_java.json", "java*.jsonl"]},
+        "javascript": {"difficulty": "medium", "file_patterns": ["BFCL_v3_javascript.json", "javascript*.jsonl"]},
+        "rest": {"difficulty": "medium", "file_patterns": ["BFCL_v3_rest.json"]},
+        "sql": {"difficulty": "medium", "file_patterns": ["BFCL_v3_sql.json"]},
+    }
 
     def load(self, path: Path, **kwargs: Any) -> Dataset:
         """Load BFCL v4 dataset.
 
         Args:
             path: Path to BFCL dataset directory
-            **kwargs: Additional arguments
+            categories: List of categories to load (default: all)
+            max_per_category: Maximum instances per category (default: None)
 
         Returns:
             Dataset with function calling tasks
         """
+        categories = kwargs.get("categories")
+        max_per_category = kwargs.get("max_per_category")
+
         dataset = Dataset(
             name="BFCL v4",
             description="Berkeley Function Calling Leaderboard v4",
             version="4.0",
         )
 
-        # BFCL uses JSONL format with specific structure
-        for jsonl_file in path.glob("*.jsonl"):
-            category = jsonl_file.stem  # e.g., "simple", "parallel"
+        categories_to_load = categories or list(self.CATEGORIES.keys())
 
-            instances = []
-            with open(jsonl_file) as f:
-                for i, line in enumerate(f):
-                    data = json.loads(line)
-                    instances.append(
-                        TaskInstance(
-                            instance_id=data.get("id", f"{category}_{i}"),
-                            input_data={
-                                "user_query": data.get("user_query", ""),
-                                "functions": data.get("function", []),
-                            },
-                            expected_output=data.get("ground_truth", {}),
-                            metadata={"category": category},
-                        )
-                    )
+        for category in categories_to_load:
+            if category not in self.CATEGORIES:
+                continue
+
+            config = self.CATEGORIES[category]
+            instances: list[TaskInstance] = []
+
+            # Find matching files (search recursively)
+            for pattern in config["file_patterns"]:
+                for jsonl_file in path.glob(f"**/{pattern}"):
+                    with open(jsonl_file) as f:
+                        for i, line in enumerate(f):
+                            if max_per_category and len(instances) >= max_per_category:
+                                break
+                            data = json.loads(line)
+
+                            # Handle various question formats:
+                            # - Nested: [[{"role": "user", "content": "..."}]]
+                            # - List of strings: ["question1", "question2"]
+                            # - Simple string: "question"
+                            question = data.get("question", data.get("user_query", ""))
+                            if isinstance(question, list):
+                                if question and isinstance(question[0], list):
+                                    # Nested format: [[{"role": "user", "content": "..."}]]
+                                    inner = question[0]
+                                    if inner and isinstance(inner[0], dict):
+                                        question = inner[0].get("content", "")
+                                    else:
+                                        question = str(inner[0]) if inner else ""
+                                elif question and isinstance(question[0], dict):
+                                    # List of message dicts: [{"role": "user", "content": "..."}]
+                                    question = question[0].get("content", "")
+                                else:
+                                    # List of strings
+                                    question = question[0] if question else ""
+
+                            # Format functions as JSON string for prompt
+                            functions = data.get("function", [])
+                            functions_str = json.dumps(functions, indent=2)
+
+                            instances.append(
+                                TaskInstance(
+                                    instance_id=data.get("id", f"{category}_{i}"),
+                                    input_data={
+                                        "user_query": question,
+                                        "functions": functions_str,
+                                    },
+                                    expected_output=data.get("ground_truth", {}),
+                                    metadata={
+                                        "category": category,
+                                        "execution_result_type": data.get(
+                                            "execution_result_type", ""
+                                        ),
+                                    },
+                                )
+                            )
 
             if instances:
                 task = Task(
                     task_id=f"bfcl_{category}",
-                    name=f"BFCL {category.title()} Function Calling",
-                    description=f"Function calling test: {category}",
+                    name=f"BFCL {category.replace('_', ' ').title()}",
+                    description=f"Function calling: {category}",
                     category=TaskCategory.FUNCTION_CALLING,
-                    difficulty=self._map_difficulty(category),
+                    difficulty=TaskDifficulty(config["difficulty"]),
                     prompt_template=(
-                        "Given these functions:\n{functions}\n\n"
+                        "You have access to the following functions:\n\n"
+                        "{functions}\n\n"
                         "User query: {user_query}\n\n"
-                        "Generate the appropriate function call(s)."
+                        "Generate the appropriate function call as JSON with "
+                        "'name' and 'arguments' keys."
                     ),
                     instances=instances,
                     evaluation_type="ast_match",
@@ -109,182 +172,449 @@ class BFCLAdapter(DatasetAdapter):
 
         return dataset
 
-    def _map_difficulty(self, category: str) -> TaskDifficulty:
-        """Map BFCL category to difficulty.
-
-        Args:
-            category: BFCL category name
-
-        Returns:
-            Corresponding difficulty level
-        """
-        mapping = {
-            "simple": TaskDifficulty.SIMPLE,
-            "parallel": TaskDifficulty.MEDIUM,
-            "multiple": TaskDifficulty.MEDIUM,
-            "parallel_multiple": TaskDifficulty.COMPLEX,
-            "irrelevance": TaskDifficulty.COMPLEX,
-        }
-        return mapping.get(category, TaskDifficulty.MEDIUM)
-
     def is_compatible(self, path: Path) -> bool:
-        """Check for BFCL-style JSONL files."""
-        return any(path.glob("*.jsonl")) and (path / "README.md").exists()
+        """Check for BFCL-style files (JSONL or BFCL_v3_*.json)."""
+        return any(path.glob("**/*.jsonl")) or any(path.glob("**/BFCL_v3_*.json"))
 
 
 class DocILEAdapter(DatasetAdapter):
     """Adapter for DocILE document extraction benchmark.
 
     DocILE focuses on document information extraction:
-    - Key-value extraction from documents
-    - Table extraction
-    - Entity recognition
+    - 6,680 annotated business documents
+    - 55 semantic field types
+    - Tasks: KILE (key info extraction), LIR (line item recognition)
 
+    Source: https://docile.rossum.ai/
     High relevance: Tests structured data extraction (EOB, invoices).
     """
 
     name = "docile"
+
+    # DocILE field types for KILE task
+    KILE_FIELDS = [
+        "document_id",
+        "vendor_name",
+        "vendor_address",
+        "customer_name",
+        "customer_address",
+        "invoice_id",
+        "invoice_date",
+        "due_date",
+        "total_amount",
+        "tax_amount",
+        "currency",
+    ]
 
     def load(self, path: Path, **kwargs: Any) -> Dataset:
         """Load DocILE dataset.
 
         Args:
             path: Path to DocILE dataset directory
-            **kwargs: Additional arguments
+            task_type: "kile" for key info extraction, "lir" for line items
+            max_documents: Maximum documents to load (default: None)
+            split: "train", "val", or "test" (default: loads all available)
 
         Returns:
             Dataset with document extraction tasks
         """
+        task_type = kwargs.get("task_type", "kile")
+        max_documents = kwargs.get("max_documents")
+        split = kwargs.get("split")
+
         dataset = Dataset(
             name="DocILE",
             description="Document Information Localization and Extraction",
             version="1.0",
         )
 
-        # DocILE typically has annotations in JSON format
-        annotations_file = path / "annotations.json"
-        if not annotations_file.exists():
-            annotations_file = path / "test.json"
+        instances: list[TaskInstance] = []
 
-        if annotations_file.exists():
-            with open(annotations_file) as f:
-                data = json.load(f)
+        # DocILE has directory structure: annotated-trainval/[doc_id]/annotation.json
+        doc_dirs = self._find_document_dirs(path, split)
 
-            instances = []
-            items = data.get("documents", data) if isinstance(data, dict) else data
-            for i, item in enumerate(items):
-                instances.append(
-                    TaskInstance(
-                        instance_id=item.get("id", f"doc_{i}"),
-                        input_data={
-                            "document_text": item.get("text", ""),
-                            "document_path": item.get("path", ""),
-                        },
-                        expected_output=item.get(
-                            "annotations", item.get("fields", {})
-                        ),
-                        metadata=item.get("metadata", {}),
-                    )
+        for i, doc_dir in enumerate(doc_dirs):
+            if max_documents and len(instances) >= max_documents:
+                break
+
+            annotation_file = doc_dir / "annotation.json"
+            ocr_file = doc_dir / "ocr.json"
+
+            if not annotation_file.exists():
+                continue
+
+            with open(annotation_file) as f:
+                annotation = json.load(f)
+
+            # Load OCR text if available
+            ocr_text = ""
+            if ocr_file.exists():
+                with open(ocr_file) as f:
+                    ocr_data = json.load(f)
+                    # Extract text from OCR results
+                    if isinstance(ocr_data, dict):
+                        ocr_text = ocr_data.get("text", "")
+                    elif isinstance(ocr_data, list):
+                        ocr_text = " ".join(
+                            item.get("text", "") for item in ocr_data if isinstance(item, dict)
+                        )
+
+            # Extract fields based on task type
+            if task_type == "kile":
+                expected = self._extract_kile_fields(annotation)
+            else:  # lir
+                expected = self._extract_line_items(annotation)
+
+            instances.append(
+                TaskInstance(
+                    instance_id=doc_dir.name,
+                    input_data={
+                        "document_text": ocr_text,
+                        "document_path": str(doc_dir / "document.pdf"),
+                        "task_type": task_type,
+                    },
+                    expected_output=expected,
+                    metadata={
+                        "has_pdf": (doc_dir / "document.pdf").exists(),
+                        "has_ocr": ocr_file.exists(),
+                    },
                 )
+            )
 
-            if instances:
-                task = Task(
-                    task_id="docile_extraction",
-                    name="DocILE Information Extraction",
-                    description="Extract structured fields from documents",
-                    category=TaskCategory.DOCUMENT_PROCESSING,
-                    difficulty=TaskDifficulty.MEDIUM,
-                    prompt_template=(
-                        "Extract the following fields from this document:\n"
-                        "{document_text}\n\n"
-                        "Return as JSON with field names as keys."
-                    ),
-                    instances=instances,
-                    evaluation_type="schema",
-                    tags=["document", "extraction", "docile"],
-                    source="docile",
-                )
-                dataset.tasks.append(task)
+        if instances:
+            task_name = "Key Information Extraction" if task_type == "kile" else "Line Item Recognition"
+            task = Task(
+                task_id=f"docile_{task_type}",
+                name=f"DocILE {task_name}",
+                description=f"Extract {'key fields' if task_type == 'kile' else 'line items'} from documents",
+                category=TaskCategory.DOCUMENT_PROCESSING,
+                difficulty=TaskDifficulty.MEDIUM if task_type == "kile" else TaskDifficulty.COMPLEX,
+                prompt_template=(
+                    "Extract structured information from this document:\n\n"
+                    "{document_text}\n\n"
+                    f"{'Extract key fields: ' + ', '.join(self.KILE_FIELDS) if task_type == 'kile' else 'Extract all line items with description, quantity, unit_price, and amount.'}\n"
+                    "Return as JSON."
+                ),
+                instances=instances,
+                evaluation_type="schema",
+                tags=["document", "extraction", "docile", task_type],
+                source="docile",
+            )
+            dataset.tasks.append(task)
 
         return dataset
 
+    def _find_document_dirs(self, path: Path, split: str | None) -> list[Path]:
+        """Find document directories in DocILE structure."""
+        doc_dirs = []
+
+        # Check for annotated-trainval directory
+        trainval_dir = path / "annotated-trainval"
+        test_dir = path / "test"
+
+        if split in (None, "train", "val") and trainval_dir.exists():
+            for doc_dir in trainval_dir.iterdir():
+                if doc_dir.is_dir() and (doc_dir / "annotation.json").exists():
+                    doc_dirs.append(doc_dir)
+
+        if split in (None, "test") and test_dir.exists():
+            for doc_dir in test_dir.iterdir():
+                if doc_dir.is_dir() and (doc_dir / "annotation.json").exists():
+                    doc_dirs.append(doc_dir)
+
+        # Fallback: check path directly for annotation files
+        if not doc_dirs:
+            for doc_dir in path.iterdir():
+                if doc_dir.is_dir() and (doc_dir / "annotation.json").exists():
+                    doc_dirs.append(doc_dir)
+
+        return sorted(doc_dirs)
+
+    def _extract_kile_fields(self, annotation: dict) -> dict:
+        """Extract key information fields from annotation."""
+        fields = {}
+        field_instances = annotation.get("field_instances", annotation.get("fields", []))
+
+        if isinstance(field_instances, list):
+            for field in field_instances:
+                field_type = field.get("field_type", field.get("type", ""))
+                value = field.get("text", field.get("value", ""))
+                if field_type:
+                    fields[field_type] = value
+        elif isinstance(field_instances, dict):
+            fields = field_instances
+
+        return fields
+
+    def _extract_line_items(self, annotation: dict) -> list[dict]:
+        """Extract line items from annotation."""
+        line_items = annotation.get("line_items", annotation.get("table_data", []))
+        return line_items if isinstance(line_items, list) else []
+
     def is_compatible(self, path: Path) -> bool:
-        """Check for DocILE annotation files."""
+        """Check for DocILE directory structure."""
+        # Check for annotated-trainval directory with document subdirs
+        trainval_dir = path / "annotated-trainval"
+        if trainval_dir.exists():
+            for doc_dir in trainval_dir.iterdir():
+                if doc_dir.is_dir() and (doc_dir / "annotation.json").exists():
+                    return True
+
+        # Fallback check for direct annotation files
         return (path / "annotations.json").exists() or (path / "test.json").exists()
 
 
 class AgentBenchAdapter(DatasetAdapter):
     """Adapter for AgentBench multi-turn agent benchmark.
 
-    AgentBench evaluates agent capabilities across environments:
-    - Operating system tasks
-    - Database operations
-    - Web browsing
-    - Knowledge graph queries
+    AgentBench evaluates agent capabilities across 8 environments:
+    - OS: Operating system tasks (bash commands)
+    - DB: Database operations (SQL queries)
+    - KG: Knowledge graph queries (SPARQL)
+    - DCG: Digital card game
+    - LTP: Lateral thinking puzzles
+    - alfworld: House-holding tasks (ALFWorld)
+    - webshop: Web shopping
+    - mind2web: Web browsing (Mind2Web)
 
+    Source: https://github.com/THUDM/AgentBench
     Medium relevance: Tests multi-step task completion.
     """
 
     name = "agentbench"
 
+    # Environment configurations (matching actual AgentBench repo structure)
+    ENVIRONMENTS: dict[str, dict[str, Any]] = {
+        "os": {
+            "name": "Operating System",
+            "difficulty": "medium",
+            "data_dirs": ["data/os_interaction/data", "data/os_interaction"],
+            "requires_docker": False,
+            "task_key": "description",
+        },
+        "db": {
+            "name": "Database",
+            "difficulty": "medium",
+            "data_dirs": ["data/dbbench", "data/db"],
+            "requires_docker": True,
+            "task_key": "instruction",
+        },
+        "kg": {
+            "name": "Knowledge Graph",
+            "difficulty": "medium",
+            "data_dirs": ["data/knowledgegraph", "data/kg"],
+            "requires_docker": False,
+            "task_key": "query",
+        },
+        "alfworld": {
+            "name": "House-Holding (ALFWorld)",
+            "difficulty": "complex",
+            "data_dirs": ["data/alfworld"],
+            "requires_docker": True,
+            "task_key": "task",
+        },
+        "webshop": {
+            "name": "Web Shopping",
+            "difficulty": "complex",
+            "data_dirs": ["data/webshop"],
+            "requires_docker": True,
+            "task_key": "instruction",
+        },
+        "mind2web": {
+            "name": "Web Browsing (Mind2Web)",
+            "difficulty": "complex",
+            "data_dirs": ["data/mind2web"],
+            "requires_docker": True,
+            "task_key": "instruction",
+        },
+        "avalon": {
+            "name": "Avalon Game",
+            "difficulty": "complex",
+            "data_dirs": ["data/avalon"],
+            "requires_docker": True,
+            "task_key": "instruction",
+        },
+        "ltp": {
+            "name": "Lateral Thinking Puzzles",
+            "difficulty": "medium",
+            "data_dirs": ["data/lateralthinkingpuzzle", "data/ltp"],
+            "requires_docker": True,
+            "task_key": "puzzle",
+        },
+    }
+
     def load(self, path: Path, **kwargs: Any) -> Dataset:
         """Load AgentBench dataset.
 
         Args:
-            path: Path to AgentBench dataset directory
-            **kwargs: Additional arguments
+            path: Path to AgentBench repository directory
+            environments: List of environments to load (default: all available)
+            split: "dev" or "test" (default: "dev")
+            max_per_env: Maximum tasks per environment (default: None)
 
         Returns:
             Dataset with multi-turn agent tasks
         """
+        environments = kwargs.get("environments")
+        split = kwargs.get("split", "dev")
+        max_per_env = kwargs.get("max_per_env")
+
         dataset = Dataset(
             name="AgentBench",
-            description="Multi-turn agent benchmark",
+            description="Multi-turn agent benchmark across 8 environments",
             version="1.0",
         )
 
-        # AgentBench has separate directories per environment
-        for env_dir in path.iterdir():
-            if env_dir.is_dir() and (env_dir / "tasks.json").exists():
-                with open(env_dir / "tasks.json") as f:
-                    tasks_data = json.load(f)
+        envs_to_load = environments or list(self.ENVIRONMENTS.keys())
 
-                instances = []
-                for i, task_data in enumerate(tasks_data):
-                    instances.append(
-                        TaskInstance(
-                            instance_id=task_data.get("id", f"{env_dir.name}_{i}"),
-                            input_data={
-                                "instruction": task_data.get("instruction", ""),
-                                "environment": env_dir.name,
-                            },
-                            expected_output=task_data.get("expected_result", ""),
-                            metadata={"turns": task_data.get("turns", [])},
-                        )
-                    )
+        for env_name in envs_to_load:
+            if env_name not in self.ENVIRONMENTS:
+                continue
 
-                if instances:
-                    task = Task(
-                        task_id=f"agentbench_{env_dir.name}",
-                        name=f"AgentBench {env_dir.name.title()}",
-                        description=f"Agent tasks in {env_dir.name} environment",
-                        category=TaskCategory.API_ORCHESTRATION,
-                        difficulty=TaskDifficulty.COMPLEX,
-                        prompt_template="Environment: {environment}\n\nTask: {instruction}",
-                        instances=instances,
-                        evaluation_type="milestone",
-                        tags=["agent", "multi_turn", env_dir.name],
-                        source="agentbench",
+            config = self.ENVIRONMENTS[env_name]
+            instances: list[TaskInstance] = []
+
+            # Try multiple possible data locations
+            data_paths = [path / d for d in config.get("data_dirs", [])]
+            data_paths.extend([path / "data" / env_name, path / env_name])
+
+            tasks_data = None
+            for data_path in data_paths:
+                if not data_path.exists():
+                    continue
+
+                # Look for task files (various naming conventions)
+                for task_file in [
+                    data_path / f"{split}.json",
+                    data_path / f"{split}_tasks.json",
+                    data_path / "tasks.json",
+                    data_path / f"{split}.jsonl",
+                ]:
+                    if task_file.exists():
+                        tasks_data = self._load_tasks_file(task_file, env_name)
+                        break
+
+                if tasks_data:
+                    break
+
+            if not tasks_data:
+                continue
+
+            task_key = config.get("task_key", "instruction")
+
+            for i, task_data in enumerate(tasks_data):
+                if max_per_env and len(instances) >= max_per_env:
+                    break
+
+                # Handle various AgentBench task formats using the task_key
+                instruction = task_data.get(
+                    task_key,
+                    task_data.get("instruction", task_data.get("input", task_data.get("query", ""))),
+                )
+
+                # Get expected output with various key names
+                expected = task_data.get(
+                    "expected_result",
+                    task_data.get("answer", task_data.get("label", task_data.get("evaluation", {}))),
+                )
+                # For OS tasks, the expected output is in evaluation.match
+                if isinstance(expected, dict) and "match" in expected:
+                    expected = expected["match"]
+
+                instances.append(
+                    TaskInstance(
+                        instance_id=task_data.get("id", f"{env_name}_{split}_{i}"),
+                        input_data={
+                            "instruction": instruction,
+                            "environment": env_name,
+                            "init_state": task_data.get("init", task_data.get("create", {})),
+                        },
+                        expected_output=expected,
+                        metadata={
+                            "turns": task_data.get("turns", []),
+                            "requires_docker": config["requires_docker"],
+                            "split": split,
+                            "labels": task_data.get("labels", []),
+                        },
                     )
-                    dataset.tasks.append(task)
+                )
+
+            if instances:
+                task = Task(
+                    task_id=f"agentbench_{env_name}",
+                    name=f"AgentBench {config['name']}",
+                    description=f"Agent tasks in {config['name']} environment",
+                    category=TaskCategory.API_ORCHESTRATION,
+                    difficulty=TaskDifficulty(config["difficulty"]),
+                    prompt_template=(
+                        "Environment: {environment}\n\n"
+                        "Initial state: {init_state}\n\n"
+                        "Task: {instruction}"
+                    ),
+                    instances=instances,
+                    evaluation_type="milestone",
+                    tags=["agent", "multi_turn", env_name, split],
+                    source="agentbench",
+                )
+                dataset.tasks.append(task)
 
         return dataset
 
+    def _load_tasks_file(self, file_path: Path, env_name: str) -> list[dict]:
+        """Load tasks from JSON or JSONL file.
+
+        Handles various AgentBench formats:
+        - List of task dicts (most environments)
+        - Dict with task categories (ALFWorld)
+        - JSONL format
+        """
+        with open(file_path) as f:
+            if file_path.suffix == ".jsonl":
+                return [json.loads(line) for line in f if line.strip()]
+            else:
+                data = json.load(f)
+
+        # Handle list format (most common)
+        if isinstance(data, list):
+            return data
+
+        # Handle dict format (ALFWorld uses {"task_type": [paths...]})
+        if isinstance(data, dict):
+            if "tasks" in data:
+                return data["tasks"]
+
+            # ALFWorld format: flatten task categories into task dicts
+            tasks = []
+            for task_type, items in data.items():
+                if isinstance(items, list):
+                    for i, item in enumerate(items):
+                        if isinstance(item, str):
+                            # ALFWorld path format
+                            tasks.append({
+                                "id": f"{task_type}_{i}",
+                                "task": f"{task_type}: {item}",
+                                "task_type": task_type,
+                                "game_path": item,
+                            })
+                        elif isinstance(item, dict):
+                            item.setdefault("task_type", task_type)
+                            tasks.append(item)
+            return tasks if tasks else [data]
+
+        return [data]
+
     def is_compatible(self, path: Path) -> bool:
-        """Check for AgentBench environment directories."""
-        return any(
-            (p / "tasks.json").exists() for p in path.iterdir() if p.is_dir()
-        )
+        """Check for AgentBench structure."""
+        data_dir = path / "data"
+        if not data_dir.exists():
+            return False
+
+        # Check for actual AgentBench directory names
+        agentbench_dirs = [
+            "os_interaction", "dbbench", "knowledgegraph", "alfworld",
+            "webshop", "mind2web", "avalon", "lateralthinkingpuzzle",
+        ]
+        return any((data_dir / d).exists() for d in agentbench_dirs)
 
 
 # Adapter registry

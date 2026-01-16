@@ -32,6 +32,9 @@ dependencies = [
     "pydantic>=2.10.0",
     "jsonschema>=4.23.0",
 
+    # Dataset downloads
+    "huggingface-hub>=0.20.0",
+
     # Testing & metrics
     "pytest>=8.0.0",
     "pytest-asyncio>=0.24.0",
