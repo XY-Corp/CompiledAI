@@ -148,6 +148,54 @@ For typical workflows: **N* < 100 executions** (often < 10).
 | Decision Logic | Eligibility checks, Routing rules |
 | API Orchestration | Multi-system updates, Webhooks |
 
+## Datasets
+
+The benchmark includes both internal and external datasets:
+
+### Available Datasets
+
+| Dataset | Tasks | Instances | Description |
+|---------|-------|-----------|-------------|
+| **XY_Benchmark** | 5 | 12 | Internal benchmark (classification, normalization, API selection) |
+| **BFCL v3** | 9 | 2,810 | Berkeley Function Calling Leaderboard (function calling accuracy) |
+| **AgentBench** | 5 | 146 | Multi-turn agent tasks (OS, DB, KG, ALFWorld, Avalon) |
+| **DocILE** | — | — | Document extraction (requires access token) |
+
+### Download Datasets
+
+```bash
+# Download BFCL from HuggingFace (free)
+python scripts/download_bfcl.py
+
+# Download AgentBench from GitHub (free)
+python scripts/download_agentbench.py
+
+# Download DocILE (requires token from https://docile.rossum.ai/)
+./scripts/download_docile.sh YOUR_TOKEN
+```
+
+### Load Datasets
+
+```python
+from compiled_ai.runner import DatasetLoader
+
+loader = DatasetLoader("datasets")
+
+# Load internal benchmark
+xy = loader.load("xy_benchmark")
+
+# Load external datasets
+bfcl = loader.load_external("bfcl", "datasets/bfcl_v4")
+agentbench = loader.load_external("agentbench", "datasets/agentbench")
+
+# With filtering options
+bfcl_simple = loader.load_external(
+    "bfcl", "datasets/bfcl_v4",
+    categories=["simple", "multiple"],
+    max_per_category=100
+)
+```
+
 ## Baselines
 
 Compare against:
@@ -165,10 +213,14 @@ CompiledAI/
 │   ├── validation/       # 4-stage validation pipeline
 │   ├── baselines/        # Comparison implementations
 │   ├── metrics/          # All 7 metric categories
-│   ├── runner/           # Benchmark execution
+│   ├── runner/           # Benchmark execution & dataset loading
 │   └── utils/            # LLM client, logging, sandbox
-├── tasks/                # Benchmark task suite
-├── scripts/              # CLI entry points
+├── datasets/             # Downloaded datasets (gitignored)
+│   ├── xy_benchmark/     # Internal benchmark tasks
+│   ├── bfcl_v4/          # BFCL function calling (download required)
+│   └── agentbench/       # AgentBench multi-turn (download required)
+├── scripts/              # CLI entry points & dataset downloaders
+├── results/              # Benchmark results (gitignored)
 └── tests/                # Unit & integration tests
 ```
 
@@ -190,12 +242,14 @@ ruff check src/
 
 ## Research
 
-Based on evaluation frameworks including:
-- MLPerf Inference (latency standards)
-- AgentBench (ICLR 2024)
-- τ-Bench (Yao et al., 2024)
-- CLASSic Framework (ICLR 2025 Workshop)
-- Pan & Wang 2025 (break-even analysis)
+Based on evaluation frameworks and datasets including:
+- **MLPerf Inference** — Latency measurement standards
+- **BFCL v3** — Berkeley Function Calling Leaderboard (gorilla-llm)
+- **AgentBench** — Multi-turn agent benchmark (ICLR 2024)
+- **DocILE** — Document Information Extraction benchmark
+- **τ-Bench** — Tool-agent benchmark (Yao et al., 2024)
+- **CLASSic Framework** — ICLR 2025 Workshop
+- **Pan & Wang 2025** — Break-even analysis for code generation
 
 ## License
 

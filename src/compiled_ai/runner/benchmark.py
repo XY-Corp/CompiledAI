@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from ..baselines.base import BaseBaseline, BaselineResult, TaskInput, get_baseline
+from ..evaluation import EvaluationResult, get_evaluator
 from ..metrics import MetricsCollector, merge_collectors
 from .dataset import Dataset, Task
 from .loader import DatasetLoader
@@ -46,6 +47,8 @@ class InstanceLog:
     latency_ms: float = 0.0
     input_tokens: int = 0
     output_tokens: int = 0
+    evaluation_score: float = 0.0
+    evaluation_details: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -149,6 +152,8 @@ class BenchmarkResult:
                             "latency_ms": log.latency_ms,
                             "input_tokens": log.input_tokens,
                             "output_tokens": log.output_tokens,
+                            "evaluation_score": log.evaluation_score,
+                            "evaluation_details": log.evaluation_details,
                         }
                         for log in tr.logs
                     ],
@@ -204,11 +209,25 @@ class BenchmarkRunner:
         Returns:
             BenchmarkResult with all metrics
         """
-        result = BenchmarkResult(config=config)
-        result.start_time = time.time()
-
         # Load dataset
         dataset = self.loader.load(config.dataset_name)
+        return self.run_with_dataset(config, dataset, **baseline_kwargs)
+
+    def run_with_dataset(
+        self, config: BenchmarkConfig, dataset: Dataset, **baseline_kwargs: Any
+    ) -> BenchmarkResult:
+        """Run a benchmark with a pre-loaded dataset.
+
+        Args:
+            config: Benchmark configuration
+            dataset: Pre-loaded Dataset object
+            **baseline_kwargs: Additional arguments for the baseline
+
+        Returns:
+            BenchmarkResult with all metrics
+        """
+        result = BenchmarkResult(config=config)
+        result.start_time = time.time()
 
         # Filter tasks
         tasks = self._filter_tasks(dataset, config)
@@ -274,6 +293,9 @@ class BenchmarkRunner:
         if config.max_instances:
             instances = instances[: config.max_instances]
 
+        # Get evaluator for this task's evaluation type
+        evaluator = self._get_evaluator(task.evaluation_type)
+
         for instance in instances:
             # Build the prompt
             prompt = task.prompt_template.format(**instance.input_data)
@@ -292,19 +314,30 @@ class BenchmarkRunner:
 
             # Run baseline
             result = baseline.run(task_input)
+
+            # Evaluate output against expected
+            eval_result = self._evaluate_output(
+                evaluator, result.output, instance.expected_output
+            )
+
+            # Update result success based on evaluation
+            result.success = eval_result.success
+
             task_result.results.append(result)
 
-            # Create log entry
+            # Create log entry with evaluation details
             log = InstanceLog(
                 instance_id=instance.instance_id,
                 prompt=prompt,
                 output=result.output,
                 expected_output=instance.expected_output,
-                success=result.success,
-                error=result.error,
+                success=eval_result.success,
+                error=result.error or eval_result.error,
                 latency_ms=result.latency_ms,
                 input_tokens=result.input_tokens,
                 output_tokens=result.output_tokens,
+                evaluation_score=eval_result.score,
+                evaluation_details=eval_result.details,
             )
             task_result.logs.append(log)
 
@@ -312,3 +345,47 @@ class BenchmarkRunner:
         task_result.metrics = baseline.to_metrics_collector(task_result.results)
 
         return task_result
+
+    def _get_evaluator(self, evaluation_type: str):
+        """Get evaluator for the given evaluation type.
+
+        Args:
+            evaluation_type: Type of evaluation (exact_match, json_match, ast_match, schema)
+
+        Returns:
+            Evaluator instance
+        """
+        # Map evaluation types to evaluator names
+        type_mapping = {
+            "exact_match": "exact_match",
+            "fuzzy_match": "fuzzy_match",
+            "json_match": "json_match",
+            "ast_match": "ast_match",
+            "schema": "schema",
+            "milestone": "fuzzy_match",  # Fallback for AgentBench
+        }
+
+        evaluator_name = type_mapping.get(evaluation_type, "exact_match")
+        return get_evaluator(evaluator_name)
+
+    def _evaluate_output(
+        self, evaluator, output: str, expected: Any
+    ) -> EvaluationResult:
+        """Evaluate output against expected result.
+
+        Args:
+            evaluator: Evaluator to use
+            output: LLM output
+            expected: Expected result
+
+        Returns:
+            EvaluationResult
+        """
+        try:
+            return evaluator.evaluate(output, expected)
+        except Exception as e:
+            return EvaluationResult(
+                success=False,
+                score=0.0,
+                error=f"Evaluation error: {e}",
+            )
