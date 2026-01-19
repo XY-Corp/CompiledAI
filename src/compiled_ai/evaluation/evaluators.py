@@ -504,7 +504,7 @@ class ASTMatchEvaluator(Evaluator):
 class SchemaEvaluator(Evaluator):
     """JSON Schema validation evaluator."""
 
-    def __init__(self, require_all_fields: bool = False):
+    def __init__(self, require_all_fields: bool = True):
         """Initialize schema evaluator.
 
         Args:
@@ -525,6 +525,19 @@ class SchemaEvaluator(Evaluator):
                 error="Could not parse JSON from output",
                 details={"raw_output": output[:500]},
             )
+
+        # Normalize expected if it's a string (may have single quotes)
+        if isinstance(expected, str):
+            try:
+                # Try to parse as JSON
+                expected = json.loads(expected)
+            except json.JSONDecodeError:
+                # If that fails, try to parse as Python literal (handles single quotes)
+                try:
+                    import ast
+                    expected = ast.literal_eval(expected)
+                except (ValueError, SyntaxError):
+                    pass  # Keep as string
 
         # If expected is a dict, do field-by-field comparison
         if isinstance(expected, dict):
@@ -612,6 +625,29 @@ class SchemaEvaluator(Evaluator):
         """Check if two values match (with type coercion)."""
         # Exact match
         if output_val == expected_val:
+            return True
+
+        # Recursive dict comparison
+        if isinstance(expected_val, dict):
+            if not isinstance(output_val, dict):
+                return False
+            # Check all expected keys exist and match
+            for key, exp_v in expected_val.items():
+                if key not in output_val:
+                    return False
+                if not self._values_match(output_val[key], exp_v):
+                    return False
+            return True
+
+        # Recursive list comparison
+        if isinstance(expected_val, list):
+            if not isinstance(output_val, list):
+                return False
+            if len(output_val) != len(expected_val):
+                return False
+            for out_v, exp_v in zip(output_val, expected_val):
+                if not self._values_match(out_v, exp_v):
+                    return False
             return True
 
         # String comparison (case-insensitive, stripped)

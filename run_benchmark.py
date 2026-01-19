@@ -108,11 +108,16 @@ BASELINES = {
         "description": "Per-transaction inference (no compilation)",
         "icon": "⚡",
     },
+    "code_factory": {
+        "name": "Code Factory",
+        "description": "Compiled workflow with template-assisted generation",
+        "icon": "🏭",
+    },
     # Future baselines:
-    # "compiled": {
-    #     "name": "Compiled AI",
-    #     "description": "Pre-compiled decision trees + edge inference",
-    #     "icon": "🚀",
+    # "langchain": {
+    #     "name": "LangChain",
+    #     "description": "LangChain agent baseline",
+    #     "icon": "🦜",
     # },
 }
 
@@ -406,11 +411,14 @@ def run_benchmark_interactive() -> None:
         return
 
     # Run
+    # Enable verbose mode for code_factory to see logs
+    verbose = baseline == "code_factory"
     run_benchmark(
         dataset_key=dataset_key,
         baseline=baseline,
         provider=provider,
         max_instances=max_instances,
+        verbose=verbose,
         **dataset_config,
     )
 
@@ -422,6 +430,7 @@ def run_benchmark(
     model: str | None = None,
     max_instances: int | None = None,
     enable_cache: bool = False,
+    verbose: bool = False,
     output_dir: str = "results",
     **dataset_kwargs,
 ) -> None:
@@ -481,6 +490,7 @@ def run_benchmark(
         provider=provider,
         model=model,
         enable_cache=enable_cache,
+        verbose=verbose,
     )
 
     # Display results
@@ -540,23 +550,20 @@ def display_results(result) -> None:
 
     console.print(table)
 
-    # Sample outputs
-    print_section("Sample Outputs")
+    # Show detailed output for ALL tasks
+    print_section("Detailed Task Outputs")
+    for tr in result.task_results:
+        if tr.logs:
+            first_log = tr.logs[0]
+            status_icon = f"[{BRAND_SUCCESS}]✓[/{BRAND_SUCCESS}]" if first_log.success else f"[{BRAND_ERROR}]✗[/{BRAND_ERROR}]"
 
-    for tr in result.task_results[:3]:
-        if tr.results:
-            first_result = tr.results[0]
-            status_icon = f"[{BRAND_SUCCESS}]✓[/{BRAND_SUCCESS}]" if first_result.success else f"[{BRAND_ERROR}]✗[/{BRAND_ERROR}]"
+            console.print(f"\n  {status_icon} [{BRAND_PRIMARY}]{tr.task.task_id}[/{BRAND_PRIMARY}] [{BRAND_DIM}](success rate: {tr.success_rate:.0%})[/{BRAND_DIM}]")
 
-            console.print(f"\n  {status_icon} [{BRAND_PRIMARY}]{tr.task.task_id}[/{BRAND_PRIMARY}]")
+            if first_log.error:
+                console.print(f"    [{BRAND_DIM}]Error:[/{BRAND_DIM}] [{BRAND_ERROR}]{first_log.error}[/{BRAND_ERROR}]")
 
-            if first_result.success and first_result.output:
-                preview = first_result.output[:150].replace("\n", " ")
-                if len(first_result.output) > 150:
-                    preview += "..."
-                console.print(f"     [{BRAND_DIM}]{preview}[/{BRAND_DIM}]")
-            elif first_result.error:
-                console.print(f"     [{BRAND_ERROR}]{first_result.error}[/{BRAND_ERROR}]")
+            console.print(f"    [{BRAND_DIM}]Expected:[/{BRAND_DIM}] [{BRAND_SUCCESS}]{first_log.expected_output}[/{BRAND_SUCCESS}]")
+            console.print(f"    [{BRAND_DIM}]Actual:[/{BRAND_DIM}]   [{BRAND_ACCENT}]{first_log.output}[/{BRAND_ACCENT}]")
 
     console.print(f"\n  [{BRAND_DIM}]Results saved to:[/{BRAND_DIM}] [{BRAND_PRIMARY}]{result.config.output_dir}/[/{BRAND_PRIMARY}]\n")
 
@@ -652,6 +659,11 @@ Examples:
         help="List available datasets and exit",
     )
     parser.add_argument(
+        "--verbose", "-v",
+        action="store_true",
+        help="Enable verbose logging (shows detailed execution logs)",
+    )
+    parser.add_argument(
         "--no-header",
         action="store_true",
         help="Skip printing the header/logo",
@@ -704,6 +716,7 @@ def main() -> None:
                 model=args.model,
                 max_instances=args.max_instances,
                 enable_cache=args.enable_cache,
+                verbose=args.verbose,
                 output_dir=args.output_dir,
                 **dataset_kwargs,
             )

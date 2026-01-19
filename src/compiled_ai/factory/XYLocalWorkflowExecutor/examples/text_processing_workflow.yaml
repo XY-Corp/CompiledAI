@@ -1,0 +1,163 @@
+# Text Processing Workflow
+# A simple workflow that demonstrates real text and file operations
+#
+# Run with: xy-workflow examples/text_processing_workflow.yaml --use-builtins --verbose -o results.json
+#
+# This workflow:
+# 1. Creates sample text files
+# 2. Reads and processes them
+# 3. Transforms the text (uppercase, word count, etc.)
+# 4. Combines results and writes output
+
+workflow_id: text-processing
+name: Text Processing Demo
+description: Process text files with various transformations
+
+variables:
+  output_dir: examples/output
+  sample_text: |
+    Hello World!
+    This is a sample text file.
+    It has multiple lines.
+    We will process it with various operations.
+    The quick brown fox jumps over the lazy dog.
+
+root:
+  sequence:
+    elements:
+      # Step 1: Log workflow start
+      - activity:
+          name: log_message
+          params:
+            message: "=== Text Processing Workflow Started ==="
+            level: info
+          result: start_log
+
+      # Step 2: Write sample text to a file
+      - activity:
+          name: write_file
+          params:
+            path: ${{ output_dir }}/sample_input.txt
+            content: ${{ sample_text }}
+          result: write_result
+
+      - activity:
+          name: log_message
+          params:
+            message: "Created sample file: ${{ write_result.path }}"
+            level: info
+          result: write_log
+
+      # Step 3: Read the file back
+      - activity:
+          name: read_file
+          params:
+            path: ${{ output_dir }}/sample_input.txt
+          result: read_result
+
+      - activity:
+          name: log_message
+          params:
+            message: "Read file: ${{ read_result.line_count }} lines, ${{ read_result.size_bytes }} bytes"
+            level: info
+          result: read_log
+
+      # Step 4: Transform to uppercase
+      - activity:
+          name: transform_string
+          params:
+            text: ${{ read_result.content }}
+            operation: upper
+          result: upper_result
+
+      # Step 5: Split into lines
+      - activity:
+          name: split_string
+          params:
+            text: ${{ read_result.content }}
+            separator: "\n"
+          result: lines_result
+
+      - activity:
+          name: log_message
+          params:
+            message: "Split into ${{ lines_result.count }} lines"
+            level: info
+          result: split_log
+
+      # Step 6: Find words matching a pattern
+      - activity:
+          name: regex_match
+          params:
+            text: ${{ read_result.content }}
+            pattern: "\\b[A-Z][a-z]+\\b"
+            find_all: true
+          result: words_result
+
+      - activity:
+          name: log_message
+          params:
+            message: "Found ${{ words_result.count }} capitalized words"
+            level: info
+          result: words_log
+
+      # Step 7: Hash the content
+      - activity:
+          name: hash_string
+          params:
+            text: ${{ read_result.content }}
+            algorithm: sha256
+          result: hash_result
+
+      # Step 8: Get timestamp
+      - activity:
+          name: get_timestamp
+          params:
+            format: iso
+          result: timestamp
+
+      # Step 9: Write uppercase version
+      - activity:
+          name: write_file
+          params:
+            path: ${{ output_dir }}/uppercase_output.txt
+            content: ${{ upper_result.result }}
+          result: upper_write
+
+      # Step 10: Write summary report
+      - activity:
+          name: write_file
+          params:
+            path: ${{ output_dir }}/summary.txt
+            content: |
+              Text Processing Summary
+              =======================
+              Timestamp: ${{ timestamp.timestamp }}
+
+              Input Statistics:
+              - Lines: ${{ read_result.line_count }}
+              - Size: ${{ read_result.size_bytes }} bytes
+              - SHA256: ${{ hash_result.hash }}
+
+              Processing Results:
+              - Capitalized words found: ${{ words_result.count }}
+              - Words: ${{ words_result.matches }}
+
+              Output Files:
+              - Uppercase: ${{ upper_write.path }}
+          result: summary_write
+
+      # Step 11: Final log
+      - activity:
+          name: log_message
+          params:
+            message: "=== Workflow Complete! Summary written to ${{ summary_write.path }} ==="
+            level: info
+          result: complete_log
+
+      # Step 12: Small delay to demonstrate timing
+      - activity:
+          name: delay
+          params:
+            milliseconds: 100
+          result: delay_result

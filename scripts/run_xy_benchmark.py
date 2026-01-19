@@ -23,7 +23,13 @@ from compiled_ai.runner import BenchmarkConfig, BenchmarkRunner, DatasetLoader
 def parse_args() -> argparse.Namespace:
     """Parse command line arguments."""
     parser = argparse.ArgumentParser(
-        description="Run XY_Benchmark with Direct LLM baseline"
+        description="Run XY_Benchmark with specified baseline"
+    )
+    parser.add_argument(
+        "--baseline",
+        choices=["direct_llm", "code_factory"],
+        default="direct_llm",
+        help="Baseline to use (default: direct_llm)",
     )
     parser.add_argument(
         "--provider",
@@ -108,6 +114,7 @@ def list_tasks(console: Console) -> None:
 def run_benchmark(args: argparse.Namespace, console: Console) -> None:
     """Run the benchmark with given arguments."""
     console.print(f"\n[bold blue]XY_Benchmark Runner[/bold blue]")
+    console.print(f"Baseline: [cyan]{args.baseline}[/cyan]")
     console.print(f"Provider: [cyan]{args.provider}[/cyan]")
     if args.model:
         console.print(f"Model: [cyan]{args.model}[/cyan]")
@@ -116,7 +123,7 @@ def run_benchmark(args: argparse.Namespace, console: Console) -> None:
     # Build config
     config = BenchmarkConfig(
         dataset_name="xy_benchmark",
-        baseline_name="direct_llm",
+        baseline_name=args.baseline,
         task_ids=[args.task] if args.task else None,
         categories=[args.category] if args.category else None,
         difficulties=[args.difficulty] if args.difficulty else None,
@@ -160,18 +167,31 @@ def run_benchmark(args: argparse.Namespace, console: Console) -> None:
 
     console.print(table)
 
-    # Show sample outputs
-    console.print("\n[bold]Sample Outputs:[/bold]")
-    for tr in result.task_results[:3]:  # Show first 3 tasks
-        if tr.results:
-            first_result = tr.results[0]
-            console.print(f"\n[cyan]{tr.task.task_id}[/cyan]:")
-            console.print(f"  Status: {'[green]Success[/green]' if first_result.success else '[red]Failed[/red]'}")
-            if first_result.success:
-                output_preview = first_result.output[:200] + "..." if len(first_result.output) > 200 else first_result.output
+    # Show all failing tasks with output comparison
+    failing_tasks = [tr for tr in result.task_results if tr.success_rate < 1.0]
+    if failing_tasks:
+        console.print("\n[bold red]Failing Tasks (with output comparison):[/bold red]")
+        for tr in failing_tasks:
+            if tr.logs:
+                first_log = tr.logs[0]
+                console.print(f"\n[cyan]{tr.task.task_id}[/cyan] (success rate: {tr.success_rate:.0%}):")
+                console.print(f"  [red]✗ Failed[/red]")
+                if first_log.error:
+                    console.print(f"  Error: [red]{first_log.error}[/red]")
+                console.print(f"  Expected: [green]{first_log.expected_output}[/green]")
+                console.print(f"  Actual:   [yellow]{first_log.output}[/yellow]")
+
+    # Show sample successful outputs
+    successful_tasks = [tr for tr in result.task_results if tr.success_rate == 1.0]
+    if successful_tasks:
+        console.print("\n[bold green]Sample Successful Outputs:[/bold green]")
+        for tr in successful_tasks[:3]:  # Show first 3 successful
+            if tr.logs:
+                first_log = tr.logs[0]
+                console.print(f"\n[cyan]{tr.task.task_id}[/cyan]:")
+                console.print(f"  [green]✓ Success[/green]")
+                output_preview = first_log.output[:200] + "..." if len(first_log.output) > 200 else first_log.output
                 console.print(f"  Output: {output_preview}")
-            elif first_result.error:
-                console.print(f"  Error: [red]{first_result.error}[/red]")
 
     # Save location
     console.print(f"\n[dim]Results saved to: {args.output_dir}/[/dim]")

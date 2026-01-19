@@ -1,0 +1,72 @@
+# Sample workflow demonstrating DSL features
+# Run with: xy-workflow examples/sample_workflow.yaml --verbose
+
+workflow_id: sample-workflow
+name: Sample Workflow
+description: Demonstrates sequence, parallel, and forEach execution
+
+# Input variables (can be overridden via --var)
+variables:
+  workflow_name: Sample Workflow
+  customers:
+    - CUSTOMER_A
+    - CUSTOMER_B
+    - CUSTOMER_C
+  process_in_parallel: true
+  delay_ms: 100
+
+# Root statement - sequence of operations
+root:
+  sequence:
+    elements:
+      # Step 1: Initialize
+      - activity:
+          name: initialize_workflow
+          params:
+            workflow_name: ${{ workflow_name }}
+          result: init_result
+
+      # Step 2: Process customers in parallel (forEach)
+      - foreach:
+          items: customers
+          item_variable: customer
+          max_concurrent: 2
+          statement:
+            sequence:
+              elements:
+                # Fetch customer data
+                - activity:
+                    name: fetch_customer_data
+                    params:
+                      customer_id: ${{ customer }}
+                    result: customer_data
+
+                # Process customer
+                - activity:
+                    name: process_customer
+                    params:
+                      customer_id: ${{ customer }}
+                      data: ${{ customer_data }}
+                    result: process_result
+
+      # Step 3: Parallel finalization
+      - parallel:
+          branches:
+            - activity:
+                name: generate_report
+                params:
+                  format: pdf
+                result: report_result
+
+            - activity:
+                name: send_notifications
+                params:
+                  channel: email
+                result: notification_result
+
+      # Step 4: Complete
+      - activity:
+          name: complete_workflow
+          params:
+            status: success
+          result: final_result

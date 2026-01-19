@@ -28,6 +28,7 @@ class DirectLLMBaseline(BaseBaseline):
         max_retries: int = 3,
         retry_delay: float = 1.0,
         enable_cache: bool = False,
+        verbose: bool = False,
     ) -> None:
         """Initialize the Direct LLM baseline.
 
@@ -38,8 +39,10 @@ class DirectLLMBaseline(BaseBaseline):
             max_retries: Maximum retry attempts on failure
             retry_delay: Base delay between retries (exponential backoff)
             enable_cache: Whether to cache LLM responses
+            verbose: Enable verbose logging (currently unused)
         """
         self.provider = provider
+        self.verbose = verbose
         self.config = LLMConfig(
             model=model or self._default_model(provider),
             system_prompt=system_prompt,

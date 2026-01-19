@@ -24,6 +24,7 @@ dependencies = [
     "langchain>=0.3.0",
     "langchain-anthropic>=0.3.0",
     "langchain-openai>=0.3.0",
+    "pydantic-ai>=0.0.14",
     # Data handling
     "pyyaml>=6.0",
     "pydantic>=2.10.0",
