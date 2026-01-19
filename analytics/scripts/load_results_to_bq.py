@@ -10,7 +10,7 @@ from pydantic import BaseModel
 
 # Add project root to path for development
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
-from analytics.table_defs import ConfigRow, SummaryRow, TaskRow, MetricRow, MetricResultRow
+from analytics.table_defs import ConfigRow, SummaryRow, TaskRow, MetricRow, MetricResultRow, LogInstanceRow, LogRow
 from analytics.utils.logger import get_logger
 from analytics.utils.bigquery_helper import BigQueryHelper
 
@@ -70,8 +70,9 @@ def build_arrow_table(rows: List[BaseModel]) -> pa.Table:
 
 def build_and_load_tables(files: List[dict]):
     """Build the tables from the results files."""
-    tables: List[pa.Table] = []
     config_rows: dict[uuid.UUID, ConfigRow] = {}
+    log_rows: set[str] = set()
+    log_instance_rows: List[LogInstanceRow] = []
     summary_rows: List[SummaryRow] = []
     task_rows: List[TaskRow] = []
     metric_rows: List[MetricRow] = []
@@ -108,11 +109,28 @@ def build_and_load_tables(files: List[dict]):
             metric_result_id: uuid.UUID = build_uuid_from_string(f"{metric_metadata_id}_metric_result_{metric_result['name']}")
             metric_result_rows.append(MetricResultRow(id=metric_result_id, metric_id=metric_metadata_id, **metric_result))
 
+        # --- Logs ---
+        if "logs" not in file:
+            continue
+        logs = file["logs"]
+        for log in logs:
+            task_id: str = log["task_id"]
+            if task_id not in log_rows:
+                log_rows.add(task_id)
+            instances = log["instances"]
+            for instance in instances:
+                expected_output_raw = instance.pop("expected_output")
+                expected_output = json.dumps(expected_output_raw) if isinstance(expected_output_raw, dict) else expected_output_raw
+                log_instance_row_id: uuid.UUID = build_uuid_from_string(f"{task_id}_instance_{instance['instance_id']}")
+                log_instance_rows.append(LogInstanceRow(id=log_instance_row_id, task_id=task_id, expected_output=expected_output, **instance))
+
     config_table = build_arrow_table(list(config_rows.values()))
     summary_table = build_arrow_table(summary_rows)
     task_table = build_arrow_table(task_rows)
     metric_table = build_arrow_table(metric_rows)
     metric_result_table = build_arrow_table(metric_result_rows)
+    log_instance_table = build_arrow_table(log_instance_rows)
+    log_table = build_arrow_table([LogRow(task_id=task_id) for task_id in log_rows])
 
     bigquery_helper = BigQueryHelper(BIGQUERY_PROJECT_ID, BIGQUERY_DATASET_ID, LOGGER)
     bigquery_helper.ensure_dataset()
@@ -121,6 +139,8 @@ def build_and_load_tables(files: List[dict]):
     bigquery_helper.upload("task", task_table, write_disposition=bigquery.WriteDisposition.WRITE_TRUNCATE)
     bigquery_helper.upload("metric", metric_table, write_disposition=bigquery.WriteDisposition.WRITE_TRUNCATE)
     bigquery_helper.upload("metric_result", metric_result_table, write_disposition=bigquery.WriteDisposition.WRITE_TRUNCATE)
+    bigquery_helper.upload("log_instance", log_instance_table, write_disposition=bigquery.WriteDisposition.WRITE_TRUNCATE)
+    bigquery_helper.upload("log", log_table, write_disposition=bigquery.WriteDisposition.WRITE_TRUNCATE)
 
 def main() -> None:
     """Main function."""

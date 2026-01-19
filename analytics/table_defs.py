@@ -44,3 +44,19 @@ class MetricResultRow(BaseModel):
     unit: str
     category: str
     timestamp: datetime.datetime
+
+class LogRow(BaseModel):
+    task_id: str
+
+class LogInstanceRow(BaseModel):
+    id: uuid.UUID
+    task_id: str
+    instance_id: str
+    prompt: str
+    output: str
+    expected_output: str
+    success: bool
+    error: Optional[str] = None
+    latency_ms: float
+    input_tokens: int
+    output_tokens: int
