@@ -42,6 +42,16 @@ class BaselineResult:
     output_tokens: int = 0
     llm_calls: int = 0
 
+    # Code Factory specific metrics
+    generation_time_ms: float | None = None  # Time to compile workflow (first task)
+    execution_time_ms: float | None = None   # Time to execute workflow (all tasks)
+
+    # Token breakdown (Code Factory)
+    generation_input_tokens: int | None = None   # Tokens used during compilation
+    generation_output_tokens: int | None = None
+    execution_input_tokens: int | None = None    # Tokens used during execution
+    execution_output_tokens: int | None = None
+
     # Response tracking
     responses: list[LLMResponse] = field(default_factory=list)
 

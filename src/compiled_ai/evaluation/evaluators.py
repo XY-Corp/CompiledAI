@@ -8,6 +8,15 @@ from typing import Any
 from .base import EvaluationResult, Evaluator, register_evaluator
 
 
+def _normalize_string(s: str) -> str:
+    """Normalize string for comparison by removing commas and periods.
+
+    This helps ignore punctuation differences like "123 Main St." vs "123 Main St"
+    or "New York, NY" vs "New York NY".
+    """
+    return s.replace(',', '').replace('.', '').strip()
+
+
 @register_evaluator("exact_match")
 class ExactMatchEvaluator(Evaluator):
     """Exact string match evaluator."""
@@ -195,8 +204,10 @@ class JSONMatchEvaluator(Evaluator):
                 match = abs(output - expected) / abs(expected) < 0.0001
             return 1.0 if match else 0.0, details
         else:
-            # String/bool comparison
-            match = str(output).strip().lower() == str(expected).strip().lower()
+            # String/bool comparison (normalize to ignore commas and periods)
+            out_normalized = _normalize_string(str(output).lower())
+            exp_normalized = _normalize_string(str(expected).lower())
+            match = out_normalized == exp_normalized
             return 1.0 if match else 0.0, details
 
     def _compare_dicts(
@@ -483,9 +494,9 @@ class ASTMatchEvaluator(Evaluator):
         if (a == "" or a is None) and (b == "" or b is None):
             return True
 
-        # String comparison (case-insensitive for strings)
+        # String comparison (case-insensitive, normalize punctuation)
         if isinstance(a, str) and isinstance(b, str):
-            return a.strip().lower() == b.strip().lower()
+            return _normalize_string(a.lower()) == _normalize_string(b.lower())
 
         # Numeric comparison
         try:
@@ -496,8 +507,8 @@ class ASTMatchEvaluator(Evaluator):
         except (ValueError, TypeError):
             pass
 
-        # String representation comparison
-        return str(a).strip().lower() == str(b).strip().lower()
+        # String representation comparison (normalized punctuation)
+        return _normalize_string(str(a).lower()) == _normalize_string(str(b).lower())
 
 
 @register_evaluator("schema")
@@ -650,9 +661,9 @@ class SchemaEvaluator(Evaluator):
                     return False
             return True
 
-        # String comparison (case-insensitive, stripped)
-        out_str = str(output_val).strip().lower()
-        exp_str = str(expected_val).strip().lower()
+        # String comparison (case-insensitive, normalized punctuation)
+        out_str = _normalize_string(str(output_val).lower())
+        exp_str = _normalize_string(str(expected_val).lower())
 
         if out_str == exp_str:
             return True

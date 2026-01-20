@@ -1,0 +1,32 @@
+{
+  "activity_name": "classify_support_ticket",
+  "description": "Classifies the support ticket text into one of the predefined categories using semantic analysis",
+  "task_id": "classification_01_ticket_001",
+  "task_description": "Classify this support ticket into one of these categories:\n- billing\n- technical\n- account\n- general\n\nTicket:\nI was charged twice for my subscription this month. Please refund the duplicate charge.\n\nReturn only the category name.\n\n**IMPORTANT: The task provides these input variables:**\n- `ticket_text` (str)\n\nYour workflow MUST use these exact variable names: ticket_text\n\n**CRITICAL - OUTPUT FORMAT (EXACT STRUCTURE REQUIRED):**\nYour activity must return this structure:\n```json\nbilling\n```\n\n**Rules:**\n- Match this structure (field names, nesting, types) EXACTLY\n- Values will vary by instance, but structure stays the same\n- Do NOT add extra fields\n- Do NOT change field names",
+  "inputs": [
+    {
+      "name": "ticket_text",
+      "type": "str",
+      "description": "The complete support ticket text containing customer's issue description and any relevant details",
+      "required": true
+    },
+    {
+      "name": "categories",
+      "type": "list",
+      "description": "List of valid category options for classification (billing, technical, account, general)",
+      "required": true
+    }
+  ],
+  "output": {
+    "type": "str",
+    "description": "Returns the single category name as a string. Example output: billing",
+    "fields": null
+  },
+  "reference_activity": "llm_classify",
+  "workflow_spec": {
+    "workflow_id": "support_ticket_classification",
+    "name": "Support Ticket Classification",
+    "description": "Classify a support ticket into one of four predefined categories: billing, technical, account, or general based on the ticket content",
+    "execution_pattern": "sequence"
+  }
+}

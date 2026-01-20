@@ -1,6 +1,6 @@
 """Structured output models for PydanticAI agents."""
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from typing import Any, Optional
 
 
@@ -17,16 +17,106 @@ class ActivityInputParam(BaseModel):
 
     name: str = Field(description="Parameter name")
     type: str = Field(description="Python type (str, List[str], Dict, etc.)")
-    description: str = Field(description="What this parameter represents")
+    description: str = Field(
+        description="Detailed description of what this parameter represents, including format and constraints"
+    )
     required: bool = Field(default=True)
+
+    @field_validator('description')
+    @classmethod
+    def validate_input_description(cls, v: str) -> str:
+        """
+        Ensure input descriptions are detailed and informative.
+
+        Good: "The complete email text containing headers (From, To, Subject, Date) and body"
+        Bad: "Email text"
+        """
+        if len(v) < 15:
+            raise ValueError(
+                f"Input description too brief ({len(v)} chars). "
+                "Explain what the parameter represents, its format, and any constraints. "
+                "Example: 'The complete email text containing headers and body'"
+            )
+
+        # Warn if description is too generic (fewer than 4 words)
+        if len(v.split()) < 4:
+            raise ValueError(
+                f"Input description too generic: '{v}'. "
+                "Provide details about format, structure, or constraints. "
+                "Example: 'The raw address string in free-form format (e.g., 123 Main St, NY, 10001)'"
+            )
+
+        return v
 
 
 class ActivityOutputSchema(BaseModel):
     """Output schema definition for activity return value."""
 
     type: str = Field(description="Return type (dict, str, List, etc.)")
-    description: str = Field(description="What the activity returns")
+    description: str = Field(
+        description="Semantic description of what this output represents (NOT example values)"
+    )
     fields: Optional[dict[str, str]] = Field(default=None, description="For dict returns, field names and types")
+
+    @field_validator('description')
+    @classmethod
+    def validate_semantic_description(cls, v: str) -> str:
+        """
+        Ensure description is semantic, not a literal example value.
+
+        Rejects:
+        - Literal values like "billing", "USA", "success"
+        - Raw JSON strings
+        - Quoted strings without context
+
+        Requires:
+        - At least 20 characters
+        - Semantic verbs (returns, contains, represents, provides)
+        - Explanatory context
+        """
+        # Check minimum length
+        if len(v) < 20:
+            raise ValueError(
+                f"Description too short ({len(v)} chars). "
+                "Provide a semantic description of what the output represents, "
+                "not just an example value. "
+                "Example: 'The support ticket category classification (billing, technical, or general)'"
+            )
+
+        # Check for literal value patterns
+        v_lower = v.lower().strip()
+
+        # Pattern 1: Single word without explanation
+        if ' ' not in v and len(v) < 30:
+            raise ValueError(
+                f"Description appears to be a single word: '{v}'. "
+                "Describe what the output REPRESENTS semantically. "
+                "Example: 'The category classification result' not just 'billing'"
+            )
+
+        # Pattern 2: Raw JSON structure
+        if v.strip().startswith('{') and v.strip().endswith('}'):
+            raise ValueError(
+                f"Description contains raw JSON structure. "
+                "Instead of showing an example, describe what it represents. "
+                "Example: 'Returns normalized address with street, city, state, zip, and country fields'"
+            )
+
+        # Pattern 3: Lacks semantic keywords
+        semantic_keywords = [
+            'return', 'contain', 'represent', 'provide', 'describe',
+            'result', 'output', 'value', 'data', 'information'
+        ]
+        has_semantic_keyword = any(keyword in v_lower for keyword in semantic_keywords)
+
+        if not has_semantic_keyword:
+            raise ValueError(
+                f"Description lacks semantic context: '{v}'. "
+                "Use verbs like 'returns', 'contains', 'represents' to explain what the output means. "
+                "Example: 'Returns the extracted email fields as a dictionary'"
+            )
+
+        return v
 
 
 class ActivitySpec(BaseModel):

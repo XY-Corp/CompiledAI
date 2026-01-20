@@ -1,0 +1,32 @@
+{
+  "activity_name": "normalize_address",
+  "description": "Parse and normalize an address string into standard components using regex patterns to identify street, city, state, ZIP, and add default country",
+  "task_id": "normalize_01_addr_001",
+  "task_description": "Normalize this address to the standard format:\n123 Main St., Apt 4B, New York, NY 10001\n\nReturn JSON with: street, city, state, zip, country\n\n**IMPORTANT: The task provides these input variables:**\n- `address` (str)\n\nYour workflow MUST use these exact variable names: address\n\n**CRITICAL - OUTPUT FORMAT (EXACT STRUCTURE REQUIRED):**\nYour activity must return this structure:\n```json\n{\n  \"street\": \"123 Main St Apt 4B\",\n  \"city\": \"New York\",\n  \"state\": \"NY\",\n  \"zip\": \"10001\",\n  \"country\": \"USA\"\n}\n```\n\n**Rules:**\n- Match this structure (field names, nesting, types) EXACTLY\n- Values will vary by instance, but structure stays the same\n- Do NOT add extra fields\n- Do NOT change field names",
+  "inputs": [
+    {
+      "name": "address",
+      "type": "str",
+      "description": "Raw address string containing street address, apartment/unit, city, state, and ZIP code in any format",
+      "required": true
+    }
+  ],
+  "output": {
+    "type": "dict",
+    "description": "Returns normalized address components: {\"street\": \"123 Main St Apt 4B\", \"city\": \"New York\", \"state\": \"NY\", \"zip\": \"10001\", \"country\": \"USA\"}",
+    "fields": {
+      "street": "str",
+      "city": "str",
+      "state": "str",
+      "zip": "str",
+      "country": "str"
+    }
+  },
+  "reference_activity": null,
+  "workflow_spec": {
+    "workflow_id": "address_normalizer",
+    "name": "Address Normalizer",
+    "description": "Normalizes a raw address string into standard format with separated components (street, city, state, zip, country)",
+    "execution_pattern": "sequence"
+  }
+}

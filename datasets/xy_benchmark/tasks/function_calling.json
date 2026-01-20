@@ -20,9 +20,9 @@
       "id": "func_001",
       "input": {
         "functions": [
-          {"name": "get_weather", "params": {"location": "string", "unit": "celsius|fahrenheit"}},
-          {"name": "send_email", "params": {"to": "string", "subject": "string", "body": "string"}},
-          {"name": "create_reminder", "params": {"title": "string", "time": "datetime"}}
+          {"name": "get_weather", "parameters": {"location": "string", "unit": "celsius|fahrenheit"}},
+          {"name": "send_email", "parameters": {"to": "string", "subject": "string", "body": "string"}},
+          {"name": "create_reminder", "parameters": {"title": "string", "time": "datetime"}}
         ],
         "user_request": "What's the weather in Paris in Celsius?"
       },
@@ -35,9 +35,9 @@
       "id": "func_002",
       "input": {
         "functions": [
-          {"name": "get_weather", "params": {"location": "string", "unit": "celsius|fahrenheit"}},
-          {"name": "send_email", "params": {"to": "string", "subject": "string", "body": "string"}},
-          {"name": "create_reminder", "params": {"title": "string", "time": "datetime"}}
+          {"name": "get_weather", "parameters": {"location": "string", "unit": "celsius|fahrenheit"}},
+          {"name": "send_email", "parameters": {"to": "string", "subject": "string", "body": "string"}},
+          {"name": "create_reminder", "parameters": {"title": "string", "time": "datetime"}}
         ],
         "user_request": "Remind me to call mom tomorrow at 3pm"
       },

@@ -530,6 +530,13 @@ def display_results(result) -> None:
     table.add_column("Task", style=BRAND_PRIMARY)
     table.add_column("Success", justify="center")
     table.add_column("Latency", justify="right", style=BRAND_DIM)
+
+    # Add Code Factory specific columns
+    is_code_factory = result.config.baseline_name == "code_factory"
+    if is_code_factory:
+        table.add_column("Gen (ms)", justify="right", style="yellow")
+        table.add_column("Exec (ms)", justify="right", style="green")
+
     table.add_column("N", justify="right", style=BRAND_DIM)
 
     for tr in result.task_results:
@@ -541,14 +548,91 @@ def display_results(result) -> None:
         bar_empty = 10 - bar_filled
         bar = f"[{rate_style}]{'█' * bar_filled}[/{rate_style}][{BRAND_DIM}]{'░' * bar_empty}[/{BRAND_DIM}] [{rate_style}]{rate:.0%}[/{rate_style}]"
 
-        table.add_row(
+        # Build row data
+        row_data = [
             tr.task.task_id,
             bar,
             f"{tr.avg_latency_ms:.0f}ms",
-            str(len(tr.results)),
-        )
+        ]
+
+        # Add Code Factory metrics if applicable
+        if is_code_factory:
+            # Calculate average generation and execution times
+            gen_times = [r.generation_time_ms for r in tr.results if r.generation_time_ms]
+            avg_gen = sum(gen_times) / len(gen_times) if gen_times else 0
+
+            exec_times = [r.execution_time_ms for r in tr.results if r.execution_time_ms]
+            avg_exec = sum(exec_times) / len(exec_times) if exec_times else 0
+
+            row_data.append(f"{avg_gen:.0f}" if avg_gen > 0 else "-")
+            row_data.append(f"{avg_exec:.0f}" if avg_exec > 0 else "-")
+
+        row_data.append(str(len(tr.results)))
+
+        table.add_row(*row_data)
 
     console.print(table)
+
+    # Show Activity Accuracy Registry (Code Factory only)
+    if is_code_factory:
+        try:
+            from compiled_ai.factory.code_factory.activity_registry import ActivityRegistry
+
+            registry = ActivityRegistry()
+            all_stats = registry.get_all_stats()
+
+            if all_stats:
+                console.print(f"\n[bold {BRAND_PRIMARY}]Activity Accuracy Registry:[/bold {BRAND_PRIMARY}]")
+
+                acc_table = Table(
+                    title=f"[{BRAND_PRIMARY}]Workflow Reliability[/{BRAND_PRIMARY}]",
+                    box=box.ROUNDED,
+                    border_style=BRAND_DIM,
+                )
+                acc_table.add_column("Workflow ID", style=BRAND_PRIMARY)
+                acc_table.add_column("Category", style=BRAND_DIM)
+                acc_table.add_column("Success Rate", justify="center")
+                acc_table.add_column("Usage", justify="right", style=BRAND_DIM)
+                acc_table.add_column("Last Used", style=BRAND_DIM)
+
+                for stats in all_stats:
+                    # Color-code success rate
+                    rate = stats.success_rate
+                    if rate >= 0.9:
+                        rate_color = BRAND_SUCCESS
+                        rate_icon = "✓"
+                    elif rate >= 0.7:
+                        rate_color = BRAND_ACCENT
+                        rate_icon = "~"
+                    else:
+                        rate_color = BRAND_ERROR
+                        rate_icon = "✗"
+
+                    rate_display = f"[{rate_color}]{rate_icon} {rate:.0%}[/{rate_color}]"
+
+                    # Format last used
+                    last_used = stats.last_used if stats.last_used else "Never"
+                    if last_used != "Never":
+                        # Show relative time
+                        from datetime import datetime
+                        try:
+                            dt = datetime.fromisoformat(last_used)
+                            last_used = dt.strftime("%Y-%m-%d %H:%M")
+                        except:
+                            pass
+
+                    acc_table.add_row(
+                        stats.workflow_id,
+                        stats.category,
+                        rate_display,
+                        f"{stats.usage_count}x",
+                        last_used,
+                    )
+
+                console.print(acc_table)
+        except Exception as e:
+            # Silently fail if registry not available
+            pass
 
     # Show detailed output for ALL tasks
     print_section("Detailed Task Outputs")

@@ -1,0 +1,13 @@
+workflow_id: email_field_extraction
+name: Email Field Extraction
+description: Extracts sender, recipient, subject, and date fields from email text using deterministic regex patterns
+variables:
+  email_text: null
+root:
+  sequence:
+    elements:
+      - activity:
+          name: extract_email_fields
+          params:
+            email_text: ${{ email_text }}
+          result: email_fields_result

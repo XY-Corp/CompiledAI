@@ -24,12 +24,22 @@ For EACH activity you design:
 2. **Define exact output schema**:
    - Specify return type: `dict`, `str`, `List[str]`, etc.
    - For dicts, specify EXACT field names and types in the `fields` dict
-   - **CRITICAL - COPY THE FULL EXPECTED OUTPUT INTO THE DESCRIPTION**:
-     - If the task shows an expected output example, COPY IT VERBATIM into the ActivityOutputSchema description field
-     - Include the complete JSON structure with ALL nested fields in the description
-     - Example: description = "Returns function call: {\"function\": \"get_weather\", \"parameters\": {\"location\": \"Paris\", \"unit\": \"celsius\"}}"
-   - The `fields` dict only describes top-level keys, but the `description` must show the complete nested structure
-   - Look at the task's expected output format and copy it EXACTLY into the output schema description
+
+   - **CRITICAL - Output Description Quality (VALIDATION ENFORCED)**:
+     - The `description` field must explain what the output REPRESENTS semantically
+     - DO NOT use literal example values as descriptions
+     - BAD: description = "billing" or "USA" or "success"
+     - GOOD: description = "The support ticket category classification (billing, technical, or general)"
+     - GOOD: description = "Returns normalized address with street, city, state, zip, and country fields"
+     - Always use semantic verbs: "Returns...", "Contains...", "Represents...", "Provides..."
+     - Include possible values or structure in parentheses for clarity
+     - MINIMUM 20 CHARACTERS REQUIRED - descriptions will be automatically validated
+
+   - **Input Parameter Descriptions (VALIDATION ENFORCED)**:
+     - Describe what the parameter represents, its format, and any constraints
+     - BAD: "Email text"
+     - GOOD: "The complete email text containing headers (From, To, Subject, Date) and body"
+     - MINIMUM 15 CHARACTERS REQUIRED - descriptions will be automatically validated
 
 3. **Use registry as INSPIRATION only**:
    - Search templates to see patterns (e.g., how to call LLMs, parse data)
@@ -73,12 +83,29 @@ Before designing activities, understand what the task is REALLY asking for:
   → Never return empty strings or null - extract the real data
   → For unstructured text, llm_client is often the best approach
 
-**4. When Activities Should Use LLM:**
-Design activities to use `llm_client.generate()` when:
-- Extracting information from unstructured text (emails, documents, etc.)
-- Making intelligent selections or classifications
-- Transforming data that requires understanding semantics
-- Analyzing text to determine intent or select options
+**4. When Activities Should Use LLM vs Deterministic Code:**
+
+⚠️ **CRITICAL: The Code Factory's value is COMPILATION - prefer deterministic code!** ⚠️
+
+Design activities to use **DETERMINISTIC CODE (regex, parsing, logic)** when:
+- ✅ Email field extraction - "From:", "To:", "Subject:" follow patterns
+- ✅ Address normalization - Street, City, State, ZIP have regex patterns
+- ✅ JSON transformations - Direct dict operations
+- ✅ Structured data parsing - Templates, forms, headers
+- ✅ Mathematical calculations and data mapping
+- ✅ ANY task with clear patterns or rules
+
+Design activities to use **`llm_client.generate()`** ONLY when:
+- ❌ Semantic classification (support tickets need context understanding)
+- ❌ Intent analysis (natural language user requests)
+- ❌ Truly unstructured narratives with no patterns
+- ❌ Tasks explicitly requiring AI reasoning
+
+**Examples:**
+- Email extraction → Use regex for "From:\s*(.+)" patterns, NOT LLM
+- Address parsing → Use regex for street/city/state patterns, NOT LLM
+- Ticket classification → Use LLM (requires semantic understanding)
+- Function selection → Use LLM (requires intent understanding)
 
 ## Your Task:
 1. Analyze business requirements and understand TRUE task intent
@@ -169,23 +196,33 @@ async def activity_name(
 ## CRITICAL: Input Handling
 **Workflow inputs are typed based on the data:**
 - **Simple values** (strings, numbers, booleans): Passed as strings
-- **Complex values** (dicts, lists): Passed as Python objects directly
+- **Complex values** (dicts, lists): MAY be passed as Python objects OR JSON strings
 
-**For structured data inputs:**
-- Dict and list inputs are passed as actual Python dicts/lists (NOT JSON strings)
-- NO need to call `json.loads()` - the data is already parsed
-- You can directly access dict keys and list elements
+**For structured data inputs - ALWAYS be defensive:**
+- Dict and list inputs MIGHT be JSON strings from external datasets
+- ALWAYS check type and parse if needed at the start of your function
 
-**Example:**
+**Defensive Input Pattern (USE THIS):**
 ```python
-async def transform_data(source_data: dict, target_schema: dict, ...) -> dict[str, Any]:
+async def activity_name(param1: dict, param2: list, ...) -> dict[str, Any]:
     try:
-        # source_data is already a dict - no parsing needed!
-        # Just use it directly
+        # Parse JSON strings if needed
+        if isinstance(param1, str):
+            param1 = json.loads(param1)
+        if isinstance(param2, str):
+            param2 = json.loads(param2)
+
+        # Validate types
+        if not isinstance(param1, dict):
+            return {"error": f"param1 must be dict, got {type(param1).__name__}"}
+
+        # Now safe to use - your logic here
         result = {
-            "fullName": f"{source_data['first_name']} {source_data['last_name']}"
+            "fullName": f"{param1['first_name']} {param1['last_name']}"
         }
         return result
+    except json.JSONDecodeError as e:
+        return {"error": f"Invalid JSON: {e}"}
     except KeyError as e:
         return {"error": f"Missing field: {e}"}
 ```
@@ -210,6 +247,64 @@ async def transform_data(source_data: dict, target_schema: dict, ...) -> dict[st
 - Example: `response = llm_client.generate("Classify this text: ...")` (NO await!)
 - Use this for tasks requiring AI inference (classification, extraction, generation)
 
+**CRITICAL - Robust JSON Extraction from LLM Responses:**
+
+When using `llm_client` to extract structured data, ALWAYS use Pydantic for validation and robust parsing:
+
+```python
+from pydantic import BaseModel
+import json
+import re
+
+class AddressComponents(BaseModel):
+    \"\"\"Define the expected structure.\"\"\"
+    street: str
+    city: str
+    state: str
+    zip: str
+    country: str = "USA"
+
+async def extract_with_llm(text: str, ...) -> dict[str, Any]:
+    # Create a clear prompt asking for JSON
+    prompt = f\"\"\"Extract address components from: {text}
+
+Return ONLY valid JSON in this exact format:
+{{\"street\": \"123 Main St Apt 4B\", \"city\": \"New York\", \"state\": \"NY\", \"zip\": \"10001\", \"country\": \"USA\"}}\"\"\"
+
+    response = llm_client.generate(prompt)
+
+    # Extract JSON from response (handles markdown code blocks)
+    content = response.content.strip()
+
+    # Remove markdown code blocks if present
+    if "```" in content:
+        # Extract content between ```json and ``` or between ``` and ```
+        json_match = re.search(r'```(?:json)?\\s*(\\{{.*?\\}})\\s*```', content, re.DOTALL)
+        if json_match:
+            content = json_match.group(1)
+        else:
+            # Try to find any JSON object
+            json_match = re.search(r'\\{{.*?\\}}', content, re.DOTALL)
+            if json_match:
+                content = json_match.group(0)
+
+    # Parse and validate with Pydantic
+    try:
+        data = json.loads(content)
+        validated = AddressComponents(**data)
+        return validated.model_dump()
+    except (json.JSONDecodeError, ValueError) as e:
+        # Fallback to regex or return error
+        return {{\"error\": f\"Failed to parse LLM response: {{e}}\"}}
+```
+
+**Why Pydantic for LLM Responses:**
+- ✅ Validates structure automatically
+- ✅ Provides clear error messages if LLM returns wrong format
+- ✅ Handles type coercion (str to int, etc.)
+- ✅ Documents the expected schema clearly
+- ✅ Catches issues early before data propagates
+
 ## CRITICAL: Implementation Guidelines
 
 **1. Return Actual Data, Not Placeholders:**
@@ -220,18 +315,64 @@ async def transform_data(source_data: dict, target_schema: dict, ...) -> dict[st
 
 **2. When to Use LLM vs Code:**
 
-**Use Python CODE for:**
-- Data transformations (JSON mapping, field renaming, concatenation)
-- Mathematical calculations
-- String manipulation
-- Structured data processing
-- Anything that can be done with if/else, dict operations, string formatting
+⚠️ **CRITICAL: PREFER DETERMINISTIC CODE WHENEVER POSSIBLE** ⚠️
 
-**Use llm_client ONLY for:**
-- Extracting information from UNSTRUCTURED text (emails, documents, natural language)
-- Classification of text content
-- Understanding semantic meaning
-- When the input is truly ambiguous and requires intelligence
+The Code Factory's value proposition is **compilation** - spend time upfront generating fast,
+deterministic code that runs in milliseconds, not making LLM calls at runtime.
+
+**ALWAYS Use Python CODE (regex, parsing, logic) for:**
+- ✅ Email parsing - Use regex patterns for "From:", "To:", "Subject:", "Date:" headers
+- ✅ Address normalization - Regex to extract street, city, state, zip patterns
+- ✅ JSON transformations - Direct dict operations, no LLM needed
+- ✅ Data field extraction from STRUCTURED formats (emails, forms, templates)
+- ✅ Mathematical calculations
+- ✅ String manipulation (split, strip, replace, format)
+- ✅ Pattern matching with clear rules
+- ✅ Anything that can be done with if/else, dict operations, or regex
+
+**ONLY Use llm_client for:**
+- ❌ Semantic classification (ticket categorization requires understanding context)
+- ❌ Intent understanding (user requests need semantic analysis)
+- ❌ Truly unstructured text with no patterns (free-form narratives)
+- ❌ When the task EXPLICITLY requires AI reasoning or understanding
+
+**Examples of WRONG LLM usage:**
+
+❌ Email extraction (has clear "From:" pattern):
+```python
+# WRONG - Using LLM for structured extraction
+response = llm_client.generate(f"Extract sender from: {email_text}")
+```
+
+✅ Email extraction (use regex):
+```python
+# RIGHT - Use regex patterns
+import re
+sender_match = re.search(r'From:\s*(.+)', email_text)
+sender = sender_match.group(1).strip() if sender_match else ""
+```
+
+❌ Address normalization (has patterns):
+```python
+# WRONG - Using LLM for address parsing
+response = llm_client.generate(f"Normalize address: {address}")
+```
+
+✅ Address normalization (use regex + logic):
+```python
+# RIGHT - Parse with regex
+import re
+# Pattern: "123 Main St, Apt 4B, New York, NY 10001"
+match = re.match(r'(.+),\s*(.+),\s*([A-Z]{2})\s*(\d{5})', address)
+if match:
+    street = match.group(1).replace(',', '').strip()
+    city = match.group(2).strip()
+    state = match.group(3)
+    zip_code = match.group(4)
+```
+
+**Rule of thumb:** If you can describe the pattern in words ("extract text after 'From:'"),
+you can write it in code. Don't use LLM for deterministic patterns!
 
 **CRITICAL - When using llm_client:**
 - Extract ONLY the relevant data first, remove all task instructions
@@ -247,6 +388,56 @@ email_text = extract_email_from_input(input_text)  # Get just the email content
 prompt = f"Extract the sender email address from this email:\n{email_text}\nReturn only the email address."
 response = llm_client.generate(prompt)
 sender = response.content.strip()
+```
+
+**CRITICAL - Function Calling Tasks:**
+
+When the task involves selecting a function and extracting parameters from user input:
+
+**Parameter Name Matching:**
+- The LLM MUST use EXACT parameter names from the function schema
+- DO NOT let the LLM infer its own parameter names
+- In your prompt to llm_client, explicitly list the exact parameter names from each function
+
+```python
+# EXAMPLE: Function calling task
+async def select_function(user_request: str, available_functions: list, ...) -> dict[str, Any]:
+    # Handle JSON string input defensively
+    if isinstance(available_functions, str):
+        available_functions = json.loads(available_functions)
+
+    # Format functions with EXACT parameter names clearly visible
+    functions_text = "Available Functions:\\n"
+    for func in available_functions:
+        # Check both 'parameters' and 'params' keys for compatibility
+        params_schema = func.get('parameters', func.get('params', {}))
+
+        # Show EXACT parameter names the LLM must use
+        param_details = []
+        for param_name, param_info in params_schema.items():
+            # Handle both string format ("string") and dict format ({"type": "string", ...})
+            if isinstance(param_info, str):
+                param_type = param_info
+            else:
+                param_type = param_info.get('type', 'string')
+            param_details.append(f'\\"{param_name}\\": <{param_type}>')
+
+        functions_text += f"- {{func['name']}}: parameters must be: {{{', '.join(param_details)}}}\\n"
+
+    prompt = f\"\"\"User request: "{{user_request}}"
+{{functions_text}}
+Select the appropriate function and extract parameters.
+
+CRITICAL: Use the EXACT parameter names shown above for each function.
+DO NOT infer different parameter names.
+
+Example for create_reminder with params {{"title": "string", "time": "datetime"}}:
+{{"function": "create_reminder", "parameters": {{"title": "call mom", "time": "tomorrow 3pm"}}}}
+
+Return JSON: {{"function": "function_name", "parameters": {{"exact_param_name": "value"}}}}\"\"\"
+
+    response = llm_client.generate(prompt)
+    # ... parse with Pydantic ...
 ```
 
 **3. Implement Actual Transformation Logic with Code:**

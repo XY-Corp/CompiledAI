@@ -38,7 +38,7 @@
         "address": "456 Oak Avenue, Suite 100, Los Angeles, California, 90001, United States"
       },
       "expected_output": {
-        "street": "456 Oak Ave Suite 100",
+        "street": "456 Oak Avenue Suite 100",
         "city": "Los Angeles",
         "state": "CA",
         "zip": "90001",

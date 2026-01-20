@@ -167,6 +167,37 @@ def run_benchmark(args: argparse.Namespace, console: Console) -> None:
 
     console.print(table)
 
+    # Show Code Factory specific metrics (generation vs execution time)
+    if args.baseline == "code_factory":
+        console.print("\n[bold cyan]Code Factory Metrics:[/bold cyan]")
+
+        cf_table = Table(title="Compilation vs Execution Time")
+        cf_table.add_column("Task ID", style="cyan")
+        cf_table.add_column("Generation (ms)", justify="right", style="yellow")
+        cf_table.add_column("Execution (ms)", justify="right", style="green")
+        cf_table.add_column("Speedup", justify="right", style="magenta")
+
+        for tr in result.task_results:
+            # Find first result with generation time (compilation task)
+            gen_times = [r.generation_time_ms for r in tr.results if r.generation_time_ms]
+            avg_gen = sum(gen_times) / len(gen_times) if gen_times else 0
+
+            # Average execution time across all tasks
+            exec_times = [r.execution_time_ms for r in tr.results if r.execution_time_ms]
+            avg_exec = sum(exec_times) / len(exec_times) if exec_times else 0
+
+            # Calculate speedup (how much faster execution is vs compilation)
+            speedup = f"{avg_gen / avg_exec:.1f}x" if avg_exec > 0 and avg_gen > 0 else "-"
+
+            cf_table.add_row(
+                tr.task.task_id,
+                f"{avg_gen:.0f}" if avg_gen > 0 else "-",
+                f"{avg_exec:.0f}",
+                speedup,
+            )
+
+        console.print(cf_table)
+
     # Show all failing tasks with output comparison
     failing_tasks = [tr for tr in result.task_results if tr.success_rate < 1.0]
     if failing_tasks:

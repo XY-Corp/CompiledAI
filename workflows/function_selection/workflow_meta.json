@@ -1,0 +1,26 @@
+{
+  "workflow_id": "function_selection",
+  "name": "Function Selection from User Request",
+  "description": "Analyzes a user request against available functions and returns the appropriate function to call with parameters",
+  "task_id": "function_call_01_func_001",
+  "task_description": "Given these available functions:\n[{'name': 'get_weather', 'parameters': {'location': 'string', 'unit': 'celsius|fahrenheit'}}, {'name': 'send_email', 'parameters': {'to': 'string', 'subject': 'string', 'body': 'string'}}, {'name': 'create_reminder', 'parameters': {'title': 'string', 'time': 'datetime'}}]\n\nUser request: What's the weather in Paris in Celsius?\n\nReturn the function call as JSON with 'function' and 'parameters' keys.\n\n**IMPORTANT: The task provides these input variables:**\n- `functions` (list)\n- `user_request` (str)\n\nYour workflow MUST use these exact variable names: functions, user_request\n\n**CRITICAL - OUTPUT FORMAT (EXACT STRUCTURE REQUIRED):**\nYour activity must return this structure:\n```json\n{\n  \"function\": \"get_weather\",\n  \"parameters\": {\n    \"location\": \"Paris\",\n    \"unit\": \"celsius\"\n  }\n}\n```\n\n**Rules:**\n- Match this structure (field names, nesting, types) EXACTLY\n- Values will vary by instance, but structure stays the same\n- Do NOT add extra fields\n- Do NOT change field names",
+  "activities": [
+    "parse_user_intent"
+  ],
+  "variables": [
+    {
+      "name": "functions",
+      "default": null
+    },
+    {
+      "name": "user_request",
+      "default": null
+    }
+  ],
+  "execution_pattern": "sequence",
+  "reasoning": "This is a function selection task that requires natural language understanding to map user intent to available functions. The user request \"What's the weather in Paris in Celsius?\" needs to be analyzed to extract the location (Paris) and unit preference (Celsius), then mapped to the get_weather function. Since this requires semantic understanding of natural language and intent analysis, an LLM-based approach is appropriate. The activity will analyze both the user request and the available function schemas to determine the correct function and extract the appropriate parameters from the natural language request.",
+  "metrics": {
+    "total_tokens": 16797,
+    "regeneration_count": 0
+  }
+}
