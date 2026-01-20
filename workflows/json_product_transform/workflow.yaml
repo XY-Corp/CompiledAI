@@ -1,0 +1,17 @@
+workflow_id: json_product_transform
+name: Product JSON Format Transformer
+description: Transform product JSON data from source format to target format with field mapping and calculations
+
+variables:
+  source_json: null
+  target_schema: null
+
+root:
+  sequence:
+    elements:
+      - activity:
+          name: transform_product_json
+          params:
+            source_data: ${{ source_json }}
+            schema_definition: ${{ target_schema }}
+          result: transformed_product

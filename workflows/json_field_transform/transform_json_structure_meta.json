@@ -1,0 +1,35 @@
+{
+  "activity_name": "transform_json_structure",
+  "description": "Transform JSON data from source format to target format by mapping and combining fields",
+  "task_id": "json_transform_01_transform_001",
+  "task_description": "Transform this JSON from the source format to the target format.\n\nSource:\n{'first_name': 'John', 'last_name': 'Doe', 'email_address': 'john@example.com'}\n\nTarget Schema:\n{'fullName': 'string', 'email': 'string'}\n\nReturn only the transformed JSON.\n\n**IMPORTANT: The task provides these input variables:**\n- `source_json` (dict)\n- `target_schema` (dict)\n\nYour workflow MUST use these exact variable names: source_json, target_schema\n\n**CRITICAL - OUTPUT FORMAT (EXACT STRUCTURE REQUIRED):**\nYour activity must return this structure:\n```json\n{\n  \"fullName\": \"John Doe\",\n  \"email\": \"john@example.com\"\n}\n```\n\n**Rules:**\n- Match this structure (field names, nesting, types) EXACTLY\n- Values will vary by instance, but structure stays the same\n- Do NOT add extra fields\n- Do NOT change field names",
+  "inputs": [
+    {
+      "name": "source_data",
+      "type": "dict",
+      "description": "The source JSON object containing first_name, last_name, and email_address fields that need to be transformed",
+      "required": true
+    },
+    {
+      "name": "schema_definition",
+      "type": "dict",
+      "description": "The target schema definition specifying the expected output field names and types",
+      "required": true
+    }
+  ],
+  "output": {
+    "type": "dict",
+    "description": "Returns the transformed JSON object with the exact structure: {\"fullName\": \"John Doe\", \"email\": \"john@example.com\"}. The fullName field combines first_name and last_name with a space, and email field maps from email_address.",
+    "fields": {
+      "fullName": "str",
+      "email": "str"
+    }
+  },
+  "reference_activity": "json_transform",
+  "workflow_spec": {
+    "workflow_id": "json_field_transform",
+    "name": "JSON Field Transformation",
+    "description": "Transform JSON data from source format to target format by mapping fields and combining values",
+    "execution_pattern": "sequence"
+  }
+}

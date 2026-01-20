@@ -1,6 +1,7 @@
 """Code Factory orchestrator with regeneration loop and actual execution."""
 
 import ast
+import json
 import re
 import sys
 import tempfile
@@ -14,6 +15,12 @@ from .agents import create_agents
 from .llm_adapter import AdapterMetrics, extract_usage_from_result, ProviderType
 from .template_registry import TemplateRegistry
 from .registration import ActivityRegistrar, RegistrationPolicy
+from .dynamic_loader import DynamicModuleLoader
+
+# Evaluation imports for self-healing loop (go up to compiled_ai level)
+from ...evaluation import get_evaluator
+from ...evaluation.base import Evaluator, EvaluationResult
+from ...utils.llm_client import create_client, LLMConfig
 
 # Add XYLocalWorkflowExecutor to path for validation and execution
 _executor_path = Path(__file__).parent.parent / "XYLocalWorkflowExecutor" / "src"
@@ -38,6 +45,11 @@ class FactoryResult:
     regeneration_count: int = 0
     metrics: Optional[AdapterMetrics] = None
     execution_result: Optional[dict] = None
+
+    # Validation tracking (Phase 2: self-healing loop)
+    yaml_validated: bool = False
+    execution_validated: bool = False
+    examples_tested: int = 0
 
     @property
     def workflow_yaml(self) -> str:
@@ -100,17 +112,175 @@ class CodeFactory:
         self.max_regenerations = max_regenerations
 
         # Registry components
-        self.registry = TemplateRegistry() if enable_registry else None
+        self.registry = TemplateRegistry(enable_semantic=False) if enable_registry else None
         self.registrar = (
             ActivityRegistrar(self.registry) if auto_register and self.registry else None
         )
+
+        # Multi-example support
+        self._current_examples: list[Any] | None = None  # TaskInput list for current compilation
+
+        # Semantic search index for workflow activities
+        self._workflow_index = None
+        self._workflow_sources: dict[str, str] = {}  # activity_name -> source code
+        self._load_workflow_activities()
 
     def _log(self, message: str) -> None:
         """Print message if verbose mode is enabled."""
         if self.verbose:
             print(message)
 
-    async def generate(self, task_description: str) -> FactoryResult:
+    def _load_workflow_activities(self) -> None:
+        """Load activities from workflows directory into semantic index.
+
+        Scans workflows/ for activities.py files and indexes them for
+        semantic search to find similar existing implementations.
+        """
+        from pathlib import Path
+        import re
+
+        try:
+            from .semantic_search import SemanticActivityIndex
+            self._workflow_index = SemanticActivityIndex()
+        except ImportError:
+            return  # sentence-transformers not installed
+
+        workflows_dir = Path("workflows")
+        if not workflows_dir.exists():
+            return
+
+        activities = []
+
+        for workflow_dir in workflows_dir.iterdir():
+            if not workflow_dir.is_dir() or workflow_dir.name.startswith("."):
+                continue
+
+            activities_file = workflow_dir / "activities.py"
+            if not activities_file.exists():
+                continue
+
+            content = activities_file.read_text()
+
+            # Extract function definitions with docstrings
+            # Pattern: async def func_name(...): """docstring"""
+            func_pattern = r'(?:async\s+)?def\s+(\w+)\s*\([^)]*\)[^:]*:\s*(?:"""([^"]*?)"""|\'\'\'([^\']*?)\'\'\')?'
+            matches = re.findall(func_pattern, content, re.DOTALL)
+
+            for match in matches:
+                func_name = match[0]
+                docstring = (match[1] or match[2] or "").strip()
+
+                if func_name.startswith("_"):
+                    continue  # Skip private functions
+
+                # Extract tags from workflow directory name
+                tags = workflow_dir.name.replace("_", " ").split()
+
+                # Store source code for later retrieval
+                # Extract the full function source
+                func_source = self._extract_function_source(content, func_name)
+                if func_source:
+                    self._workflow_sources[func_name] = func_source
+
+                description = docstring[:200] if docstring else f"Activity from {workflow_dir.name}"
+                activities.append((func_name, description, tags, func_source or ""))
+
+        if activities:
+            self._workflow_index.add_activities_batch(activities)
+
+    def _extract_function_source(self, content: str, func_name: str) -> str | None:
+        """Extract complete function source code from file content."""
+        import re
+
+        # Find function start
+        pattern = rf'^((?:async\s+)?def\s+{re.escape(func_name)}\s*\([^)]*\)[^:]*:)'
+        match = re.search(pattern, content, re.MULTILINE)
+        if not match:
+            return None
+
+        start = match.start()
+        lines = content[start:].split("\n")
+
+        # Find function end by tracking indentation
+        func_lines = [lines[0]]
+        base_indent = len(lines[0]) - len(lines[0].lstrip())
+
+        for line in lines[1:]:
+            # Empty lines are part of function
+            if not line.strip():
+                func_lines.append(line)
+                continue
+
+            # Check indentation
+            current_indent = len(line) - len(line.lstrip())
+            if current_indent <= base_indent and line.strip():
+                break  # Found next top-level statement
+
+            func_lines.append(line)
+
+        return "\n".join(func_lines)
+
+    def _add_to_workflow_semantic_index(self, result: FactoryResult) -> None:
+        """Add newly generated activities to semantic index for future matching.
+
+        Args:
+            result: Successful FactoryResult with generated code
+        """
+        if not self._workflow_index or not result.generated:
+            return
+
+        import re
+
+        activities_code = result.generated.activities_code
+        if not activities_code:
+            return
+
+        # Extract function definitions
+        func_pattern = r'(?:async\s+)?def\s+(\w+)\s*\([^)]*\)[^:]*:\s*(?:"""([^"]*?)"""|\'\'\'([^\']*?)\'\'\')?'
+        matches = re.findall(func_pattern, activities_code, re.DOTALL)
+
+        activities_to_add = []
+        for match in matches:
+            func_name = match[0]
+            docstring = (match[1] or match[2] or "").strip()
+
+            if func_name.startswith("_"):
+                continue
+
+            # Skip if already in index
+            if func_name in self._workflow_sources:
+                continue
+
+            # Extract source code
+            func_source = self._extract_function_source(activities_code, func_name)
+            if func_source:
+                self._workflow_sources[func_name] = func_source
+
+            # Create description from docstring or plan
+            description = docstring[:200] if docstring else ""
+            if not description and result.plan:
+                # Try to find matching activity in plan for description
+                for activity in result.plan.activities:
+                    if activity.name == func_name:
+                        description = activity.description
+                        break
+
+            # Extract tags from workflow name
+            tags = []
+            if result.plan:
+                tags = result.plan.name.lower().replace("_", " ").split()[:3]
+
+            activities_to_add.append((func_name, description, tags, func_source or ""))
+            self._log(f"[Semantic] Added '{func_name}' to semantic index")
+
+        if activities_to_add:
+            self._workflow_index.add_activities_batch(activities_to_add)
+
+    async def generate(
+        self,
+        task_description: str,
+        examples: list[Any] | None = None
+    ) -> FactoryResult:
         """Generate workflow from natural language description.
 
         This method:
@@ -121,12 +291,16 @@ class CodeFactory:
 
         Args:
             task_description: Natural language description of the workflow
+            examples: Optional list of TaskInput examples for multi-example compilation
 
         Returns:
             FactoryResult with generated code and validation status
         """
         result = FactoryResult(success=False)
         metrics = AdapterMetrics()
+
+        # Store examples for use in coder prompt
+        self._current_examples = examples or []
 
         # Create agents (planner gets registry for template search)
         planner, coder, _ = create_agents(
@@ -174,25 +348,52 @@ class CodeFactory:
             input_tokens, output_tokens = extract_usage_from_result(code_result)
             metrics.record(input_tokens, output_tokens, latency_ms)
 
-            # Validate YAML structure
-            validation_error = self._validate_yaml(result)
-            if validation_error is None:
-                result.success = True
-                self._log(f"[Validation] YAML valid on attempt {attempt + 1}")
-                break
-            else:
-                error_feedback = validation_error
-                result.validation_errors.append(f"Attempt {attempt + 1}: {validation_error}")
-                self._log(f"[Validation] Failed: {validation_error}")
+            # Step 2a: Validate YAML structure
+            yaml_error = self._validate_yaml(result)
+            if yaml_error is not None:
+                error_feedback = yaml_error
+                result.validation_errors.append(f"Attempt {attempt + 1} - YAML: {yaml_error}")
+                self._log(f"[Validation] YAML failed: {yaml_error[:100]}...")
+                continue  # Try again
 
-                if attempt == self.max_regenerations:
-                    self._log("[Validation] Max regenerations reached")
+            # YAML is valid
+            result.yaml_validated = True
+            self._log(f"[Validation] YAML valid on attempt {attempt + 1}")
 
+            # Step 2b: Execution validation (if examples available)
+            if self._current_examples:
+                self._log(f"[Validation] Testing on {len(self._current_examples[:3])} examples...")
+
+                execution_error = await self._validate_execution(result, self._current_examples)
+
+                if execution_error is not None:
+                    error_feedback = execution_error
+                    result.validation_errors.append(f"Attempt {attempt + 1} - Execution: {execution_error[:200]}...")
+                    self._log(f"[Validation] Execution failed: {execution_error[:100]}...")
+                    result.examples_tested = len([ex for ex in self._current_examples[:3] if hasattr(ex, 'metadata') and ex.metadata and "expected_output" in ex.metadata])
+                    continue  # Try again with execution feedback
+
+                result.execution_validated = True
+                result.examples_tested = len([ex for ex in self._current_examples[:3] if hasattr(ex, 'metadata') and ex.metadata and "expected_output" in ex.metadata])
+                self._log(f"[Validation] All example executions passed!")
+
+            # Both YAML and execution valid (or no examples to test)
+            result.success = True
+            break
+
+        # After loop: set metrics
         result.metrics = metrics
+
+        if not result.success:
+            self._log("[Validation] Max regenerations reached without success")
 
         # Auto-register successful activities
         if result.success and self.registrar:
             self._register_activities(result, task_description)
+
+        # Add to semantic index for future similarity matching
+        if result.success and result.generated:
+            self._add_to_workflow_semantic_index(result)
 
         return result
 
@@ -361,6 +562,16 @@ CRITICAL REQUIREMENTS:
         if template_section:
             base_prompt += f"\n{template_section}"
 
+        # Add semantically similar activities as inspiration
+        semantic_section = self._build_semantic_inspiration_section(plan)
+        if semantic_section:
+            base_prompt += f"\n{semantic_section}"
+
+        # Add examples section if multiple examples are available
+        examples_section = self._build_examples_section()
+        if examples_section:
+            base_prompt += f"\n{examples_section}"
+
         if error_feedback:
             base_prompt += f"""
 
@@ -408,6 +619,395 @@ Please fix the issues and regenerate valid YAML.
                 template_section += "- Adapted logic for your specific use case\n\n"
 
         return template_section
+
+    def _build_semantic_inspiration_section(self, plan: WorkflowSpec, min_similarity: float = 0.5) -> str:
+        """Build section with semantically similar activities as inspiration.
+
+        Uses the semantic search index to find existing workflow activities
+        that are similar to what we're trying to generate.
+
+        Args:
+            plan: WorkflowSpec with activities to find matches for
+            min_similarity: Minimum similarity threshold (0 to 1)
+
+        Returns:
+            Formatted section with similar activity source code
+        """
+        if not self._workflow_index:
+            return ""
+
+        section = ""
+        seen_activities = set()
+
+        for activity in plan.activities:
+            # Search for similar activities using the activity description
+            query = f"{activity.name} {activity.description}"
+            results = self._workflow_index.search(query, k=1)
+
+            if not results:
+                continue
+
+            top_match = results[0]
+
+            # Skip if below threshold or already seen
+            if top_match.similarity < min_similarity:
+                continue
+            if top_match.template_name in seen_activities:
+                continue
+
+            seen_activities.add(top_match.template_name)
+
+            # Get the source code
+            source = self._workflow_sources.get(top_match.template_name)
+            if not source:
+                continue
+
+            if not section:
+                section = "\n## SIMILAR EXISTING ACTIVITIES (use as inspiration):\n\n"
+                section += "These are real working activities from your codebase that are semantically similar.\n"
+                section += "Study their patterns and adapt them for your implementation.\n\n"
+
+            section += f"### {top_match.template_name} (similarity: {top_match.similarity:.0%})\n"
+            section += f"Similar to your activity: **{activity.name}**\n"
+            section += "```python\n"
+            section += source.strip()
+            section += "\n```\n\n"
+
+        return section
+
+    def _build_examples_section(self) -> str:
+        """Build examples section for coder prompt showing I/O patterns.
+
+        Returns:
+            Formatted examples section, or empty string if no examples
+        """
+        if not self._current_examples:
+            return ""
+
+        section = "\n## EXAMPLE INPUT/OUTPUT PATTERNS:\n\n"
+        if len(self._current_examples) > 1:
+            section += "Use these examples to understand expected behavior and generalize your implementation:\n\n"
+        else:
+            section += "Use this example to understand expected input/output behavior:\n\n"
+
+        # Limit to 3 examples for prompt size management
+        for idx, example in enumerate(self._current_examples[:3], 1):
+            section += f"### Example {idx}:\n"
+
+            # Show input variables
+            if hasattr(example, 'context') and example.context:
+                section += "**Input Variables:**\n```json\n"
+                # Truncate large values to keep prompt size reasonable
+                truncated_context = {}
+                for key, value in example.context.items():
+                    value_str = json.dumps(value) if isinstance(value, (dict, list)) else str(value)
+                    if len(value_str) > 150:
+                        value_str = value_str[:150] + "..."
+                    truncated_context[key] = value if len(json.dumps(value)) <= 150 else value_str
+                section += json.dumps(truncated_context, indent=2)
+                section += "\n```\n"
+
+            # Show expected output
+            if hasattr(example, 'metadata') and example.metadata and "expected_output" in example.metadata:
+                expected = example.metadata["expected_output"]
+                section += "**Expected Output:**\n```json\n"
+                # Truncate if too large
+                expected_str = json.dumps(expected, indent=2)
+                if len(expected_str) > 150:
+                    expected_str = expected_str[:150] + "..."
+                section += expected_str
+                section += "\n```\n\n"
+
+        section += "**CRITICAL:** Your implementation must generalize to handle all these patterns correctly.\n"
+        return section
+
+    def _select_evaluator(self, expected_output: Any, metadata: dict) -> Evaluator:
+        """Auto-select appropriate evaluator based on output type.
+
+        Args:
+            expected_output: The expected output to evaluate against
+            metadata: Task metadata (may contain evaluator_type override)
+
+        Returns:
+            Appropriate evaluator instance
+        """
+        # Check for explicit override
+        if "evaluator_type" in metadata:
+            return get_evaluator(metadata["evaluator_type"])
+
+        # Auto-detect from output type
+        if isinstance(expected_output, (dict, list)):
+            return get_evaluator("json_match")
+        else:
+            return get_evaluator("fuzzy_match", threshold=0.85)
+
+    async def _execute_single_example(
+        self,
+        factory_result: FactoryResult,
+        example: Any  # TaskInput
+    ) -> dict[str, Any]:
+        """Execute workflow on a single example.
+
+        Args:
+            factory_result: FactoryResult with compiled workflow
+            example: TaskInput with context and expected output
+
+        Returns:
+            Dict with success, output, and optional error
+        """
+        import shutil
+
+        try:
+            # Load activities dynamically
+            loader = DynamicModuleLoader()
+            llm_client = create_client(
+                provider=self.provider,
+                config=LLMConfig(model=self.model, temperature=0.0, max_tokens=4096)
+            )
+
+            activities = loader.load(
+                activities_code=factory_result.activities_code,
+                workflow_id=factory_result.plan.workflow_id,
+                llm_client=llm_client
+            )
+
+            # Create executor
+            executor = LocalWorkflowExecutor(
+                mock_activities=activities,
+                dry_run=False,
+                verbose=False  # Quiet during validation
+            )
+
+            # Prepare variables from context
+            variables = {}
+            if hasattr(example, 'context') and example.context:
+                for key, value in example.context.items():
+                    if isinstance(value, (dict, list)):
+                        variables[key] = value
+                    else:
+                        variables[key] = str(value)
+
+            # Write YAML to temp file
+            temp_dir = tempfile.mkdtemp(prefix="code_factory_validation_")
+            workflow_file = Path(temp_dir) / "workflow.yaml"
+            workflow_file.write_text(factory_result.workflow_yaml)
+
+            # Parse YAML to find the result variable name
+            import yaml
+            result_var_name = None
+            try:
+                workflow_data = yaml.safe_load(factory_result.workflow_yaml)
+                if "root" in workflow_data and "sequence" in workflow_data["root"]:
+                    elements = workflow_data["root"]["sequence"].get("elements", [])
+                    for element in reversed(elements):  # Get last result variable
+                        if "activity" in element and "result" in element["activity"]:
+                            result_var_name = element["activity"]["result"]
+                            break
+            except:
+                pass  # If parsing fails, fall back to heuristics
+
+            try:
+                # Execute with timeout
+                import asyncio
+                exec_output = await asyncio.wait_for(
+                    executor.run_yaml(str(workflow_file), variables=variables),
+                    timeout=30.0
+                )
+
+                # Extract output
+                output = self._extract_output_from_execution(exec_output, result_var_name)
+
+                return {"success": True, "output": output}
+
+            except asyncio.TimeoutError:
+                return {"success": False, "error": "Execution timeout (30s)", "output": ""}
+            except Exception as e:
+                return {"success": False, "error": str(e), "output": ""}
+            finally:
+                # Cleanup temp directory
+                try:
+                    shutil.rmtree(temp_dir)
+                except:
+                    pass
+
+        except Exception as e:
+            return {"success": False, "error": f"Setup error: {str(e)}", "output": ""}
+
+    def _extract_output_from_execution(self, result: Any, result_var_name: str | None = None) -> str:
+        """Extract output from execution result.
+
+        Args:
+            result: Execution result from LocalWorkflowExecutor (dict of all variables)
+            result_var_name: Optional name of the result variable from YAML parsing
+
+        Returns:
+            String representation of output
+        """
+        # LocalWorkflowExecutor returns all variables, we need to find the output
+        if isinstance(result, dict):
+            # If we know the exact result variable name, use it
+            if result_var_name and result_var_name in result:
+                output = result[result_var_name]
+                if isinstance(output, (dict, list)):
+                    return json.dumps(output)
+                return str(output)
+
+            # Fallback: Look for keys containing common output terms
+            output_terms = ["category", "classification", "result", "output", "response", "answer",
+                           "extracted", "normalized", "transformed", "formatted", "email", "address"]
+
+            for term in output_terms:
+                for key, value in result.items():
+                    if term in key.lower():
+                        # Found a likely output field
+                        if isinstance(value, (dict, list)):
+                            return json.dumps(value)
+                        return str(value)
+
+            # Last resort: return whole dict as JSON
+            return json.dumps(result)
+        elif isinstance(result, str):
+            return result
+        else:
+            return str(result)
+
+    async def _validate_execution(
+        self,
+        result: FactoryResult,
+        examples: list[Any]
+    ) -> str | None:
+        """Execute workflow on examples and validate outputs.
+
+        Args:
+            result: FactoryResult with compiled workflow
+            examples: List of TaskInput examples with expected outputs
+
+        Returns:
+            Error message string if validation fails, None if all pass
+        """
+        # Only test examples with expected outputs
+        test_examples = [
+            ex for ex in examples[:3]  # Limit to 3 for speed
+            if hasattr(ex, 'metadata') and ex.metadata and "expected_output" in ex.metadata
+        ]
+
+        if not test_examples:
+            self._log("[Validation] No examples with expected outputs - skipping execution validation")
+            return None
+
+        failures = []
+
+        for idx, example in enumerate(test_examples, 1):
+            try:
+                # Execute workflow
+                exec_result = await self._execute_single_example(result, example)
+
+                if not exec_result["success"]:
+                    failures.append(
+                        f"Example {idx}/{len(test_examples)} - Execution Error:\n"
+                        f"  {exec_result.get('error', 'Unknown error')}"
+                    )
+                    break  # Stop at first failure
+
+                # Evaluate output
+                expected = example.metadata["expected_output"]
+                evaluator = self._select_evaluator(expected, example.metadata)
+
+                eval_result = evaluator.evaluate(
+                    output=exec_result["output"],
+                    expected=expected
+                )
+
+                if not eval_result.success:
+                    failures.append(self._format_evaluation_failure(
+                        idx, len(test_examples), example, exec_result, eval_result
+                    ))
+                    break  # Stop at first failure
+
+            except Exception as e:
+                failures.append(
+                    f"Example {idx}/{len(test_examples)} - Unexpected Error:\n"
+                    f"  {str(e)}"
+                )
+                break
+
+        if failures:
+            return self._format_validation_feedback(failures, len(test_examples))
+
+        return None  # All examples passed
+
+    def _format_evaluation_failure(
+        self,
+        example_num: int,
+        total: int,
+        example: Any,
+        exec_result: dict,
+        eval_result: EvaluationResult
+    ) -> str:
+        """Format evaluation failure into actionable feedback.
+
+        Args:
+            example_num: Which example failed (1-indexed)
+            total: Total number of examples tested
+            example: The TaskInput that failed
+            exec_result: Execution result dict
+            eval_result: Evaluation result
+
+        Returns:
+            Formatted error message
+        """
+        msg = f"Example {example_num}/{total} FAILED:\n"
+
+        # Show inputs
+        if hasattr(example, 'context') and example.context:
+            msg += "  Input: "
+            input_str = json.dumps(example.context, indent=4)
+            # Indent continuation lines
+            msg += input_str.replace("\n", "\n         ")
+            msg += "\n"
+
+        # Show expected vs actual
+        expected = example.metadata["expected_output"]
+        msg += "  Expected: " + json.dumps(expected, indent=4).replace("\n", "\n            ") + "\n"
+        msg += "  Actual:   " + exec_result["output"][:200] + "\n"
+
+        # Show evaluation details
+        if eval_result.error:
+            msg += f"  Error: {eval_result.error}\n"
+
+        if eval_result.details:
+            msg += "  Details:\n"
+            for key, value in eval_result.details.items():
+                msg += f"    - {key}: {value}\n"
+
+        return msg
+
+    def _format_validation_feedback(
+        self,
+        failures: list[str],
+        total_examples: int
+    ) -> str:
+        """Format all failures into regeneration feedback.
+
+        Args:
+            failures: List of formatted failure messages
+            total_examples: Total number of examples tested
+
+        Returns:
+            Complete feedback message for coder
+        """
+        feedback = "EXECUTION VALIDATION FAILED: Workflow executed but outputs don't match expectations\n\n"
+
+        for failure in failures:
+            feedback += failure + "\n"
+
+        feedback += f"\nFix these issues:\n"
+        feedback += "1. Check that activity implementations match the expected output schema EXACTLY\n"
+        feedback += "2. Ensure parameter bindings are correct (variable names match)\n"
+        feedback += "3. For LLM-based activities, verify prompts produce the expected structure\n"
+        feedback += "4. For data transformations, ensure field mapping is correct\n"
+
+        return feedback
 
     def _register_activities(
         self, result: FactoryResult, task_description: str

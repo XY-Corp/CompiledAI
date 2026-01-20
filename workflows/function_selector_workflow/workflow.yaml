@@ -1,0 +1,15 @@
+workflow_id: function_selector_workflow
+name: Function Selection Workflow
+description: Analyzes user request and available functions to determine which function to call with appropriate parameters
+variables:
+  functions: null
+  user_request: null
+root:
+  sequence:
+    elements:
+      - activity:
+          name: analyze_user_intent
+          params:
+            user_request: ${{ user_request }}
+            functions: ${{ functions }}
+          result: function_selection

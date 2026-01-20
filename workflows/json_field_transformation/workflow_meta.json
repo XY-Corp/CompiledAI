@@ -1,0 +1,26 @@
+{
+  "workflow_id": "json_field_transformation",
+  "name": "JSON Field Transformation",
+  "description": "Transform JSON data from source format to target format by mapping fields and calculating values",
+  "task_id": "json_transform_01_transform_002",
+  "task_description": "Transform this JSON from the source format to the target format.\n\nSource:\n{'product_id': 'SKU-123', 'product_name': 'Widget', 'price_usd': 29.99, 'qty': 5}\n\nTarget Schema:\n{'id': 'string', 'name': 'string', 'total': 'number'}\n\nReturn only the transformed JSON.\n\n**IMPORTANT: The task provides these input variables:**\n- `source_json` (dict)\n- `target_schema` (dict)\n\nYour workflow MUST use these exact variable names: source_json, target_schema\n\n**CRITICAL - OUTPUT FORMAT (EXACT STRUCTURE REQUIRED):**\nYour activity must return this structure:\n```json\n{\n  \"id\": \"SKU-123\",\n  \"name\": \"Widget\",\n  \"total\": 149.95\n}\n```\n\n**Rules:**\n- Match this structure (field names, nesting, types) EXACTLY\n- Values will vary by instance, but structure stays the same\n- Do NOT add extra fields\n- Do NOT change field names",
+  "activities": [
+    "transform_json_structure"
+  ],
+  "variables": [
+    {
+      "name": "source_json",
+      "default": null
+    },
+    {
+      "name": "target_schema",
+      "default": null
+    }
+  ],
+  "execution_pattern": "sequence",
+  "reasoning": "This workflow uses deterministic code logic rather than LLM since JSON field transformation is a structured mapping task with clear rules. The activity maps product_id\u2192id, product_name\u2192name, and calculates total as price_usd*qty. Using deterministic code ensures consistent, fast transformation and aligns with the Code Factory's compilation value. The json_transform template provides the pattern for field mapping, but this activity is customized for the specific source-to-target transformation with calculation logic.",
+  "metrics": {
+    "total_tokens": 16449,
+    "regeneration_count": 0
+  }
+}

@@ -1,11 +1,11 @@
 {
   "workflow_id": "json_transform_workflow",
-  "name": "JSON Format Transformer",
-  "description": "Transform JSON data from source format to target schema with field mapping and calculations",
+  "name": "JSON Format Transformation",
+  "description": "Transforms JSON data from source format to target schema by mapping fields and calculating derived values",
   "task_id": "json_transform_01_transform_002",
   "task_description": "Transform this JSON from the source format to the target format.\n\nSource:\n{'product_id': 'SKU-123', 'product_name': 'Widget', 'price_usd': 29.99, 'qty': 5}\n\nTarget Schema:\n{'id': 'string', 'name': 'string', 'total': 'number'}\n\nReturn only the transformed JSON.\n\n**IMPORTANT: The task provides these input variables:**\n- `source_json` (dict)\n- `target_schema` (dict)\n\nYour workflow MUST use these exact variable names: source_json, target_schema\n\n**CRITICAL - OUTPUT FORMAT (EXACT STRUCTURE REQUIRED):**\nYour activity must return this structure:\n```json\n{\n  \"id\": \"SKU-123\",\n  \"name\": \"Widget\",\n  \"total\": 149.95\n}\n```\n\n**Rules:**\n- Match this structure (field names, nesting, types) EXACTLY\n- Values will vary by instance, but structure stays the same\n- Do NOT add extra fields\n- Do NOT change field names",
   "activities": [
-    "transform_product_data"
+    "transform_json_structure"
   ],
   "variables": [
     {
@@ -18,9 +18,9 @@
     }
   ],
   "execution_pattern": "sequence",
-  "reasoning": "This is a data transformation task that requires deterministic code rather than LLM. The task involves mapping specific fields (product_id -> id, product_name -> name) and calculating the total (price_usd * qty = total). Using direct Python operations ensures reliable, fast transformation without the overhead of AI inference. A single activity is sufficient since the transformation is straightforward and requires sequential processing to map fields and calculate the total value.",
+  "reasoning": "This workflow uses a single deterministic transformation activity that can map fields directly using code logic rather than LLM. The transformation follows clear rules: id maps from product_id, name from product_name, and total is calculated as price_usd * qty. This is exactly the kind of structured data transformation that benefits from deterministic code over LLM processing. The activity is inspired by the json_transform template but customized with specific field mappings and calculation logic for this use case. A sequence pattern is used since there's only one activity.",
   "metrics": {
-    "total_tokens": 16419,
+    "total_tokens": 16420,
     "regeneration_count": 0
   }
 }

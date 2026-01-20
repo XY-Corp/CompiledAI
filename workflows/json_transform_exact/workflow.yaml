@@ -1,0 +1,17 @@
+workflow_id: json_transform_exact
+name: Transform JSON to Exact Target Schema
+description: Transforms source JSON data to the exact target schema format with precise field mapping and value calculations
+
+variables:
+  source_json: null
+  target_schema: null
+
+root:
+  sequence:
+    elements:
+      - activity:
+          name: transform_json_schema
+          params:
+            source_data: ${{ source_json }}
+            target_format: ${{ target_schema }}
+          result: transformed_result

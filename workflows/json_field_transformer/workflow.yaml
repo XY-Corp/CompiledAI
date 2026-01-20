@@ -1,0 +1,17 @@
+workflow_id: json_field_transformer
+name: JSON Field Transformer
+description: Transforms JSON data from source format to target format by mapping and combining fields according to target schema requirements
+
+variables:
+  source_json: null
+  target_schema: null
+
+root:
+  sequence:
+    elements:
+      - activity:
+          name: transform_json_fields
+          params:
+            source_data: ${{ source_json }}
+            schema_definition: ${{ target_schema }}
+          result: transformed_result

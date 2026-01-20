@@ -1,0 +1,26 @@
+{
+  "workflow_id": "function_selector",
+  "name": "Function Selector Workflow",
+  "description": "Analyzes user requests to select the appropriate function and extract parameters from available function definitions",
+  "task_id": "function_call_01_func_001",
+  "task_description": "Given these available functions:\n[{'name': 'get_weather', 'parameters': {'location': 'string', 'unit': 'celsius|fahrenheit'}}, {'name': 'send_email', 'parameters': {'to': 'string', 'subject': 'string', 'body': 'string'}}, {'name': 'create_reminder', 'parameters': {'title': 'string', 'time': 'datetime'}}]\n\nUser request: What's the weather in Paris in Celsius?\n\nReturn the function call as JSON with 'function' and 'parameters' keys.\n\n**IMPORTANT: The task provides these input variables:**\n- `functions` (list)\n- `user_request` (str)\n\nYour workflow MUST use these exact variable names: functions, user_request\n\n**CRITICAL - OUTPUT FORMAT (EXACT STRUCTURE REQUIRED):**\nYour activity must return this structure:\n```json\n{\n  \"function\": \"get_weather\",\n  \"parameters\": {\n    \"location\": \"Paris\",\n    \"unit\": \"celsius\"\n  }\n}\n```\n\n**Rules:**\n- Match this structure (field names, nesting, types) EXACTLY\n- Values will vary by instance, but structure stays the same\n- Do NOT add extra fields\n- Do NOT change field names",
+  "activities": [
+    "analyze_request_and_select_function"
+  ],
+  "variables": [
+    {
+      "name": "functions",
+      "default": null
+    },
+    {
+      "name": "user_request",
+      "default": null
+    }
+  ],
+  "execution_pattern": "sequence",
+  "reasoning": "This workflow requires semantic understanding to map natural language user requests to structured function calls. The task is analyzing user intent and extracting parameters, which requires LLM capabilities rather than deterministic code. A single activity using LLM-based extraction is the most appropriate approach since it needs to understand the user's intent, match it to available functions, and extract the correct parameters. The llm_extract template provides the foundation for structured data extraction that this task requires.",
+  "metrics": {
+    "total_tokens": 16628,
+    "regeneration_count": 0
+  }
+}

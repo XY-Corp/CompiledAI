@@ -1,0 +1,31 @@
+{
+  "activity_name": "extract_email_headers",
+  "description": "Extract sender, recipient, subject, and date from email text using regex patterns for standard email headers",
+  "task_id": "text_extraction_01_email_001",
+  "task_description": "Extract the following fields from this email:\n- sender\n- recipient\n- subject\n- date\n\nEmail:\nFrom: john.doe@example.com\nTo: jane.smith@company.org\nSubject: Q4 Report Review\nDate: 2025-01-15\n\nPlease review the attached Q4 report.\n\nReturn as JSON.\n\n**IMPORTANT: The task provides these input variables:**\n- `email_text` (str)\n\nYour workflow MUST use these exact variable names: email_text\n\n**CRITICAL - OUTPUT FORMAT (EXACT STRUCTURE REQUIRED):**\nYour activity must return this structure:\n```json\n{\n  \"sender\": \"john.doe@example.com\",\n  \"recipient\": \"jane.smith@company.org\",\n  \"subject\": \"Q4 Report Review\",\n  \"date\": \"2025-01-15\"\n}\n```\n\n**Rules:**\n- Match this structure (field names, nesting, types) EXACTLY\n- Values will vary by instance, but structure stays the same\n- Do NOT add extra fields\n- Do NOT change field names",
+  "inputs": [
+    {
+      "name": "email_content",
+      "type": "str",
+      "description": "The complete email text containing headers (From, To, Subject, Date) and body content to parse",
+      "required": true
+    }
+  ],
+  "output": {
+    "type": "dict",
+    "description": "Returns extracted email fields: {\"sender\": \"john.doe@example.com\", \"recipient\": \"jane.smith@company.org\", \"subject\": \"Q4 Report Review\", \"date\": \"2025-01-15\"}",
+    "fields": {
+      "sender": "str",
+      "recipient": "str",
+      "subject": "str",
+      "date": "str"
+    }
+  },
+  "reference_activity": "llm_extract",
+  "workflow_spec": {
+    "workflow_id": "extract_email_fields",
+    "name": "Extract Email Fields",
+    "description": "Extracts sender, recipient, subject, and date fields from email text using regex patterns to parse standard email headers (From, To, Subject, Date)",
+    "execution_pattern": "sequence"
+  }
+}

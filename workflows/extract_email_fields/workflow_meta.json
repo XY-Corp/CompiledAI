@@ -1,0 +1,22 @@
+{
+  "workflow_id": "extract_email_fields",
+  "name": "Extract Email Fields",
+  "description": "Extracts sender, recipient, subject, and date fields from email text using regex patterns to parse standard email headers (From, To, Subject, Date)",
+  "task_id": "text_extraction_01_email_001",
+  "task_description": "Extract the following fields from this email:\n- sender\n- recipient\n- subject\n- date\n\nEmail:\nFrom: john.doe@example.com\nTo: jane.smith@company.org\nSubject: Q4 Report Review\nDate: 2025-01-15\n\nPlease review the attached Q4 report.\n\nReturn as JSON.\n\n**IMPORTANT: The task provides these input variables:**\n- `email_text` (str)\n\nYour workflow MUST use these exact variable names: email_text\n\n**CRITICAL - OUTPUT FORMAT (EXACT STRUCTURE REQUIRED):**\nYour activity must return this structure:\n```json\n{\n  \"sender\": \"john.doe@example.com\",\n  \"recipient\": \"jane.smith@company.org\",\n  \"subject\": \"Q4 Report Review\",\n  \"date\": \"2025-01-15\"\n}\n```\n\n**Rules:**\n- Match this structure (field names, nesting, types) EXACTLY\n- Values will vary by instance, but structure stays the same\n- Do NOT add extra fields\n- Do NOT change field names",
+  "activities": [
+    "extract_email_headers"
+  ],
+  "variables": [
+    {
+      "name": "email_text",
+      "default": null
+    }
+  ],
+  "execution_pattern": "sequence",
+  "reasoning": "This is a deterministic parsing task that follows standard email header patterns. Using regex for field extraction is more reliable and faster than LLM for this structured format. Email headers follow consistent patterns like \"From: email\", \"To: email\", \"Subject: text\", \"Date: date\" which are perfect for regex parsing.",
+  "metrics": {
+    "total_tokens": 17825,
+    "regeneration_count": 0
+  }
+}

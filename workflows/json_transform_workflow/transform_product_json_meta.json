@@ -1,0 +1,36 @@
+{
+  "activity_name": "transform_product_json",
+  "description": "Transform product JSON from source format to target format with field mapping and total calculation",
+  "task_id": "json_transform_01_transform_002",
+  "task_description": "Transform this JSON from the source format to the target format.\n\nSource:\n{'product_id': 'SKU-123', 'product_name': 'Widget', 'price_usd': 29.99, 'qty': 5}\n\nTarget Schema:\n{'id': 'string', 'name': 'string', 'total': 'number'}\n\nReturn only the transformed JSON.\n\n**IMPORTANT: The task provides these input variables:**\n- `source_json` (dict)\n- `target_schema` (dict)\n\nYour workflow MUST use these exact variable names: source_json, target_schema\n\n**CRITICAL - OUTPUT FORMAT (EXACT STRUCTURE REQUIRED):**\nYour activity must return this structure:\n```json\n{\n  \"id\": \"SKU-123\",\n  \"name\": \"Widget\",\n  \"total\": 149.95\n}\n```\n\n**Rules:**\n- Match this structure (field names, nesting, types) EXACTLY\n- Values will vary by instance, but structure stays the same\n- Do NOT add extra fields\n- Do NOT change field names",
+  "inputs": [
+    {
+      "name": "source_data",
+      "type": "dict",
+      "description": "Source JSON data containing product information with fields like product_id, product_name, price_usd, and qty",
+      "required": true
+    },
+    {
+      "name": "schema_definition",
+      "type": "dict",
+      "description": "Target schema definition specifying the required output field structure and types",
+      "required": true
+    }
+  ],
+  "output": {
+    "type": "dict",
+    "description": "Returns the transformed JSON data in the exact target format: {\"id\": \"SKU-123\", \"name\": \"Widget\", \"total\": 149.95}. The transformation maps product_id to id, product_name to name, and calculates total as price_usd multiplied by qty.",
+    "fields": {
+      "id": "str",
+      "name": "str",
+      "total": "float"
+    }
+  },
+  "reference_activity": "json_transform",
+  "workflow_spec": {
+    "workflow_id": "json_transform_workflow",
+    "name": "JSON Transform Workflow",
+    "description": "Transform JSON data from source format to target format with field mapping and calculation",
+    "execution_pattern": "sequence"
+  }
+}

@@ -1,7 +1,7 @@
 {
   "workflow_id": "email_field_extraction",
   "name": "Email Field Extraction",
-  "description": "Extracts sender, recipient, subject, and date fields from email text using deterministic regex patterns",
+  "description": "Extracts sender, recipient, subject, and date fields from email text using regex patterns for structured email headers",
   "task_id": "text_extraction_01_email_001",
   "task_description": "Extract the following fields from this email:\n- sender\n- recipient\n- subject\n- date\n\nEmail:\nFrom: john.doe@example.com\nTo: jane.smith@company.org\nSubject: Q4 Report Review\nDate: 2025-01-15\n\nPlease review the attached Q4 report.\n\nReturn as JSON.\n\n**IMPORTANT: The task provides these input variables:**\n- `email_text` (str)\n\nYour workflow MUST use these exact variable names: email_text\n\n**CRITICAL - OUTPUT FORMAT (EXACT STRUCTURE REQUIRED):**\nYour activity must return this structure:\n```json\n{\n  \"sender\": \"john.doe@example.com\",\n  \"recipient\": \"jane.smith@company.org\",\n  \"subject\": \"Q4 Report Review\",\n  \"date\": \"2025-01-15\"\n}\n```\n\n**Rules:**\n- Match this structure (field names, nesting, types) EXACTLY\n- Values will vary by instance, but structure stays the same\n- Do NOT add extra fields\n- Do NOT change field names",
   "activities": [
@@ -14,9 +14,9 @@
     }
   ],
   "execution_pattern": "sequence",
-  "reasoning": "This workflow uses a single activity with deterministic code (regex patterns) to extract structured email header fields. Email headers follow well-defined patterns (From:, To:, Subject:, Date:) that can be reliably parsed with regular expressions, making this more efficient and reliable than using an LLM. The activity returns the exact JSON structure specified in the task requirements.",
+  "reasoning": "This is a deterministic extraction task with clear email header patterns (From:, To:, Subject:, Date:). Using regex patterns is more reliable and efficient than LLM for structured email headers. The workflow consists of a single extraction activity that parses the email text and returns the required fields in the exact JSON structure specified.",
   "metrics": {
-    "total_tokens": 18015,
+    "total_tokens": 16366,
     "regeneration_count": 0
   }
 }

@@ -44,6 +44,9 @@ dependencies = [
     "python-dotenv>=1.0.0",
     "httpx>=0.28.0",
     "questionary>=2.1.1",
+    # Semantic search
+    "sentence-transformers>=3.0.0",
+    "scikit-learn>=1.5.0",
 ]
 
 [dependency-groups]

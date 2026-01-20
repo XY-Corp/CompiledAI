@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "last_updated": "2026-01-20T13:33:33.701991",
+  "last_updated": "2026-01-20T22:49:00.817865",
   "workflows": {
     "support_ticket_classification": {
       "workflow_id": "support_ticket_classification",
@@ -16,11 +16,11 @@
     "address_normalizer": {
       "workflow_id": "address_normalizer",
       "category": "normalize",
-      "usage_count": 2,
-      "success_count": 2,
+      "usage_count": 4,
+      "success_count": 4,
       "failure_count": 0,
       "success_rate": 1.0,
-      "last_used": "2026-01-20T13:30:54.881875",
+      "last_used": "2026-01-20T20:39:38.860773",
       "created_at": "2026-01-20T13:30:54.867164",
       "recent_failures": []
     },
@@ -38,23 +38,245 @@
     "json_transform_workflow": {
       "workflow_id": "json_transform_workflow",
       "category": "json_transform",
-      "usage_count": 2,
-      "success_count": 2,
+      "usage_count": 8,
+      "success_count": 8,
       "failure_count": 0,
       "success_rate": 1.0,
-      "last_used": "2026-01-20T13:32:45.721906",
+      "last_used": "2026-01-20T20:41:30.076650",
       "created_at": "2026-01-20T13:32:09.206708",
       "recent_failures": []
     },
     "email_field_extraction": {
       "workflow_id": "email_field_extraction",
       "category": "text_extraction",
+      "usage_count": 10,
+      "success_count": 10,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-20T20:41:56.810806",
+      "created_at": "2026-01-20T13:33:33.689555",
+      "recent_failures": []
+    },
+    "function_selector": {
+      "workflow_id": "function_selector",
+      "category": "test",
+      "usage_count": 7,
+      "success_count": 7,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-20T20:40:23.636658",
+      "created_at": "2026-01-20T13:55:45.737791",
+      "recent_failures": []
+    },
+    "support_ticket_classifier": {
+      "workflow_id": "support_ticket_classifier",
+      "category": "classification",
+      "usage_count": 25,
+      "success_count": 24,
+      "failure_count": 1,
+      "success_rate": 0.96,
+      "last_used": "2026-01-20T20:38:14.498160",
+      "created_at": "2026-01-20T15:28:00.125528",
+      "recent_failures": [
+        {
+          "task_id": "classification_01_ticket_004",
+          "error": "Compilation failed: ['Attempt 1 - Execution: EXECUTION VALIDATION FAILED: Workflow executed but outputs don\\'t match expectations\\n\\nExample 1/1 FAILED:\\n  Input: {\\n             \"ticket_text\": \"What ",
+          "timestamp": "2026-01-20T16:19:10.021522"
+        }
+      ]
+    },
+    "address_normalization": {
+      "workflow_id": "address_normalization",
+      "category": "normalize",
+      "usage_count": 8,
+      "success_count": 8,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-20T16:34:09.086112",
+      "created_at": "2026-01-20T15:29:02.159252",
+      "recent_failures": []
+    },
+    "function_selector_weather": {
+      "workflow_id": "function_selector_weather",
+      "category": "function_call",
       "usage_count": 2,
       "success_count": 2,
       "failure_count": 0,
       "success_rate": 1.0,
-      "last_used": "2026-01-20T13:33:33.701972",
-      "created_at": "2026-01-20T13:33:33.689555",
+      "last_used": "2026-01-20T15:39:23.933008",
+      "created_at": "2026-01-20T15:39:19.033362",
+      "recent_failures": []
+    },
+    "ticket_categorization": {
+      "workflow_id": "ticket_categorization",
+      "category": "classification",
+      "usage_count": 1,
+      "success_count": 0,
+      "failure_count": 1,
+      "success_rate": 0.0,
+      "last_used": "2026-01-20T16:14:05.653354",
+      "created_at": "2026-01-20T16:14:05.651497",
+      "recent_failures": [
+        {
+          "task_id": "classification_01_ticket_001",
+          "error": "Compilation failed: ['Attempt 1 - Execution: EXECUTION VALIDATION FAILED: Workflow executed but outputs don\\'t match expectations\\n\\nExample 1/1 FAILED:\\n  Input: {\\n             \"ticket_text\": \"I was",
+          "timestamp": "2026-01-20T16:14:05.653364"
+        }
+      ]
+    },
+    "ticket_classification": {
+      "workflow_id": "ticket_classification",
+      "category": "classification",
+      "usage_count": 5,
+      "success_count": 4,
+      "failure_count": 1,
+      "success_rate": 0.8,
+      "last_used": "2026-01-20T16:33:14.387152",
+      "created_at": "2026-01-20T16:15:48.692015",
+      "recent_failures": [
+        {
+          "task_id": "classification_01_ticket_002",
+          "error": "Compilation failed: ['Attempt 1 - YAML: mapping values are not allowed here\\n  in \"<unicode string>\", line 3, column 67:\\n     ... cket into one of four categories: billing, technical, account, o ... ",
+          "timestamp": "2026-01-20T16:15:48.693373"
+        }
+      ]
+    },
+    "support-ticket-classifier": {
+      "workflow_id": "support-ticket-classifier",
+      "category": "classification",
+      "usage_count": 1,
+      "success_count": 0,
+      "failure_count": 1,
+      "success_rate": 0.0,
+      "last_used": "2026-01-20T16:17:36.408206",
+      "created_at": "2026-01-20T16:17:36.406674",
+      "recent_failures": [
+        {
+          "task_id": "classification_01_ticket_003",
+          "error": "Compilation failed: ['Attempt 1 - Execution: EXECUTION VALIDATION FAILED: Workflow executed but outputs don\\'t match expectations\\n\\nExample 1/1 FAILED:\\n  Input: {\\n             \"ticket_text\": \"I nee",
+          "timestamp": "2026-01-20T16:17:36.408208"
+        }
+      ]
+    },
+    "classify_support_ticket": {
+      "workflow_id": "classify_support_ticket",
+      "category": "classification",
+      "usage_count": 2,
+      "success_count": 2,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-20T16:24:43.698333",
+      "created_at": "2026-01-20T16:24:37.152575",
+      "recent_failures": []
+    },
+    "json_field_transformer": {
+      "workflow_id": "json_field_transformer",
+      "category": "json_transform",
+      "usage_count": 2,
+      "success_count": 2,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-20T16:35:42.373343",
+      "created_at": "2026-01-20T16:26:50.079220",
+      "recent_failures": []
+    },
+    "json_field_transformation": {
+      "workflow_id": "json_field_transformation",
+      "category": "json_transform",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-20T16:27:24.391328",
+      "created_at": "2026-01-20T16:27:24.389360",
+      "recent_failures": []
+    },
+    "function_selector_workflow": {
+      "workflow_id": "function_selector_workflow",
+      "category": "function_call",
+      "usage_count": 2,
+      "success_count": 2,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-20T16:34:54.241930",
+      "created_at": "2026-01-20T16:34:49.830755",
+      "recent_failures": []
+    },
+    "extract_email_fields": {
+      "workflow_id": "extract_email_fields",
+      "category": "text_extraction",
+      "usage_count": 4,
+      "success_count": 4,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-20T22:49:00.817846",
+      "created_at": "2026-01-20T16:36:54.871764",
+      "recent_failures": []
+    },
+    "normalize_address": {
+      "workflow_id": "normalize_address",
+      "category": "normalize",
+      "usage_count": 4,
+      "success_count": 4,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-20T22:46:33.785232",
+      "created_at": "2026-01-20T16:53:02.748872",
+      "recent_failures": []
+    },
+    "json_field_transform": {
+      "workflow_id": "json_field_transform",
+      "category": "json_transform",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-20T20:40:55.483148",
+      "created_at": "2026-01-20T20:40:55.478796",
+      "recent_failures": []
+    },
+    "support_ticket_categorization": {
+      "workflow_id": "support_ticket_categorization",
+      "category": "classification",
+      "usage_count": 4,
+      "success_count": 4,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-20T22:45:39.685167",
+      "created_at": "2026-01-20T22:45:30.906131",
+      "recent_failures": []
+    },
+    "function-selector-workflow": {
+      "workflow_id": "function-selector-workflow",
+      "category": "function_call",
+      "usage_count": 2,
+      "success_count": 2,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-20T22:47:17.888508",
+      "created_at": "2026-01-20T22:47:13.221828",
+      "recent_failures": []
+    },
+    "transform_json_structure": {
+      "workflow_id": "transform_json_structure",
+      "category": "json_transform",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-20T22:47:47.845934",
+      "created_at": "2026-01-20T22:47:47.842316",
+      "recent_failures": []
+    },
+    "json_transform_exact": {
+      "workflow_id": "json_transform_exact",
+      "category": "json_transform",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-20T22:48:20.275082",
+      "created_at": "2026-01-20T22:48:20.271732",
       "recent_failures": []
     }
   }

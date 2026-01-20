@@ -1,0 +1,17 @@
+workflow_id: function_selector_weather
+name: Function Selector for Weather Query
+description: Analyzes a user request and selects the appropriate function call from available functions, with proper parameter extraction for weather queries
+
+variables:
+  functions: null
+  user_request: null
+
+root:
+  sequence:
+    elements:
+      - activity:
+          name: analyze_user_request
+          params:
+            user_request: ${{ user_request }}
+            available_functions: ${{ functions }}
+          result: function_selection

@@ -155,12 +155,26 @@ class CodeFactoryBaseline(BaseBaseline):
         """
         from collections import defaultdict
 
-        # Group inputs by signature
+        # Group inputs by task template ID (extracted from task_id)
+        # This ensures all instances of the same task are compiled together
         signature_groups: dict[str, list[TaskInput]] = defaultdict(list)
         for task_input in inputs:
-            signature = self.signature_extractor.extract(task_input)
-            sig_key = f"{signature.category}_{signature.prompt_hash[:8]}"
-            signature_groups[sig_key].append(task_input)
+            # Extract task template from task_id (e.g., "classification_01_ticket_001" -> "classification_01")
+            # Pattern: {task_name}_{task_number}_{instance_name}_{instance_number}
+            task_id_parts = task_input.task_id.split("_")
+
+            # Find all numeric parts
+            numeric_indices = [i for i, part in enumerate(task_id_parts) if part.isdigit()]
+
+            if len(numeric_indices) >= 1:
+                # Template is everything up to and including the FIRST numeric part (task number)
+                # e.g., "classification_01_ticket_001" -> "classification_01"
+                template_id = "_".join(task_id_parts[:numeric_indices[0] + 1])
+            else:
+                # No numeric parts - use task_id as-is (fallback)
+                template_id = task_input.task_id
+
+            signature_groups[template_id].append(task_input)
 
         # Process each group
         results = []
@@ -489,9 +503,9 @@ class CodeFactoryBaseline(BaseBaseline):
                 console=console,
             ) as progress:
                 progress.add_task("compile", total=None)
-                result = await factory.generate(task_description)
+                result = await factory.generate(task_description, examples=task_examples)
         else:
-            result = await factory.generate(task_description)
+            result = await factory.generate(task_description, examples=task_examples)
 
         self._compilation_latency_ms = (time.perf_counter() - start_time) * 1000
 

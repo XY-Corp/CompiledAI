@@ -1,0 +1,15 @@
+workflow_id: function-selector-workflow
+name: Function Selector Workflow
+description: Analyzes user request and available functions to return the appropriate function call with parameters in JSON format
+variables:
+  functions: null
+  user_request: null
+root:
+  sequence:
+    elements:
+      - activity:
+          name: analyze_function_request
+          params:
+            user_request: ${{ user_request }}
+            available_functions: ${{ functions }}
+          result: function_selection

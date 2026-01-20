@@ -1,0 +1,14 @@
+workflow_id: support_ticket_classifier
+name: Support Ticket Classifier
+description: "Classifies a support ticket into one of four categories: billing, technical, account, or general"
+variables:
+  ticket_text: null
+root:
+  sequence:
+    elements:
+      - activity:
+          name: classify_support_ticket
+          params:
+            ticket_text: ${{ ticket_text }}
+            categories: ["billing", "technical", "account", "general"]
+          result: classification_result

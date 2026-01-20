@@ -1,0 +1,22 @@
+{
+  "workflow_id": "normalize_address",
+  "name": "Address Normalization Workflow",
+  "description": "Normalizes a street address string into a structured format with separate fields for street, city, state, zip, and country",
+  "task_id": "normalize_01_addr_001",
+  "task_description": "Normalize this address to the standard format:\n123 Main St., Apt 4B, New York, NY 10001\n\nReturn JSON with: street, city, state, zip, country\n\n**IMPORTANT: The task provides these input variables:**\n- `address` (str)\n\nYour workflow MUST use these exact variable names: address\n\n**CRITICAL - OUTPUT FORMAT (EXACT STRUCTURE REQUIRED):**\nYour activity must return this structure:\n```json\n{\n  \"street\": \"123 Main St Apt 4B\",\n  \"city\": \"New York\",\n  \"state\": \"NY\",\n  \"zip\": \"10001\",\n  \"country\": \"USA\"\n}\n```\n\n**Rules:**\n- Match this structure (field names, nesting, types) EXACTLY\n- Values will vary by instance, but structure stays the same\n- Do NOT add extra fields\n- Do NOT change field names",
+  "activities": [
+    "normalize_address_format"
+  ],
+  "variables": [
+    {
+      "name": "address",
+      "default": null
+    }
+  ],
+  "execution_pattern": "sequence",
+  "reasoning": "This workflow uses a single deterministic activity to parse and normalize addresses using regex patterns and string manipulation rather than LLM, which aligns with the Code Factory's value of compilation over AI inference. Address normalization follows predictable patterns (street numbers, abbreviations, state codes, zip formats) that can be handled efficiently with deterministic code. The activity will use regex to identify and separate address components, normalize common abbreviations (St., Ave., etc.), handle apartment/unit designations, and ensure consistent formatting. This approach is faster, more reliable, and cost-effective than using an LLM for structured address parsing. The output schema exactly matches the required JSON structure with the specified field names and nesting.",
+  "metrics": {
+    "total_tokens": 18266,
+    "regeneration_count": 0
+  }
+}

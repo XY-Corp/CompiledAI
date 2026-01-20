@@ -15,6 +15,10 @@ from .template_registry import (
     ActivityTemplate,
     SearchResult,
 )
+from .semantic_search import (
+    SemanticActivityIndex,
+    SemanticSearchResult,
+)
 from .registration import (
     ActivityRegistrar,
     RegistrationPolicy,
@@ -42,6 +46,9 @@ __all__ = [
     "TemplateCategory",
     "ActivityTemplate",
     "SearchResult",
+    # Semantic search
+    "SemanticActivityIndex",
+    "SemanticSearchResult",
     # Registration
     "ActivityRegistrar",
     "RegistrationPolicy",
