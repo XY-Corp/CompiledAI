@@ -10,6 +10,8 @@ from .base import (
     register_baseline,
 )
 from .direct_llm import DirectLLMBaseline
+from .langchain_baseline import LangChainBaseline
+from .autogen_baseline import AutoGenBaseline
 
 __all__ = [
     "BaseBaseline",
@@ -17,6 +19,8 @@ __all__ = [
     "TaskInput",
     "TaskOutput",
     "DirectLLMBaseline",
+    "LangChainBaseline",
+    "AutoGenBaseline",
     "get_baseline",
     "list_baselines",
     "register_baseline",

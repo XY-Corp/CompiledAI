@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Run the XY_Benchmark dataset with the Direct LLM baseline.
+"""Run the XY_Benchmark dataset with various baselines.
 
 Usage:
-    python scripts/run_xy_benchmark.py --provider anthropic
+    python scripts/run_xy_benchmark.py --baseline direct_llm --provider anthropic
+    python scripts/run_xy_benchmark.py --baseline langchain --provider anthropic
     python scripts/run_xy_benchmark.py --provider gemini --max-instances 2
-    python scripts/run_xy_benchmark.py --provider anthropic --task classification_01
 """
 
 import argparse
@@ -18,12 +18,19 @@ from rich.table import Table
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from compiled_ai.runner import BenchmarkConfig, BenchmarkRunner, DatasetLoader
+from compiled_ai.baselines import list_baselines
 
 
 def parse_args() -> argparse.Namespace:
     """Parse command line arguments."""
     parser = argparse.ArgumentParser(
-        description="Run XY_Benchmark with Direct LLM baseline"
+        description="Run XY_Benchmark with various baselines"
+    )
+    parser.add_argument(
+        "--baseline",
+        choices=list_baselines(),
+        default="direct_llm",
+        help=f"Baseline to run (default: direct_llm, available: {list_baselines()})",
     )
     parser.add_argument(
         "--provider",
@@ -108,6 +115,7 @@ def list_tasks(console: Console) -> None:
 def run_benchmark(args: argparse.Namespace, console: Console) -> None:
     """Run the benchmark with given arguments."""
     console.print(f"\n[bold blue]XY_Benchmark Runner[/bold blue]")
+    console.print(f"Baseline: [cyan]{args.baseline}[/cyan]")
     console.print(f"Provider: [cyan]{args.provider}[/cyan]")
     if args.model:
         console.print(f"Model: [cyan]{args.model}[/cyan]")
@@ -116,7 +124,7 @@ def run_benchmark(args: argparse.Namespace, console: Console) -> None:
     # Build config
     config = BenchmarkConfig(
         dataset_name="xy_benchmark",
-        baseline_name="direct_llm",
+        baseline_name=args.baseline,
         task_ids=[args.task] if args.task else None,
         categories=[args.category] if args.category else None,
         difficulties=[args.difficulty] if args.difficulty else None,
