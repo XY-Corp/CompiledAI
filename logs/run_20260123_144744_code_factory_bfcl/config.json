@@ -1,0 +1,17 @@
+{
+  "timestamp": "20260123_144744",
+  "baseline": "code_factory",
+  "dataset": "bfcl",
+  "provider": "anthropic",
+  "model": null,
+  "max_instances": 5,
+  "max_tasks": null,
+  "enable_cache": false,
+  "verbose": true,
+  "dataset_kwargs": {
+    "categories": [
+      "simple"
+    ],
+    "split": "dev"
+  }
+}

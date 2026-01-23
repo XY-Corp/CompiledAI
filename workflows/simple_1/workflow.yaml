@@ -1,0 +1,18 @@
+workflow_id: simple_1
+name: Function Call Extractor
+description: |
+  Extract function name and parameters from natural language query
+
+variables:
+  prompt: null
+  functions: null
+
+root:
+  sequence:
+    elements:
+      - activity:
+          name: extract_function_call
+          params:
+            prompt: ${{ prompt }}
+            functions: ${{ functions }}
+          result: function_call

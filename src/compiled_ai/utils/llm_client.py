@@ -1,8 +1,10 @@
 """Unified LLM client abstraction for Claude, OpenAI, and Gemini APIs."""
 
+import asyncio
 import hashlib
 import json
 import os
+import random
 import time
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
@@ -159,11 +161,21 @@ class AnthropicClient(LLMClient):
             api_key=api_key or os.getenv("ANTHROPIC_API_KEY")
         )
 
-    def generate(self, prompt: str, **kwargs: Any) -> LLMResponse:
-        """Generate a response using Claude.
+    def generate(
+        self,
+        prompt: str,
+        max_retries: int = 5,
+        base_delay: float = 2.0,
+        max_delay: float = 60.0,
+        **kwargs: Any,
+    ) -> LLMResponse:
+        """Generate a response using Claude with exponential backoff on rate limits.
 
         Args:
             prompt: The user prompt
+            max_retries: Maximum retry attempts on rate limit errors
+            base_delay: Initial delay in seconds for backoff
+            max_delay: Maximum delay cap in seconds
             **kwargs: Additional arguments for the API call
 
         Returns:
@@ -177,32 +189,57 @@ class AnthropicClient(LLMClient):
 
         messages: list[dict[str, str]] = [{"role": "user", "content": prompt}]
 
-        start_time = time.perf_counter()
-        response = self.client.messages.create(
-            model=kwargs.get("model", self.config.model),
-            max_tokens=kwargs.get("max_tokens", self.config.max_tokens),
-            temperature=kwargs.get("temperature", self.config.temperature),
-            system=kwargs.get("system_prompt", self.config.system_prompt) or "",
-            messages=messages,
-        )
-        latency_ms = (time.perf_counter() - start_time) * 1000
+        last_exception = None
+        for attempt in range(max_retries + 1):
+            try:
+                start_time = time.perf_counter()
+                response = self.client.messages.create(
+                    model=kwargs.get("model", self.config.model),
+                    max_tokens=kwargs.get("max_tokens", self.config.max_tokens),
+                    temperature=kwargs.get("temperature", self.config.temperature),
+                    system=kwargs.get("system_prompt", self.config.system_prompt) or "",
+                    messages=messages,
+                )
+                latency_ms = (time.perf_counter() - start_time) * 1000
 
-        content = response.content[0].text if response.content else ""
+                content = response.content[0].text if response.content else ""
 
-        result = LLMResponse(
-            content=content,
-            input_tokens=response.usage.input_tokens,
-            output_tokens=response.usage.output_tokens,
-            model=response.model,
-            latency_ms=latency_ms,
-            cached=False,
-        )
+                result = LLMResponse(
+                    content=content,
+                    input_tokens=response.usage.input_tokens,
+                    output_tokens=response.usage.output_tokens,
+                    model=response.model,
+                    latency_ms=latency_ms,
+                    cached=False,
+                )
 
-        log_tokens(result.input_tokens, result.output_tokens)
-        log_latency(latency_ms, "Claude API")
+                log_tokens(result.input_tokens, result.output_tokens)
+                log_latency(latency_ms, "Claude API")
 
-        self._cache_response(cache_key, result)
-        return result
+                self._cache_response(cache_key, result)
+                return result
+
+            except anthropic.RateLimitError as e:
+                last_exception = e
+                if attempt == max_retries:
+                    logger.error(f"Rate limit: max retries ({max_retries}) exhausted")
+                    raise
+
+                # Exponential backoff with jitter
+                delay = min(base_delay * (2 ** attempt), max_delay)
+                delay = delay * (0.75 + random.random() * 0.5)  # ±25% jitter
+
+                logger.warning(
+                    f"Rate limited (429). Retry {attempt + 1}/{max_retries} in {delay:.1f}s"
+                )
+                print(f"⏳ Rate limited. Waiting {delay:.1f}s before retry {attempt + 1}/{max_retries}...")
+
+                time.sleep(delay)
+
+        # Should never reach here
+        if last_exception:
+            raise last_exception
+        raise RuntimeError("Unexpected retry loop exit")
 
 
 class OpenAIClient(LLMClient):

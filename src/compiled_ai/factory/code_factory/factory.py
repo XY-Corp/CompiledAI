@@ -10,9 +10,12 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable, Optional
 
+from pydantic_ai import ModelSettings
+
 from .models import WorkflowSpec, GeneratedFiles, BFCLFunctionCallOutput
 from .agents import create_agents, create_bfcl_agent
 from .llm_adapter import AdapterMetrics, extract_usage_from_result, ProviderType
+from .retry import run_agent_with_retry
 from .template_registry import TemplateRegistry
 from .registration import ActivityRegistrar, RegistrationPolicy
 from .dynamic_loader import DynamicModuleLoader
@@ -31,6 +34,31 @@ from xy_local_executor.dsl.parser import build_dsl_input
 from xy_local_executor.dsl.models import DSLInput
 from xy_local_executor import LocalWorkflowExecutor
 from xy_local_executor.mocks import ActivityMocks
+
+
+# =============================================================================
+# Function Call Template: Skip Planner for simple function-calling tasks
+# Used when task has `functions` in context (works with any dataset)
+# =============================================================================
+FUNCTION_CALL_TEMPLATE = """workflow_id: {workflow_id}
+name: Function Call Extractor
+description: |
+  Extract function name and parameters from natural language query
+
+variables:
+  prompt: null
+  functions: null
+
+root:
+  sequence:
+    elements:
+      - activity:
+          name: extract_function_call
+          params:
+            prompt: ${{{{ prompt }}}}
+            functions: ${{{{ functions }}}}
+          result: function_call
+"""
 
 
 @dataclass
@@ -364,11 +392,13 @@ class CodeFactory:
     ) -> FactoryResult:
         """Generate workflow from natural language description.
 
-        This method:
-        1. Uses the planner agent to design workflow structure
-        2. Uses the coder agent to generate YAML and Python code
-        3. Validates the generated YAML against the DSL schema
-        4. Retries with error feedback if validation fails
+        This method uses a two-level regeneration strategy:
+        1. OUTER LOOP (Planner): Regenerates workflow structure if YAML validation fails
+        2. INNER LOOP (Coder): Regenerates Python activities if execution validation fails
+
+        This ensures:
+        - YAML errors → regenerate Planner (creates new YAML)
+        - Python/execution errors → regenerate Coder only (keeps valid YAML)
 
         Args:
             task_description: Natural language description of the workflow
@@ -399,123 +429,177 @@ class CodeFactory:
             registry=self.registry,
         )
 
-        # Step 1: Planning Agent -> WorkflowSpec
-        self._log("[Planning] Designing workflow structure...")
+        # Track total regeneration attempts (Planner + Coder combined)
+        total_regeneration_count = 0
 
-        # Log planner prompt to file
-        self._log_to_file(task_description, section="PLANNER PROMPT")
+        # =======================================================================
+        # OUTER LOOP: Planner regeneration (for YAML structure errors)
+        # =======================================================================
+        planner_error_feedback = ""
+        for planner_attempt in range(self.max_regenerations + 1):
+            # Step 1: Planning Agent -> WorkflowSpec
+            self._log(f"[Planning] Attempt {planner_attempt + 1}: Designing workflow structure...")
 
-        if self.verbose:
-            print("\n" + "="*80)
-            print("PLANNER PROMPT:")
-            print("="*80)
-            print(task_description)
-            print("="*80 + "\n")
-        start_time = time.perf_counter()
-        plan_result = await planner.run(task_description)
-        latency_ms = (time.perf_counter() - start_time) * 1000
+            planner_prompt = self._build_planner_prompt(task_description, planner_error_feedback)
 
-        result.plan = plan_result.output
-
-        # Track metrics
-        input_tokens, output_tokens = extract_usage_from_result(plan_result)
-        metrics.record(input_tokens, output_tokens, latency_ms)
-
-        # Log planner output
-        self._log_to_file(
-            f"Workflow ID: {result.plan.workflow_id}\n"
-            f"Name: {result.plan.name}\n"
-            f"Description: {result.plan.description}\n"
-            f"Activities: {[a.name for a in result.plan.activities]}\n"
-            f"Pattern: {result.plan.execution_pattern}\n"
-            f"Tokens: {input_tokens} in / {output_tokens} out",
-            section="PLANNER OUTPUT"
-        )
-
-        self._log(f"[Planning] Created: {result.plan.name}")
-        self._log(f"[Planning] Activities: {[a.name for a in result.plan.activities]}")
-        self._log(f"[Planning] Pattern: {result.plan.execution_pattern}")
-
-        # Step 2: Code Generation with Regeneration Loop
-        error_feedback = ""
-        for attempt in range(self.max_regenerations + 1):
-            self._log(f"[Coding] Generation attempt {attempt + 1}...")
-
-            coder_prompt = self._build_coder_prompt(result.plan, error_feedback)
-
-            # Log coder prompt to file
-            self._log_to_file(coder_prompt, section=f"CODER PROMPT (Attempt {attempt + 1})")
+            # Log planner prompt to file
+            self._log_to_file(planner_prompt, section=f"PLANNER PROMPT (Attempt {planner_attempt + 1})")
 
             if self.verbose:
                 print("\n" + "="*80)
-                print(f"CODER PROMPT (Attempt {attempt + 1}):")
+                print(f"PLANNER PROMPT (Attempt {planner_attempt + 1}):")
                 print("="*80)
-                print(coder_prompt)
+                print(planner_prompt)
                 print("="*80 + "\n")
+
             start_time = time.perf_counter()
-            code_result = await coder.run(coder_prompt)
+            plan_result = await run_agent_with_retry(planner, planner_prompt)
             latency_ms = (time.perf_counter() - start_time) * 1000
 
-            result.generated = code_result.output
-            result.regeneration_count = attempt
+            result.plan = plan_result.output
 
-            # Track metrics
-            input_tokens, output_tokens = extract_usage_from_result(code_result)
+            # Track metrics for planner call
+            input_tokens, output_tokens = extract_usage_from_result(plan_result)
             metrics.record(input_tokens, output_tokens, latency_ms)
 
-            # Log generated code
+            # Log planner output
             self._log_to_file(
-                f"Workflow YAML:\n{result.generated.workflow_yaml}\n\n"
-                f"Activities Code:\n{result.generated.activities_code}",
-                section=f"GENERATED CODE (Attempt {attempt + 1})"
+                f"Workflow ID: {result.plan.workflow_id}\n"
+                f"Name: {result.plan.name}\n"
+                f"Description: {result.plan.description}\n"
+                f"Activities: {[a.name for a in result.plan.activities]}\n"
+                f"Pattern: {result.plan.execution_pattern}\n"
+                f"Tokens: {input_tokens} in / {output_tokens} out",
+                section=f"PLANNER OUTPUT (Attempt {planner_attempt + 1})"
             )
 
-            # Step 2a: Validate YAML structure
+            self._log(f"[Planning] Created: {result.plan.name}")
+            self._log(f"[Planning] Activities: {[a.name for a in result.plan.activities]}")
+            self._log(f"[Planning] Pattern: {result.plan.execution_pattern}")
+
+            # Validate YAML from Planner IMMEDIATELY (before calling Coder)
+            # Create a temporary GeneratedFiles just to validate the YAML
+            result.generated = GeneratedFiles(
+                workflow_yaml=result.plan.workflow_yaml or "",
+                activities_code=""
+            )
+
             yaml_error = self._validate_yaml(result)
+
             if yaml_error is not None:
-                error_feedback = yaml_error
-                result.validation_errors.append(f"Attempt {attempt + 1} - YAML: {yaml_error}")
-                self._log(f"[Validation] YAML failed: {yaml_error[:100]}...")
+                # YAML invalid - regenerate PLANNER
+                planner_error_feedback = f"YAML VALIDATION ERROR:\n{yaml_error}"
+                result.validation_errors.append(f"Planner Attempt {planner_attempt + 1} - YAML: {yaml_error}")
+                self._log(f"[Validation] YAML from Planner invalid: {yaml_error[:100]}...")
+                self._log_to_file(yaml_error, section=f"YAML VALIDATION ERROR (Planner Attempt {planner_attempt + 1})")
 
-                # Log validation error
-                self._log_to_file(yaml_error, section=f"YAML VALIDATION ERROR (Attempt {attempt + 1})")
+                total_regeneration_count += 1
+                continue  # Regenerate PLANNER
 
-                continue  # Try again
-
-            # YAML is valid
+            # YAML is valid!
             result.yaml_validated = True
-            self._log(f"[Validation] YAML valid on attempt {attempt + 1}")
+            self._log(f"[Validation] YAML valid on Planner attempt {planner_attempt + 1}")
 
-            # Step 2b: Execution validation (if examples available)
-            if self._current_examples:
-                self._log(f"[Validation] Testing on {len(self._current_examples[:3])} examples...")
+            # ===================================================================
+            # INNER LOOP: Coder regeneration (for Python/execution errors)
+            # ===================================================================
+            coder_error_feedback = ""
+            for coder_attempt in range(self.max_regenerations + 1):
+                self._log(f"[Coding] Attempt {coder_attempt + 1}: Generating Python activities...")
 
-                execution_error = await self._validate_execution(result, self._current_examples)
+                coder_prompt = self._build_coder_prompt(result.plan, coder_error_feedback)
 
-                if execution_error is not None:
-                    error_feedback = execution_error
-                    result.validation_errors.append(f"Attempt {attempt + 1} - Execution: {execution_error[:500]}...")
-                    self._log(f"[Validation] Execution failed: {execution_error[:200]}...")
+                # Log coder prompt to file
+                self._log_to_file(coder_prompt, section=f"CODER PROMPT (Planner {planner_attempt + 1}, Coder {coder_attempt + 1})")
 
-                    # Log execution validation error
-                    self._log_to_file(execution_error, section=f"EXECUTION VALIDATION ERROR (Attempt {attempt + 1})")
+                if self.verbose:
+                    print("\n" + "="*80)
+                    print(f"CODER PROMPT (Planner {planner_attempt + 1}, Coder {coder_attempt + 1}):")
+                    print("="*80)
+                    print(coder_prompt)
+                    print("="*80 + "\n")
 
-                    result.examples_tested = len([ex for ex in self._current_examples[:3] if hasattr(ex, 'metadata') and ex.metadata and "expected_output" in ex.metadata])
-                    continue  # Try again with execution feedback
+                start_time = time.perf_counter()
+                code_result = await run_agent_with_retry(coder, coder_prompt)
+                latency_ms = (time.perf_counter() - start_time) * 1000
 
-                result.execution_validated = True
-                result.examples_tested = len([ex for ex in self._current_examples[:3] if hasattr(ex, 'metadata') and ex.metadata and "expected_output" in ex.metadata])
-                self._log(f"[Validation] All example executions passed!")
+                result.generated = code_result.output
 
-                # Log success
-                self._log_to_file("All examples passed!", section=f"EXECUTION VALIDATION SUCCESS (Attempt {attempt + 1})")
+                # Use YAML from Planner (Coder only generates Python activities)
+                result.generated.workflow_yaml = result.plan.workflow_yaml or ""
 
-            # Both YAML and execution valid (or no examples to test)
-            result.success = True
-            break
+                result.regeneration_count = total_regeneration_count
 
-        # After loop: set metrics
+                # Track metrics for coder call
+                input_tokens, output_tokens = extract_usage_from_result(code_result)
+                metrics.record(input_tokens, output_tokens, latency_ms)
+
+                # Log generated code
+                self._log_to_file(
+                    f"Workflow YAML (from Planner):\n{result.generated.workflow_yaml}\n\n"
+                    f"Activities Code (from Coder):\n{result.generated.activities_code}",
+                    section=f"GENERATED CODE (Planner {planner_attempt + 1}, Coder {coder_attempt + 1})"
+                )
+
+                # Execution validation (if examples available)
+                if self._current_examples:
+                    self._log(f"[Validation] Testing on {len(self._current_examples[:3])} examples...")
+
+                    execution_error = await self._validate_execution(result, self._current_examples)
+
+                    if execution_error is not None:
+                        # Execution failed - regenerate CODER only
+                        coder_error_feedback = execution_error
+                        result.validation_errors.append(
+                            f"Coder Attempt {coder_attempt + 1} (Planner {planner_attempt + 1}) - Execution: {execution_error[:500]}..."
+                        )
+                        self._log(f"[Validation] Execution failed: {execution_error[:200]}...")
+                        self._log_to_file(
+                            execution_error,
+                            section=f"EXECUTION VALIDATION ERROR (Planner {planner_attempt + 1}, Coder {coder_attempt + 1})"
+                        )
+
+                        result.examples_tested = len([
+                            ex for ex in self._current_examples[:3]
+                            if hasattr(ex, 'metadata') and ex.metadata and "expected_output" in ex.metadata
+                        ])
+                        total_regeneration_count += 1
+                        continue  # Regenerate CODER only
+
+                    result.execution_validated = True
+                    result.examples_tested = len([
+                        ex for ex in self._current_examples[:3]
+                        if hasattr(ex, 'metadata') and ex.metadata and "expected_output" in ex.metadata
+                    ])
+                    self._log(f"[Validation] All example executions passed!")
+                    self._log_to_file(
+                        "All examples passed!",
+                        section=f"EXECUTION VALIDATION SUCCESS (Planner {planner_attempt + 1}, Coder {coder_attempt + 1})"
+                    )
+
+                # SUCCESS! Both YAML and execution valid (or no examples to test)
+                result.success = True
+                result.regeneration_count = total_regeneration_count
+                break  # Exit inner (Coder) loop
+
+            # Check if we succeeded in the inner loop
+            if result.success:
+                break  # Exit outer (Planner) loop
+
+            # Inner loop exhausted without success - try regenerating Planner with different design
+            if not result.success and coder_attempt >= self.max_regenerations:
+                planner_error_feedback = (
+                    "CODER FAILED REPEATEDLY:\n"
+                    "The Coder could not generate valid Python activities for your workflow design.\n"
+                    "Please try a DIFFERENT activity design with clearer schemas or simpler logic.\n"
+                    f"Last error: {coder_error_feedback[:500] if coder_error_feedback else 'Unknown'}"
+                )
+                total_regeneration_count += 1
+                self._log("[Planner] Coder exhausted - trying different workflow design...")
+
+        # After both loops: set metrics
         result.metrics = metrics
+        result.regeneration_count = total_regeneration_count
 
         if not result.success:
             self._log("[Validation] Max regenerations reached without success")
@@ -527,13 +611,14 @@ class CodeFactory:
                 f"YAML Validated: {result.yaml_validated}\n"
                 f"Execution Validated: {result.execution_validated}\n"
                 f"Examples Tested: {result.examples_tested}\n"
-                f"Regeneration Count: {result.regeneration_count}\n"
+                f"Total Regeneration Count: {total_regeneration_count}\n"
                 f"Total Tokens: {metrics.total_tokens}",
                 section="FINAL RESULT"
             )
         else:
             self._log_to_file(
                 f"FAILED!\n"
+                f"Total Regeneration Count: {total_regeneration_count}\n"
                 f"Validation Errors:\n" + "\n".join(result.validation_errors),
                 section="FINAL RESULT"
             )
@@ -547,6 +632,272 @@ class CodeFactory:
             self._add_to_workflow_semantic_index(result)
 
         return result
+
+    async def generate_function_call_workflow(
+        self,
+        task_description: str,
+        task_id: str = "function_call_task",
+        examples: list[Any] | None = None,
+        coder_model: str | None = None,
+        temperature: float | None = None,
+        max_tokens: int | None = None,
+    ) -> FactoryResult:
+        """Generate workflow for function-calling tasks using a template.
+
+        This method SKIPS the Planner and uses a fixed YAML template for simple
+        function-calling tasks (tasks with `functions` in context). This saves
+        ~15-20K tokens and ~20-30s latency per task.
+
+        Only the Coder agent runs to generate the Python activity implementation.
+        Works with any dataset that follows the function-calling pattern.
+
+        Args:
+            task_description: Natural language description with function schemas
+            task_id: Task identifier for logging and workflow_id
+            examples: Optional list of TaskInput examples for validation
+            coder_model: Optional model override for Coder (e.g., "claude-3-5-haiku-20241022" for faster/cheaper)
+            temperature: Model temperature (0.0 = deterministic, lower = less verbose)
+            max_tokens: Maximum output tokens (limits response length)
+
+        Returns:
+            FactoryResult with generated code and validation status
+        """
+        result = FactoryResult(success=False)
+        metrics = AdapterMetrics()
+
+        # Store examples for use in coder prompt
+        self._current_examples = examples or []
+
+        # Set up log file for this compilation
+        self._setup_log_file(task_id)
+        self._log_to_file(task_description, section="TASK DESCRIPTION")
+
+        # Use template YAML - SKIP PLANNER entirely!
+        workflow_yaml = FUNCTION_CALL_TEMPLATE.format(workflow_id=task_id)
+
+        self._log(f"[Template] Using fixed YAML template (skipping Planner)")
+        self._log_to_file(workflow_yaml, section="TEMPLATE YAML (No Planner)")
+
+        # Create minimal WorkflowSpec for compatibility
+        from .models import WorkflowSpec, WorkflowVariable, ActivitySpec, ActivityInputParam, ActivityOutputSchema
+
+        result.plan = WorkflowSpec(
+            workflow_id=task_id,
+            name="Function Call Extractor",
+            description="Extract function name and parameters from natural language query",
+            variables=[
+                WorkflowVariable(name="prompt", default_value=None),
+                WorkflowVariable(name="functions", default_value=None),
+            ],
+            activities=[
+                ActivitySpec(
+                    name="extract_function_call",
+                    description="Parse natural language query and extract function call with parameters",
+                    inputs=[
+                        ActivityInputParam(
+                            name="prompt",
+                            type="str",
+                            description="The natural language query containing the function call request"
+                        ),
+                        ActivityInputParam(
+                            name="functions",
+                            type="list",
+                            description="List of available function definitions with their parameter schemas"
+                        ),
+                    ],
+                    output=ActivityOutputSchema(
+                        type="dict",
+                        description="Returns a dict with function name as key and parameters as nested dict value",
+                        fields={"function_name": "dict[str, Any]"}
+                    ),
+                )
+            ],
+            execution_pattern="sequence",
+            reasoning="BFCL template: single activity for function call extraction",
+            workflow_yaml=workflow_yaml,
+        )
+
+        # Create Coder agent only (optionally with lighter model)
+        effective_model = coder_model or self.model
+        _, coder, _ = create_agents(
+            provider=self.provider,
+            model=effective_model,
+            registry=self.registry,
+        )
+
+        if coder_model:
+            self._log(f"[Template] Using lighter model for Coder: {coder_model}")
+
+        # Build model settings for temperature/max_tokens control
+        model_settings: ModelSettings | None = None
+        if temperature is not None or max_tokens is not None:
+            settings_dict = {}
+            if temperature is not None:
+                settings_dict["temperature"] = temperature
+            if max_tokens is not None:
+                settings_dict["max_tokens"] = max_tokens
+            model_settings = ModelSettings(**settings_dict)
+            self._log(f"[Template] Model settings: temperature={temperature}, max_tokens={max_tokens}")
+
+        # Track total regeneration attempts
+        total_regeneration_count = 0
+
+        # Coder regeneration loop (no Planner loop since YAML is fixed)
+        coder_error_feedback = ""
+        for coder_attempt in range(self.max_regenerations + 1):
+            self._log(f"[Coding] Attempt {coder_attempt + 1}: Generating Python activity...")
+
+            coder_prompt = self._build_function_call_coder_prompt(task_description, coder_error_feedback)
+
+            self._log_to_file(coder_prompt, section=f"FUNCTION CALL CODER PROMPT (Attempt {coder_attempt + 1})")
+
+            if self.verbose:
+                print("\n" + "="*80)
+                print(f"FUNCTION CALL CODER PROMPT (Attempt {coder_attempt + 1}):")
+                print("="*80)
+                print(coder_prompt)
+                print("="*80 + "\n")
+
+            start_time = time.perf_counter()
+            code_result = await run_agent_with_retry(
+                coder, coder_prompt, model_settings=model_settings
+            )
+            latency_ms = (time.perf_counter() - start_time) * 1000
+
+            result.generated = code_result.output
+            result.generated.workflow_yaml = workflow_yaml  # Use template YAML
+            result.regeneration_count = total_regeneration_count
+
+            # Track metrics
+            input_tokens, output_tokens = extract_usage_from_result(code_result)
+            metrics.record(input_tokens, output_tokens, latency_ms)
+
+            self._log_to_file(
+                f"Workflow YAML (template):\n{workflow_yaml}\n\n"
+                f"Activities Code (from Coder):\n{result.generated.activities_code}",
+                section=f"GENERATED CODE (Attempt {coder_attempt + 1})"
+            )
+
+            # YAML is pre-validated (it's a template), so mark as valid
+            result.yaml_validated = True
+
+            # Execution validation (if examples available)
+            if self._current_examples:
+                self._log(f"[Validation] Testing on {len(self._current_examples[:3])} examples...")
+
+                execution_error = await self._validate_execution(result, self._current_examples)
+
+                if execution_error is not None:
+                    coder_error_feedback = execution_error
+                    result.validation_errors.append(
+                        f"Coder Attempt {coder_attempt + 1} - Execution: {execution_error[:500]}..."
+                    )
+                    self._log(f"[Validation] Execution failed: {execution_error[:200]}...")
+                    self._log_to_file(execution_error, section=f"EXECUTION VALIDATION ERROR (Attempt {coder_attempt + 1})")
+
+                    result.examples_tested = len([
+                        ex for ex in self._current_examples[:3]
+                        if hasattr(ex, 'metadata') and ex.metadata and "expected_output" in ex.metadata
+                    ])
+                    total_regeneration_count += 1
+                    continue  # Regenerate Coder
+
+                result.execution_validated = True
+                result.examples_tested = len([
+                    ex for ex in self._current_examples[:3]
+                    if hasattr(ex, 'metadata') and ex.metadata and "expected_output" in ex.metadata
+                ])
+                self._log(f"[Validation] All example executions passed!")
+                self._log_to_file("All examples passed!", section=f"EXECUTION VALIDATION SUCCESS (Attempt {coder_attempt + 1})")
+
+            # SUCCESS!
+            result.success = True
+            result.regeneration_count = total_regeneration_count
+            break
+
+        # Set final metrics
+        result.metrics = metrics
+
+        if not result.success:
+            self._log("[Validation] Max regenerations reached without success")
+
+        # Log final result
+        if result.success:
+            self._log_to_file(
+                f"SUCCESS (Function Call Template)!\n"
+                f"YAML Validated: {result.yaml_validated}\n"
+                f"Execution Validated: {result.execution_validated}\n"
+                f"Examples Tested: {result.examples_tested}\n"
+                f"Total Regeneration Count: {total_regeneration_count}\n"
+                f"Total Tokens: {metrics.total_tokens}\n"
+                f"Tokens Saved: ~15-20K (skipped Planner)",
+                section="FINAL RESULT"
+            )
+        else:
+            self._log_to_file(
+                f"FAILED (Function Call Template)!\n"
+                f"Total Regeneration Count: {total_regeneration_count}\n"
+                f"Validation Errors:\n" + "\n".join(result.validation_errors),
+                section="FINAL RESULT"
+            )
+
+        # Auto-register successful activities
+        if result.success and self.registrar:
+            self._register_activities(result, task_description)
+
+        # Add to semantic index
+        if result.success and result.generated:
+            self._add_to_workflow_semantic_index(result)
+
+        return result
+
+    def _build_function_call_coder_prompt(self, task_description: str, error_feedback: str = "") -> str:
+        """Build a concise coder prompt for function-calling tasks.
+
+        Optimized for minimal tokens while maintaining accuracy.
+        """
+        base_prompt = f"""Generate `extract_function_call` activity. Return ONLY `{{"func_name": {{params}}}}`.
+
+## Task:
+{task_description}
+
+## Requirements:
+- Return format: `{{"function_name": {{"param1": val1}}}}` - NO extra fields
+- Extract values using JSON parsing, regex, or string matching (no LLM calls)
+- Parse inputs defensively (prompt/functions may be JSON strings)
+- Match parameter names EXACTLY from function schema
+
+## Template:
+```python
+import re, json
+from typing import Any
+
+async def extract_function_call(prompt: str, functions: list, **kwargs) -> dict[str, Any]:
+    # Parse inputs (may be JSON strings)
+    try:
+        data = json.loads(prompt) if isinstance(prompt, str) else prompt
+        query = data.get("question", [[{{"content": prompt}}]])[0][0].get("content", str(prompt))
+    except: query = str(prompt)
+
+    funcs = json.loads(functions) if isinstance(functions, str) else functions
+    func = funcs[0] if funcs else {{}}
+    name = func.get("name", "")
+    props = func.get("parameters", {{}}).get("properties", {{}})
+
+    # Extract params - use regex for numbers, string matching for text
+    params = {{}}
+    # ... extract values from query based on props schema ...
+
+    return {{name: params}}
+```
+"""
+
+        if error_feedback:
+            base_prompt += f"\n## FIX: {error_feedback[:300]}"
+
+        return base_prompt
+
+        return base_prompt
 
     def _validate_yaml(self, result: FactoryResult) -> str | None:
         """Validate YAML against DSL schema.
@@ -639,6 +990,35 @@ class CodeFactory:
             self._log(f"[Execution] Failed: {e}")
 
         return result
+
+    def _build_planner_prompt(
+        self, task_description: str, error_feedback: str = ""
+    ) -> str:
+        """Build prompt for planner agent, including any error feedback.
+
+        Args:
+            task_description: Original task description
+            error_feedback: Previous validation error (e.g., YAML parsing failure)
+
+        Returns:
+            Formatted prompt string for the planner agent
+        """
+        prompt = task_description
+        if error_feedback:
+            prompt += f"""
+
+**PREVIOUS ATTEMPT FAILED - PLEASE FIX:**
+{error_feedback}
+
+Fix the issues above and regenerate a valid workflow YAML.
+Common fixes:
+- Ensure 'variables' is a mapping (key: value), not a list
+- Use null as default values for variables
+- Use proper ${{{{ variable_name }}}} syntax in params
+- Ensure all activities have valid 'name' and 'params' fields
+- Use block scalars (|) for multi-line strings
+"""
+        return prompt
 
     def _build_coder_prompt(
         self, plan: WorkflowSpec, error_feedback: str = ""
@@ -1341,7 +1721,7 @@ Please fix the issues and regenerate valid YAML.
 
         try:
             start_time = time.perf_counter()
-            agent_result = await bfcl_agent.run(prompt)
+            agent_result = await run_agent_with_retry(bfcl_agent, prompt)
             latency_ms = (time.perf_counter() - start_time) * 1000
 
             # Track metrics

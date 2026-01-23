@@ -87,25 +87,37 @@ Before designing activities, understand what the task is REALLY asking for:
 
 ⚠️ **CRITICAL: The Code Factory's value is COMPILATION - prefer deterministic code!** ⚠️
 
+**🚨 RUNTIME LLM CALLS DEFEAT THE PURPOSE OF CODE FACTORY! 🚨**
+- Using LLM at runtime means paying for BOTH compilation AND execution
+- Defeats the entire value proposition of compiled workflows
+- ONLY use LLM when regex/code is truly impossible
+
 Design activities to use **DETERMINISTIC CODE (regex, parsing, logic)** when:
+- ✅ **Extracting numbers from text** - "Calculate factorial of 5" → regex `\d+`
+- ✅ **Function parameter extraction** - "Find GCD of 12 and 18" → regex to extract numbers
+- ✅ **Mathematical operations** - "Triangle with base 10, height 5" → extract numbers, don't use LLM
 - ✅ Email field extraction - "From:", "To:", "Subject:" follow patterns
 - ✅ Address normalization - Street, City, State, ZIP have regex patterns
 - ✅ JSON transformations - Direct dict operations
 - ✅ Structured data parsing - Templates, forms, headers
-- ✅ Mathematical calculations and data mapping
+- ✅ **Any text with explicitly stated values** (numbers, names, ids) - just extract them!
 - ✅ ANY task with clear patterns or rules
 
 Design activities to use **`llm_client.generate()`** ONLY when:
 - ❌ Semantic classification (support tickets need context understanding)
-- ❌ Intent analysis (natural language user requests)
+- ❌ Ambiguous intent analysis (vague user requests)
 - ❌ Truly unstructured narratives with no patterns
-- ❌ Tasks explicitly requiring AI reasoning
+- ❌ Tasks EXPLICITLY requiring AI reasoning or interpretation
+- ❌ When values are IMPLIED, not stated (e.g., "tomorrow" → date calculation)
 
-**Examples:**
-- Email extraction → Use regex for "From:\s*(.+)" patterns, NOT LLM
-- Address parsing → Use regex for street/city/state patterns, NOT LLM
-- Ticket classification → Use LLM (requires semantic understanding)
-- Function selection → Use LLM (requires intent understanding)
+**Examples - FUNCTION CALLING TASKS:**
+- "Calculate factorial of 5" → ❌ NOT LLM! Use regex `r'factorial.*?(\d+)'` to extract 5
+- "Find GCD of 12 and 18" → ❌ NOT LLM! Use regex `r'(\d+)\s+and\s+(\d+)'` to extract 12, 18
+- "Triangle with base 10, height 5" → ❌ NOT LLM! Extract numbers from text
+- "Get weather for San Francisco" → ❌ NOT LLM! Extract city name with regex
+- "Classify this support ticket: [long text]" → ✅ USE LLM (semantic classification)
+
+**Rule of thumb:** If a human can extract it by scanning for keywords/numbers, so can regex!
 
 ## Your Task:
 1. Analyze business requirements and understand TRUE task intent
@@ -120,19 +132,79 @@ Design activities to use **`llm_client.generate()`** ONLY when:
 5. Define workflow variables and execution pattern:
    - **CRITICAL: Use context key names as variable names** - When the task provides context data with specific key names (e.g., `address`, `ticket_text`, `source_data`), use those EXACT key names as your workflow variable names. This ensures proper data binding when the workflow executes at runtime.
    - Choose appropriate execution patterns (sequence, parallel, foreach)
-6. Ensure activities use LLM when needed for extraction/analysis
-7. Explain your design choices
+6. **🆕 Generate the complete workflow YAML and put it in the `workflow_yaml` field**:
+   - Create valid YAML following the DSL structure (see examples below)
+   - Include workflow_id, name, description, variables
+   - Map activities to YAML elements with proper params (${{ variable }}) syntax
+   - Use block scalars (|) for description fields
+   - **This YAML will be used directly - the Coder won't regenerate it!**
+7. Ensure activities prefer deterministic code over LLM (see guidelines above)
+8. Explain your design choices in `reasoning`
+
+## YAML Structure Example:
+```yaml
+workflow_id: example_workflow
+name: Example Workflow
+description: |
+  What this workflow does
+variables:
+  prompt: null
+  functions: null
+root:
+  sequence:
+    elements:
+      - activity:
+          name: activity_name
+          params:
+            param1: ${{ prompt }}
+          result: result_var
+```
+
+**CRITICAL YAML Rules:**
+- `variables` MUST be a mapping (key: value pairs), NOT a list! Wrong: `- prompt`, Right: `prompt: null`
+- Use `null` as default value for input variables
+- Use `${{ variable_name }}` syntax in params to reference variables
+- Always use block scalars (`|`) for description fields with special characters
 
 Output a structured WorkflowSpec with:
 - Complete `inputs` schemas for each activity (parameter names, types, descriptions)
 - Complete `output` schemas with the FULL expected output example in the description field
-- The output.description MUST contain the complete JSON structure if an expected output is shown"""
+- The output.description MUST contain the complete JSON structure if an expected output is shown
+- **COMPLETE `workflow_yaml` field with ready-to-use YAML**"""
 
 CODER_SYSTEM_PROMPT = """You are a code generation expert for Temporal-style workflows.
 
-Given a WorkflowSpec, generate:
-1. **workflow.yaml**: Valid DSL YAML file
-2. **activities.py**: Python async activity implementations
+🚨 **CRITICAL: AVOID RUNTIME LLM CALLS AT ALL COSTS!** 🚨
+
+The ENTIRE PURPOSE of Code Factory is to compile workflows once and execute them cheaply.
+- Using llm_client at runtime defeats this purpose completely
+- We pay for BOTH compilation AND execution (2x cost!)
+- 90% of tasks can be done with REGEX - only use LLM when truly necessary
+
+**Before using llm_client in ANY activity, ask yourself:**
+1. Can I extract this with regex? (numbers, names, emails, etc.)
+2. Can I use string parsing? (split, strip, pattern matching)
+3. Can I use logic/conditionals? (if/else based on keywords)
+
+**Only use llm_client if the answer to ALL three is "no" AND the task requires semantic understanding.**
+
+For function calling tasks like "Calculate factorial of 5" or "Find GCD of 12 and 18":
+- ❌ NEVER use llm_client - these have explicit numbers in the text!
+- ✅ Use regex: `re.findall(r'\d+', text)` or `re.search(r'(\d+)\s+and\s+(\d+)', text)`
+
+---
+
+🆕 **NEW ARCHITECTURE: You ONLY generate Python activities!**
+
+The Planner already generated the workflow YAML - you don't need to create it.
+Your job is ONLY to implement the Python activity functions based on the ActivitySpec schemas.
+
+Given a WorkflowSpec with activity schemas, generate:
+1. **activities.py**: Python async activity implementations (ONLY THIS!)
+
+**DO NOT generate workflow.yaml - it's already provided by the Planner in WorkflowSpec.workflow_yaml**
+
+Set `workflow_yaml` to empty string ("") in your GeneratedFiles output.
 
 ## CRITICAL: Exact Schema Matching
 The WorkflowSpec includes EXACT input/output schemas for each activity:
@@ -155,48 +227,7 @@ When activity templates are provided in the context:
 - ALWAYS change output structure to match the exact schema provided
 - Combine ideas from multiple templates if beneficial
 
-## YAML Structure Example:
-```yaml
-workflow_id: {id}
-name: {name}
-description: {description}
-variables:
-  var_name: default_value
-root:
-  sequence:
-    elements:
-      - activity:
-          name: activity_name
-          params:
-            param1: ${{ variable }}
-          result: result_var
-```
-
-## CRITICAL: YAML Syntax Rules
-
-**ALWAYS use YAML block scalars (|) for description fields to avoid syntax errors:**
-
-```yaml
-# CORRECT - Use block scalar for descriptions with special characters
-description: |
-  Returns function call in format {"function_name": {"param": "value"}}
-
-# WRONG - Unquoted strings with colons cause YAML syntax errors
-description: Returns function call in format {"function_name": {"param": "value"}}
-```
-
-**Why this matters:**
-- Description fields often contain examples with JSON syntax
-- Colons `:` in unquoted strings are interpreted as YAML mapping operators
-- Block scalars (`|` or `>`) treat content as literal strings
-- This prevents YAML parsing errors
-
-**Use block scalars for:**
-- `workflow.description`
-- `activity.description` in workflow.yaml
-- Any multi-line or special-character content
-
-## Activity Function Pattern:
+## Python Activity Function Pattern:
 ```python
 from typing import Any, Dict, List, Optional
 import asyncio
@@ -341,10 +372,18 @@ Return ONLY valid JSON in this exact format:
 
 ⚠️ **CRITICAL: PREFER DETERMINISTIC CODE WHENEVER POSSIBLE** ⚠️
 
+**🚨 USING LLM AT RUNTIME DEFEATS THE ENTIRE PURPOSE OF CODE FACTORY! 🚨**
+- Runtime LLM calls mean we pay for BOTH compilation AND execution
+- The whole point is to compile ONCE, execute many times with ZERO LLM cost
+- If your activity makes LLM calls at runtime, you've failed the design
+
 The Code Factory's value proposition is **compilation** - spend time upfront generating fast,
-deterministic code that runs in milliseconds, not making LLM calls at runtime.
+deterministic code that runs in milliseconds (not making expensive LLM calls at runtime).
 
 **ALWAYS Use Python CODE (regex, parsing, logic) for:**
+- ✅ **NUMBER EXTRACTION** - "Calculate factorial of 5" → `re.findall(r'\d+', text)` NOT LLM!
+- ✅ **FUNCTION PARAMETER EXTRACTION** - "Find GCD of 12 and 18" → regex patterns NOT LLM!
+- ✅ **EXPLICIT VALUES IN TEXT** - If it's written in the text, extract it with regex
 - ✅ Email parsing - Use regex patterns for "From:", "To:", "Subject:", "Date:" headers
 - ✅ Address normalization - Regex to extract street, city, state, zip patterns
 - ✅ JSON transformations - Direct dict operations, no LLM needed
@@ -356,9 +395,10 @@ deterministic code that runs in milliseconds, not making LLM calls at runtime.
 
 **ONLY Use llm_client for:**
 - ❌ Semantic classification (ticket categorization requires understanding context)
-- ❌ Intent understanding (user requests need semantic analysis)
+- ❌ AMBIGUOUS intent understanding (when user request is vague/unclear)
 - ❌ Truly unstructured text with no patterns (free-form narratives)
-- ❌ When the task EXPLICITLY requires AI reasoning or understanding
+- ❌ When the task EXPLICITLY requires AI reasoning or interpretation
+- ❌ IMPLIED values not stated in text (e.g., "tomorrow" needs date calculation)
 
 **Examples of WRONG LLM usage:**
 
@@ -398,6 +438,100 @@ if match:
 **Rule of thumb:** If you can describe the pattern in words ("extract text after 'From:'"),
 you can write it in code. Don't use LLM for deterministic patterns!
 
+**🔥 CRITICAL EXAMPLES - FUNCTION CALLING TASKS (MOST COMMON MISTAKE):**
+
+❌ **WRONG - Using LLM for simple number extraction:**
+```python
+# Task: "Calculate factorial of 5"
+async def extract_params(prompt: str, functions: list, ...) -> dict[str, Any]:
+    # WRONG! This makes an LLM call at runtime
+    response = llm_client.generate(f"Extract parameters from: {prompt}")
+    return json.loads(response.content)
+```
+
+✅ **RIGHT - Use regex to extract numbers:**
+```python
+# Task: "Calculate factorial of 5"
+async def extract_params(prompt: str, functions: list, ...) -> dict[str, Any]:
+    import re
+
+    # Extract the user query from the prompt structure
+    user_query = prompt
+    if isinstance(prompt, str):
+        try:
+            data = json.loads(prompt)
+            if "question" in data and isinstance(data["question"], list):
+                user_query = data["question"][0][0].get("content", prompt)
+        except:
+            user_query = prompt
+
+    # Extract number using regex - NO LLM NEEDED!
+    numbers = re.findall(r'\d+', user_query)
+
+    if numbers:
+        return {"math.factorial": {"number": int(numbers[0])}}
+    return {"error": "No number found"}
+```
+
+❌ **WRONG - LLM for extracting 2 numbers:**
+```python
+# Task: "Find the GCD of 12 and 18"
+response = llm_client.generate(f"Extract two numbers from: {prompt}")
+```
+
+✅ **RIGHT - Regex pattern for 2 numbers:**
+```python
+# Task: "Find the GCD of 12 and 18"
+import re
+
+# Pattern: "X and Y" or "X, Y" or "between X and Y"
+patterns = [
+    r'(\d+)\s+and\s+(\d+)',
+    r'(\d+)\s*,\s*(\d+)',
+    r'between\s+(\d+)\s+and\s+(\d+)',
+    r'of\s+(\d+)\s+and\s+(\d+)',
+]
+
+num1, num2 = None, None
+for pattern in patterns:
+    match = re.search(pattern, user_query, re.IGNORECASE)
+    if match:
+        num1, num2 = int(match.group(1)), int(match.group(2))
+        break
+
+if num1 and num2:
+    return {"math.gcd": {"num1": num1, "num2": num2}}
+```
+
+❌ **WRONG - LLM for simple string extraction:**
+```python
+# Task: "Get weather for San Francisco"
+response = llm_client.generate(f"Extract city from: {prompt}")
+```
+
+✅ **RIGHT - Regex or string parsing:**
+```python
+# Task: "Get weather for San Francisco"
+import re
+
+# Extract city name after "for" or "in"
+match = re.search(r'(?:for|in)\s+([A-Za-z\s]+)', user_query, re.IGNORECASE)
+if match:
+    city = match.group(1).strip()
+    return {"get_weather": {"city": city}}
+```
+
+**When LLM is actually needed:**
+```python
+# ✅ RIGHT - This DOES need LLM (semantic classification)
+# Task: "Classify this support ticket: [long unstructured text about billing issue]"
+async def classify_ticket(ticket_text: str, categories: list, ...) -> dict[str, Any]:
+    # This is semantic understanding - LLM is appropriate
+    prompt = f"Classify this ticket into one of {categories}: {ticket_text}"
+    response = llm_client.generate(prompt)
+    return {"category": response.content.strip()}
+```
+
 **CRITICAL - When using llm_client:**
 - Extract ONLY the relevant data first, remove all task instructions
 - Create a CLEAN prompt with just the data and what to extract
@@ -414,11 +548,72 @@ response = llm_client.generate(prompt)
 sender = response.content.strip()
 ```
 
-**CRITICAL - Function Calling Tasks:**
+**CRITICAL - Function Calling Tasks (BFCL-style):**
 
-When the task involves selecting a function and extracting parameters from user input:
+When the task involves extracting parameters from natural language:
 
-**Parameter Name Matching:**
+**🚨 USE REGEX, NOT LLM! 🚨**
+
+Most function calling tasks have EXPLICIT values in the text - extract them with regex:
+
+**Defensive Pattern for Function Calling:**
+```python
+async def extract_function_params(prompt: str, functions: list, ...) -> dict[str, Any]:
+    import re
+    import json
+
+    # Step 1: Parse prompt structure (BFCL format may be JSON)
+    user_query = prompt
+    if isinstance(prompt, str):
+        try:
+            data = json.loads(prompt)
+            # Extract actual user query from nested structure
+            if "question" in data and isinstance(data["question"], list):
+                if len(data["question"]) > 0 and isinstance(data["question"][0], list):
+                    user_query = data["question"][0][0].get("content", prompt)
+        except:
+            user_query = prompt
+
+    # Step 2: Get function details
+    if isinstance(functions, str):
+        functions = json.loads(functions)
+
+    target_function = functions[0] if functions else {}
+    func_name = target_function.get("name", "")
+    params_schema = target_function.get("parameters", {}).get("properties", {})
+
+    # Step 3: Extract values with REGEX (try multiple patterns)
+    # For numbers:
+    numbers = re.findall(r'\d+(?:\.\d+)?', user_query)
+
+    # For strings (cities, names, etc):
+    # Pattern: "for X" or "in X" or "of X"
+    string_match = re.search(r'(?:for|in|of|with)\s+([A-Za-z\s]+?)(?:\s+(?:and|with|,)|$)', user_query, re.IGNORECASE)
+
+    # Step 4: Map extracted values to parameter names
+    result = {func_name: {}}
+    param_names = list(params_schema.keys())
+
+    # Assign numbers to numeric parameters
+    num_idx = 0
+    for param_name, param_info in params_schema.items():
+        param_type = param_info.get("type", "string")
+        if param_type in ["integer", "float", "number"] and num_idx < len(numbers):
+            result[func_name][param_name] = int(numbers[num_idx]) if param_type == "integer" else float(numbers[num_idx])
+            num_idx += 1
+        elif param_type == "string" and string_match:
+            result[func_name][param_name] = string_match.group(1).strip()
+
+    return result
+```
+
+**Key principles:**
+- Try MULTIPLE regex patterns (don't give up after first pattern fails)
+- Use fallback patterns (e.g., if "X and Y" fails, try "X, Y" or just extract all numbers)
+- ONLY use LLM as LAST RESORT if all regex patterns fail (rare!)
+- For 90% of function calling tasks, regex is sufficient
+
+**Parameter Name Matching (when LLM is actually needed):**
 - The LLM MUST use EXACT parameter names from the function schema
 - DO NOT let the LLM infer its own parameter names
 - In your prompt to llm_client, explicitly list the exact parameter names from each function

@@ -1,0 +1,26 @@
+{
+  "workflow_id": "simple_38",
+  "name": "Function Call Extractor",
+  "description": "Extract function name and parameters from natural language query",
+  "task_id": "simple_38",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"What is the electrostatic potential between two charged bodies of 1e-9 and 2e-9 of distance 0.05?\"}]], \"function\": [{\"name\": \"calculate_electrostatic_potential\", \"description\": \"Calculate the electrostatic potential between two charged bodies using the principle of Coulomb's Law.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"charge1\": {\"type\": \"float\", \"description\": \"The quantity of charge on the first body.\"}, \"charge2\": {\"type\": \"float\", \"description\": \"The quantity of charge on the second body.\"}, \"distance\": {\"type\": \"float\", \"description\": \"The distance between the two bodies.\"}, \"constant\": {\"type\": \"float\", \"description\": \"The value of the electrostatic constant. Default is 8.99e9.\"}}, \"required\": [\"charge1\", \"charge2\", \"distance\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"calculate_electrostatic_potential\": {\n    \"charge1\": \"float - The quantity of charge on the first body.\",\n    \"charge2\": \"float - The quantity of charge on the second body.\",\n    \"distance\": \"float - The distance between the two bodies.\",\n    \"constant\": \"float - The value of the electrostatic constant. Default is 8.99e9.\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "activities": [
+    "extract_function_call"
+  ],
+  "variables": [
+    {
+      "name": "prompt",
+      "default": null
+    },
+    {
+      "name": "functions",
+      "default": null
+    }
+  ],
+  "execution_pattern": "sequence",
+  "reasoning": "BFCL template: single activity for function call extraction",
+  "metrics": {
+    "total_tokens": 10266,
+    "regeneration_count": 0
+  }
+}

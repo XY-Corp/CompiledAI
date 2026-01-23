@@ -59,6 +59,10 @@ class CodeFactoryBaseline(BaseBaseline):
         cache_size: int = 50,
         similarity_threshold: float = 0.7,
         log_dir: str | None = "logs",
+        use_function_call_template: bool = True,
+        function_call_model: str | None = None,
+        function_call_temperature: float | None = 0.0,
+        function_call_max_tokens: int | None = 8192,
     ) -> None:
         """Initialize the Code Factory baseline.
 
@@ -73,6 +77,10 @@ class CodeFactoryBaseline(BaseBaseline):
             cache_size: Maximum number of workflows to cache (default: 50)
             similarity_threshold: Minimum similarity for workflow reuse (default: 0.7)
             log_dir: Directory for compilation logs (None to disable file logging)
+            use_function_call_template: Use fixed YAML template for function-calling tasks (saves ~50% tokens)
+            function_call_model: Model to use for function-call template mode (e.g., "claude-3-5-haiku-20241022" for faster/cheaper)
+            function_call_temperature: Temperature for function-call mode (default: 0.0 for deterministic)
+            function_call_max_tokens: Max output tokens for function-call mode (default: 8192)
         """
         self.provider = provider
         self.model = model or self._default_model(provider)
@@ -83,6 +91,10 @@ class CodeFactoryBaseline(BaseBaseline):
         self.enable_cache = enable_cache
         self.similarity_threshold = similarity_threshold
         self.log_dir = log_dir
+        self.use_function_call_template = use_function_call_template
+        self.function_call_model = function_call_model
+        self.function_call_temperature = function_call_temperature
+        self.function_call_max_tokens = function_call_max_tokens
 
         # NEW: Task classification and caching
         self.signature_extractor = TaskSignatureExtractor()
@@ -534,16 +546,53 @@ class CodeFactoryBaseline(BaseBaseline):
             task_description += f"- Match the structure (field names, nesting, types) EXACTLY\n"
             task_description += f"- Do NOT add extra fields"
 
-        if self.verbose:
-            with Progress(
-                SpinnerColumn(),
-                TextColumn("[bold blue]Generating workflow..."),
-                console=console,
-            ) as progress:
-                progress.add_task("compile", total=None)
-                result = await factory.generate(task_description, examples=task_examples)
+        # Detect if this is a function-calling task (has `functions` in context)
+        is_function_call_task = (
+            self.use_function_call_template and
+            task_input.context and
+            "functions" in task_input.context
+        )
+
+        if is_function_call_task:
+            # Use template-based generation (skips Planner, saves ~50% tokens)
+            model_info = f" with {self.function_call_model}" if self.function_call_model else ""
+            if self.verbose:
+                console.print(f"[cyan]🚀 Using function-call template (skipping Planner){model_info}[/cyan]")
+                with Progress(
+                    SpinnerColumn(),
+                    TextColumn("[bold blue]Generating activity (template mode)..."),
+                    console=console,
+                ) as progress:
+                    progress.add_task("compile", total=None)
+                    result = await factory.generate_function_call_workflow(
+                        task_description=task_description,
+                        task_id=task_input.task_id,
+                        examples=task_examples,
+                        coder_model=self.function_call_model,
+                        temperature=self.function_call_temperature,
+                        max_tokens=self.function_call_max_tokens,
+                    )
+            else:
+                result = await factory.generate_function_call_workflow(
+                    task_description=task_description,
+                    task_id=task_input.task_id,
+                    examples=task_examples,
+                    coder_model=self.function_call_model,
+                    temperature=self.function_call_temperature,
+                    max_tokens=self.function_call_max_tokens,
+                )
         else:
-            result = await factory.generate(task_description, examples=task_examples)
+            # Use full Planner + Coder pipeline (for complex workflows)
+            if self.verbose:
+                with Progress(
+                    SpinnerColumn(),
+                    TextColumn("[bold blue]Generating workflow (full pipeline)..."),
+                    console=console,
+                ) as progress:
+                    progress.add_task("compile", total=None)
+                    result = await factory.generate(task_description, examples=task_examples)
+            else:
+                result = await factory.generate(task_description, examples=task_examples)
 
         self._compilation_latency_ms = (time.perf_counter() - start_time) * 1000
 
