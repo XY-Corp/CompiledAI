@@ -1,0 +1,17 @@
+workflow_id: function_parameter_extraction_workflow
+name: Function Parameter Extraction and Call Structure
+description: Analyzes natural language physics problems to extract numerical parameters and structure them as function calls with proper parameter mappings
+
+variables:
+  prompt: null
+  functions: null
+
+root:
+  sequence:
+    elements:
+      - activity:
+          name: extract_function_parameters
+          params:
+            problem_text: ${{ prompt }}
+            available_functions: ${{ functions }}
+          result: extraction_result

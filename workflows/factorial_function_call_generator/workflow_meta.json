@@ -1,0 +1,30 @@
+{
+  "workflow_id": "factorial_function_call_generator",
+  "name": "Factorial Function Call Generator",
+  "description": "Analyzes a user query about calculating factorials and generates the appropriate function call JSON structure for the math.factorial function with extracted parameters",
+  "task_id": "bfcl_simple_simple_1",
+  "task_description": "You have access to the following functions:\n\n[\n  {\n    \"name\": \"math.factorial\",\n    \"description\": \"Calculate the factorial of a given number.\",\n    \"parameters\": {\n      \"type\": \"dict\",\n      \"properties\": {\n        \"number\": {\n          \"type\": \"integer\",\n          \"description\": \"The number for which factorial needs to be calculated.\"\n        }\n      },\n      \"required\": [\n        \"number\"\n      ]\n    }\n  }\n]\n\nUser query: Calculate the factorial of 5 using math functions.\n\nGenerate the appropriate function call as JSON with 'name' and 'arguments' keys.\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `user_query` (str) - context for task type\n- `functions` (str) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, user_query, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"math.factorial\": {\n    \"number\": \"integer - The number for which factorial needs to be calculated.\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "activities": [
+    "generate_factorial_function_call"
+  ],
+  "variables": [
+    {
+      "name": "prompt",
+      "default": null
+    },
+    {
+      "name": "user_query",
+      "default": null
+    },
+    {
+      "name": "functions",
+      "default": null
+    }
+  ],
+  "execution_pattern": "sequence",
+  "reasoning": "This workflow uses a single activity to parse the user query, extract the number to calculate factorial for, and generate the required function call structure. Since this is a simple extraction and formatting task that requires understanding the query intent, an LLM-based approach is most appropriate. The output must match the exact structure specified with the function name as the top-level key and parameters nested below.",
+  "metrics": {
+    "total_tokens": 18130,
+    "regeneration_count": 0
+  }
+}

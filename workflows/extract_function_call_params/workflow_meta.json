@@ -1,0 +1,26 @@
+{
+  "workflow_id": "extract_function_call_params",
+  "name": "Extract Function Call Parameters",
+  "description": "Parses a natural language prompt to extract parameter values for a specified function call format. Given a prompt describing a task (like solving a quadratic equation) and available function definitions, this workflow extracts the actual parameter values and returns them in the exact function call structure required.",
+  "task_id": "simple_4",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"Solve a quadratic equation where a=2, b=6, and c=5\"}]], \"function\": [{\"name\": \"solve_quadratic_equation\", \"description\": \"Function solves the quadratic equation and returns its roots.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"a\": {\"type\": \"integer\", \"description\": \"Coefficient of x squared\"}, \"b\": {\"type\": \"integer\", \"description\": \"Coefficient of x\"}, \"c\": {\"type\": \"integer\", \"description\": \"Constant term in the quadratic equation.\"}}, \"required\": [\"a\", \"b\", \"c\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"solve_quadratic_equation\": {\n    \"a\": \"integer - Coefficient of x squared\",\n    \"b\": \"integer - Coefficient of x\",\n    \"c\": \"integer - Constant term in the quadratic equation.\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "activities": [
+    "extract_function_call"
+  ],
+  "variables": [
+    {
+      "name": "prompt",
+      "default": null
+    },
+    {
+      "name": "functions",
+      "default": null
+    }
+  ],
+  "execution_pattern": "sequence",
+  "reasoning": "This task requires understanding natural language intent and extracting specific parameter values to construct a function call. Key design decisions:\n\n1. **Single Activity Design**: Since the task is to parse a prompt and return a structured function call, one activity is sufficient. The task is a METADATA task - it should return which function to call with what parameters, not execute the function itself.\n\n2. **LLM-Based Extraction**: The prompt is natural language (\"Solve a quadratic equation where a=2, b=6, and c=5\"), which requires semantic understanding to:\n   - Identify which function to call (solve_quadratic_equation)\n   - Extract the parameter values (a=2, b=6, c=5)\n   - Map them correctly to the function schema\n\n3. **Output Format**: The task specifies a specific output structure where the function name is the top-level key with parameters nested inside. This is NOT the standard function call format but a custom structure the workflow must produce.\n\n4. **Using functions context**: The functions list provides the schema that helps the LLM understand what parameters to extract and their types (integers in this case).\n\n5. **No hardcoding**: The activity extracts actual values from the prompt at runtime - not hardcoded to the example values. Different prompts with different equations will produce different parameter values.",
+  "metrics": {
+    "total_tokens": 28121,
+    "regeneration_count": 0
+  }
+}

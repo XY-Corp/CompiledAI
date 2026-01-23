@@ -1,0 +1,14 @@
+workflow_id: geometry_area_calculator
+name: Geometry Area Calculator
+description: Parse a user request to calculate circle area and extract the radius parameter, then format as a function call to geometry.calculate_area_circle
+variables:
+  prompt: null
+  functions: null
+root:
+  sequence:
+    elements:
+      - activity:
+          name: parse_circle_area_request
+          params:
+            user_request: ${{ prompt }}
+          result: parsed_function_call

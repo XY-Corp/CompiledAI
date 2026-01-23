@@ -1,0 +1,17 @@
+workflow_id: thermodynamics-phase-change-calculator
+name: Thermodynamics Phase Change Energy Calculator
+description: Parse thermodynamics problem from natural language prompt and extract parameters to call the appropriate calculation function
+
+variables:
+  prompt: null
+  functions: null
+
+root:
+  sequence:
+    elements:
+      - activity:
+          name: parse_thermodynamics_problem
+          params:
+            problem_text: ${{ prompt }}
+            available_functions: ${{ functions }}
+          result: function_call

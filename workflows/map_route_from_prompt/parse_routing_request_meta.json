@@ -1,0 +1,34 @@
+{
+  "activity_name": "parse_routing_request",
+  "description": "Extracts start location, end location, and toll preferences from user's natural language routing request",
+  "task_id": "simple_81",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"Find the fastest route from San Francisco to Los Angeles with toll roads avoided.\"}]], \"function\": [{\"name\": \"map_routing.fastest_route\", \"description\": \"Finds the fastest route from one location to another, with an option to avoid toll roads.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"start_location\": {\"type\": \"string\", \"description\": \"The starting location for the journey.\"}, \"end_location\": {\"type\": \"string\", \"description\": \"The destination for the journey.\"}, \"avoid_tolls\": {\"type\": \"boolean\", \"description\": \"Option to avoid toll roads during the journey. Default is false.\"}}, \"required\": [\"start_location\", \"end_location\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"map_routing.fastest_route\": {\n    \"start_location\": \"string - The starting location for the journey.\",\n    \"end_location\": \"string - The destination for the journey.\",\n    \"avoid_tolls\": \"boolean - Option to avoid toll roads during the journey. Default is false.\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "inputs": [
+    {
+      "name": "user_request",
+      "type": "str",
+      "description": "The complete user input text containing routing preferences, start and end locations, and any special requirements like avoiding tolls",
+      "required": true
+    },
+    {
+      "name": "function_schema",
+      "type": "dict",
+      "description": "The schema definition for map_routing.fastest_route function including parameter names, types, and descriptions for validation",
+      "required": true
+    }
+  ],
+  "output": {
+    "type": "dict",
+    "description": "Returns function call structure: {\"map_routing.fastest_route\": {\"start_location\": \"San Francisco\", \"end_location\": \"Los Angeles\", \"avoid_tolls\": true}}",
+    "fields": {
+      "map_routing.fastest_route": "dict containing start_location (str), end_location (str), and avoid_tolls (bool) parameters"
+    }
+  },
+  "reference_activity": "llm_extract",
+  "workflow_spec": {
+    "workflow_id": "map_route_from_prompt",
+    "name": "Extract Map Routing Parameters from User Query",
+    "description": "Parses user natural language routing request and extracts parameters for the map_routing.fastest_route function call",
+    "execution_pattern": "sequence"
+  }
+}

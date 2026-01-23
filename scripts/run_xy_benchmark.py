@@ -24,13 +24,13 @@ from compiled_ai.baselines import list_baselines
 def parse_args() -> argparse.Namespace:
     """Parse command line arguments."""
     parser = argparse.ArgumentParser(
-        description="Run XY_Benchmark with various baselines"
+        description="Run XY_Benchmark with specified baseline"
     )
     parser.add_argument(
         "--baseline",
-        choices=list_baselines(),
+        choices=["direct_llm", "code_factory"],
         default="direct_llm",
-        help=f"Baseline to run (default: direct_llm, available: {list_baselines()})",
+        help="Baseline to use (default: direct_llm)",
     )
     parser.add_argument(
         "--provider",
@@ -168,18 +168,62 @@ def run_benchmark(args: argparse.Namespace, console: Console) -> None:
 
     console.print(table)
 
-    # Show sample outputs
-    console.print("\n[bold]Sample Outputs:[/bold]")
-    for tr in result.task_results[:3]:  # Show first 3 tasks
-        if tr.results:
-            first_result = tr.results[0]
-            console.print(f"\n[cyan]{tr.task.task_id}[/cyan]:")
-            console.print(f"  Status: {'[green]Success[/green]' if first_result.success else '[red]Failed[/red]'}")
-            if first_result.success:
-                output_preview = first_result.output[:200] + "..." if len(first_result.output) > 200 else first_result.output
+    # Show Code Factory specific metrics (generation vs execution time)
+    if args.baseline == "code_factory":
+        console.print("\n[bold cyan]Code Factory Metrics:[/bold cyan]")
+
+        cf_table = Table(title="Compilation vs Execution Time")
+        cf_table.add_column("Task ID", style="cyan")
+        cf_table.add_column("Generation (ms)", justify="right", style="yellow")
+        cf_table.add_column("Execution (ms)", justify="right", style="green")
+        cf_table.add_column("Speedup", justify="right", style="magenta")
+
+        for tr in result.task_results:
+            # Find first result with generation time (compilation task)
+            gen_times = [r.generation_time_ms for r in tr.results if r.generation_time_ms]
+            avg_gen = sum(gen_times) / len(gen_times) if gen_times else 0
+
+            # Average execution time across all tasks
+            exec_times = [r.execution_time_ms for r in tr.results if r.execution_time_ms]
+            avg_exec = sum(exec_times) / len(exec_times) if exec_times else 0
+
+            # Calculate speedup (how much faster execution is vs compilation)
+            speedup = f"{avg_gen / avg_exec:.1f}x" if avg_exec > 0 and avg_gen > 0 else "-"
+
+            cf_table.add_row(
+                tr.task.task_id,
+                f"{avg_gen:.0f}" if avg_gen > 0 else "-",
+                f"{avg_exec:.0f}",
+                speedup,
+            )
+
+        console.print(cf_table)
+
+    # Show all failing tasks with output comparison
+    failing_tasks = [tr for tr in result.task_results if tr.success_rate < 1.0]
+    if failing_tasks:
+        console.print("\n[bold red]Failing Tasks (with output comparison):[/bold red]")
+        for tr in failing_tasks:
+            if tr.logs:
+                first_log = tr.logs[0]
+                console.print(f"\n[cyan]{tr.task.task_id}[/cyan] (success rate: {tr.success_rate:.0%}):")
+                console.print(f"  [red]✗ Failed[/red]")
+                if first_log.error:
+                    console.print(f"  Error: [red]{first_log.error}[/red]")
+                console.print(f"  Expected: [green]{first_log.expected_output}[/green]")
+                console.print(f"  Actual:   [yellow]{first_log.output}[/yellow]")
+
+    # Show sample successful outputs
+    successful_tasks = [tr for tr in result.task_results if tr.success_rate == 1.0]
+    if successful_tasks:
+        console.print("\n[bold green]Sample Successful Outputs:[/bold green]")
+        for tr in successful_tasks[:3]:  # Show first 3 successful
+            if tr.logs:
+                first_log = tr.logs[0]
+                console.print(f"\n[cyan]{tr.task.task_id}[/cyan]:")
+                console.print(f"  [green]✓ Success[/green]")
+                output_preview = first_log.output[:200] + "..." if len(first_log.output) > 200 else first_log.output
                 console.print(f"  Output: {output_preview}")
-            elif first_result.error:
-                console.print(f"  Error: [red]{first_result.error}[/red]")
 
     # Save location
     console.print(f"\n[dim]Results saved to: {args.output_dir}/[/dim]")

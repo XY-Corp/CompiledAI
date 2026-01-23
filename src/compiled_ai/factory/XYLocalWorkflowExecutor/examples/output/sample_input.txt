@@ -1,0 +1,5 @@
+Hello World!
+This is a sample text file.
+It has multiple lines.
+We will process it with various operations.
+The quick brown fox jumps over the lazy dog.

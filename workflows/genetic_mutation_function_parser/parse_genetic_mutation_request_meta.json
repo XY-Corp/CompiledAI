@@ -1,0 +1,34 @@
+{
+  "activity_name": "parse_genetic_mutation_request",
+  "description": "Extract genetic mutation parameters from user request and format as function call",
+  "task_id": "simple_60",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"Find the type of gene mutation based on SNP (Single Nucleotide Polymorphism) ID rs6034464.\"}]], \"function\": [{\"name\": \"mutation_type.find\", \"description\": \"Finds the type of a genetic mutation based on its SNP (Single Nucleotide Polymorphism) ID.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"snp_id\": {\"type\": \"string\", \"description\": \"The ID of the Single Nucleotide Polymorphism (SNP) mutation.\"}, \"species\": {\"type\": \"string\", \"description\": \"Species in which the SNP occurs, default is 'Homo sapiens' (Humans).\"}}, \"required\": [\"snp_id\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"mutation_type.find\": {\n    \"snp_id\": \"string - The ID of the Single Nucleotide Polymorphism (SNP) mutation.\",\n    \"species\": \"string - Species in which the SNP occurs, default is 'Homo sapiens' (Humans).\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "inputs": [
+    {
+      "name": "user_request",
+      "type": "str",
+      "description": "The raw user input text containing the genetic mutation query with SNP ID and other relevant details",
+      "required": true
+    },
+    {
+      "name": "available_functions",
+      "type": "list",
+      "description": "List of available function definitions to understand required parameter structure and constraints",
+      "required": true
+    }
+  ],
+  "output": {
+    "type": "dict",
+    "description": "Returns a function call object with the function name as key and parameters as nested dict. Example output structure: {\"mutation_type.find\": {\"snp_id\": \"rs6034464\", \"species\": \"Homo sapiens\"}}. The function name key matches exactly the available function, and parameters include snp_id (extracted SNP identifier) and species (defaults to 'Homo sapiens' if not specified in request).",
+    "fields": {
+      "mutation_type.find": "dict containing the function parameters with snp_id and species fields"
+    }
+  },
+  "reference_activity": "llm_extract",
+  "workflow_spec": {
+    "workflow_id": "genetic_mutation_function_parser",
+    "name": "Genetic Mutation Function Call Parser",
+    "description": "Parses user request for genetic mutation analysis and returns the appropriate function call with extracted parameters",
+    "execution_pattern": "sequence"
+  }
+}

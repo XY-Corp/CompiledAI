@@ -1,0 +1,26 @@
+{
+  "workflow_id": "quadratic_solver_function_call",
+  "name": "Quadratic Equation Function Call Generator",
+  "description": "Analyzes a natural language query about solving quadratic equations, extracts coefficients and requirements, then generates the appropriate function call structure for the solve_quadratic function",
+  "task_id": "simple_5",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"Find all the roots of a quadratic equation given coefficients a = 3, b = -11, and c = -4.\"}]], \"function\": [{\"name\": \"solve_quadratic\", \"description\": \"Solve a quadratic equation given coefficients a, b, and c. If optional 'root_type' is 'real', the function will only return real roots. If not specified, function may return complex roots.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"a\": {\"type\": \"integer\", \"description\": \"The coefficient of the squared term in the quadratic equation.\"}, \"b\": {\"type\": \"integer\", \"description\": \"The coefficient of the linear term in the quadratic equation.\"}, \"c\": {\"type\": \"integer\", \"description\": \"The constant term in the quadratic equation.\"}, \"root_type\": {\"type\": \"string\", \"description\": \"The type of roots to return: 'real' for real roots, 'all' for both real and complex roots. Default value is 'real'.\"}}, \"required\": [\"a\", \"b\", \"c\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"solve_quadratic\": {\n    \"a\": \"integer - The coefficient of the squared term in the quadratic equation.\",\n    \"b\": \"integer - The coefficient of the linear term in the quadratic equation.\",\n    \"c\": \"integer - The constant term in the quadratic equation.\",\n    \"root_type\": \"string - The type of roots to return: 'real' for real roots, 'all' for both real and complex roots. Default value is 'real'.\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "activities": [
+    "extract_quadratic_parameters"
+  ],
+  "variables": [
+    {
+      "name": "prompt",
+      "default": null
+    },
+    {
+      "name": "functions",
+      "default": null
+    }
+  ],
+  "execution_pattern": "sequence",
+  "reasoning": "This workflow needs to parse a natural language query about solving quadratic equations and extract the specific coefficients (a, b, c) to generate the correct function call structure. The task is asking for metadata (which function to call and with what parameters) rather than actually solving the equation. I'm using a single LLM-based extraction activity because:\n\n1. **Natural Language Processing Required**: The input is unstructured text that needs semantic understanding to identify coefficients and requirements\n2. **Parameter Extraction**: Need to find specific numeric values for a, b, c from the natural language description\n3. **Root Type Inference**: Must determine if the user wants real roots only or all roots based on the phrasing\n4. **Structured Output**: Must format the response as a function call structure with exact field names matching the expected output\n\nThe activity uses LLM extraction (inspired by llm_extract template) because deterministic regex patterns would be too brittle for parsing varied natural language expressions like \"given coefficients a = 3, b = -11, and c = -4\" or \"find all roots\" vs \"find real roots\".",
+  "metrics": {
+    "total_tokens": 18875,
+    "regeneration_count": 0
+  }
+}

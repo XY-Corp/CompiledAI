@@ -1,0 +1,17 @@
+workflow_id: bird_identification_workflow
+name: Bird Identification Function Call Workflow
+description: Analyzes natural language bird identification requests and maps them to the identify_bird function call with appropriate parameters extracted from the prompt
+
+variables:
+  prompt: null
+  functions: null
+
+root:
+  sequence:
+    elements:
+      - activity:
+          name: extract_bird_parameters
+          params:
+            prompt: ${{ prompt }}
+            functions: ${{ functions }}
+          result: bird_function_call

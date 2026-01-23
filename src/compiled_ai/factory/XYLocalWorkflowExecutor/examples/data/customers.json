@@ -1,0 +1,9 @@
+[
+  {"id": "C001", "name": "Acme Corp", "status": "active", "balance": 15000.50},
+  {"id": "C002", "name": "TechStart Inc", "status": "active", "balance": 8500.00},
+  {"id": "C003", "name": "Old Company", "status": "inactive", "balance": 200.00},
+  {"id": "C004", "name": "Global Services", "status": "active", "balance": 45000.75},
+  {"id": "C005", "name": "Local Shop", "status": "pending", "balance": 1200.00},
+  {"id": "C006", "name": "Enterprise Ltd", "status": "active", "balance": 92000.00},
+  {"id": "C007", "name": "Defunct LLC", "status": "inactive", "balance": 0.00}
+]

@@ -1,0 +1,17 @@
+workflow_id: derivative_function_selector
+name: Derivative Function Parameter Selector
+description: Analyzes a mathematical derivative calculation request to extract the polynomial function and optional x-value, returning the appropriate function call structure
+
+variables:
+  prompt: null
+  functions: null
+
+root:
+  sequence:
+    elements:
+      - activity:
+          name: extract_derivative_parameters
+          params:
+            user_query: ${{ prompt }}
+            available_functions: ${{ functions }}
+          result: derivative_params

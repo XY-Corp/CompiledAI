@@ -6,6 +6,15 @@
   "difficulty": "simple",
   "prompt_template": "Extract the following fields from this email:\n- sender\n- recipient\n- subject\n- date\n\nEmail:\n{email_text}\n\nReturn as JSON.",
   "evaluation_type": "schema",
+  "output_format": {
+    "type": "object",
+    "fields": {
+      "sender": "string - email address of the sender (From: header)",
+      "recipient": "string - email address of the recipient (To: header)",
+      "subject": "string - email subject line",
+      "date": "string - date in format from the email (Date: header)"
+    }
+  },
   "schema": {
     "type": "object",
     "properties": {

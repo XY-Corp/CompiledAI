@@ -1,0 +1,40 @@
+{
+  "total_failures": 1,
+  "failure_rate": 0.5,
+  "failures": [
+    {
+      "instance_id": "simple_1",
+      "input": "{\"question\": [[{\"role\": \"user\", \"content\": \"Calculate the factorial of 5 using math functions.\"}]], \"function\": [{\"name\": \"math.factorial\", \"description\": \"Calculate the factorial of a given number.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"number\": {\"type\": \"integer\", \"description\": \"The number for which factorial needs to be calculated.\"}}, \"required\": [\"number\"]}}]}",
+      "output": "",
+      "expected": {
+        "math.factorial": {
+          "number": 5
+        }
+      },
+      "error": "Compilation failed: ['Attempt 1 - YAML: mapping values are not allowed here\\n  in \"<unicode string>\", line 3, column 231:\\n     ... a in the format {\"function_name\": {\"param\": \"value\"}}.\\n                                         ^', 'Attempt 2 - Execution: EXECUTION VALIDATION FAILED (LLM-based format check):\\nOutput format does not match expected structure.\\n\\nExample 1/1 FAILED (LLM eval: failure):\\n  Input: {\\n             \"functions\": [\\n                 {\\n                     \"name\": \"math.factorial\",\\n                     \"description\": \"Calculate the factorial of a given number.\",\\n                     \"parameters\": {\\n                         \"type\": \"dict\",\\n                         \"properties\": {\\n                             \"number\": {\\n         ...', 'Attempt 3 - YAML: mapping values are not allowed here\\n  in \"<unicode string>\", line 3, column 231:\\n     ... a in the format {\"function_name\": {\"param\": \"value\"}}.\\n                                         ^', 'Attempt 4 - Execution: EXECUTION VALIDATION FAILED (LLM-based format check):\\nOutput format does not match expected structure.\\n\\nExample 1/1 FAILED (LLM eval: failure):\\n  Input: {\\n             \"functions\": [\\n                 {\\n                     \"name\": \"math.factorial\",\\n                     \"description\": \"Calculate the factorial of a given number.\",\\n                     \"parameters\": {\\n                         \"type\": \"dict\",\\n                         \"properties\": {\\n                             \"number\": {\\n         ...']",
+      "match_type": "failure",
+      "evaluation_score": 0.0,
+      "evaluation_details": {
+        "match_type": "failure",
+        "format_correct": false,
+        "content_correct": false,
+        "field_matches": {
+          "math.factorial": false,
+          "number": false
+        },
+        "explanation": "No actual output provided to compare against expected output"
+      },
+      "latency_ms": 180642.16841664165,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "tokens": {
+        "input": 59467,
+        "output": 0,
+        "generation_input": null,
+        "generation_output": null,
+        "execution_input": null,
+        "execution_output": null
+      }
+    }
+  ]
+}

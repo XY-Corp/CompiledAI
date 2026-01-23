@@ -1,0 +1,26 @@
+{
+  "workflow_id": "extract_prime_factors_params",
+  "name": "Prime Factors Function Parameter Extraction",
+  "description": "Analyzes natural language request to extract parameters for the get_prime_factors function call",
+  "task_id": "simple_17",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"Find the prime factors of 450\"}]], \"function\": [{\"name\": \"get_prime_factors\", \"description\": \"Function to retrieve prime factors of a number.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"number\": {\"type\": \"integer\", \"description\": \"Number for which prime factors need to be calculated\"}, \"formatted\": {\"type\": \"boolean\", \"description\": \"Return formatted string if true, array if false. Default is true.\"}}, \"required\": [\"number\", \"formatted\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"get_prime_factors\": {\n    \"number\": \"integer - Number for which prime factors need to be calculated\",\n    \"formatted\": \"boolean - Return formatted string if true, array if false. Default is true.\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "activities": [
+    "extract_function_parameters"
+  ],
+  "variables": [
+    {
+      "name": "prompt",
+      "default": null
+    },
+    {
+      "name": "functions",
+      "default": null
+    }
+  ],
+  "execution_pattern": "sequence",
+  "reasoning": "This workflow addresses a metadata extraction task - the goal is to analyze the natural language request \"Find the prime factors of 450\" and return which function to call with what parameters, not to actually calculate the prime factors. The single activity uses LLM extraction capabilities to parse the user's request, identify the number (450) from the text, and map it to the get_prime_factors function's required parameters. The LLM will extract the number value and set appropriate defaults for other parameters like 'formatted'. The output structure exactly matches the expected format with get_prime_factors as the top-level key containing the parameter object.",
+  "metrics": {
+    "total_tokens": 34313,
+    "regeneration_count": 2
+  }
+}

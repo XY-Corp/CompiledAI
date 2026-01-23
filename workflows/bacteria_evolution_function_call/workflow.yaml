@@ -1,0 +1,15 @@
+workflow_id: bacteria_evolution_function_call
+name: Bacteria Evolution Function Call Generator
+description: Extracts bacteria population parameters from natural language text and formats them as a function call for calculate_bacteria_evolution_rate
+variables:
+  prompt: null
+  functions: null
+root:
+  sequence:
+    elements:
+      - activity:
+          name: extract_bacteria_parameters
+          params:
+            user_prompt: ${{ prompt }}
+            available_functions: ${{ functions }}
+          result: bacteria_call

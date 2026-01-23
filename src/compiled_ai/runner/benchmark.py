@@ -301,15 +301,23 @@ class BenchmarkRunner:
             prompt = task.prompt_template.format(**instance.input_data)
 
             # Convert to TaskInput
+            # Build metadata with output_format if available (CRITICAL for Code Factory)
+            metadata = {
+                "task_name": task.name,
+                "category": task.category.value,
+                "difficulty": task.difficulty.value,
+                "expected_output": instance.expected_output,  # Include for format reference
+            }
+
+            # Add output_format if available (needed for Code Factory compilation)
+            if hasattr(instance, 'metadata') and instance.metadata and "output_format" in instance.metadata:
+                metadata["output_format"] = instance.metadata["output_format"]
+
             task_input = TaskInput(
                 task_id=f"{task.task_id}_{instance.instance_id}",
                 prompt=prompt,
                 context=instance.input_data,
-                metadata={
-                    "task_name": task.name,
-                    "category": task.category.value,
-                    "difficulty": task.difficulty.value,
-                },
+                metadata=metadata,
             )
 
             # Run baseline
@@ -340,6 +348,18 @@ class BenchmarkRunner:
                 evaluation_details=eval_result.details,
             )
             task_result.logs.append(log)
+
+            # Print immediate feedback if verbose baseline (e.g., code_factory)
+            if hasattr(baseline, 'verbose') and baseline.verbose:
+                from rich.console import Console
+                console = Console()
+                status_icon = "✓" if eval_result.success else "✗"
+                status_color = "green" if eval_result.success else "red"
+                console.print(f"\n[{status_color}]{status_icon}[/{status_color}] [cyan]{task.task_id}_{instance.instance_id}[/cyan]")
+                if result.error:
+                    console.print(f"  [dim]Error:[/dim] [red]{result.error}[/red]")
+                console.print(f"  [dim]Expected:[/dim] [green]{instance.expected_output}[/green]")
+                console.print(f"  [dim]Actual:[/dim]   [yellow]{result.output}[/yellow]")
 
         # Collect metrics
         task_result.metrics = baseline.to_metrics_collector(task_result.results)

@@ -1,0 +1,17 @@
+workflow_id: parse_factorial_request
+name: Parse Factorial Function Request
+description: Parses a natural language request to calculate factorial and extracts the function name and parameters in the required format
+
+variables:
+  prompt: null
+  functions: null
+
+root:
+  sequence:
+    elements:
+      - activity:
+          name: parse_math_request
+          params:
+            user_request: ${{ prompt }}
+            available_functions: ${{ functions }}
+          result: parsed_function

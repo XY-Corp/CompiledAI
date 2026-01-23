@@ -1,0 +1,16 @@
+workflow_id: quadratic_function_call_builder
+name: Quadratic Equation Function Call Builder
+description: |
+  Parses natural language requests for solving quadratic equations, extracts the coefficients (a, b, c) and any optional parameters, then formats a proper function call structure with the solve_quadratic function as the top-level key.
+variables:
+  prompt: null
+  functions: null
+root:
+  sequence:
+    elements:
+      - activity:
+          name: parse_quadratic_request
+          params:
+            prompt: ${{ prompt }}
+            functions: ${{ functions }}
+          result: parse_result

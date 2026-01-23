@@ -1,0 +1,28 @@
+{
+  "activity_name": "extract_quadratic_coefficients",
+  "description": "Parse the user prompt to extract coefficients a, b, and c for a quadratic equation and format them as a function call structure",
+  "task_id": "simple_6",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"What are the roots of the quadratic equation where a=2, b=5 and c=3 ?\"}]], \"function\": [{\"name\": \"solve_quadratic\", \"description\": \"Find the roots of a quadratic equation. Returns both roots.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"a\": {\"type\": \"integer\", \"description\": \"Coefficient of x\\u00b2.\"}, \"b\": {\"type\": \"integer\", \"description\": \"Coefficient of x.\"}, \"c\": {\"type\": \"integer\", \"description\": \"Constant term.\"}}, \"required\": [\"a\", \"b\", \"c\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"solve_quadratic\": {\n    \"a\": \"integer - Coefficient of x\\u00b2.\",\n    \"b\": \"integer - Coefficient of x.\",\n    \"c\": \"integer - Constant term.\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "inputs": [
+    {
+      "name": "user_prompt",
+      "type": "str",
+      "description": "The complete user prompt text containing the quadratic equation problem with coefficient values to be extracted and parsed",
+      "required": true
+    }
+  ],
+  "output": {
+    "type": "dict",
+    "description": "Returns a function call structure with solve_quadratic as the top-level key containing parameters: {\"solve_quadratic\": {\"a\": integer_value, \"b\": integer_value, \"c\": integer_value}} where the integer values are the actual coefficients extracted from the user prompt",
+    "fields": {
+      "solve_quadratic": "dict containing the extracted coefficient parameters a, b, and c as integers"
+    }
+  },
+  "reference_activity": "llm_extract",
+  "workflow_spec": {
+    "workflow_id": "quadratic_equation_solver",
+    "name": "Quadratic Equation Function Caller",
+    "description": "Analyzes user prompts about quadratic equations and returns a function call structure with the extracted coefficients for the solve_quadratic function",
+    "execution_pattern": "sequence"
+  }
+}

@@ -1,0 +1,15 @@
+workflow_id: magnetic_field_calculator
+name: Magnetic Field Strength Calculator
+description: Parse natural language physics problem and extract parameters to call the calculate_magnetic_field_strength function
+variables:
+  prompt: null
+  functions: null
+root:
+  sequence:
+    elements:
+      - activity:
+          name: extract_physics_parameters
+          params:
+            problem_text: ${{ prompt }}
+            available_functions: ${{ functions }}
+          result: physics_params

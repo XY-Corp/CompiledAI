@@ -1,0 +1,14 @@
+workflow_id: math_function_parser
+name: Math Function Parameter Parser
+description: Parse natural language math requests to extract function names and parameters, returning properly formatted function calls
+variables:
+  prompt: null
+root:
+  sequence:
+    elements:
+      - activity:
+          name: parse_math_function_call
+          params:
+            request_text: ${{ prompt }}
+            available_functions: []
+          result: parsed_function

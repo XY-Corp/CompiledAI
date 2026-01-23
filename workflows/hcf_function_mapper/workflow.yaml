@@ -1,0 +1,15 @@
+workflow_id: hcf_function_mapper
+name: HCF Function Mapper
+description: Analyzes mathematical queries about highest common factors and returns the appropriate function call with extracted parameters
+variables:
+  prompt: null
+  functions: null
+root:
+  sequence:
+    elements:
+      - activity:
+          name: parse_hcf_request
+          params:
+            query_text: ${{ prompt }}
+            available_functions: ${{ functions }}
+          result: function_call

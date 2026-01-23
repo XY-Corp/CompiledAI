@@ -1,0 +1,17 @@
+workflow_id: elephant_population_function_parser
+name: Elephant Population Function Parser
+description: Parses natural language input about elephant population estimation and extracts numerical parameters to return a structured function call
+
+variables:
+  prompt: null
+  functions: null
+
+root:
+  sequence:
+    elements:
+      - activity:
+          name: parse_population_parameters
+          params:
+            text_input: ${{ prompt }}
+            available_functions: ${{ functions }}
+          result: result

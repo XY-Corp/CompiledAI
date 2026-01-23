@@ -1,0 +1,34 @@
+{
+  "activity_name": "extract_physics_parameters",
+  "description": "Extracts numerical physics parameters from natural language text and formats them as function call parameters",
+  "task_id": "simple_28",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"Calculate the displacement of a car given the initial velocity of 10 and acceleeration of 9.8 within 5 seconds.\"}]], \"function\": [{\"name\": \"calculate_displacement\", \"description\": \"Calculates the displacement of an object in motion given initial velocity, time, and acceleration.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"initial_velocity\": {\"type\": \"integer\", \"description\": \"The initial velocity of the object in m/s.\"}, \"time\": {\"type\": \"integer\", \"description\": \"The time in seconds that the object has been in motion.\"}, \"acceleration\": {\"type\": \"float\", \"description\": \"The acceleration of the object in m/s^2.\", \"default\": 0}}, \"required\": [\"initial_velocity\", \"time\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"calculate_displacement\": {\n    \"initial_velocity\": \"integer - The initial velocity of the object in m/s.\",\n    \"time\": \"integer - The time in seconds that the object has been in motion.\",\n    \"acceleration\": \"float - The acceleration of the object in m/s^2.\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "inputs": [
+    {
+      "name": "prompt_text",
+      "type": "str",
+      "description": "The natural language physics problem description containing initial velocity, acceleration, and time values",
+      "required": true
+    },
+    {
+      "name": "function_schemas",
+      "type": "list",
+      "description": "List of available function definitions providing parameter names and types for validation",
+      "required": true
+    }
+  ],
+  "output": {
+    "type": "dict",
+    "description": "Returns function call structure: {\"calculate_displacement\": {\"initial_velocity\": 10, \"time\": 5, \"acceleration\": 9.8}} where the function name is the top-level key containing a nested object with the extracted parameter values (initial_velocity as integer, time as integer, acceleration as float)",
+    "fields": {
+      "calculate_displacement": "dict"
+    }
+  },
+  "reference_activity": "llm_extract",
+  "workflow_spec": {
+    "workflow_id": "calculate_displacement_params",
+    "name": "Calculate Displacement Parameters Extractor",
+    "description": "Extracts physics calculation parameters from natural language prompts and formats them for function execution",
+    "execution_pattern": "sequence"
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "activity_name": "parse_function_call_from_text",
+  "description": "Analyzes the input prompt to extract function name and parameters, then formats them into the correct function call structure",
+  "task_id": "bfcl_simple_simple_2",
+  "task_description": "You have access to the following functions:\n\n[\n  {\n    \"name\": \"math.hypot\",\n    \"description\": \"Calculate the Euclidean norm, sqrt(sum(squares)), the length of the vector from the origin to point (x, y) which is the hypotenuse of the right triangle.\",\n    \"parameters\": {\n      \"type\": \"dict\",\n      \"properties\": {\n        \"x\": {\n          \"type\": \"integer\",\n          \"description\": \"The x-coordinate value.\"\n        },\n        \"y\": {\n          \"type\": \"integer\",\n          \"description\": \"The y-coordinate value.\"\n        },\n        \"z\": {\n          \"type\": \"integer\",\n          \"description\": \"Optional. The z-coordinate value. Default is 0.\"\n        }\n      },\n      \"required\": [\n        \"x\",\n        \"y\"\n      ]\n    }\n  }\n]\n\nUser query: Calculate the hypotenuse of a right triangle given the lengths of the other two sides as 4 and 5.\n\nGenerate the appropriate function call as JSON with 'name' and 'arguments' keys.\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `user_query` (str) - context for task type\n- `functions` (str) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, user_query, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"math.hypot\": {\n    \"x\": \"integer - The x-coordinate value.\",\n    \"y\": \"integer - The y-coordinate value.\",\n    \"z\": \"integer - Optional. The z-coordinate value. Default is 0.\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "inputs": [
+    {
+      "name": "text",
+      "type": "str",
+      "description": "The natural language text containing the function call request that needs to be parsed",
+      "required": true
+    },
+    {
+      "name": "available_functions",
+      "type": "str",
+      "description": "JSON string containing the available function definitions and their parameter schemas",
+      "required": true
+    }
+  ],
+  "output": {
+    "type": "dict",
+    "description": "Returns the function call structure with the function name as the top-level key and its parameters as a nested object. Example for math.hypot: {\"math.hypot\": {\"x\": 4, \"y\": 5}}",
+    "fields": {
+      "function_name": "dict - Contains the function parameters as key-value pairs"
+    }
+  },
+  "reference_activity": "llm_extract",
+  "workflow_spec": {
+    "workflow_id": "parse_function_call",
+    "name": "Parse Function Call from Text",
+    "description": "Extracts function name and parameters from natural language text and returns the appropriate function call structure",
+    "execution_pattern": "sequence"
+  }
+}

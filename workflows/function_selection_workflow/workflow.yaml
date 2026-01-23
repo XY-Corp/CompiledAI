@@ -1,0 +1,15 @@
+workflow_id: function_selection_workflow
+name: Function Selection and Parameter Extraction
+description: Analyzes user prompt to select the appropriate function and extract parameters for execution
+
+variables:
+  prompt: None
+  functions: None
+
+root:
+  activity:
+    name: analyze_prompt_for_function_selection
+    params:
+      user_prompt: ${{ prompt }}
+      available_functions: ${{ functions }}
+    result: function_call

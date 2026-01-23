@@ -1,0 +1,26 @@
+{
+  "workflow_id": "physics_function_call_workflow",
+  "name": "Physics Function Call Workflow",
+  "description": "Parses physics problem text to extract parameters and calls the appropriate calculation function",
+  "task_id": "simple_31",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"Calculate the final velocity of an object, knowing that it started from rest, accelerated at a rate of 9.8 m/s^2 for a duration of 5 seconds.\"}]], \"function\": [{\"name\": \"calculate_final_velocity\", \"description\": \"Calculate the final velocity of an object under constant acceleration, knowing its initial velocity, acceleration, and time of acceleration.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"initial_velocity\": {\"type\": \"integer\", \"description\": \"The initial velocity of the object.\"}, \"acceleration\": {\"type\": \"float\", \"description\": \"The acceleration of the object.\"}, \"time\": {\"type\": \"integer\", \"description\": \"The time of acceleration.\"}}, \"required\": [\"initial_velocity\", \"acceleration\", \"time\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"calculate_final_velocity\": {\n    \"initial_velocity\": \"integer - The initial velocity of the object.\",\n    \"acceleration\": \"float - The acceleration of the object.\",\n    \"time\": \"integer - The time of acceleration.\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "activities": [
+    "parse_physics_problem"
+  ],
+  "variables": [
+    {
+      "name": "prompt",
+      "default": null
+    },
+    {
+      "name": "functions",
+      "default": null
+    }
+  ],
+  "execution_pattern": "sequence",
+  "reasoning": "This workflow uses deterministic text parsing instead of LLM because physics problems follow clear patterns with numerical values and units that can be extracted using regex. The task requires parsing \"started from rest\" (initial_velocity=0), \"9.8 m/s^2\" (acceleration), and \"5 seconds\" (time) - all structured data that doesn't require semantic understanding. The output must match the exact structure shown in the task with the function name as the top-level key and parameters nested underneath. This approach is more reliable and efficient than using an LLM for what is essentially a structured data extraction task.",
+  "metrics": {
+    "total_tokens": 18765,
+    "regeneration_count": 0
+  }
+}

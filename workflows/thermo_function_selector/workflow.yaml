@@ -1,0 +1,15 @@
+workflow_id: thermo_function_selector
+name: Thermodynamics Function Parameter Extractor
+description: Analyzes a thermodynamics question and extracts parameters for the appropriate function call to calculate phase change energy
+variables:
+  prompt: null
+  functions: null
+root:
+  sequence:
+    elements:
+      - activity:
+          name: parse_thermo_question
+          params:
+            question_text: ${{ prompt }}
+            available_functions: ${{ functions }}
+          result: thermo_result

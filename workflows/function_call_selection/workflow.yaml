@@ -1,0 +1,16 @@
+workflow_id: function_call_selection
+name: Function Call Parameter Extraction
+description: |
+  Analyzes a user's natural language prompt and available function definitions to select the appropriate function and extract the required parameters from the user's request.
+variables:
+  prompt: null
+  functions: null
+root:
+  sequence:
+    elements:
+      - activity:
+          name: extract_function_call
+          params:
+            prompt: ${{ prompt }}
+            functions: ${{ functions }}
+          result: function_call_result

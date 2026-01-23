@@ -1,0 +1,16 @@
+workflow_id: quadratic_function_call_generator
+name: Quadratic Equation Function Call Generator
+description: Analyzes user queries about quadratic equations and generates the appropriate function call with extracted coefficients and parameters
+variables:
+  prompt: null
+  user_query: null
+  functions: null
+root:
+  sequence:
+    elements:
+      - activity:
+          name: parse_quadratic_query
+          params:
+            query_text: ${{ user_query }}
+            available_functions: ${{ functions }}
+          result: quadratic_function_call

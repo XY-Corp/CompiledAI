@@ -1,0 +1,26 @@
+{
+  "workflow_id": "entropy_change_calculator",
+  "name": "Entropy Change Calculator",
+  "description": "Extracts numerical parameters from a text prompt and formats them as a function call to calculate_entropy_change",
+  "task_id": "simple_51",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"Calculate the entropy change for a certain process given an initial temperature of 300K, a final temperature of 400K, and a heat capacity of 5J/K.\"}]], \"function\": [{\"name\": \"calculate_entropy_change\", \"description\": \"Calculate the entropy change for an isothermal and reversible process.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"initial_temp\": {\"type\": \"integer\", \"description\": \"The initial temperature in Kelvin.\"}, \"final_temp\": {\"type\": \"integer\", \"description\": \"The final temperature in Kelvin.\"}, \"heat_capacity\": {\"type\": \"integer\", \"description\": \"The heat capacity in J/K.\"}, \"isothermal\": {\"type\": \"boolean\", \"description\": \"Whether the process is isothermal. Default is True.\"}}, \"required\": [\"initial_temp\", \"final_temp\", \"heat_capacity\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"calculate_entropy_change\": {\n    \"initial_temp\": \"integer - The initial temperature in Kelvin.\",\n    \"final_temp\": \"integer - The final temperature in Kelvin.\",\n    \"heat_capacity\": \"integer - The heat capacity in J/K.\",\n    \"isothermal\": \"boolean - Whether the process is isothermal. Default is True.\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "activities": [
+    "parse_entropy_parameters"
+  ],
+  "variables": [
+    {
+      "name": "prompt",
+      "default": null
+    },
+    {
+      "name": "functions",
+      "default": null
+    }
+  ],
+  "execution_pattern": "sequence",
+  "reasoning": "This task requires parsing numerical values from natural language text and formatting them as a specific function call structure. The user provides initial temperature (300K), final temperature (400K), and heat capacity (5J/K) in natural language, and we need to extract these values and format them exactly as the calculate_entropy_change function expects.\n\nI designed a single activity that uses deterministic text parsing to extract the numerical values from the prompt. While I considered using an LLM for extraction, the temperature and heat capacity values follow clear patterns in the text (numbers followed by units like \"K\" or \"J/K\"), making regex-based extraction more reliable and efficient.\n\nThe activity returns the exact structure specified in the task - a dictionary with the function name as the key and parameters as a nested object. The isothermal parameter defaults to true as specified in the function definition.\n\nThis approach ensures accurate extraction of numerical data while maintaining the Code Factory's preference for deterministic operations over LLM calls when patterns are clear.",
+  "metrics": {
+    "total_tokens": 27420,
+    "regeneration_count": 0
+  }
+}

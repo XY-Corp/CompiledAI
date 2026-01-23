@@ -1,0 +1,16 @@
+workflow_id: support_ticket_classifier
+name: Support Ticket Classification
+description: Classifies support tickets into predefined categories based on the content of the ticket
+
+variables:
+  prompt: null
+  _task_schema: null
+  ticket_text: null
+
+root:
+  activity:
+    name: classify_support_ticket
+    params:
+      ticket_content: ${{ ticket_text }}
+      available_categories: ["billing", "technical", "account", "general"]
+    result: classification_result

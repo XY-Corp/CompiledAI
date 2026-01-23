@@ -1,0 +1,26 @@
+{
+  "workflow_id": "function_selector_weather",
+  "name": "Function Selection for Weather Query",
+  "description": "Analyzes a natural language weather query and returns the appropriate function call with properly extracted parameters to get average temperature data",
+  "task_id": "simple_78",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"Get the average temperature in Austin for the next 3 days in Celsius.\"}]], \"function\": [{\"name\": \"average_temperature\", \"description\": \"Retrieves the average temperature for a specific location over the defined timeframe.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"location\": {\"type\": \"string\", \"description\": \"The city to get the average temperature for. It should format as city name such as Boston.\"}, \"days\": {\"type\": \"integer\", \"description\": \"The number of days to get the average temperature for.\"}, \"temp_unit\": {\"type\": \"string\", \"description\": \"The temperature unit ('Celsius' or 'Fahrenheit'). Default is 'Fahrenheit'.\"}}, \"required\": [\"location\", \"days\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"average_temperature\": {\n    \"location\": \"string - The city to get the average temperature for. It should format as city name such as Boston.\",\n    \"days\": \"integer - The number of days to get the average temperature for.\",\n    \"temp_unit\": \"string - The temperature unit ('Celsius' or 'Fahrenheit'). Default is 'Fahrenheit'.\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "activities": [
+    "parse_weather_query"
+  ],
+  "variables": [
+    {
+      "name": "prompt",
+      "default": null
+    },
+    {
+      "name": "functions",
+      "default": null
+    }
+  ],
+  "execution_pattern": "sequence",
+  "reasoning": "This workflow is designed to parse user intent and return metadata about which function to call with what parameters, rather than executing the actual function. Based on the task structure, this is a function selection workflow that analyzes natural language input and maps it to specific function calls. The activity uses LLM because it requires semantic understanding of natural language queries to extract location, timeframe, and temperature units. The output format follows the exact structure specified in the task - a function name as the top-level key with its parameters nested underneath.",
+  "metrics": {
+    "total_tokens": 45803,
+    "regeneration_count": 3
+  }
+}

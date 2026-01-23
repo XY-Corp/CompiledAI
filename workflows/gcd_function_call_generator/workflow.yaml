@@ -1,0 +1,15 @@
+workflow_id: gcd_function_call_generator
+name: Greatest Common Divisor Function Call Generator
+description: Analyzes user prompt to extract numbers and generates a properly formatted function call for math.gcd with the extracted numerical parameters
+variables:
+  prompt: null
+  functions: null
+root:
+  sequence:
+    elements:
+      - activity:
+          name: parse_numbers_and_generate_function_call
+          params:
+            user_prompt: ${{ prompt }}
+            available_functions: ${{ functions }}
+          result: function_call

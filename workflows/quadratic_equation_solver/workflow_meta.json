@@ -1,0 +1,22 @@
+{
+  "workflow_id": "quadratic_equation_solver",
+  "name": "Quadratic Equation Function Caller",
+  "description": "Analyzes user prompts about quadratic equations and returns a function call structure with the extracted coefficients for the solve_quadratic function",
+  "task_id": "simple_6",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"What are the roots of the quadratic equation where a=2, b=5 and c=3 ?\"}]], \"function\": [{\"name\": \"solve_quadratic\", \"description\": \"Find the roots of a quadratic equation. Returns both roots.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"a\": {\"type\": \"integer\", \"description\": \"Coefficient of x\\u00b2.\"}, \"b\": {\"type\": \"integer\", \"description\": \"Coefficient of x.\"}, \"c\": {\"type\": \"integer\", \"description\": \"Constant term.\"}}, \"required\": [\"a\", \"b\", \"c\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"solve_quadratic\": {\n    \"a\": \"integer - Coefficient of x\\u00b2.\",\n    \"b\": \"integer - Coefficient of x.\",\n    \"c\": \"integer - Constant term.\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "activities": [
+    "extract_quadratic_coefficients"
+  ],
+  "variables": [
+    {
+      "name": "prompt",
+      "default": null
+    }
+  ],
+  "execution_pattern": "sequence",
+  "reasoning": "This workflow needs to parse natural language text containing quadratic equation coefficients and format them into a specific function call structure. Since the task involves extracting numerical values (a=2, b=5, c=3) from unstructured text and understanding the semantic context of what constitutes a quadratic equation, an LLM-based approach is most appropriate. The llm_extract template provides the foundation for extracting structured data from text, which I've adapted to specifically target quadratic equation coefficients. The workflow uses a single sequential activity since there's only one extraction and formatting step needed. The activity takes the raw prompt as input and outputs the exact function call structure required, with solve_quadratic as the top-level key containing the extracted integer coefficients.",
+  "metrics": {
+    "total_tokens": 20641,
+    "regeneration_count": 0
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "workflow_id": "function_call_mapper",
+  "name": "Function Call Parameter Mapper",
+  "description": "Analyzes a user prompt and available function definitions to extract the appropriate function name and parameter values, returning them in a structured function call format.",
+  "task_id": "simple_10",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"Calculate the area of a right-angled triangle given the lengths of its base and height as 6cm and 10cm.\"}]], \"function\": [{\"name\": \"calculate_area\", \"description\": \"Calculate the area of a right-angled triangle given the lengths of its base and height.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"base\": {\"type\": \"integer\", \"description\": \"The length of the base of the right-angled triangle.\"}, \"height\": {\"type\": \"integer\", \"description\": \"The height of the right-angled triangle.\"}, \"unit\": {\"type\": \"string\", \"description\": \"The unit of measure used. Defaults to 'cm'.\"}}, \"required\": [\"base\", \"height\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"calculate_area\": {\n    \"base\": \"integer - The length of the base of the right-angled triangle.\",\n    \"height\": \"integer - The height of the right-angled triangle.\",\n    \"unit\": \"string - The unit of measure used. Defaults to 'cm'.\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "activities": [
+    "map_prompt_to_function_call"
+  ],
+  "variables": [
+    {
+      "name": "prompt",
+      "default": null
+    },
+    {
+      "name": "functions",
+      "default": null
+    }
+  ],
+  "execution_pattern": "sequence",
+  "reasoning": "This task requires analyzing natural language text to extract values and map them to a function call structure. The key requirements are:\n\n1. **Task Intent Analysis**: This is a METADATA task - we need to return which function to call and with what parameters, NOT actually execute the function. The output should be the function call specification.\n\n2. **Why LLM is needed**: This requires semantic understanding to:\n   - Parse the natural language prompt to identify numeric values (6cm, 10cm)\n   - Understand that 'base' and 'height' in the prompt map to the function parameters\n   - Extract the unit 'cm' from the context\n   - Match the user's request to the correct function from the available list\n\n3. **Output Format**: The expected output format is a dict with the function name as the top-level key (e.g., `calculate_area`) and a nested object containing the extracted parameters. This is NOT a standard `{\\\"function\\\": \\\"name\\\", \\\"params\\\": {...}}` format - the function name IS the key.\n\n4. **Single Activity Design**: One activity is sufficient since the entire task is about extraction and mapping - analyzing the prompt against the function definitions and returning the structured call.\n\n5. **Reference Activity**: Using `llm_extract` as inspiration since this is fundamentally an extraction task - extracting structured data (function name and parameters) from unstructured text (the user prompt).\n\nThe workflow uses a sequence pattern with a single activity since there's only one logical step: analyze the prompt and functions, then return the mapped function call.",
+  "metrics": {
+    "total_tokens": 28929,
+    "regeneration_count": 0
+  }
+}

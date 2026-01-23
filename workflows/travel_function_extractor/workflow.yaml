@@ -1,0 +1,15 @@
+workflow_id: travel_function_extractor
+name: Travel Itinerary Function Parameter Extractor
+description: Extracts travel itinerary function parameters from natural language travel requests and returns the appropriate function call structure
+
+variables:
+  prompt: None
+  functions: None
+
+root:
+  activity:
+    name: extract_travel_parameters
+    params:
+      travel_request: ${{ prompt }}
+      available_functions: ${{ functions }}
+    result: result

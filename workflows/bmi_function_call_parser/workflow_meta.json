@@ -1,0 +1,26 @@
+{
+  "workflow_id": "bmi_function_call_parser",
+  "name": "BMI Function Call Parser",
+  "description": "Parses a natural language BMI calculation request and formats it as a function call with extracted parameters",
+  "task_id": "simple_88",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"Calculate the BMI (Body Mass Index) of a person who weighs 70kg and is 1.75m tall.\"}]], \"function\": [{\"name\": \"calculate_BMI\", \"description\": \"Calculate the Body Mass Index (BMI) given a person's weight and height.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"weight_kg\": {\"type\": \"integer\", \"description\": \"The weight of the person in kilograms.\"}, \"height_m\": {\"type\": \"float\", \"description\": \"The height of the person in meters.\"}}, \"required\": [\"weight_kg\", \"height_m\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"calculate_BMI\": {\n    \"weight_kg\": \"integer - The weight of the person in kilograms.\",\n    \"height_m\": \"float - The height of the person in meters.\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "activities": [
+    "extract_bmi_parameters_and_format_call"
+  ],
+  "variables": [
+    {
+      "name": "prompt",
+      "default": null
+    },
+    {
+      "name": "functions",
+      "default": null
+    }
+  ],
+  "execution_pattern": "sequence",
+  "reasoning": "This workflow is designed to parse natural language BMI calculation requests and convert them into structured function calls. The task requires extracting numeric values (weight and height) from conversational text and formatting them according to a specific function call schema.\n\nThe single activity uses LLM-based extraction because:\n1. Natural language parsing requires semantic understanding to identify weight and height values\n2. The input format is conversational (\"weighs 70kg and is 1.75m tall\") rather than structured\n3. Unit conversion and value extraction from prose requires contextual reasoning\n\nThe activity takes the raw prompt text and function schema, then uses LLM capabilities to:\n- Parse the natural language to identify weight (70kg) and height (1.75m) \n- Convert units if needed (kg to integer, meters to float)\n- Format the output as a function call object with calculate_BMI as the key\n- Ensure parameter types match the schema (weight_kg as integer, height_m as float)\n\nThe output format exactly matches the required structure with calculate_BMI as the top-level key and nested parameter object containing weight_kg and height_m fields.",
+  "metrics": {
+    "total_tokens": 17570,
+    "regeneration_count": 0
+  }
+}

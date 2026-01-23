@@ -1,0 +1,18 @@
+workflow_id: function_call_gcd_extraction
+name: GCD Function Call Parameter Extraction
+description: |
+  Extracts two numbers from a natural language prompt and returns a function call object for computing the Greatest Common Divisor (GCD) using the number_theory.gcd function.
+
+variables:
+  prompt: null
+  functions: null
+
+root:
+  sequence:
+    elements:
+      - activity:
+          name: extract_gcd_function_call
+          params:
+            prompt: ${{ prompt }}
+            functions: ${{ functions }}
+          result: function_call_result

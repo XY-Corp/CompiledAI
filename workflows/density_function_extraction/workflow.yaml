@@ -1,0 +1,14 @@
+workflow_id: density_function_extraction
+name: Extract Density Function Call from Text
+description: Extract density calculation parameters from natural language text and format them as a function call structure
+variables:
+  prompt: null
+  functions: null
+root:
+  sequence:
+    elements:
+      - activity:
+          name: extract_density_params
+          params:
+            text: ${{ prompt }}
+          result: function_call

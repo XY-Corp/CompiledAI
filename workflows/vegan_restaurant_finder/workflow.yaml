@@ -1,0 +1,17 @@
+workflow_id: vegan_restaurant_finder
+name: Vegan Restaurant Finder
+description: Analyzes user requests to find vegan restaurants and extracts the appropriate function call with location and operating hours parameters
+
+variables:
+  prompt: null
+  functions: null
+
+root:
+  sequence:
+    elements:
+      - activity:
+          name: extract_restaurant_function_call
+          params:
+            prompt: ${{ prompt }}
+            functions: ${{ functions }}
+          result: restaurant_search_request

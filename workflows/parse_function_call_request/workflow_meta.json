@@ -1,0 +1,26 @@
+{
+  "workflow_id": "parse_function_call_request",
+  "name": "Parse Function Call Request",
+  "description": "Parses a user request to extract function call information and parameters for database operations",
+  "task_id": "simple_94",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"Update my customer information with user id 43523 'name':'John Doe', 'email':'johndoe@email.com' in the database.\"}]], \"function\": [{\"name\": \"update_user_info\", \"description\": \"Update user information in the database.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"user_id\": {\"type\": \"integer\", \"description\": \"The user ID of the customer.\"}, \"update_info\": {\"type\": \"dict\", \"properties\": {\"name\": {\"type\": \"string\", \"description\": \"The customer's updated name.\"}, \"email\": {\"type\": \"string\", \"description\": \"The customer's updated email.\"}}, \"description\": \"The new information to update.\"}, \"database\": {\"type\": \"string\", \"description\": \"The database where the user's information is stored.\", \"default\": \"CustomerInfo\"}}, \"required\": [\"user_id\", \"update_info\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"update_user_info\": {\n    \"user_id\": \"integer - The user ID of the customer.\",\n    \"update_info\": \"dict - The new information to update.\",\n    \"database\": \"string - The database where the user's information is stored.\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "activities": [
+    "parse_user_request"
+  ],
+  "variables": [
+    {
+      "name": "prompt",
+      "default": null
+    },
+    {
+      "name": "functions",
+      "default": null
+    }
+  ],
+  "execution_pattern": "sequence",
+  "reasoning": "This workflow needs to parse a natural language user request to extract structured function call information. The task is metadata extraction rather than actual execution - we need to return WHAT function to call and its parameters, not execute the database update. I'm using an LLM-based approach since this requires understanding natural language intent and mapping it to structured function parameters. The llm_extract template provides the perfect pattern for extracting structured data from unstructured text. The output must match the exact format specified, with the function name as the top-level key containing the parameter object. The activity will use the LLM to parse the user request against the available function schema to extract the correct parameters with proper types (user_id as integer, update_info as nested dict, etc.).",
+  "metrics": {
+    "total_tokens": 40457,
+    "regeneration_count": 2
+  }
+}

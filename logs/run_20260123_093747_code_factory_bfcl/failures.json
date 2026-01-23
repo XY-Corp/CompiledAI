@@ -1,0 +1,114 @@
+{
+  "total_failures": 3,
+  "failure_rate": 1.0,
+  "failures": [
+    {
+      "instance_id": "simple_0",
+      "input": "{\"question\": [[{\"role\": \"user\", \"content\": \"Find the area of a triangle with a base of 10 units and height of 5 units.\"}]], \"function\": [{\"name\": \"calculate_triangle_area\", \"description\": \"Calculate the area of a triangle given its base and height.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"base\": {\"type\": \"integer\", \"description\": \"The base of the triangle.\"}, \"height\": {\"type\": \"integer\", \"description\": \"The height of the triangle.\"}, \"unit\": {\"type\": \"string\", \"description\": \"The unit of measure (defaults to 'units' if not specified)\"}}, \"required\": [\"base\", \"height\"]}}]}",
+      "output": "",
+      "expected": {
+        "calculate_triangle_area": {
+          "base": 10,
+          "height": 5,
+          "unit": "units"
+        }
+      },
+      "error": "AnthropicModel.__init__() got an unexpected keyword argument 'thinking'",
+      "match_type": "failure",
+      "evaluation_score": 0.0,
+      "evaluation_details": {
+        "match_type": "failure",
+        "format_correct": false,
+        "content_correct": false,
+        "field_matches": {
+          "calculate_triangle_area": false,
+          "base": false,
+          "height": false,
+          "unit": false
+        },
+        "explanation": "No actual output provided to compare against expected output"
+      },
+      "latency_ms": 9391.471832990646,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "tokens": {
+        "input": 0,
+        "output": 0,
+        "generation_input": null,
+        "generation_output": null,
+        "execution_input": null,
+        "execution_output": null
+      }
+    },
+    {
+      "instance_id": "simple_1",
+      "input": "{\"question\": [[{\"role\": \"user\", \"content\": \"Calculate the factorial of 5 using math functions.\"}]], \"function\": [{\"name\": \"math.factorial\", \"description\": \"Calculate the factorial of a given number.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"number\": {\"type\": \"integer\", \"description\": \"The number for which factorial needs to be calculated.\"}}, \"required\": [\"number\"]}}]}",
+      "output": "",
+      "expected": {
+        "math.factorial": {
+          "number": 5
+        }
+      },
+      "error": "AnthropicModel.__init__() got an unexpected keyword argument 'thinking'",
+      "match_type": "failure",
+      "evaluation_score": 0.0,
+      "evaluation_details": {
+        "match_type": "failure",
+        "format_correct": false,
+        "content_correct": false,
+        "field_matches": {
+          "math.factorial": false,
+          "number": false
+        },
+        "explanation": "No actual output was provided to compare against the expected output"
+      },
+      "latency_ms": 292.91999991983175,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "tokens": {
+        "input": 0,
+        "output": 0,
+        "generation_input": null,
+        "generation_output": null,
+        "execution_input": null,
+        "execution_output": null
+      }
+    },
+    {
+      "instance_id": "simple_2",
+      "input": "{\"question\": [[{\"role\": \"user\", \"content\": \"Calculate the hypotenuse of a right triangle given the lengths of the other two sides as 4 and 5.\"}]], \"function\": [{\"name\": \"math.hypot\", \"description\": \"Calculate the Euclidean norm, sqrt(sum(squares)), the length of the vector from the origin to point (x, y) which is the hypotenuse of the right triangle.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"x\": {\"type\": \"integer\", \"description\": \"The x-coordinate value.\"}, \"y\": {\"type\": \"integer\", \"description\": \"The y-coordinate value.\"}, \"z\": {\"type\": \"integer\", \"description\": \"Optional. The z-coordinate value. Default is 0.\"}}, \"required\": [\"x\", \"y\"]}}]}",
+      "output": "",
+      "expected": {
+        "math.hypot": {
+          "x": 4,
+          "y": 5
+        }
+      },
+      "error": "AnthropicModel.__init__() got an unexpected keyword argument 'thinking'",
+      "match_type": "failure",
+      "evaluation_score": 0.0,
+      "evaluation_details": {
+        "match_type": "failure",
+        "format_correct": false,
+        "content_correct": false,
+        "field_matches": {
+          "math.hypot": false,
+          "x": false,
+          "y": false
+        },
+        "explanation": "No actual output provided to compare against expected output"
+      },
+      "latency_ms": 298.3915414661169,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "tokens": {
+        "input": 0,
+        "output": 0,
+        "generation_input": null,
+        "generation_output": null,
+        "execution_input": null,
+        "execution_output": null
+      }
+    }
+  ]
+}

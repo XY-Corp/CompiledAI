@@ -16,6 +16,23 @@ from .loader import (
     DocILEAdapter,
     register_adapter,
 )
+from .standardized import (
+    EvaluationType,
+    StandardizedDataset,
+    StandardizedInstance,
+    StandardizedTask,
+)
+from .transformers import (
+    AgentBenchTransformer,
+    BFCLTransformer,
+    DatasetTransformer,
+    DocILETransformer,
+    XYBenchmarkTransformer,
+    get_transformer,
+    list_transformers,
+    transform_dataset,
+)
+# NOTE: bfcl_helpers removed - use compiled_ai.datasets.BFCLConverter instead
 
 __all__ = [
     # Dataset
@@ -24,6 +41,20 @@ __all__ = [
     "TaskInstance",
     "TaskCategory",
     "TaskDifficulty",
+    # Standardized format
+    "StandardizedDataset",
+    "StandardizedTask",
+    "StandardizedInstance",
+    "EvaluationType",
+    # Transformers
+    "DatasetTransformer",
+    "XYBenchmarkTransformer",
+    "BFCLTransformer",
+    "AgentBenchTransformer",
+    "DocILETransformer",
+    "get_transformer",
+    "list_transformers",
+    "transform_dataset",
     # Loader
     "DatasetLoader",
     "DatasetAdapter",

@@ -1,0 +1,34 @@
+{
+  "activity_name": "extract_function_call",
+  "description": "Parse the user's natural language prompt to identify which function to call and extract the required parameters. Analyzes the prompt against the available function definitions to select the appropriate function (calculate_area_under_curve) and extracts parameters like the mathematical function expression, interval bounds, and optional method.",
+  "task_id": "simple_13",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"Calculate the area under the curve y=x^2 from x=1 to x=3.\"}]], \"function\": [{\"name\": \"calculate_area_under_curve\", \"description\": \"Calculate the area under a mathematical function within a given interval.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"function\": {\"type\": \"string\", \"description\": \"The mathematical function as a string.\"}, \"interval\": {\"type\": \"array\", \"items\": {\"type\": \"float\"}, \"description\": \"An array that defines the interval to calculate the area under the curve from the start to the end point.\"}, \"method\": {\"type\": \"string\", \"description\": \"The numerical method to approximate the area under the curve. The default value is 'trapezoidal'.\"}}, \"required\": [\"function\", \"interval\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"calculate_area_under_curve\": {\n    \"function\": \"string - The mathematical function as a string.\",\n    \"interval\": \"array - An array that defines the interval to calculate the area under the curve from the start to the end point.\",\n    \"method\": \"string - The numerical method to approximate the area under the curve. The default value is 'trapezoidal'.\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "inputs": [
+    {
+      "name": "prompt",
+      "type": "str",
+      "description": "The user's natural language request describing what calculation they want to perform, e.g. 'Calculate the area under the curve y=x^2 from x=1 to x=3'",
+      "required": true
+    },
+    {
+      "name": "functions",
+      "type": "list",
+      "description": "List of available function definitions with their names, descriptions, and parameter schemas that can be matched against the user's request",
+      "required": true
+    }
+  ],
+  "output": {
+    "type": "dict",
+    "description": "Returns a function call object with the function name as the top-level key and parameters as nested object. Example output: {\"calculate_area_under_curve\": {\"function\": \"x^2\", \"interval\": [1.0, 3.0], \"method\": \"trapezoidal\"}}. The function field contains the mathematical expression, interval is an array of [start, end] float values, and method is the numerical approximation technique (defaults to 'trapezoidal' if not specified).",
+    "fields": {
+      "calculate_area_under_curve": "dict - Contains function (str), interval (array of floats), and optional method (str)"
+    }
+  },
+  "reference_activity": "llm_extract",
+  "workflow_spec": {
+    "workflow_id": "function_call_selection",
+    "name": "Function Call Parameter Extraction",
+    "description": "Analyzes a user's natural language prompt and available function definitions to select the appropriate function and extract the required parameters from the user's request.",
+    "execution_pattern": "sequence"
+  }
+}

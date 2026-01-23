@@ -1,0 +1,26 @@
+{
+  "workflow_id": "temperature_mixing_parameter_extraction",
+  "name": "Temperature Mixing Parameter Extraction",
+  "description": "Extracts numerical parameters from a temperature mixing calculation prompt and formats them as function call parameters for the calculate_final_temperature function",
+  "task_id": "simple_46",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"Calculate the final temperature when 20 kg of water at 30 degree Celsius is mixed with 15 kg of water at 60 degree Celsius.\"}]], \"function\": [{\"name\": \"calculate_final_temperature\", \"description\": \"Calculates the final equilibrium temperature after mixing two bodies with different masses and temperatures\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"mass1\": {\"type\": \"integer\", \"description\": \"The mass of the first body (kg).\"}, \"temperature1\": {\"type\": \"integer\", \"description\": \"The initial temperature of the first body (Celsius).\"}, \"mass2\": {\"type\": \"integer\", \"description\": \"The mass of the second body (kg).\"}, \"temperature2\": {\"type\": \"integer\", \"description\": \"The initial temperature of the second body (Celsius).\"}, \"specific_heat_capacity\": {\"type\": \"float\", \"description\": \"The specific heat capacity of the bodies in kJ/kg/K. If not provided, will default to that of water at room temperature, which is 4.2 kJ/kg/K.\"}}, \"required\": [\"mass1\", \"temperature1\", \"mass2\", \"temperature2\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"calculate_final_temperature\": {\n    \"mass1\": \"integer - The mass of the first body (kg).\",\n    \"temperature1\": \"integer - The initial temperature of the first body (Celsius).\",\n    \"mass2\": \"integer - The mass of the second body (kg).\",\n    \"temperature2\": \"integer - The initial temperature of the second body (Celsius).\",\n    \"specific_heat_capacity\": \"float - The specific heat capacity of the bodies in kJ/kg/K. If not provided, will default to that of water at room temperature, which is 4.2 kJ/kg/K.\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "activities": [
+    "extract_temperature_mixing_parameters"
+  ],
+  "variables": [
+    {
+      "name": "prompt",
+      "default": null
+    },
+    {
+      "name": "functions",
+      "default": null
+    }
+  ],
+  "execution_pattern": "sequence",
+  "reasoning": "This is a metadata extraction task where the goal is to parse numerical parameters from natural language and format them as a function call structure, not to actually perform the temperature calculation. The task requires extracting specific numerical values (masses in kg, temperatures in Celsius) from the prompt text using deterministic regex patterns since the format follows clear numerical patterns. A single activity is sufficient as this is a straightforward parsing operation that extracts structured data from unstructured text. The activity uses regex to identify patterns like \"20 kg\", \"30 degree Celsius\" and maps them to the correct parameter names as defined in the function schema. The specific_heat_capacity parameter will be set to the default value of 4.2 kJ/kg/K as mentioned in the function definition since it's not provided in the prompt.",
+  "metrics": {
+    "total_tokens": 28975,
+    "regeneration_count": 1
+  }
+}

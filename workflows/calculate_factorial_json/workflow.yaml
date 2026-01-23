@@ -1,0 +1,15 @@
+workflow_id: calculate_factorial_json
+name: Calculate Factorial with JSON Function Call
+description: Parse user query to extract number and generate appropriate math.factorial function call in JSON format
+
+variables:
+  prompt: null
+
+root:
+  sequence:
+    elements:
+      - activity:
+          name: parse_factorial_request
+          params:
+            user_request: ${{ prompt }}
+          result: factorial_call

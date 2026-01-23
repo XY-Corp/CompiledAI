@@ -1,0 +1,34 @@
+{
+  "activity_name": "extract_bmi_parameters",
+  "description": "Parse the natural language BMI request and extract weight and height values to map to the calculate_bmi function",
+  "task_id": "simple_84",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"Calculate the Body Mass Index (BMI) of a person with a weight of 85 kilograms and height of 180 cm.\"}]], \"function\": [{\"name\": \"calculate_bmi\", \"description\": \"Calculate the Body Mass Index (BMI) of a person.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"weight\": {\"type\": \"integer\", \"description\": \"Weight of the person in kilograms.\"}, \"height\": {\"type\": \"integer\", \"description\": \"Height of the person in centimeters.\"}, \"unit\": {\"type\": \"string\", \"description\": \"Optional parameter to choose between 'imperial' and 'metric' systems. Default is 'metric'.\"}}, \"required\": [\"weight\", \"height\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"calculate_bmi\": {\n    \"weight\": \"integer - Weight of the person in kilograms.\",\n    \"height\": \"integer - Height of the person in centimeters.\",\n    \"unit\": \"string - Optional parameter to choose between 'imperial' and 'metric' systems. Default is 'metric'.\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "inputs": [
+    {
+      "name": "request_text",
+      "type": "str",
+      "description": "The natural language text requesting BMI calculation containing weight and height information",
+      "required": true
+    },
+    {
+      "name": "function_schema",
+      "type": "dict",
+      "description": "The target function schema including parameters and their types for calculate_bmi function",
+      "required": true
+    }
+  ],
+  "output": {
+    "type": "dict",
+    "description": "Returns a function call object with calculate_bmi as the key and parameters as nested object: {\"calculate_bmi\": {\"weight\": 85, \"height\": 180, \"unit\": \"metric\"}}",
+    "fields": {
+      "calculate_bmi": "dict containing weight (int), height (int), and unit (str) parameters"
+    }
+  },
+  "reference_activity": "llm_extract",
+  "workflow_spec": {
+    "workflow_id": "bmi_function_mapping",
+    "name": "BMI Function Parameter Mapping",
+    "description": "Extracts weight and height values from a natural language BMI calculation request and maps them to the calculate_bmi function parameters",
+    "execution_pattern": "sequence"
+  }
+}

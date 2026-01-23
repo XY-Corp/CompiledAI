@@ -1,0 +1,15 @@
+workflow_id: route_function_extractor
+name: Route Function Parameter Extractor
+description: Analyzes user routing requests and extracts function parameters for the map_routing.fastest_route function call
+variables:
+  prompt: null
+  functions: null
+root:
+  sequence:
+    elements:
+      - activity:
+          name: extract_routing_parameters
+          params:
+            user_request: ${{ prompt }}
+            function_schema: ${{ functions }}
+          result: routing_result

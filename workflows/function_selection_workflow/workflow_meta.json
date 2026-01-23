@@ -1,0 +1,26 @@
+{
+  "workflow_id": "function_selection_workflow",
+  "name": "Function Selection and Parameter Extraction",
+  "description": "Analyzes user prompt to select the appropriate function and extract parameters for execution",
+  "task_id": "simple_36",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"Find the shortest driving distance between New York City and Washington D.C.\"}]], \"function\": [{\"name\": \"get_shortest_driving_distance\", \"description\": \"Calculate the shortest driving distance between two locations.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"origin\": {\"type\": \"string\", \"description\": \"Starting point of the journey. You should format it as city name like Boston.\"}, \"destination\": {\"type\": \"string\", \"description\": \"End point of the journey. You should format it as city name like Boston.\"}, \"unit\": {\"type\": \"string\", \"description\": \"Preferred unit of distance (optional, default is 'km').\"}}, \"required\": [\"origin\", \"destination\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"get_shortest_driving_distance\": {\n    \"origin\": \"string - Starting point of the journey. You should format it as city name like Boston.\",\n    \"destination\": \"string - End point of the journey. You should format it as city name like Boston.\",\n    \"unit\": \"string - Preferred unit of distance (optional, default is 'km').\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "activities": [
+    "analyze_prompt_for_function_selection"
+  ],
+  "variables": [
+    {
+      "name": "prompt",
+      "default": null
+    },
+    {
+      "name": "functions",
+      "default": null
+    }
+  ],
+  "execution_pattern": "sequence",
+  "reasoning": "This workflow is designed to analyze a user prompt and select the appropriate function to call based on the available functions. The task is a metadata analysis task - we need to determine WHICH function to call and extract the parameters, not actually execute the function. \n\nThe single activity uses LLM capabilities because this requires semantic understanding of the user's intent and intelligent parameter extraction from natural language. The activity takes the raw user prompt and the list of available functions, then uses AI to:\n\n1. Understand what the user is asking for (e.g., \"shortest driving distance between NYC and DC\")\n2. Match this to the appropriate function (get_shortest_driving_distance)\n3. Extract the required parameters from the prompt (origin: New York City, destination: Washington D.C.)\n4. Return the function call structure in the exact format expected\n\nThe output format matches the required structure with the function name as the top-level key and parameters as nested objects. This is a deterministic extraction task that requires LLM reasoning to parse natural language and map it to structured function calls.",
+  "metrics": {
+    "total_tokens": 27449,
+    "regeneration_count": 1
+  }
+}

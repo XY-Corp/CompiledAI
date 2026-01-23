@@ -1,0 +1,26 @@
+{
+  "workflow_id": "physics_function_analyzer",
+  "name": "Physics Function Parameter Analyzer",
+  "description": "Analyzes physics problem descriptions and extracts parameters for appropriate calculation functions",
+  "task_id": "simple_39",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"Calculate the electric field at a point 3 meters away from a charge of 2 coulombs.\"}]], \"function\": [{\"name\": \"calculate_electric_field\", \"description\": \"Calculate the electric field produced by a charge at a certain distance.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"charge\": {\"type\": \"integer\", \"description\": \"Charge in coulombs producing the electric field.\"}, \"distance\": {\"type\": \"integer\", \"description\": \"Distance from the charge in meters where the field is being measured.\"}, \"permitivity\": {\"type\": \"float\", \"description\": \"Permitivity of the space where field is being calculated, default is 8.854e-12.\"}}, \"required\": [\"charge\", \"distance\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"calculate_electric_field\": {\n    \"charge\": \"integer - Charge in coulombs producing the electric field.\",\n    \"distance\": \"integer - Distance from the charge in meters where the field is being measured.\",\n    \"permitivity\": \"float - Permitivity of the space where field is being calculated, default is 8.854e-12.\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "activities": [
+    "parse_physics_problem"
+  ],
+  "variables": [
+    {
+      "name": "prompt",
+      "default": null
+    },
+    {
+      "name": "functions",
+      "default": null
+    }
+  ],
+  "execution_pattern": "sequence",
+  "reasoning": "This workflow is designed to analyze physics problems and extract the appropriate function calls with parameters. The task requires understanding natural language descriptions of physics problems and mapping them to structured function calls. Since this involves semantic understanding of physics concepts and parameter extraction from unstructured text, an LLM-based approach is most appropriate. The workflow uses a single activity that leverages the llm_extract pattern to parse the problem text and return the exact function call structure expected. The activity takes the raw prompt (problem description) and available functions as context, then returns a structured object with the function name and its parameters extracted from the problem text.",
+  "metrics": {
+    "total_tokens": 19281,
+    "regeneration_count": 0
+  }
+}

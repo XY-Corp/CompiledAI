@@ -1,6 +1,7 @@
 """Direct LLM Baseline: Per-transaction prompting with no compilation."""
 
 import time
+from pathlib import Path
 from typing import Any
 
 from .base import BaseBaseline, BaselineResult, TaskInput, register_baseline
@@ -28,6 +29,8 @@ class DirectLLMBaseline(BaseBaseline):
         max_retries: int = 3,
         retry_delay: float = 1.0,
         enable_cache: bool = False,
+        verbose: bool = False,
+        log_dir: str | None = "logs",
     ) -> None:
         """Initialize the Direct LLM baseline.
 
@@ -38,8 +41,12 @@ class DirectLLMBaseline(BaseBaseline):
             max_retries: Maximum retry attempts on failure
             retry_delay: Base delay between retries (exponential backoff)
             enable_cache: Whether to cache LLM responses
+            verbose: Enable verbose logging
+            log_dir: Directory for execution logs (None to disable file logging)
         """
         self.provider = provider
+        self.verbose = verbose
+        self.log_dir = Path(log_dir) if log_dir else None
         self.config = LLMConfig(
             model=model or self._default_model(provider),
             system_prompt=system_prompt,
@@ -50,6 +57,9 @@ class DirectLLMBaseline(BaseBaseline):
         self.max_retries = max_retries
         self.retry_delay = retry_delay
         self.token_tracker = TokenTracker()
+
+        # Current log file for this execution
+        self._current_log_file: Path | None = None
 
     def _default_model(self, provider: str) -> str:
         """Get default model for provider.
@@ -67,6 +77,57 @@ class DirectLLMBaseline(BaseBaseline):
         }
         return defaults.get(provider, "claude-sonnet-4-20250514")
 
+    def _log(self, message: str) -> None:
+        """Print message if verbose mode is enabled and write to log file."""
+        if self.verbose:
+            print(f"[DirectLLM] {message}")
+        self._log_to_file(message)
+
+    def _log_to_file(self, message: str, section: str | None = None) -> None:
+        """Write message to current log file.
+
+        Args:
+            message: Message to log
+            section: Optional section header
+        """
+        if not self._current_log_file:
+            return
+
+        with open(self._current_log_file, "a", encoding="utf-8") as f:
+            if section:
+                f.write(f"\n{'='*80}\n")
+                f.write(f"{section}\n")
+                f.write(f"{'='*80}\n")
+            f.write(f"{message}\n")
+
+    def _setup_log_file(self, task_id: str) -> None:
+        """Set up a new log file for this execution.
+
+        Args:
+            task_id: Task identifier for naming the log file
+        """
+        if not self.log_dir:
+            self._current_log_file = None
+            return
+
+        # Create logs directory if it doesn't exist
+        self.log_dir.mkdir(parents=True, exist_ok=True)
+
+        # Create log file (no timestamp needed, each run has its own directory)
+        log_filename = f"{task_id}.log"
+        self._current_log_file = self.log_dir / log_filename
+
+        # Write header
+        from datetime import datetime
+        self._log_to_file(f"Direct LLM Execution Log", section="HEADER")
+        self._log_to_file(f"Task ID: {task_id}")
+        self._log_to_file(f"Timestamp: {datetime.now().isoformat()}")
+        self._log_to_file(f"Provider: {self.provider}")
+        self._log_to_file(f"Model: {self.config.model}")
+        self._log_to_file(f"Max Retries: {self.max_retries}")
+        if self.config.system_prompt:
+            self._log_to_file(f"System Prompt: {self.config.system_prompt}")
+
     def run(self, task_input: TaskInput) -> BaselineResult:
         """Execute LLM inference for a single task.
 
@@ -76,7 +137,17 @@ class DirectLLMBaseline(BaseBaseline):
         Returns:
             BaselineResult with output and metrics
         """
+        # Set up log file for this task
+        self._setup_log_file(task_input.task_id)
+
         start_time = time.perf_counter()
+
+        # Log task input
+        self._log_to_file(
+            f"Original Prompt: {task_input.prompt}\n"
+            f"Context: {task_input.context}",
+            section="TASK INPUT"
+        )
 
         # Build prompt with context
         prompt = task_input.prompt
@@ -86,17 +157,44 @@ class DirectLLMBaseline(BaseBaseline):
             )
             prompt = f"Context:\n{context_str}\n\nTask:\n{prompt}"
 
+        # Log full prompt sent to LLM
+        self._log_to_file(prompt, section="LLM PROMPT")
+        self._log(f"Executing task {task_input.task_id}")
+
         # Retry logic with exponential backoff
         last_error: str | None = None
         responses = []
 
         for attempt in range(self.max_retries):
             try:
+                self._log(f"Attempt {attempt + 1}/{self.max_retries}")
                 response = self.client.generate(prompt)
                 responses.append(response)
                 self.token_tracker.record(response)
 
                 latency_ms = (time.perf_counter() - start_time) * 1000
+
+                # Log successful response
+                self._log_to_file(
+                    f"Content: {response.content}\n"
+                    f"Input Tokens: {response.input_tokens}\n"
+                    f"Output Tokens: {response.output_tokens}\n"
+                    f"Latency: {latency_ms:.2f}ms",
+                    section=f"LLM RESPONSE (Attempt {attempt + 1})"
+                )
+
+                # Log final result
+                self._log_to_file(
+                    f"SUCCESS!\n"
+                    f"Output: {response.content}\n"
+                    f"Total Attempts: {attempt + 1}\n"
+                    f"Total Latency: {latency_ms:.2f}ms\n"
+                    f"Input Tokens: {response.input_tokens}\n"
+                    f"Output Tokens: {response.output_tokens}",
+                    section="FINAL RESULT"
+                )
+
+                self._log(f"Success on attempt {attempt + 1}")
 
                 return BaselineResult(
                     task_id=task_input.task_id,
@@ -110,10 +208,31 @@ class DirectLLMBaseline(BaseBaseline):
                 )
             except Exception as e:
                 last_error = str(e)
-                if attempt < self.max_retries - 1:
-                    time.sleep(self.retry_delay * (2**attempt))  # Exponential backoff
+                self._log_to_file(
+                    f"Error: {last_error}",
+                    section=f"ERROR (Attempt {attempt + 1})"
+                )
+                self._log(f"Error on attempt {attempt + 1}: {last_error}")
 
+                if attempt < self.max_retries - 1:
+                    delay = self.retry_delay * (2**attempt)
+                    self._log(f"Retrying in {delay}s...")
+                    time.sleep(delay)  # Exponential backoff
+
+        # All retries failed
         latency_ms = (time.perf_counter() - start_time) * 1000
+
+        # Log final failure
+        self._log_to_file(
+            f"FAILED!\n"
+            f"Error: {last_error}\n"
+            f"Total Attempts: {self.max_retries}\n"
+            f"Total Latency: {latency_ms:.2f}ms",
+            section="FINAL RESULT"
+        )
+
+        self._log(f"Failed after {self.max_retries} attempts")
+
         return BaselineResult(
             task_id=task_input.task_id,
             output="",

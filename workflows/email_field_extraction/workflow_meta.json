@@ -1,0 +1,22 @@
+{
+  "workflow_id": "email_field_extraction",
+  "name": "Email Field Extraction",
+  "description": "Extracts sender, recipient, subject, and date fields from email text using regex patterns to parse email headers",
+  "task_id": "text_extraction_01_email_001",
+  "task_description": "{\"prompt_template\": \"Extract the following fields from this email:\\n- sender\\n- recipient\\n- subject\\n- date\\n\\nEmail:\\n{email_text}\\n\\nReturn as JSON.\", \"input\": {\"email_text\": \"From: john.doe@example.com\\nTo: jane.smith@company.org\\nSubject: Q4 Report Review\\nDate: 2025-01-15\\n\\nPlease review the attached Q4 report.\"}}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `_task_schema` (dict) - context for task type\n- `email_text` (str) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, _task_schema, email_text\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"fields\": {\n    \"sender\": \"string - email address of the sender (From: header)\",\n    \"recipient\": \"string - email address of the recipient (To: header)\",\n    \"subject\": \"string - email subject line\",\n    \"date\": \"string - date in format from the email (Date: header)\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "activities": [
+    "extract_email_fields"
+  ],
+  "variables": [
+    {
+      "name": "prompt",
+      "default": null
+    }
+  ],
+  "execution_pattern": "sequence",
+  "reasoning": "This workflow requires extracting structured data from email headers which follow standard patterns (From:, To:, Subject:, Date:). Using deterministic regex-based parsing is more reliable and efficient than LLM for this structured text extraction task. The Code Factory's compilation advantage is best utilized with deterministic code patterns rather than LLM calls for structured data parsing.",
+  "metrics": {
+    "total_tokens": 22493,
+    "regeneration_count": 1
+  }
+}

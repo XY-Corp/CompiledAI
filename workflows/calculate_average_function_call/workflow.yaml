@@ -1,0 +1,17 @@
+workflow_id: calculate_average_function_call
+name: Calculate Average Function Call Generator
+description: Analyzes the user's natural language request to calculate the average of a list of numbers, extracts the specific numbers from the prompt text, and returns the properly formatted function call with parameters for the calculate_average function
+
+variables:
+  prompt: None
+  functions: None
+
+root:
+  sequence:
+    elements:
+      - activity:
+          name: parse_and_format_function_call
+          params:
+            user_request: ${{ prompt }}
+            available_functions: ${{ functions }}
+          result: result

@@ -1,0 +1,17 @@
+workflow_id: genetics_function_parameter_extraction
+name: Genetics Function Parameter Extraction
+description: Extracts parameters from genetics questions to generate proper function calls with allele frequency and genotype parameters
+
+variables:
+  prompt: null
+  functions: null
+
+root:
+  sequence:
+    elements:
+      - activity:
+          name: extract_genetics_parameters
+          params:
+            question_text: ${{ prompt }}
+            available_functions: ${{ functions }}
+          result: genetics_parameters

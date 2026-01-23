@@ -1,0 +1,26 @@
+{
+  "workflow_id": "extract_and_call_math_function",
+  "name": "Extract Number and Generate Math Function Call",
+  "description": "Parses the user prompt to extract the number for factorial calculation and generates a structured function call with the extracted parameter",
+  "task_id": "simple_1",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"Calculate the factorial of 5 using math functions.\"}]], \"function\": [{\"name\": \"math.factorial\", \"description\": \"Calculate the factorial of a given number.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"number\": {\"type\": \"integer\", \"description\": \"The number for which factorial needs to be calculated.\"}}, \"required\": [\"number\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"Function call with function name as key and parameters object as value\",\n  \"functions\": {\n    \"math.factorial\": {\n      \"number\": \"integer - The number for which factorial needs to be calculated.\"\n    }\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "activities": [
+    "extract_factorial_number"
+  ],
+  "variables": [
+    {
+      "name": "prompt",
+      "default": null
+    },
+    {
+      "name": "functions",
+      "default": null
+    }
+  ],
+  "execution_pattern": "sequence",
+  "reasoning": "This workflow uses a single activity approach because the task is straightforward number extraction from a simple text prompt. The activity uses deterministic code (regex) to extract the number from \"Calculate the factorial of 5\" rather than using an LLM, since number extraction follows clear patterns. The output format exactly matches the expected structure with \"math.factorial\" as the function key and \"number\" as the parameter. This approach is efficient and reliable for mathematical function parameter extraction.",
+  "metrics": {
+    "total_tokens": 17084,
+    "regeneration_count": 0
+  }
+}

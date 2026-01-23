@@ -1,0 +1,17 @@
+workflow_id: yellowstone_forest_growth_forecast
+name: Yellowstone Forest Growth Forecast Workflow
+description: Analyzes user prompt to extract function parameters for forest growth forecasting in Yellowstone National Park
+
+variables:
+  prompt: null
+  functions: null
+
+root:
+  sequence:
+    elements:
+      - activity:
+          name: extract_forecast_parameters
+          params:
+            user_prompt: ${{ prompt }}
+            available_functions: ${{ functions }}
+          result: function_call_data

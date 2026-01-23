@@ -1,0 +1,15 @@
+workflow_id: extract_physics_parameters_and_generate_function_call
+name: Extract Physics Parameters and Generate Function Call
+description: Analyzes a physics problem in natural language, extracts the numerical parameters (acceleration, distance, initial velocity), and formats them into a function call structure for the kinematics.final_velocity_from_distance function
+
+variables:
+  prompt: None
+  functions: None
+
+root:
+  activity:
+    name: extract_physics_parameters
+    params:
+      problem_text: ${{ prompt }}
+      available_functions: ${{ functions }}
+    result: function_call

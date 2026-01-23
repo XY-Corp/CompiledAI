@@ -1,0 +1,26 @@
+{
+  "workflow_id": "function_parameter_extraction",
+  "name": "Function Parameter Extraction Workflow",
+  "description": "Analyzes a natural language prompt to extract parameter values for a specified function and returns the function call metadata in a structured format with the function name as the top-level key.",
+  "task_id": "simple_31",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"Calculate the final velocity of an object, knowing that it started from rest, accelerated at a rate of 9.8 m/s^2 for a duration of 5 seconds.\"}]], \"function\": [{\"name\": \"calculate_final_velocity\", \"description\": \"Calculate the final velocity of an object under constant acceleration, knowing its initial velocity, acceleration, and time of acceleration.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"initial_velocity\": {\"type\": \"integer\", \"description\": \"The initial velocity of the object.\"}, \"acceleration\": {\"type\": \"float\", \"description\": \"The acceleration of the object.\"}, \"time\": {\"type\": \"integer\", \"description\": \"The time of acceleration.\"}}, \"required\": [\"initial_velocity\", \"acceleration\", \"time\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"calculate_final_velocity\": {\n    \"initial_velocity\": \"integer - The initial velocity of the object.\",\n    \"acceleration\": \"float - The acceleration of the object.\",\n    \"time\": \"integer - The time of acceleration.\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "activities": [
+    "extract_function_parameters"
+  ],
+  "variables": [
+    {
+      "name": "prompt",
+      "default": null
+    },
+    {
+      "name": "functions",
+      "default": null
+    }
+  ],
+  "execution_pattern": "sequence",
+  "reasoning": "This task requires extracting parameter values from a natural language physics problem and returning them in a specific function call format. \n\n**Task Analysis:**\n1. The user asks to calculate final velocity from a natural language description\n2. We need to EXTRACT parameter values (not execute the calculation)\n3. The output should be metadata: {\"calculate_final_velocity\": {\"initial_velocity\": ..., \"acceleration\": ..., \"time\": ...}}\n\n**Why LLM is needed:**\n- The prompt contains natural language like \"started from rest\" which means initial_velocity = 0\n- Values like \"9.8 m/s^2\" and \"5 seconds\" need semantic understanding to map to the correct parameters\n- This requires understanding context and intent, not just regex pattern matching\n\n**Design Decisions:**\n1. Single activity that uses LLM to parse the natural language prompt\n2. The LLM reads the function definition to understand expected parameters\n3. Returns the exact format requested: function name as top-level key with nested parameter values\n4. Used llm_extract as inspiration for the structured output extraction pattern with PydanticAI\n\n**Output Format:**\nThe output must be exactly: {\"calculate_final_velocity\": {\"initial_velocity\": 0, \"acceleration\": 9.8, \"time\": 5}}\n- \"started from rest\" \u2192 initial_velocity = 0\n- \"9.8 m/s^2\" \u2192 acceleration = 9.8\n- \"5 seconds\" \u2192 time = 5",
+  "metrics": {
+    "total_tokens": 29552,
+    "regeneration_count": 0
+  }
+}

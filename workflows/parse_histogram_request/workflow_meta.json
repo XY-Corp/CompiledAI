@@ -1,0 +1,26 @@
+{
+  "workflow_id": "parse_histogram_request",
+  "name": "Parse Histogram Request and Extract Function Call",
+  "description": "Parses natural language request to extract histogram function parameters and returns a properly formatted function call object",
+  "task_id": "simple_79",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"Create a histogram for student scores with the following data: 85, 90, 88, 92, 86, 89, 91 and set bin range to 5.\"}]], \"function\": [{\"name\": \"create_histogram\", \"description\": \"Create a histogram based on provided data.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"data\": {\"type\": \"array\", \"items\": {\"type\": \"integer\"}, \"description\": \"The data for which histogram needs to be plotted.\"}, \"bins\": {\"type\": \"integer\", \"description\": \"The number of equal-width bins in the range. Default is 10.\"}}, \"required\": [\"data\", \"bins\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"create_histogram\": {\n    \"data\": \"array - The data for which histogram needs to be plotted.\",\n    \"bins\": \"integer - The number of equal-width bins in the range. Default is 10.\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "activities": [
+    "parse_histogram_request"
+  ],
+  "variables": [
+    {
+      "name": "prompt",
+      "default": null
+    },
+    {
+      "name": "functions",
+      "default": null
+    }
+  ],
+  "execution_pattern": "sequence",
+  "reasoning": "This workflow needs to parse a natural language request to extract specific data points and parameters for a histogram function call. The task is asking for METADATA extraction (which function to call and with what parameters) rather than execution. I designed a single activity that uses LLM extraction capabilities to parse the unstructured text and extract the numerical data array and bin count, then format it as the exact function call structure expected. The activity uses the llm_extract pattern as inspiration but is customized specifically for parsing histogram requests and returning the precise function call format. The workflow uses sequence execution since there's only one activity. The output description contains the complete expected JSON structure to ensure the coder generates the exact return format needed.",
+  "metrics": {
+    "total_tokens": 29012,
+    "regeneration_count": 1
+  }
+}

@@ -1,0 +1,14 @@
+workflow_id: quadratic_equation_function_selector
+name: Quadratic Equation Function Selector
+description: Parses mathematical quadratic equation requests and returns the appropriate function call with extracted coefficients
+variables:
+  prompt: null
+  functions: null
+root:
+  sequence:
+    elements:
+      - activity:
+          name: parse_quadratic_equation
+          params:
+            equation_text: ${{ prompt }}
+          result: function_call

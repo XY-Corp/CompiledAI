@@ -1,0 +1,16 @@
+workflow_id: vegan_restaurant_function_selector
+name: Vegan Restaurant Function Call Generator
+description: |
+  Analyzes a natural language user request about finding vegan restaurants and generates the appropriate function call with extracted parameters. Returns the function name and its parameters as structured output.
+variables:
+  prompt: null
+  functions: null
+root:
+  sequence:
+    elements:
+      - activity:
+          name: extract_function_call_params
+          params:
+            user_prompt: ${{ prompt }}
+            available_functions: ${{ functions }}
+          result: function_call_result

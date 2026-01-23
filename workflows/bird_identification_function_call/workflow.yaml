@@ -1,0 +1,17 @@
+workflow_id: bird_identification_function_call
+name: Bird Identification Function Call Generator
+description: Analyzes user requests about bird identification and generates the appropriate function call with extracted parameters
+
+variables:
+  prompt: null
+  functions: null
+
+root:
+  sequence:
+    elements:
+      - activity:
+          name: extract_bird_parameters
+          params:
+            user_text: ${{ prompt }}
+            available_functions: ${{ functions }}
+          result: function_call

@@ -1,0 +1,15 @@
+workflow_id: parse_sine_wave_request
+name: Parse Sine Wave Plot Request
+description: Analyzes a natural language request for plotting a sine wave and extracts the function parameters needed for the plot_sine_wave function
+variables:
+  prompt: null
+  functions: null
+root:
+  sequence:
+    elements:
+      - activity:
+          name: parse_sine_wave_parameters
+          params:
+            user_request: ${{ prompt }}
+            available_functions: ${{ functions }}
+          result: parsed_parameters

@@ -1,0 +1,17 @@
+workflow_id: math_factorial_calculator
+name: Math Factorial Calculator
+description: Analyzes user input to extract a number and generates a function call to calculate its factorial using the math.factorial function
+
+variables:
+  prompt: null
+  functions: null
+
+root:
+  sequence:
+    elements:
+      - activity:
+          name: parse_factorial_request
+          params:
+            user_input: ${{ prompt }}
+            available_functions: ${{ functions }}
+          result: function_call

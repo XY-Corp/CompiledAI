@@ -1,0 +1,23 @@
+workflow_id: lc_circuit_analysis
+name: LC Circuit Resonant Frequency Calculator
+description: Parses user query about LC circuit parameters and returns the appropriate function call to calculate resonant frequency with extracted values
+
+variables:
+  prompt: null
+  functions: null
+
+root:
+  sequence:
+    elements:
+      - activity:
+          name: extract_lc_parameters
+          params:
+            query_text: ${{ prompt }}
+          result: circuit_params
+      - activity:
+          name: format_function_call
+          params:
+            inductance: ${{ circuit_params.inductance_henries }}
+            capacitance: ${{ circuit_params.capacitance_farads }}
+            round_off: ${{ circuit_params.round_off }}
+          result: function_call

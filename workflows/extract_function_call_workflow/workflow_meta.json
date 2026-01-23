@@ -1,0 +1,26 @@
+{
+  "workflow_id": "extract_function_call_workflow",
+  "name": "Extract Function Call from Natural Language",
+  "description": "Parses natural language prompts to extract function names and parameters, returning a structured function call object with the function name as the top-level key",
+  "task_id": "simple_11",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"What is the area of a triangle with base of 10 units and height of 5 units?\"}]], \"function\": [{\"name\": \"calculate_triangle_area\", \"description\": \"Calculate the area of a triangle using its base and height.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"base\": {\"type\": \"integer\", \"description\": \"The length of the base of the triangle.\"}, \"height\": {\"type\": \"integer\", \"description\": \"The height of the triangle from the base.\"}}, \"required\": [\"base\", \"height\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"calculate_triangle_area\": {\n    \"base\": \"integer - The length of the base of the triangle.\",\n    \"height\": \"integer - The height of the triangle from the base.\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "activities": [
+    "extract_function_call"
+  ],
+  "variables": [
+    {
+      "name": "prompt",
+      "default": null
+    },
+    {
+      "name": "functions",
+      "default": null
+    }
+  ],
+  "execution_pattern": "sequence",
+  "reasoning": "This workflow analyzes the task requirement which is to extract function calls from natural language prompts. The task shows an example where a user asks about triangle area calculation, and the expected output is a structured object with the function name as the top-level key and parameters as nested values. The workflow uses a single LLM-based extraction activity that leverages the available functions list as context to identify which function to call and extract the appropriate parameter values from the natural language prompt. This requires semantic understanding of the user's intent, making LLM the appropriate tool rather than deterministic parsing. The output structure exactly matches the expected format with the function name as the top-level key.",
+  "metrics": {
+    "total_tokens": 35697,
+    "regeneration_count": 2
+  }
+}

@@ -1,0 +1,15 @@
+workflow_id: function_call_geo_distance
+name: Function Call for Geographic Distance
+description: Parse user query to extract location information and format a function call to calculate geographic distance
+variables:
+  prompt: null
+  functions: null
+root:
+  sequence:
+    elements:
+      - activity:
+          name: parse_distance_query
+          params:
+            query_text: ${{ prompt }}
+            available_functions: ${{ functions }}
+          result: function_call

@@ -1,0 +1,22 @@
+workflow_id: parse_and_call_quadratic_function
+name: Parse Quadratic Equation and Generate Function Call
+description: Parses a quadratic equation query to extract coefficients and generates the appropriate function call with parameters
+
+variables:
+  prompt: null
+  user_query: null
+  functions: null
+
+root:
+  sequence:
+    elements:
+      - activity:
+          name: extract_quadratic_coefficients
+          params:
+            equation_text: ${{ user_query }}
+          result: coefficients
+      - activity:
+          name: generate_function_call
+          params:
+            coefficients: ${{ coefficients }}
+          result: function_call

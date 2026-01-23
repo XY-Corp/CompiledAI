@@ -1,0 +1,15 @@
+workflow_id: gene-protein-function-extractor
+name: Gene Protein Function Extractor
+description: Extracts function call parameters from natural language queries about gene protein sequences
+variables:
+  prompt: null
+  functions: null
+root:
+  sequence:
+    elements:
+      - activity:
+          name: extract_gene_function_call
+          params:
+            user_query: ${{ prompt }}
+            available_functions: ${{ functions }}
+          result: extracted_call

@@ -1,0 +1,15 @@
+workflow_id: geometry_function_selector
+name: Geometry Function Parameter Extractor
+description: Analyzes natural language geometry questions and extracts function parameters to match the geometry.circumference function structure
+variables:
+  prompt: null
+  functions: null
+root:
+  sequence:
+    elements:
+      - activity:
+          name: extract_geometry_parameters
+          params:
+            question_text: ${{ prompt }}
+            function_definitions: ${{ functions }}
+          result: geometry_params

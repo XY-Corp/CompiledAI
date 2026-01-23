@@ -1,0 +1,15 @@
+workflow_id: parse_sine_wave_command
+name: Parse Sine Wave Command
+description: Parses a natural language command to extract parameters for plotting a sine wave and returns the structured function call
+variables:
+  prompt: null
+  functions: null
+root:
+  sequence:
+    elements:
+      - activity:
+          name: parse_sine_wave_parameters
+          params:
+            command_text: ${{ prompt }}
+            available_functions: ${{ functions }}
+          result: parsed_parameters

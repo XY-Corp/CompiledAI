@@ -1,0 +1,26 @@
+{
+  "workflow_id": "extract_function_call",
+  "name": "Extract Function Call from Natural Language",
+  "description": "Analyzes natural language prompt to extract function name and parameters for mathematical integration tasks",
+  "task_id": "simple_15",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"Calculate the area under the curve from x = -2 to x = 3 for the function y = x^3 using simpson method.\"}]], \"function\": [{\"name\": \"integrate\", \"description\": \"Calculate the area under a curve for a specified function between two x values.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"function\": {\"type\": \"string\", \"description\": \"The function to integrate, represented as a string. For example, 'x^3'\"}, \"start_x\": {\"type\": \"integer\", \"description\": \"The starting x-value to integrate over.\"}, \"end_x\": {\"type\": \"integer\", \"description\": \"The ending x-value to integrate over.\"}, \"method\": {\"type\": \"string\", \"description\": \"The method of numerical integration to use. Choices are 'trapezoid' or 'simpson'. Default is 'trapezoid'.\"}}, \"required\": [\"function\", \"start_x\", \"end_x\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"integrate\": {\n    \"function\": \"string - The function to integrate, represented as a string. For example, 'x^3'\",\n    \"start_x\": \"integer - The starting x-value to integrate over.\",\n    \"end_x\": \"integer - The ending x-value to integrate over.\",\n    \"method\": \"string - The method of numerical integration to use. Choices are 'trapezoid' or 'simpson'. Default is 'trapezoid'.\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "activities": [
+    "parse_integration_request"
+  ],
+  "variables": [
+    {
+      "name": "prompt",
+      "default": null
+    },
+    {
+      "name": "functions",
+      "default": null
+    }
+  ],
+  "execution_pattern": "sequence",
+  "reasoning": "This workflow processes natural language mathematical integration requests to extract structured function calls. The task is a metadata extraction task - it needs to analyze the prompt and return WHICH function to call with WHAT parameters, not execute the integration itself. \n\nI designed a single activity that uses LLM-based extraction because:\n\n1. **Task Intent Analysis**: The task asks to \"return which function to call\" - this is clearly a metadata extraction task, not an execution task. The output should describe what to do, not the result of doing it.\n\n2. **Natural Language Processing Required**: The input is unstructured natural language (\"Calculate the area under the curve from x = -2 to x = 3 for the function y = x^3 using simpson method\") that needs semantic understanding to extract:\n   - Mathematical function (y = x^3 \u2192 \"x^3\")  \n   - Integration bounds (x = -2 to x = 3 \u2192 start_x: -2, end_x: 3)\n   - Method preference (simpson method \u2192 \"simpson\")\n\n3. **LLM vs Deterministic Code**: While I generally prefer deterministic code, this case requires LLM because:\n   - Mathematical expressions can be written in many ways (\"y = x^3\", \"f(x) = x\u00b3\", \"x cubed\")\n   - Bound descriptions vary (\"from -2 to 3\", \"between -2 and 3\", \"x = -2 to x = 3\")\n   - Method names need normalization (\"simpson\" vs \"Simpson's rule\" vs \"Simpson method\")\n\n4. **Output Format**: The expected output is a nested dictionary with the function name as the top-level key. The activity will extract the actual values from the prompt and structure them correctly as {\"integrate\": {\"function\": \"x^3\", \"start_x\": -2, \"end_x\": 3, \"method\": \"simpson\"}}.\n\nThe workflow uses sequence execution since there's only one activity. The activity takes both the prompt (containing the request) and functions (providing context about expected parameters) as inputs, then uses LLM extraction to parse and structure the response appropriately.",
+  "metrics": {
+    "total_tokens": 20528,
+    "regeneration_count": 0
+  }
+}

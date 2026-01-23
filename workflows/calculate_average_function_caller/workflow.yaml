@@ -1,0 +1,14 @@
+workflow_id: calculate_average_function_caller
+name: Calculate Average Function Caller
+description: Parse user request for calculating average of numbers and return function call structure
+variables:
+  prompt: null
+root:
+  sequence:
+    elements:
+      - activity:
+          name: parse_function_call_request
+          params:
+            user_request: ${{ prompt }}
+            target_function: "calculate_average"
+          result: result

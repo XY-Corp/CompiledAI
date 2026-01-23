@@ -1,0 +1,26 @@
+{
+  "workflow_id": "calculate_factorial_function_call",
+  "name": "Calculate Factorial Function Call",
+  "description": "Parses a user request for factorial calculation and formats it as a proper function call with parameters",
+  "task_id": "simple_1",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"Calculate the factorial of 5 using math functions.\"}]], \"function\": [{\"name\": \"math.factorial\", \"description\": \"Calculate the factorial of a given number.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"number\": {\"type\": \"integer\", \"description\": \"The number for which factorial needs to be calculated.\"}}, \"required\": [\"number\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"math.factorial\": {\n    \"number\": \"integer - The number for which factorial needs to be calculated.\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "activities": [
+    "extract_factorial_parameters"
+  ],
+  "variables": [
+    {
+      "name": "prompt",
+      "default": null
+    },
+    {
+      "name": "functions",
+      "default": null
+    }
+  ],
+  "execution_pattern": "sequence",
+  "reasoning": "This workflow needs to parse a user's natural language request to calculate a factorial and format it as a proper function call. The task is metadata extraction - we need to understand the user's intent and return which function to call with what parameters, not actually execute the calculation. The activity uses LLM extraction because it needs to understand the semantic meaning of the user's request (\"Calculate the factorial of 5\") and map it to the appropriate function structure. The output must match the exact schema format with math.factorial as the top-level key containing the number parameter. This is a single-step process that transforms unstructured text into structured function call metadata.",
+  "metrics": {
+    "total_tokens": 18581,
+    "regeneration_count": 0
+  }
+}

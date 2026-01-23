@@ -1,0 +1,17 @@
+workflow_id: map_route_from_prompt
+name: Extract Map Routing Parameters from User Query
+description: Parses user natural language routing request and extracts parameters for the map_routing.fastest_route function call
+
+variables:
+  prompt: null
+  functions: null
+
+root:
+  sequence:
+    elements:
+      - activity:
+          name: parse_routing_request
+          params:
+            user_request: ${{ prompt }}
+            function_schema: ${{ functions }}
+          result: routing_result

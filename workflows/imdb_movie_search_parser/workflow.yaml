@@ -1,0 +1,17 @@
+workflow_id: imdb_movie_search_parser
+name: IMDB Movie Search Parameter Parser
+description: Parses natural language queries about finding movies by actor and extracts the required function parameters for IMDB database search
+
+variables:
+  prompt: null
+  functions: null
+
+root:
+  sequence:
+    elements:
+      - activity:
+          name: parse_movie_query
+          params:
+            query_text: ${{ prompt }}
+            available_functions: ${{ functions }}
+          result: parsed_query

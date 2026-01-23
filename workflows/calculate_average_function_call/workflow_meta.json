@@ -1,0 +1,26 @@
+{
+  "workflow_id": "calculate_average_function_call",
+  "name": "Calculate Average Function Call Generator",
+  "description": "Analyzes the user's natural language request to calculate the average of a list of numbers, extracts the specific numbers from the prompt text, and returns the properly formatted function call with parameters for the calculate_average function",
+  "task_id": "simple_82",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"Calculate the average of list of integers [12, 15, 18, 20, 21, 26, 30].\"}]], \"function\": [{\"name\": \"calculate_average\", \"description\": \"Calculates the average of a list of numbers.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"numbers\": {\"type\": \"array\", \"items\": {\"type\": \"float\"}, \"description\": \"The list of numbers to calculate the average of.\"}}, \"required\": [\"numbers\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"calculate_average\": {\n    \"numbers\": \"array - The list of numbers to calculate the average of.\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "activities": [
+    "parse_and_format_function_call"
+  ],
+  "variables": [
+    {
+      "name": "prompt",
+      "default": null
+    },
+    {
+      "name": "functions",
+      "default": null
+    }
+  ],
+  "execution_pattern": "sequence",
+  "reasoning": "This task requires analyzing the user's natural language prompt to extract the list of numbers and format them as a function call. Since the user request contains a specific list [12, 15, 18, 20, 21, 26, 30], we need to use an LLM to parse the prompt and extract these numbers, then format them as a function call. The task is asking for metadata (what function to call and its parameters) rather than executing the calculation itself. A sequential execution is appropriate since we only need one activity to parse and format the response.",
+  "metrics": {
+    "total_tokens": 35577,
+    "regeneration_count": 2
+  }
+}

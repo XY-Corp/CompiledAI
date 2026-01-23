@@ -1,0 +1,34 @@
+{
+  "workflow_id": "json_transform_workflow",
+  "name": "JSON Transformation Workflow",
+  "description": "Transform JSON data from source format to target schema by parsing input data and mapping fields according to target structure",
+  "task_id": "json_transform_01_transform_002",
+  "task_description": "{\"prompt_template\": \"Transform this JSON from the source format to the target format.\\n\\nSource:\\n{source_json}\\n\\nTarget Schema:\\n{target_schema}\\n\\nReturn only the transformed JSON.\", \"input\": {\"source_json\": {\"product_id\": \"SKU-123\", \"product_name\": \"Widget\", \"price_usd\": 29.99, \"qty\": 5}, \"target_schema\": {\"id\": \"string\", \"name\": \"string\", \"total\": \"number\"}}}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `_task_schema` (dict) - context for task type\n- `source_json` (dict) - context for task type\n- `target_schema` (dict) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, _task_schema, source_json, target_schema\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"JSON object matching the target_schema structure provided in input. Fields are dynamically determined by target_schema - map source fields to target fields, combining or computing values as needed.\"\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "activities": [
+    "transform_json_data"
+  ],
+  "variables": [
+    {
+      "name": "prompt",
+      "default": null
+    },
+    {
+      "name": "_task_schema",
+      "default": null
+    },
+    {
+      "name": "source_json",
+      "default": null
+    },
+    {
+      "name": "target_schema",
+      "default": null
+    }
+  ],
+  "execution_pattern": "sequence",
+  "reasoning": "This workflow handles JSON transformation tasks by analyzing the input prompt to extract source JSON data and target schema requirements. Since this is a data transformation task with clear patterns (mapping fields like product_id->id, calculating totals from price*quantity), I designed it to use deterministic code logic rather than LLM processing. The activity will parse the prompt to extract the source JSON, analyze the target schema to determine required field mappings and calculations, then return the transformed data matching the exact target structure. The template json_transform provided inspiration for the field mapping approach, but I customized it to handle computed fields (like total = price_usd * qty) and parse from the prompt variable as required.",
+  "metrics": {
+    "total_tokens": 16951,
+    "regeneration_count": 0
+  }
+}

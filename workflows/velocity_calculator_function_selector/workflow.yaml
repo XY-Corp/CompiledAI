@@ -1,0 +1,17 @@
+workflow_id: velocity_calculator_function_selector
+name: Velocity Calculator Function Selector
+description: Analyzes a user query about velocity calculation and returns the appropriate function call with extracted parameters for the calculate_velocity function
+
+variables:
+  prompt: None
+  functions: None
+
+root:
+  sequence:
+    elements:
+      - activity:
+          name: extract_velocity_parameters
+          params:
+            user_query: ${{ prompt }}
+            available_functions: ${{ functions }}
+          result: velocity_function_call

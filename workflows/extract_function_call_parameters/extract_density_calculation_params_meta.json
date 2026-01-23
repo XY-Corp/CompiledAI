@@ -1,0 +1,28 @@
+{
+  "activity_name": "extract_density_calculation_params",
+  "description": "Parse natural language prompt to extract parameters needed for population density calculation function call",
+  "task_id": "simple_65",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"Calculate the Population Density for Brazil in 2022 if the population is 213 million and the land area is 8.5 million square kilometers.\"}]], \"function\": [{\"name\": \"calculate_density\", \"description\": \"Calculate the population density of a specific country in a specific year.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"country\": {\"type\": \"string\", \"description\": \"The country for which the density needs to be calculated.\"}, \"year\": {\"type\": \"string\", \"description\": \"The year in which the density is to be calculated.\"}, \"population\": {\"type\": \"integer\", \"description\": \"The population of the country.\"}, \"land_area\": {\"type\": \"integer\", \"description\": \"The land area of the country in square kilometers.\"}}, \"required\": [\"country\", \"year\", \"population\", \"land_area\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"calculate_density\": {\n    \"country\": \"string - The country for which the density needs to be calculated.\",\n    \"year\": \"string - The year in which the density is to be calculated.\",\n    \"population\": \"integer - The population of the country.\",\n    \"land_area\": \"integer - The land area of the country in square kilometers.\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "inputs": [
+    {
+      "name": "text",
+      "type": "str",
+      "description": "The complete user prompt containing the population density calculation request with embedded data values",
+      "required": true
+    }
+  ],
+  "output": {
+    "type": "dict",
+    "description": "Returns a function call structure with calculate_density as the top-level key containing extracted parameters: {\"calculate_density\": {\"country\": \"Brazil\", \"year\": \"2022\", \"population\": 213000000, \"land_area\": 8500000}}",
+    "fields": {
+      "calculate_density": "dict containing the function parameters (country, year, population, land_area)"
+    }
+  },
+  "reference_activity": "llm_extract",
+  "workflow_spec": {
+    "workflow_id": "extract_function_call_parameters",
+    "name": "Extract Function Call Parameters for Population Density",
+    "description": "Extracts parameters from user prompt and formats them as a structured function call for the calculate_density function. Parses natural language request to identify country, year, population, and land area values.",
+    "execution_pattern": "sequence"
+  }
+}

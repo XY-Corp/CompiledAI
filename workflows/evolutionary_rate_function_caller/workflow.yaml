@@ -1,0 +1,15 @@
+workflow_id: evolutionary_rate_function_caller
+name: Evolutionary Rate Function Call Extractor
+description: Extracts function call parameters for evolutionary rate predictions from natural language prompts and returns them in the required function call format
+variables:
+  prompt: null
+  functions: null
+root:
+  sequence:
+    elements:
+      - activity:
+          name: extract_function_call_parameters
+          params:
+            prompt_text: ${{ prompt }}
+            available_functions: ${{ functions }}
+          result: function_call_data

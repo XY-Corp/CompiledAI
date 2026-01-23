@@ -1,0 +1,34 @@
+{
+  "activity_name": "parse_query_and_generate_call",
+  "description": "Parses the user query to extract function parameters and generates the appropriate function call JSON structure",
+  "task_id": "bfcl_simple_simple_7",
+  "task_description": "You have access to the following functions:\n\n[\n  {\n    \"name\": \"calculate_circumference\",\n    \"description\": \"Calculates the circumference of a circle with a given radius.\",\n    \"parameters\": {\n      \"type\": \"dict\",\n      \"properties\": {\n        \"radius\": {\n          \"type\": \"integer\",\n          \"description\": \"The radius of the circle in the unit given.\"\n        },\n        \"unit\": {\n          \"type\": \"string\",\n          \"description\": \"The unit of measurement for the radius. Default is 'cm'.\"\n        }\n      },\n      \"required\": [\n        \"radius\"\n      ]\n    }\n  }\n]\n\nUser query: What is the circumference of a circle with a radius of 4 inches?\n\nGenerate the appropriate function call as JSON with 'name' and 'arguments' keys.\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `user_query` (str) - context for task type\n- `functions` (str) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, user_query, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"calculate_circumference\": {\n    \"radius\": \"integer - The radius of the circle in the unit given.\",\n    \"unit\": \"string - The unit of measurement for the radius. Default is 'cm'.\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "inputs": [
+    {
+      "name": "prompt",
+      "type": "str",
+      "description": "The raw user query containing the request for a function call with specific parameters",
+      "required": true
+    },
+    {
+      "name": "functions",
+      "type": "str",
+      "description": "Available function definitions in JSON format that define the callable functions and their parameters",
+      "required": true
+    }
+  ],
+  "output": {
+    "type": "dict",
+    "description": "Returns a function call object with the function name as the top-level key and parameters as a nested object. For the circumference example: {\"calculate_circumference\": {\"radius\": 4, \"unit\": \"inches\"}}. The structure varies based on which function is called and what parameters are extracted from the query.",
+    "fields": {
+      "function_name": "dict - Contains the parameters for the identified function call"
+    }
+  },
+  "reference_activity": "llm_extract",
+  "workflow_spec": {
+    "workflow_id": "function_call_generator",
+    "name": "Function Call Generator",
+    "description": "Parses user query and generates appropriate JSON function call with extracted parameters",
+    "execution_pattern": "sequence"
+  }
+}

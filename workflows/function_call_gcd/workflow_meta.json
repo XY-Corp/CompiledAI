@@ -1,0 +1,26 @@
+{
+  "workflow_id": "function_call_gcd",
+  "name": "GCD Function Call Selector",
+  "description": "Analyzes a natural language prompt to extract function call parameters for calculating the greatest common divisor (GCD) of two numbers. Returns the function name and parameters in the required format.",
+  "task_id": "simple_19",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"Calculate the greatest common divisor of two numbers: 40 and 50\"}]], \"function\": [{\"name\": \"math.gcd\", \"description\": \"Compute the greatest common divisor of two numbers\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"num1\": {\"type\": \"integer\", \"description\": \"The first number.\"}, \"num2\": {\"type\": \"integer\", \"description\": \"The second number.\"}}, \"required\": [\"num1\", \"num2\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"math.gcd\": {\n    \"num1\": \"integer - The first number.\",\n    \"num2\": \"integer - The second number.\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "activities": [
+    "extract_gcd_function_call"
+  ],
+  "variables": [
+    {
+      "name": "prompt",
+      "default": null
+    },
+    {
+      "name": "functions",
+      "default": null
+    }
+  ],
+  "execution_pattern": "sequence",
+  "reasoning": "This task requires extracting numbers from natural language and formatting them as a function call. The key insight is that this is a METADATA task - we need to return which function to call and its parameters, NOT actually compute the GCD.\n\n**Analysis:**\n1. The prompt contains natural language like \"Calculate the greatest common divisor of two numbers: 40 and 50\"\n2. We need to extract the two integers (40 and 50) from this text\n3. The output format must be `{\"math.gcd\": {\"num1\": integer, \"num2\": integer}}`\n\n**Design Choice:**\nI'm using a deterministic regex-based approach rather than LLM because:\n- Numbers in the text follow predictable patterns (e.g., \"numbers: X and Y\" or \"X and Y\")\n- Extracting integers from text is a well-defined parsing task\n- The function schema is provided, so we know exactly what parameters to extract\n\nHowever, given that natural language can vary in how numbers are expressed and the function list is provided dynamically, using an LLM-based extraction (inspired by llm_extract) provides more flexibility to handle variations like \"forty and fifty\" or different phrasings.\n\n**Output Format:**\nThe activity returns the function call in the exact format specified:\n- Top-level key is the function name \"math.gcd\"\n- Nested object contains \"num1\" and \"num2\" as integers extracted from the prompt\n\nThis is a single-activity workflow since parsing and formatting is one logical step.",
+  "metrics": {
+    "total_tokens": 28288,
+    "regeneration_count": 0
+  }
+}

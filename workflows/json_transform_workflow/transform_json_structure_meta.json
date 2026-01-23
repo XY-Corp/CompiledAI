@@ -1,0 +1,32 @@
+{
+  "activity_name": "transform_json_structure",
+  "description": "Transform the source JSON to match target schema by mapping and computing field values",
+  "task_id": "json_transform_01_transform_002",
+  "task_description": "{\"prompt_template\": \"Transform this JSON from the source format to the target format.\\n\\nSource:\\n{source_json}\\n\\nTarget Schema:\\n{target_schema}\\n\\nReturn only the transformed JSON.\", \"input\": {\"source_json\": {\"product_id\": \"SKU-123\", \"product_name\": \"Widget\", \"price_usd\": 29.99, \"qty\": 5}, \"target_schema\": {\"id\": \"string\", \"name\": \"string\", \"total\": \"number\"}}}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `_task_schema` (dict) - context for task type\n- `source_json` (dict) - context for task type\n- `target_schema` (dict) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, _task_schema, source_json, target_schema\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"JSON object matching the target_schema structure provided in input. Fields are dynamically determined by target_schema - map source fields to target fields, combining or computing values as needed.\"\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "inputs": [
+    {
+      "name": "source_data",
+      "type": "dict",
+      "description": "The source JSON object containing the original data fields to transform",
+      "required": true
+    },
+    {
+      "name": "target_schema",
+      "type": "dict",
+      "description": "The target schema definition specifying required field names and their expected types",
+      "required": true
+    }
+  ],
+  "output": {
+    "type": "dict",
+    "description": "Returns transformed JSON object matching target schema with computed values: {'id': 'SKU-123', 'name': 'Widget', 'total': 149.95}",
+    "fields": null
+  },
+  "reference_activity": "json_transform",
+  "workflow_spec": {
+    "workflow_id": "json_transform_workflow",
+    "name": "JSON Structure Transformation",
+    "description": "Transform JSON data from source format to target schema format by parsing the prompt input, extracting source and target information, and mapping fields with computed values as needed",
+    "execution_pattern": "sequence"
+  }
+}

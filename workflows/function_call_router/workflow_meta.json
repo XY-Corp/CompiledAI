@@ -1,0 +1,26 @@
+{
+  "workflow_id": "function_call_router",
+  "name": "Function Call Router",
+  "description": "Analyzes a natural language prompt and available function definitions to determine the appropriate function to call and extract the required parameters from the user's request.",
+  "task_id": "simple_0",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"Find the area of a triangle with a base of 10 units and height of 5 units.\"}]], \"function\": [{\"name\": \"calculate_triangle_area\", \"description\": \"Calculate the area of a triangle given its base and height.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"base\": {\"type\": \"integer\", \"description\": \"The base of the triangle.\"}, \"height\": {\"type\": \"integer\", \"description\": \"The height of the triangle.\"}, \"unit\": {\"type\": \"string\", \"description\": \"The unit of measure (defaults to 'units' if not specified)\"}}, \"required\": [\"base\", \"height\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"calculate_triangle_area\": {\n    \"base\": \"integer - The base of the triangle.\",\n    \"height\": \"integer - The height of the triangle.\",\n    \"unit\": \"string - The unit of measure (defaults to 'units' if not specified)\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "activities": [
+    "route_function_call"
+  ],
+  "variables": [
+    {
+      "name": "prompt",
+      "default": null
+    },
+    {
+      "name": "functions",
+      "default": null
+    }
+  ],
+  "execution_pattern": "sequence",
+  "reasoning": "This task requires understanding natural language intent and mapping it to a function call - a classic LLM task that requires semantic understanding. The user asks to find the area of a triangle, and we need to:\n\n1. **Identify the correct function**: Match the user intent (\"find area of triangle\") to the available function `calculate_triangle_area`\n2. **Extract parameter values**: Parse \"base of 10 units\" \u2192 base=10, \"height of 5 units\" \u2192 height=5, and infer unit=\"units\"\n3. **Return metadata, not execution**: The task asks us to return WHICH function to call with WHAT parameters, not to actually calculate the area\n\nI designed a single activity `route_function_call` because:\n- This is a metadata/routing task - we output function call specification, not execution results\n- The LLM needs to understand intent from natural language (requires semantic understanding)\n- The LLM must extract specific values (10, 5, \"units\") and map them to parameter names\n- Output format must be: `{\"calculate_triangle_area\": {\"base\": 10, \"height\": 5, \"unit\": \"units\"}}`\n\nThe activity uses the `llm_extract` template as inspiration since it demonstrates structured extraction from text, but customizes it for function routing where the output structure is dynamic based on the selected function.",
+  "metrics": {
+    "total_tokens": 28672,
+    "regeneration_count": 0
+  }
+}

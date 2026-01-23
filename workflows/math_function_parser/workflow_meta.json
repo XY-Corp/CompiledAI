@@ -1,0 +1,22 @@
+{
+  "workflow_id": "math_function_parser",
+  "name": "Math Function Parameter Parser",
+  "description": "Parse natural language math requests to extract function names and parameters, returning properly formatted function calls",
+  "task_id": "simple_1",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"Calculate the factorial of 5 using math functions.\"}]], \"function\": [{\"name\": \"math.factorial\", \"description\": \"Calculate the factorial of a given number.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"number\": {\"type\": \"integer\", \"description\": \"The number for which factorial needs to be calculated.\"}}, \"required\": [\"number\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"math.factorial\": {\n    \"number\": \"integer - The number for which factorial needs to be calculated.\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "activities": [
+    "parse_math_function_call"
+  ],
+  "variables": [
+    {
+      "name": "prompt",
+      "default": null
+    }
+  ],
+  "execution_pattern": "sequence",
+  "reasoning": "This workflow needs to parse natural language math requests and extract the specific function name and parameters. Since the task involves understanding natural language intent and mapping it to structured function calls, an LLM-based approach is appropriate. The task requires semantic understanding to identify that \"factorial of 5\" maps to the math.factorial function with parameter number=5. The output must match the exact format specified, with the function name as the top-level key and parameters nested within. I'm using the llm_extract template as inspiration since it handles structured data extraction from unstructured text, which matches our need to extract function parameters from natural language.",
+  "metrics": {
+    "total_tokens": 27206,
+    "regeneration_count": 1
+  }
+}

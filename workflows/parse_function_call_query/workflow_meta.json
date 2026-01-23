@@ -1,0 +1,26 @@
+{
+  "workflow_id": "parse_function_call_query",
+  "name": "Function Call Parser",
+  "description": "Parses a natural language query to determine the appropriate function to call and extracts the required parameters from the query text",
+  "task_id": "simple_73",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"What's the projected population growth in United States in the next 20 years?\"}]], \"function\": [{\"name\": \"population_projections\", \"description\": \"Calculates the projected population growth based on the current growth rate.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"country\": {\"type\": \"string\", \"description\": \"The country for which to calculate the population projection.\"}, \"years\": {\"type\": \"integer\", \"description\": \"Number of years for the projection.\"}, \"growth_rate\": {\"type\": \"float\", \"description\": \"Optional parameter to specify the growth rate, in percentage. Default is 1.2.\"}}, \"required\": [\"country\", \"years\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"population_projections\": {\n    \"country\": \"string - The country for which to calculate the population projection.\",\n    \"years\": \"integer - Number of years for the projection.\",\n    \"growth_rate\": \"float - Optional parameter to specify the growth rate, in percentage. Default is 1.2.\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "activities": [
+    "parse_query_for_function_call"
+  ],
+  "variables": [
+    {
+      "name": "prompt",
+      "default": null
+    },
+    {
+      "name": "functions",
+      "default": null
+    }
+  ],
+  "execution_pattern": "sequence",
+  "reasoning": "This workflow addresses the task of parsing a natural language query to determine which function to call and extract the required parameters. The task is asking for metadata (which function to call and with what parameters), not execution of the function itself.\n\nThe single activity uses LLM extraction because:\n1. This requires semantic understanding of natural language intent\n2. The query \"What's the projected population growth in United States in the next 20 years?\" needs to be mapped to the population_projections function\n3. Parameter extraction requires understanding that \"United States\" maps to the country parameter, \"next 20 years\" maps to years=20, and growth_rate can use the default\n\nThe activity takes the raw prompt and available functions as inputs, then uses LLM reasoning to:\n- Identify which function matches the user's intent\n- Extract specific parameter values from the natural language query\n- Return the structured function call format with the function name as the top-level key\n\nThe output format is designed to match the expected structure where the function name becomes the key and parameters are nested within, allowing for dynamic function selection based on the query content.",
+  "metrics": {
+    "total_tokens": 40902,
+    "regeneration_count": 2
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "activity_name": "parse_function_call_request",
+  "description": "Parse user request to extract numbers list and format as function call structure",
+  "task_id": "simple_82",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"Calculate the average of list of integers [12, 15, 18, 20, 21, 26, 30].\"}]], \"function\": [{\"name\": \"calculate_average\", \"description\": \"Calculates the average of a list of numbers.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"numbers\": {\"type\": \"array\", \"items\": {\"type\": \"float\"}, \"description\": \"The list of numbers to calculate the average of.\"}}, \"required\": [\"numbers\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"calculate_average\": {\n    \"numbers\": \"array - The list of numbers to calculate the average of.\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "inputs": [
+    {
+      "name": "user_request",
+      "type": "str",
+      "description": "The raw user request containing numbers to calculate average of",
+      "required": true
+    },
+    {
+      "name": "target_function",
+      "type": "str",
+      "description": "The name of the function to call (calculate_average)",
+      "required": true
+    }
+  ],
+  "output": {
+    "type": "dict",
+    "description": "Returns function call structure: {\"calculate_average\": {\"numbers\": [12, 15, 18, 20, 21, 26, 30]}} - The top-level key is the function name and contains a nested object with the numbers parameter as an array of integers extracted from the user request",
+    "fields": {
+      "calculate_average": "dict containing the numbers parameter"
+    }
+  },
+  "reference_activity": "llm_extract",
+  "workflow_spec": {
+    "workflow_id": "calculate_average_function_caller",
+    "name": "Calculate Average Function Caller",
+    "description": "Parse user request for calculating average of numbers and return function call structure",
+    "execution_pattern": "sequence"
+  }
+}

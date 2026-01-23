@@ -1,4 +1,4 @@
-"""Baseline Implementations: Direct LLM, LangChain, Multi-agent comparisons."""
+"""Baseline Implementations: Direct LLM, Code Factory, LangChain, Multi-agent comparisons."""
 
 from .base import (
     BaseBaseline,
@@ -10,8 +10,7 @@ from .base import (
     register_baseline,
 )
 from .direct_llm import DirectLLMBaseline
-from .langchain_baseline import LangChainBaseline
-from .autogen_baseline import AutoGenBaseline
+from .code_factory import CodeFactoryBaseline
 
 __all__ = [
     "BaseBaseline",
@@ -19,8 +18,7 @@ __all__ = [
     "TaskInput",
     "TaskOutput",
     "DirectLLMBaseline",
-    "LangChainBaseline",
-    "AutoGenBaseline",
+    "CodeFactoryBaseline",
     "get_baseline",
     "list_baselines",
     "register_baseline",

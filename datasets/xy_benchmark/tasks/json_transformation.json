@@ -6,6 +6,10 @@
   "difficulty": "medium",
   "prompt_template": "Transform this JSON from the source format to the target format.\n\nSource:\n{source_json}\n\nTarget Schema:\n{target_schema}\n\nReturn only the transformed JSON.",
   "evaluation_type": "schema",
+  "output_format": {
+    "type": "object",
+    "description": "JSON object matching the target_schema structure provided in input. Fields are dynamically determined by target_schema - map source fields to target fields, combining or computing values as needed."
+  },
   "tags": ["transformation", "json", "schema"],
   "instances": [
     {

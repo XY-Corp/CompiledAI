@@ -1,0 +1,15 @@
+workflow_id: function_call_extraction_workflow
+name: Function Call Extraction Workflow
+description: Analyzes user prompts to extract function call specifications with parameters, determining the appropriate function to call based on user intent and available functions
+variables:
+  prompt: null
+  functions: null
+root:
+  sequence:
+    elements:
+      - activity:
+          name: extract_function_call_from_prompt
+          params:
+            user_prompt: ${{ prompt }}
+            available_functions: ${{ functions }}
+          result: function_call

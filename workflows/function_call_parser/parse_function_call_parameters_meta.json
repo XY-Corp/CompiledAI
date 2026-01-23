@@ -1,0 +1,32 @@
+{
+  "activity_name": "parse_function_call_parameters",
+  "description": "Extract function name and parameter values from user query and format as required JSON structure",
+  "task_id": "bfcl_simple_simple_0",
+  "task_description": "You have access to the following functions:\n\n[\n  {\n    \"name\": \"calculate_triangle_area\",\n    \"description\": \"Calculate the area of a triangle given its base and height.\",\n    \"parameters\": {\n      \"type\": \"dict\",\n      \"properties\": {\n        \"base\": {\n          \"type\": \"integer\",\n          \"description\": \"The base of the triangle.\"\n        },\n        \"height\": {\n          \"type\": \"integer\",\n          \"description\": \"The height of the triangle.\"\n        },\n        \"unit\": {\n          \"type\": \"string\",\n          \"description\": \"The unit of measure (defaults to 'units' if not specified)\"\n        }\n      },\n      \"required\": [\n        \"base\",\n        \"height\"\n      ]\n    }\n  }\n]\n\nUser query: Find the area of a triangle with a base of 10 units and height of 5 units.\n\nGenerate the appropriate function call as JSON with 'name' and 'arguments' keys.\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `user_query` (str) - context for task type\n- `functions` (str) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, user_query, functions\n\n**OUTPUT FORMAT (STRUCTURE REFERENCE - VALUES ARE EXAMPLES ONLY!):**\nYour activity must return this structure:\n```json\n[\n  {\n    \"calculate_triangle_area\": {\n      \"base\": [\n        10\n      ],\n      \"height\": [\n        5\n      ],\n      \"unit\": [\n        \"units\",\n        \"\"\n      ]\n    }\n  }\n]\n```\n\n**CRITICAL RULES:**\n- The values above are EXAMPLES ONLY - do NOT hardcode them\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Match the structure (field names, nesting, types) EXACTLY\n- Do NOT add extra fields",
+  "inputs": [
+    {
+      "name": "query_text",
+      "type": "str",
+      "description": "The user query text containing the request to parse for function parameters and values",
+      "required": true
+    },
+    {
+      "name": "available_functions",
+      "type": "str",
+      "description": "String representation of available function definitions with parameters and types",
+      "required": true
+    }
+  ],
+  "output": {
+    "type": "list",
+    "description": "Returns a list containing a single dictionary with the function name as key and parameter arrays as values. Example structure: [{\"calculate_triangle_area\": {\"base\": [10], \"height\": [5], \"unit\": [\"units\", \"\"]}}]. The parameter values are extracted from the user query and formatted as arrays with actual values followed by empty strings for optional parameters.",
+    "fields": null
+  },
+  "reference_activity": "llm_extract",
+  "workflow_spec": {
+    "workflow_id": "function_call_parser",
+    "name": "Function Call Parser",
+    "description": "Parse user query to generate appropriate function call with extracted parameters in the required JSON structure format",
+    "execution_pattern": "sequence"
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "workflow_id": "find_math_hcf",
+  "name": "Find Mathematical Highest Common Factor",
+  "description": "Analyzes a natural language request to find the highest common factor of two numbers and returns the appropriate function call structure",
+  "task_id": "simple_20",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"Find the highest common factor of 36 and 24.\"}]], \"function\": [{\"name\": \"math.hcf\", \"description\": \"Calculate the highest common factor of two numbers.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"number1\": {\"type\": \"integer\", \"description\": \"First number.\"}, \"number2\": {\"type\": \"integer\", \"description\": \"Second number.\"}}, \"required\": [\"number1\", \"number2\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"math.hcf\": {\n    \"number1\": \"integer - First number.\",\n    \"number2\": \"integer - Second number.\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "activities": [
+    "extract_numbers_and_create_function_call"
+  ],
+  "variables": [
+    {
+      "name": "prompt",
+      "default": null
+    },
+    {
+      "name": "functions",
+      "default": null
+    }
+  ],
+  "execution_pattern": "sequence",
+  "reasoning": "This workflow needs to analyze a natural language request to find the highest common factor of two numbers and return the appropriate function call structure. The task is asking for metadata (which function to call with what parameters) rather than execution of the function itself. I designed a single activity that uses deterministic text processing to extract the two numbers from the prompt and format them into the exact function call structure expected. The activity will parse the prompt to identify the numbers (36 and 24 in this case) and return them in the math.hcf function call format. Since this involves understanding natural language and extracting semantic meaning, I reference the llm_extract template for the extraction approach, but the activity will be customized to return the exact function call structure required.",
+  "metrics": {
+    "total_tokens": 17672,
+    "regeneration_count": 0
+  }
+}

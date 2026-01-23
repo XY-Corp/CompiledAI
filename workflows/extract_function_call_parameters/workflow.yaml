@@ -1,0 +1,18 @@
+workflow_id: extract_function_call_parameters
+name: Extract Function Call Parameters
+description: |
+  Analyzes a natural language prompt and available function definitions to extract the appropriate function to call along with its parameters. Returns the function call in the expected format with the function name as the top-level key.
+variables:
+  prompt: null
+  functions: null
+root:
+  sequence:
+    elements:
+      - activity:
+          name: extract_function_call
+          description: |
+            Extracts the appropriate function name and parameters from a natural language prompt based on available function definitions. Uses LLM to understand intent and map to correct function with parameter values.
+          params:
+            prompt: ${{ prompt }}
+            functions: ${{ functions }}
+          result: function_call_result

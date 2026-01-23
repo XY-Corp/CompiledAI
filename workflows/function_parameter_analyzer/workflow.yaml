@@ -1,0 +1,15 @@
+workflow_id: function_parameter_analyzer
+name: Function Parameter Analyzer
+description: Analyzes user questions and available functions to determine the correct function to call with appropriate parameters
+variables:
+  prompt: null
+  functions: null
+root:
+  sequence:
+    elements:
+      - activity:
+          name: analyze_user_question
+          params:
+            user_question: ${{ prompt }}
+            available_functions: ${{ functions }}
+          result: analysis_result

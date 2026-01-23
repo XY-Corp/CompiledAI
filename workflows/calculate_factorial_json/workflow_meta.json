@@ -1,0 +1,22 @@
+{
+  "workflow_id": "calculate_factorial_json",
+  "name": "Calculate Factorial with JSON Function Call",
+  "description": "Parse user query to extract number and generate appropriate math.factorial function call in JSON format",
+  "task_id": "bfcl_simple_simple_1",
+  "task_description": "You have access to the following functions:\n\n[\n  {\n    \"name\": \"math.factorial\",\n    \"description\": \"Calculate the factorial of a given number.\",\n    \"parameters\": {\n      \"type\": \"dict\",\n      \"properties\": {\n        \"number\": {\n          \"type\": \"integer\",\n          \"description\": \"The number for which factorial needs to be calculated.\"\n        }\n      },\n      \"required\": [\n        \"number\"\n      ]\n    }\n  }\n]\n\nUser query: Calculate the factorial of 5 using math functions.\n\nGenerate the appropriate function call as JSON with 'name' and 'arguments' keys.\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `user_query` (str) - context for task type\n- `functions` (str) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, user_query, functions\n\n**OUTPUT FORMAT (STRUCTURE REFERENCE - VALUES ARE EXAMPLES ONLY!):**\nYour activity must return this structure:\n```json\n[\n  {\n    \"math.factorial\": {\n      \"number\": [\n        5\n      ]\n    }\n  }\n]\n```\n\n**CRITICAL RULES:**\n- The values above are EXAMPLES ONLY - do NOT hardcode them\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Match the structure (field names, nesting, types) EXACTLY\n- Do NOT add extra fields",
+  "activities": [
+    "parse_factorial_request"
+  ],
+  "variables": [
+    {
+      "name": "prompt",
+      "default": null
+    }
+  ],
+  "execution_pattern": "sequence",
+  "reasoning": "This workflow needs to parse the user's request to extract the number (5) and generate the specific JSON function call format. Since this involves understanding natural language (\"Calculate the factorial of 5\") and generating structured output in a specific format, I'm using an LLM-based approach. The activity will extract the number from the prompt and format it according to the required JSON structure with math.factorial as the function name and the number in a list format as shown in the expected output.",
+  "metrics": {
+    "total_tokens": 16576,
+    "regeneration_count": 0
+  }
+}

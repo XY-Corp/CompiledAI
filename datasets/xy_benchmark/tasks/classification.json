@@ -6,6 +6,10 @@
   "difficulty": "simple",
   "prompt_template": "Classify this support ticket into one of these categories:\n- billing\n- technical\n- account\n- general\n\nTicket:\n{ticket_text}\n\nReturn only the category name.",
   "evaluation_type": "exact_match",
+  "output_format": {
+    "type": "string",
+    "description": "One of: billing, technical, account, general - lowercase category name"
+  },
   "tags": ["classification", "support", "simple"],
   "instances": [
     {

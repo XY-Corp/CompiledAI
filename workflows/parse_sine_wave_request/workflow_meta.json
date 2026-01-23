@@ -1,0 +1,26 @@
+{
+  "workflow_id": "parse_sine_wave_request",
+  "name": "Parse Sine Wave Plot Request",
+  "description": "Analyzes a natural language request for plotting a sine wave and extracts the function parameters needed for the plot_sine_wave function",
+  "task_id": "simple_99",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"Plot a sine wave from 0 to 2 pi with a frequency of 5 Hz.\"}]], \"function\": [{\"name\": \"plot_sine_wave\", \"description\": \"Plot a sine wave for a given frequency in a given range.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"start_range\": {\"type\": \"float\", \"description\": \"Start of the range in radians. Four decimal places.\"}, \"end_range\": {\"type\": \"float\", \"description\": \"End of the range in radians. Four decimal places.\"}, \"frequency\": {\"type\": \"integer\", \"description\": \"Frequency of the sine wave in Hz.\"}, \"amplitude\": {\"type\": \"integer\", \"description\": \"Amplitude of the sine wave. Default is 1.\"}, \"phase_shift\": {\"type\": \"integer\", \"description\": \"Phase shift of the sine wave in radians. Default is 0.\"}}, \"required\": [\"start_range\", \"end_range\", \"frequency\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"plot_sine_wave\": {\n    \"start_range\": \"float - Start of the range in radians. Four decimal places.\",\n    \"end_range\": \"float - End of the range in radians. Four decimal places.\",\n    \"frequency\": \"integer - Frequency of the sine wave in Hz.\",\n    \"amplitude\": \"integer - Amplitude of the sine wave. Default is 1.\",\n    \"phase_shift\": \"integer - Phase shift of the sine wave in radians. Default is 0.\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "activities": [
+    "parse_sine_wave_parameters"
+  ],
+  "variables": [
+    {
+      "name": "prompt",
+      "default": null
+    },
+    {
+      "name": "functions",
+      "default": null
+    }
+  ],
+  "execution_pattern": "sequence",
+  "reasoning": "This workflow needs to parse natural language input to extract specific numeric parameters for plotting a sine wave. The task is asking to analyze the user's request and return the appropriate function call structure, not to actually execute the plotting.\n\nI designed a single activity that:\n1. Uses LLM extraction (inspired by llm_extract template) since this requires understanding natural language intent and mapping it to structured parameters\n2. Takes the raw prompt as input along with function definitions for context\n3. Extracts the specific values mentioned in the request (range 0 to 2\u03c0, frequency 5 Hz)\n4. Handles defaults for optional parameters (amplitude=1, phase_shift=0) when not specified\n5. Returns the exact structure expected: a dict with plot_sine_wave as the key containing the parameter object\n\nThe output description contains the exact expected format showing how the extracted parameters should be structured. The LLM will analyze the natural language request \"Plot a sine wave from 0 to 2 pi with a frequency of 5 Hz\" and convert 2\u03c0 to the numeric value 6.2832 (four decimal places as required), extract frequency as 5, and use defaults for unspecified parameters.",
+  "metrics": {
+    "total_tokens": 20143,
+    "regeneration_count": 0
+  }
+}

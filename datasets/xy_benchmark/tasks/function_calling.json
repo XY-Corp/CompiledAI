@@ -6,6 +6,13 @@
   "difficulty": "medium",
   "prompt_template": "Given these available functions:\n{functions}\n\nUser request: {user_request}\n\nReturn the function call as JSON with 'function' and 'parameters' keys.",
   "evaluation_type": "schema",
+  "output_format": {
+    "type": "object",
+    "fields": {
+      "function": "string - name of the function to call from the available functions list",
+      "parameters": "object - key-value pairs matching the function's parameter schema"
+    }
+  },
   "schema": {
     "type": "object",
     "properties": {
@@ -20,9 +27,9 @@
       "id": "func_001",
       "input": {
         "functions": [
-          {"name": "get_weather", "params": {"location": "string", "unit": "celsius|fahrenheit"}},
-          {"name": "send_email", "params": {"to": "string", "subject": "string", "body": "string"}},
-          {"name": "create_reminder", "params": {"title": "string", "time": "datetime"}}
+          {"name": "get_weather", "parameters": {"location": "string", "unit": "celsius|fahrenheit"}},
+          {"name": "send_email", "parameters": {"to": "string", "subject": "string", "body": "string"}},
+          {"name": "create_reminder", "parameters": {"title": "string", "time": "datetime"}}
         ],
         "user_request": "What's the weather in Paris in Celsius?"
       },
@@ -35,9 +42,9 @@
       "id": "func_002",
       "input": {
         "functions": [
-          {"name": "get_weather", "params": {"location": "string", "unit": "celsius|fahrenheit"}},
-          {"name": "send_email", "params": {"to": "string", "subject": "string", "body": "string"}},
-          {"name": "create_reminder", "params": {"title": "string", "time": "datetime"}}
+          {"name": "get_weather", "parameters": {"location": "string", "unit": "celsius|fahrenheit"}},
+          {"name": "send_email", "parameters": {"to": "string", "subject": "string", "body": "string"}},
+          {"name": "create_reminder", "parameters": {"title": "string", "time": "datetime"}}
         ],
         "user_request": "Remind me to call mom tomorrow at 3pm"
       },

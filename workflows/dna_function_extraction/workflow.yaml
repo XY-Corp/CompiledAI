@@ -1,0 +1,17 @@
+workflow_id: dna_function_extraction
+name: DNA Function Parameter Extraction
+description: Extracts function name and parameters from user prompt for DNA sequence generation requests
+
+variables:
+  prompt: null
+  functions: null
+
+root:
+  sequence:
+    elements:
+      - activity:
+          name: extract_function_parameters
+          params:
+            user_prompt: ${{ prompt }}
+            available_functions: ${{ functions }}
+          result: extracted_result

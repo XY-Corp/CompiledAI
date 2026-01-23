@@ -1,0 +1,18 @@
+workflow_id: parse_function_call
+name: Parse Function Call from Query
+description: Parses a user query to extract function parameters and generate a function call with the appropriate structure
+
+variables:
+  prompt: null
+  user_query: null
+  functions: null
+
+root:
+  sequence:
+    elements:
+      - activity:
+          name: parse_function_parameters
+          params:
+            query_text: ${{ user_query }}
+            available_functions: ${{ functions }}
+          result: function_call

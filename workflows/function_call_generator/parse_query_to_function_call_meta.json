@@ -1,0 +1,34 @@
+{
+  "activity_name": "parse_query_to_function_call",
+  "description": "Analyzes the natural language query and available function definitions to generate the appropriate function call with extracted parameters",
+  "task_id": "simple_89",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"Fetch all records for students studying Science in 'Bluebird High School' from the StudentDB.\"}]], \"function\": [{\"name\": \"db_fetch_records\", \"description\": \"Fetch records from a specified database table based on certain conditions.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"database_name\": {\"type\": \"string\", \"description\": \"The name of the database.\"}, \"table_name\": {\"type\": \"string\", \"description\": \"The name of the table from which records need to be fetched.\"}, \"conditions\": {\"type\": \"dict\", \"properties\": {\"department\": {\"type\": \"string\", \"description\": \"The name of the department of students.\"}, \"school\": {\"type\": \"string\", \"description\": \"The name of the school students are enrolled in.\"}}, \"description\": \"The conditions based on which records are to be fetched.\"}, \"fetch_limit\": {\"type\": \"integer\", \"description\": \"Limits the number of records to be fetched. Default is 0, which means no limit.\"}}, \"required\": [\"database_name\", \"table_name\", \"conditions\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"db_fetch_records\": {\n    \"database_name\": \"string - The name of the database.\",\n    \"table_name\": \"string - The name of the table from which records need to be fetched.\",\n    \"conditions\": \"dict - The conditions based on which records are to be fetched.\",\n    \"fetch_limit\": \"integer - Limits the number of records to be fetched. Default is 0, which means no limit.\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "inputs": [
+    {
+      "name": "user_query",
+      "type": "str",
+      "description": "The natural language query from the user that needs to be converted to a function call",
+      "required": true
+    },
+    {
+      "name": "available_functions",
+      "type": "list",
+      "description": "List of function definitions containing name, description, and parameter schemas",
+      "required": true
+    }
+  ],
+  "output": {
+    "type": "dict",
+    "description": "Returns a function call structure with the function name as the top-level key and its parameters as values. Example format: {\"db_fetch_records\": {\"database_name\": \"StudentDB\", \"table_name\": \"students\", \"conditions\": {\"department\": \"Science\", \"school\": \"Bluebird High School\"}, \"fetch_limit\": 0}}",
+    "fields": {
+      "function_name": "dict - Contains the function parameters as key-value pairs where the function name is the top-level key"
+    }
+  },
+  "reference_activity": "llm_extract",
+  "workflow_spec": {
+    "workflow_id": "function_call_generator",
+    "name": "Function Call Generator",
+    "description": "Analyzes a natural language query and generates the corresponding function call with proper parameters",
+    "execution_pattern": "sequence"
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "workflow_id": "fitness_calculation_workflow",
+  "name": "Evolutionary Fitness Calculation",
+  "description": "Parses a fitness calculation query and extracts trait values and contributions to generate the appropriate function call parameters",
+  "task_id": "simple_72",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"Calculate the expected evolutionary fitness of a creature, with trait A contributing to 40% of the fitness and trait B contributing 60%, if trait A has a value of 0.8 and trait B a value of 0.7.\"}]], \"function\": [{\"name\": \"calculate_fitness\", \"description\": \"Calculate the expected evolutionary fitness of a creature based on the individual values and contributions of its traits.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"trait_values\": {\"type\": \"array\", \"items\": {\"type\": \"float\"}, \"description\": \"List of trait values, which are decimal numbers between 0 and 1, where 1 represents the trait maximally contributing to fitness.\"}, \"trait_contributions\": {\"type\": \"array\", \"items\": {\"type\": \"float\"}, \"description\": \"List of the percentage contributions of each trait to the overall fitness, which must sum to 1.\"}}, \"required\": [\"trait_values\", \"trait_contributions\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"calculate_fitness\": {\n    \"trait_values\": \"array - List of trait values, which are decimal numbers between 0 and 1, where 1 represents the trait maximally contributing to fitness.\",\n    \"trait_contributions\": \"array - List of the percentage contributions of each trait to the overall fitness, which must sum to 1.\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "activities": [
+    "parse_fitness_query"
+  ],
+  "variables": [
+    {
+      "name": "prompt",
+      "default": null
+    },
+    {
+      "name": "functions",
+      "default": null
+    }
+  ],
+  "execution_pattern": "sequence",
+  "reasoning": "This workflow analyzes the fitness calculation query to extract trait values and their percentage contributions, then formats them into the required function call structure. Since this involves parsing natural language to identify numerical values and their relationships (which trait contributes what percentage), I use an LLM-based extraction approach inspired by the llm_extract template. The activity extracts the exact values mentioned in the query (trait A: 0.8 with 40% contribution, trait B: 0.7 with 60% contribution) and formats them into the calculate_fitness function parameters. A single sequential activity is sufficient as we only need to parse the query once to extract all required information.",
+  "metrics": {
+    "total_tokens": 18546,
+    "regeneration_count": 0
+  }
+}

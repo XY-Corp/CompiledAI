@@ -1,0 +1,34 @@
+{
+  "activity_name": "extract_gcd_function_call",
+  "description": "Extract two integers from the user prompt and construct a function call object for the number_theory.gcd function. The activity parses the prompt to find the two numbers mentioned, and returns them in the format required for a function call.",
+  "task_id": "simple_21",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"Find the Greatest Common Divisor (GCD) of two numbers, say 36 and 48.\"}]], \"function\": [{\"name\": \"number_theory.gcd\", \"description\": \"Compute the greatest common divisor of two given integers.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"number1\": {\"type\": \"integer\", \"description\": \"The first integer.\"}, \"number2\": {\"type\": \"integer\", \"description\": \"The second integer.\"}}, \"required\": [\"number1\", \"number2\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"number_theory.gcd\": {\n    \"number1\": \"integer - The first integer.\",\n    \"number2\": \"integer - The second integer.\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "inputs": [
+    {
+      "name": "prompt",
+      "type": "str",
+      "description": "The natural language prompt containing a request to find the GCD of two numbers, e.g., 'Find the GCD of 36 and 48'",
+      "required": true
+    },
+    {
+      "name": "functions",
+      "type": "list",
+      "description": "List of available function definitions with names, descriptions and parameter schemas that can be called",
+      "required": true
+    }
+  ],
+  "output": {
+    "type": "dict",
+    "description": "Returns a function call object with 'number_theory.gcd' as the key containing parameters 'number1' and 'number2' as integers. Example: {\"number_theory.gcd\": {\"number1\": 36, \"number2\": 48}}",
+    "fields": {
+      "number_theory.gcd": "dict - Object containing 'number1' (integer) and 'number2' (integer) extracted from the prompt"
+    }
+  },
+  "reference_activity": "llm_extract",
+  "workflow_spec": {
+    "workflow_id": "function_call_gcd_extraction",
+    "name": "GCD Function Call Parameter Extraction",
+    "description": "Extracts two numbers from a natural language prompt and returns a function call object for computing the Greatest Common Divisor (GCD) using the number_theory.gcd function.",
+    "execution_pattern": "sequence"
+  }
+}

@@ -1,0 +1,15 @@
+workflow_id: physics_function_selector
+name: Physics Function Parameter Extractor
+description: Analyzes physics problem text to extract parameters and format them for the appropriate physics calculation function
+variables:
+  prompt: null
+  functions: null
+root:
+  sequence:
+    elements:
+      - activity:
+          name: extract_physics_parameters
+          params:
+            problem_text: ${{ prompt }}
+            available_functions: ${{ functions }}
+          result: result

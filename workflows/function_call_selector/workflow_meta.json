@@ -1,0 +1,26 @@
+{
+  "workflow_id": "function_call_selector",
+  "name": "Function Call Parameter Extraction",
+  "description": "Analyzes a natural language prompt to identify the appropriate function to call from a list of available functions and extracts the required parameters from the user's request.",
+  "task_id": "simple_16",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"Calculate the derivative of the function 2x^2 at x = 1.\"}]], \"function\": [{\"name\": \"calculus.derivative\", \"description\": \"Compute the derivative of a function at a specific value.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"function\": {\"type\": \"string\", \"description\": \"The function to calculate the derivative of.\"}, \"value\": {\"type\": \"integer\", \"description\": \"The value where the derivative needs to be calculated at.\"}, \"function_variable\": {\"type\": \"string\", \"description\": \"The variable present in the function, for instance x or y, etc. Default is 'x'.\"}}, \"required\": [\"function\", \"value\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"calculus.derivative\": {\n    \"function\": \"string - The function to calculate the derivative of.\",\n    \"value\": \"integer - The value where the derivative needs to be calculated at.\",\n    \"function_variable\": \"string - The variable present in the function, for instance x or y, etc. Default is 'x'.\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "activities": [
+    "extract_function_call"
+  ],
+  "variables": [
+    {
+      "name": "prompt",
+      "default": null
+    },
+    {
+      "name": "functions",
+      "default": null
+    }
+  ],
+  "execution_pattern": "sequence",
+  "reasoning": "This task is a METADATA task - the goal is to identify which function to call and extract parameters, NOT to actually execute the derivative calculation. \n\nKey design decisions:\n\n1. **Single Activity Design**: This workflow needs one activity that performs function selection and parameter extraction in one step. The LLM needs to:\n   - Understand the user's intent from the natural language prompt\n   - Match that intent to the appropriate function from the available list\n   - Extract the parameter values from the prompt text\n   - Format the output according to the specified schema\n\n2. **LLM Required**: This task requires LLM because:\n   - Understanding natural language intent (\"Calculate the derivative\") requires semantic understanding\n   - Mapping user terminology to function names requires reasoning\n   - Extracting parameters from free-form text requires NLU capabilities\n\n3. **Output Structure**: The expected output format is a dict with the function name as the top-level key and parameters as a nested object:\n   ```json\n   {\"calculus.derivative\": {\"function\": \"2x^2\", \"value\": 1, \"function_variable\": \"x\"}}\n   ```\n\n4. **Variable Binding**: Using the exact context key names (`prompt` and `functions`) as workflow variables ensures proper data binding at runtime.\n\n5. **Reference Pattern**: Inspired by `llm_extract` template which shows how to use LLM for extracting structured data from unstructured text, but adapted specifically for function call extraction with dynamic function schema matching.",
+  "metrics": {
+    "total_tokens": 29016,
+    "regeneration_count": 0
+  }
+}

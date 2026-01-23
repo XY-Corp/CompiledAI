@@ -1,0 +1,15 @@
+workflow_id: parse_math_function_call
+name: Parse Mathematical Function Call
+description: Analyze a natural language mathematical request and extract the function name and parameters needed to call calculate_area_under_curve function
+variables:
+  prompt: null
+  functions: null
+root:
+  sequence:
+    elements:
+      - activity:
+          name: parse_math_request
+          params:
+            request_text: ${{ prompt }}
+            available_functions: ${{ functions }}
+          result: function_call

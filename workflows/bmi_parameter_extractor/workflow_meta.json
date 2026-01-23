@@ -1,0 +1,26 @@
+{
+  "workflow_id": "bmi_parameter_extractor",
+  "name": "BMI Parameter Extractor",
+  "description": "Extracts weight and height parameters from user prompts and formats them for BMI calculation function calls",
+  "task_id": "simple_88",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"Calculate the BMI (Body Mass Index) of a person who weighs 70kg and is 1.75m tall.\"}]], \"function\": [{\"name\": \"calculate_BMI\", \"description\": \"Calculate the Body Mass Index (BMI) given a person's weight and height.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"weight_kg\": {\"type\": \"integer\", \"description\": \"The weight of the person in kilograms.\"}, \"height_m\": {\"type\": \"float\", \"description\": \"The height of the person in meters.\"}}, \"required\": [\"weight_kg\", \"height_m\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"calculate_BMI\": {\n    \"weight_kg\": \"integer - The weight of the person in kilograms.\",\n    \"height_m\": \"float - The height of the person in meters.\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "activities": [
+    "extract_bmi_parameters"
+  ],
+  "variables": [
+    {
+      "name": "prompt",
+      "default": null
+    },
+    {
+      "name": "functions",
+      "default": null
+    }
+  ],
+  "execution_pattern": "sequence",
+  "reasoning": "This workflow uses a single activity to parse the user prompt text and extract the weight and height values required for BMI calculation. The task asks for function call metadata (what to call, not execute), so the output returns the function name as a key with its parameters. Using deterministic text parsing with regex would be more reliable than LLM for extracting numerical values from structured text, but given the variability in how users might express weight/height, an LLM approach provides better flexibility for natural language parsing.",
+  "metrics": {
+    "total_tokens": 42995,
+    "regeneration_count": 1
+  }
+}

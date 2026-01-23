@@ -1,0 +1,17 @@
+workflow_id: physics_function_call_parser
+name: Physics Function Call Parser
+description: Parse user physics questions and extract parameters for appropriate physics calculation functions
+
+variables:
+  prompt: null
+  functions: null
+
+root:
+  sequence:
+    elements:
+      - activity:
+          name: parse_physics_parameters
+          params:
+            user_question: ${{ prompt }}
+            available_functions: ${{ functions }}
+          result: parsed_parameters

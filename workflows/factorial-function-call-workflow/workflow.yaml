@@ -1,0 +1,17 @@
+workflow_id: factorial-function-call-workflow
+name: Function Call Extraction for Math Operations
+description: Analyzes user requests to extract function calls with parameters for mathematical operations. Takes a natural language prompt requesting mathematical calculations and returns the appropriate function call structure with extracted parameters.
+
+variables:
+  prompt: null
+  functions: null
+
+root:
+  sequence:
+    elements:
+      - activity:
+          name: extract_function_call
+          params:
+            user_request: ${{ prompt }}
+            available_functions: ${{ functions }}
+          result: function_call_result

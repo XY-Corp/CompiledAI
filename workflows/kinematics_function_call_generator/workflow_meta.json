@@ -1,0 +1,26 @@
+{
+  "workflow_id": "kinematics_function_call_generator",
+  "name": "Kinematics Function Call Generator",
+  "description": "Analyzes a natural language physics question and extracts the required parameters to generate a function call for kinematics calculations. Parses the user prompt to identify acceleration and distance values, then returns a structured function call object.",
+  "task_id": "simple_30",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"What is the final velocity of a vehicle that started from rest and accelerated at 4 m/s^2 for a distance of 300 meters?\"}]], \"function\": [{\"name\": \"kinematics.final_velocity_from_distance\", \"description\": \"Calculate the final velocity of an object given the acceleration and distance travelled, assuming initial velocity is 0.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"acceleration\": {\"type\": \"integer\", \"description\": \"Acceleration of the object, m/s^2.\"}, \"distance\": {\"type\": \"integer\", \"description\": \"Distance traveled by the object, m.\"}, \"initial_velocity\": {\"type\": \"float\", \"description\": \"Initial velocity of the object. Default is 0, m/s\"}}, \"required\": [\"acceleration\", \"distance\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"kinematics.final_velocity_from_distance\": {\n    \"acceleration\": \"integer - Acceleration of the object, m/s^2.\",\n    \"distance\": \"integer - Distance traveled by the object, m.\",\n    \"initial_velocity\": \"float - Initial velocity of the object. Default is 0, m/s\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "activities": [
+    "extract_kinematics_parameters"
+  ],
+  "variables": [
+    {
+      "name": "prompt",
+      "default": null
+    },
+    {
+      "name": "functions",
+      "default": null
+    }
+  ],
+  "execution_pattern": "sequence",
+  "reasoning": "This workflow solves a METADATA task - the goal is to extract parameters from a natural language question and return a structured function call object, NOT to actually calculate the velocity.\n\n**Task Analysis:**\n1. The user provides a physics question in natural language\n2. We need to extract numeric values (acceleration=4, distance=300) from the text\n3. We must format these as a function call object with the specific structure shown\n\n**Design Decisions:**\n1. **Single Activity Design**: This is a straightforward extraction task that requires understanding natural language to identify numeric parameters. A single LLM-based activity can handle parsing the question and formatting the output.\n\n2. **Why LLM is appropriate**: While numeric extraction could theoretically use regex, the task requires:\n   - Understanding context ('accelerated at 4 m/s^2' means acceleration=4)\n   - Recognizing 'started from rest' implies initial_velocity=0 (which is the default, so omitted)\n   - Mapping natural language to the specific function parameter names\n   - This semantic understanding requires LLM capabilities\n\n3. **Output Format**: The output must be a dict with the function name as key and parameters as nested object. The initial_velocity is optional and defaults to 0, so when 'started from rest' is mentioned, we don't need to include it.\n\n4. **Variable Naming**: Using `prompt` and `functions` as specified in the task context to ensure proper data binding at runtime.",
+  "metrics": {
+    "total_tokens": 30006,
+    "regeneration_count": 0
+  }
+}

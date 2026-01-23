@@ -1,0 +1,17 @@
+workflow_id: directions_request_parser
+name: Parse User Request for Directions
+description: Analyzes a user's natural language request for directions and extracts the function call parameters needed to get directions from one location to another
+
+variables:
+  prompt: None
+  functions: None
+
+root:
+  sequence:
+    elements:
+      - activity:
+          name: parse_directions_request
+          params:
+            user_request: ${{ prompt }}
+            available_functions: ${{ functions }}
+          result: parsed_request

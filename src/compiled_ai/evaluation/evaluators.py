@@ -8,6 +8,15 @@ from typing import Any
 from .base import EvaluationResult, Evaluator, register_evaluator
 
 
+def _normalize_string(s: str) -> str:
+    """Normalize string for comparison by removing commas and periods.
+
+    This helps ignore punctuation differences like "123 Main St." vs "123 Main St"
+    or "New York, NY" vs "New York NY".
+    """
+    return s.replace(',', '').replace('.', '').strip()
+
+
 @register_evaluator("exact_match")
 class ExactMatchEvaluator(Evaluator):
     """Exact string match evaluator."""
@@ -195,8 +204,10 @@ class JSONMatchEvaluator(Evaluator):
                 match = abs(output - expected) / abs(expected) < 0.0001
             return 1.0 if match else 0.0, details
         else:
-            # String/bool comparison
-            match = str(output).strip().lower() == str(expected).strip().lower()
+            # String/bool comparison (normalize to ignore commas and periods)
+            out_normalized = _normalize_string(str(output).lower())
+            exp_normalized = _normalize_string(str(expected).lower())
+            match = out_normalized == exp_normalized
             return 1.0 if match else 0.0, details
 
     def _compare_dicts(
@@ -483,9 +494,9 @@ class ASTMatchEvaluator(Evaluator):
         if (a == "" or a is None) and (b == "" or b is None):
             return True
 
-        # String comparison (case-insensitive for strings)
+        # String comparison (case-insensitive, normalize punctuation)
         if isinstance(a, str) and isinstance(b, str):
-            return a.strip().lower() == b.strip().lower()
+            return _normalize_string(a.lower()) == _normalize_string(b.lower())
 
         # Numeric comparison
         try:
@@ -496,15 +507,321 @@ class ASTMatchEvaluator(Evaluator):
         except (ValueError, TypeError):
             pass
 
-        # String representation comparison
-        return str(a).strip().lower() == str(b).strip().lower()
+        # String representation comparison (normalized punctuation)
+        return _normalize_string(str(a).lower()) == _normalize_string(str(b).lower())
+
+
+@register_evaluator("bfcl_function_call")
+class BFCLFunctionCallEvaluator(Evaluator):
+    """BFCL function call evaluator for Code Factory output.
+
+    Designed to evaluate Code Factory's BFCLResult against BFCL ground truth.
+    Handles BFCL's format where ground truth allows multiple valid answers:
+    [{"function_name": {"param1": [valid_value1, valid_value2], ...}}]
+    """
+
+    def __init__(self, strict_params: bool = False):
+        """Initialize BFCL function call evaluator.
+
+        Args:
+            strict_params: Require exact parameter match (no missing optional params)
+        """
+        self.strict_params = strict_params
+
+    def evaluate(self, output: str, expected: Any, **kwargs: Any) -> EvaluationResult:
+        """Evaluate function call against BFCL ground truth.
+
+        Args:
+            output: JSON string with function call (from Code Factory)
+            expected: BFCL ground truth (list of acceptable function calls)
+            **kwargs: Additional context
+
+        Returns:
+            EvaluationResult with success, score, and details
+        """
+        # Parse output
+        predicted = self._parse_output(output)
+        if predicted is None:
+            return EvaluationResult(
+                success=False,
+                score=0.0,
+                error="Could not parse function call from output",
+                details={"raw_output": output[:500]},
+            )
+
+        # Parse expected (BFCL ground truth format)
+        ground_truth = self._parse_ground_truth(expected)
+        if not ground_truth:
+            return EvaluationResult(
+                success=False,
+                score=0.0,
+                error="Could not parse ground truth",
+                details={"raw_expected": str(expected)[:500]},
+            )
+
+        # Compare against all valid answers
+        best_score = 0.0
+        best_details: dict[str, Any] = {}
+
+        for acceptable in ground_truth:
+            success, score, details = self._compare_function_call(predicted, acceptable)
+            if score > best_score:
+                best_score = score
+                best_details = details
+                if success:
+                    break  # Found a match, no need to continue
+
+        overall_success = best_score >= 0.99
+
+        return EvaluationResult(
+            success=overall_success,
+            score=best_score,
+            details=best_details,
+        )
+
+    def _parse_output(self, text: str) -> dict[str, Any] | None:
+        """Parse function call from output text.
+
+        Handles multiple formats:
+        - {"function_name": {"args"}}  (BFCL native)
+        - {"name": "...", "arguments": {...}}  (OpenAI-style)
+        - {"function_name": "...", "arguments": {...}}  (Code Factory style)
+        """
+        if isinstance(text, dict):
+            return self._normalize_function_call(text)
+
+        try:
+            data = json.loads(text.strip())
+            return self._normalize_function_call(data)
+        except json.JSONDecodeError:
+            pass
+
+        # Try extracting from markdown code blocks
+        patterns = [
+            r"```json\s*([\s\S]*?)\s*```",
+            r"```\s*([\s\S]*?)\s*```",
+            r"\{[\s\S]*\}",
+        ]
+        for pattern in patterns:
+            match = re.search(pattern, text)
+            if match:
+                try:
+                    json_str = match.group(1) if "```" in pattern else match.group(0)
+                    data = json.loads(json_str.strip())
+                    return self._normalize_function_call(data)
+                except (json.JSONDecodeError, IndexError):
+                    continue
+
+        return None
+
+    def _normalize_function_call(self, data: Any) -> dict[str, Any] | None:
+        """Normalize various function call formats to {name, arguments}."""
+        if not isinstance(data, dict):
+            return None
+
+        # Format 1: {"function_name": "...", "arguments": {...}} (Code Factory)
+        if "function_name" in data:
+            return {
+                "name": data["function_name"],
+                "arguments": data.get("arguments", {}),
+            }
+
+        # Format 2: {"name": "...", "arguments": {...}} (OpenAI-style)
+        if "name" in data:
+            return {
+                "name": data["name"],
+                "arguments": data.get("arguments", data.get("parameters", {})),
+            }
+
+        # Format 3: {"func_name": {...args...}} (BFCL native)
+        if len(data) == 1:
+            func_name = list(data.keys())[0]
+            args = data[func_name]
+            if isinstance(args, dict):
+                return {"name": func_name, "arguments": args}
+
+        return None
+
+    def _parse_ground_truth(self, expected: Any) -> list[dict[str, Any]]:
+        """Parse BFCL ground truth format.
+
+        BFCL format: [{"function_name": {"param1": [valid_values], "param2": [valid_values]}}]
+        """
+        if isinstance(expected, str):
+            try:
+                expected = json.loads(expected)
+            except json.JSONDecodeError:
+                return []
+
+        if isinstance(expected, dict):
+            # Single function call
+            if "ground_truth" in expected:
+                return self._parse_ground_truth(expected["ground_truth"])
+            return [expected]
+
+        if isinstance(expected, list):
+            return expected
+
+        return []
+
+    def _compare_function_call(
+        self, predicted: dict[str, Any], acceptable: dict[str, Any]
+    ) -> tuple[bool, float, dict]:
+        """Compare predicted function call against one acceptable answer.
+
+        Args:
+            predicted: Normalized {name, arguments}
+            acceptable: BFCL format {func_name: {param: [valid_values]}}
+
+        Returns:
+            Tuple of (success, score, details)
+        """
+        details = {
+            "predicted_function": predicted.get("name", ""),
+            "predicted_arguments": predicted.get("arguments", {}),
+        }
+
+        # Extract expected function name and args from BFCL format
+        if not acceptable:
+            return False, 0.0, {"error": "Empty acceptable answer"}
+
+        expected_name = list(acceptable.keys())[0]
+        expected_args = acceptable.get(expected_name, {})
+
+        details["expected_function"] = expected_name
+        details["expected_arguments"] = expected_args
+
+        # Check function name
+        if predicted.get("name", "") != expected_name:
+            return False, 0.0, {
+                **details,
+                "error": "Function name mismatch",
+            }
+
+        # Check arguments
+        pred_args = predicted.get("arguments", {})
+        args_score, args_details = self._compare_bfcl_arguments(pred_args, expected_args)
+
+        details["argument_match"] = args_details
+
+        success = args_score >= 0.99
+        return success, args_score, details
+
+    def _compare_bfcl_arguments(
+        self, predicted: dict[str, Any], expected: dict[str, Any]
+    ) -> tuple[float, dict]:
+        """Compare arguments against BFCL format.
+
+        BFCL expected format: {"param_name": [list_of_valid_values]}
+        Empty string "" in valid values means "optional, any value OK"
+        """
+        if not expected:
+            return 1.0, {"matched": 0, "total": 0}
+
+        matched = 0
+        total = len(expected)
+        mismatched = []
+        missing = []
+
+        for param_name, valid_values in expected.items():
+            if param_name not in predicted:
+                # Check if it's optional (empty string in valid values)
+                if isinstance(valid_values, list) and "" in valid_values:
+                    matched += 0.5  # Partial credit for omitting optional
+                else:
+                    missing.append(param_name)
+                continue
+
+            pred_value = predicted[param_name]
+
+            # valid_values is a list of acceptable values
+            if isinstance(valid_values, list):
+                if self._value_matches_any(pred_value, valid_values):
+                    matched += 1
+                else:
+                    mismatched.append({
+                        "param": param_name,
+                        "predicted": pred_value,
+                        "expected_values": valid_values,
+                    })
+            else:
+                # Direct comparison
+                if self._values_equivalent(pred_value, valid_values):
+                    matched += 1
+                else:
+                    mismatched.append({
+                        "param": param_name,
+                        "predicted": pred_value,
+                        "expected": valid_values,
+                    })
+
+        score = matched / total if total > 0 else 1.0
+
+        return score, {
+            "matched": matched,
+            "total": total,
+            "missing": missing,
+            "mismatched": mismatched,
+        }
+
+    def _value_matches_any(self, predicted: Any, valid_values: list) -> bool:
+        """Check if predicted value matches any valid value."""
+        for valid in valid_values:
+            if valid == "":
+                # Empty string means optional - any non-None value is OK
+                if predicted is not None:
+                    return True
+                continue
+
+            if self._values_equivalent(predicted, valid):
+                return True
+
+        return False
+
+    def _values_equivalent(self, a: Any, b: Any) -> bool:
+        """Check if two values are equivalent (with type coercion)."""
+        # Direct equality
+        if a == b:
+            return True
+
+        # None/empty equivalence
+        if (a is None or a == "") and (b is None or b == ""):
+            return True
+
+        # Numeric equivalence (5 == 5.0)
+        try:
+            if not isinstance(a, bool) and not isinstance(b, bool):
+                num_a = float(a)
+                num_b = float(b)
+                return abs(num_a - num_b) < 0.0001
+        except (TypeError, ValueError):
+            pass
+
+        # String equivalence (case-insensitive, normalized)
+        if isinstance(a, str) and isinstance(b, str):
+            return _normalize_string(a.lower()) == _normalize_string(b.lower())
+
+        # List equivalence (order-sensitive)
+        if isinstance(a, list) and isinstance(b, list):
+            if len(a) != len(b):
+                return False
+            return all(self._values_equivalent(x, y) for x, y in zip(a, b))
+
+        # Dict equivalence
+        if isinstance(a, dict) and isinstance(b, dict):
+            if set(a.keys()) != set(b.keys()):
+                return False
+            return all(self._values_equivalent(a[k], b[k]) for k in a)
+
+        # String representation as last resort
+        return _normalize_string(str(a).lower()) == _normalize_string(str(b).lower())
 
 
 @register_evaluator("schema")
 class SchemaEvaluator(Evaluator):
     """JSON Schema validation evaluator."""
 
-    def __init__(self, require_all_fields: bool = False):
+    def __init__(self, require_all_fields: bool = True):
         """Initialize schema evaluator.
 
         Args:
@@ -525,6 +842,19 @@ class SchemaEvaluator(Evaluator):
                 error="Could not parse JSON from output",
                 details={"raw_output": output[:500]},
             )
+
+        # Normalize expected if it's a string (may have single quotes)
+        if isinstance(expected, str):
+            try:
+                # Try to parse as JSON
+                expected = json.loads(expected)
+            except json.JSONDecodeError:
+                # If that fails, try to parse as Python literal (handles single quotes)
+                try:
+                    import ast
+                    expected = ast.literal_eval(expected)
+                except (ValueError, SyntaxError):
+                    pass  # Keep as string
 
         # If expected is a dict, do field-by-field comparison
         if isinstance(expected, dict):
@@ -614,9 +944,32 @@ class SchemaEvaluator(Evaluator):
         if output_val == expected_val:
             return True
 
-        # String comparison (case-insensitive, stripped)
-        out_str = str(output_val).strip().lower()
-        exp_str = str(expected_val).strip().lower()
+        # Recursive dict comparison
+        if isinstance(expected_val, dict):
+            if not isinstance(output_val, dict):
+                return False
+            # Check all expected keys exist and match
+            for key, exp_v in expected_val.items():
+                if key not in output_val:
+                    return False
+                if not self._values_match(output_val[key], exp_v):
+                    return False
+            return True
+
+        # Recursive list comparison
+        if isinstance(expected_val, list):
+            if not isinstance(output_val, list):
+                return False
+            if len(output_val) != len(expected_val):
+                return False
+            for out_v, exp_v in zip(output_val, expected_val):
+                if not self._values_match(out_v, exp_v):
+                    return False
+            return True
+
+        # String comparison (case-insensitive, normalized punctuation)
+        out_str = _normalize_string(str(output_val).lower())
+        exp_str = _normalize_string(str(expected_val).lower())
 
         if out_str == exp_str:
             return True
@@ -632,3 +985,185 @@ class SchemaEvaluator(Evaluator):
             pass
 
         return False
+
+
+@register_evaluator("llm")
+class LLMEvaluator(Evaluator):
+    """LLM-based semantic evaluator using Claude haiku.
+
+    Compares output against expected semantically, returning match types:
+    - total_match: Both format AND content match
+    - content_match: Content is correct but format differs
+    - format_match: Format is correct but content is wrong
+    - failure: Neither format nor content matches
+    """
+
+    def __init__(self, model: str = "claude-3-5-haiku-latest"):
+        """Initialize LLM evaluator.
+
+        Args:
+            model: Model to use for evaluation (default: haiku for speed/cost)
+        """
+        self.model = model
+        self._client = None
+
+    @property
+    def client(self):
+        """Lazy-load Anthropic client."""
+        if self._client is None:
+            import anthropic
+            self._client = anthropic.Anthropic()
+        return self._client
+
+    def evaluate(self, output: str, expected: Any, **kwargs: Any) -> EvaluationResult:
+        """Evaluate output against expected using LLM.
+
+        Args:
+            output: The actual output from the workflow
+            expected: The expected ground truth values
+            output_format: (optional) The expected output structure description
+            **kwargs: Additional context
+
+        Returns:
+            EvaluationResult with match type (total_match, content_match, format_match, failure)
+        """
+        output_format = kwargs.get("output_format", {})
+
+        # Build evaluation prompt
+        prompt = self._build_prompt(output, expected, output_format)
+
+        try:
+            response = self.client.messages.create(
+                model=self.model,
+                max_tokens=1024,
+                messages=[{"role": "user", "content": prompt}],
+            )
+
+            # Parse LLM response
+            result_text = response.content[0].text
+            return self._parse_response(result_text, output, expected)
+
+        except Exception as e:
+            return EvaluationResult(
+                success=False,
+                score=0.0,
+                error=f"LLM evaluation failed: {str(e)}",
+                details={"raw_output": str(output)[:500]},
+            )
+
+    def _build_prompt(self, output: Any, expected: Any, output_format: dict) -> str:
+        """Build the evaluation prompt for the LLM."""
+        # Normalize to JSON strings for consistent comparison
+        if isinstance(output, str):
+            try:
+                output_json = json.loads(output)
+                output_str = json.dumps(output_json, indent=2)
+            except json.JSONDecodeError:
+                output_str = output
+        else:
+            output_str = json.dumps(output, indent=2) if output else str(output)
+
+        if isinstance(expected, str):
+            try:
+                expected_json = json.loads(expected)
+                expected_str = json.dumps(expected_json, indent=2)
+            except json.JSONDecodeError:
+                expected_str = expected
+        else:
+            expected_str = json.dumps(expected, indent=2) if expected else str(expected)
+
+        format_str = json.dumps(output_format, indent=2) if output_format else "Not specified"
+
+        return f"""Compare the ACTUAL OUTPUT against the EXPECTED OUTPUT and determine the match type.
+
+EXPECTED OUTPUT FORMAT (structure description):
+{format_str}
+
+EXPECTED OUTPUT (ground truth values):
+{expected_str}
+
+ACTUAL OUTPUT:
+{output_str}
+
+Evaluate both FORMAT (structure/fields) and CONTENT (values):
+
+FORMAT match criteria:
+- Has the correct fields/keys
+- Has the correct data types
+- Follows the expected structure
+
+CONTENT match criteria:
+- Values are semantically equivalent (minor formatting differences OK)
+- Numbers match (5 == 5.0, "5" == 5)
+- Strings match case-insensitively, ignoring trailing punctuation
+- Dates/times represent the same moment
+
+Return your evaluation as JSON:
+{{
+  "match_type": "total_match" | "content_match" | "format_match" | "failure",
+  "format_correct": true | false,
+  "content_correct": true | false,
+  "field_matches": {{"field_name": true/false, ...}},
+  "explanation": "Brief explanation of what matched/didn't match"
+}}
+
+Rules:
+- total_match: Format AND content both correct
+- content_match: Content is correct but format differs (e.g., extra fields, different structure)
+- format_match: Format is correct but content/values are wrong
+- failure: Neither format nor content is correct
+
+Return ONLY the JSON, no other text."""
+
+    def _parse_response(self, response_text: str, output: Any, expected: Any) -> EvaluationResult:
+        """Parse the LLM's response into an EvaluationResult."""
+        try:
+            # Try to extract JSON from response
+            json_match = re.search(r'\{[\s\S]*\}', response_text)
+            if not json_match:
+                raise ValueError("No JSON found in response")
+
+            result = json.loads(json_match.group())
+
+            match_type = result.get("match_type", "failure")
+            format_correct = result.get("format_correct", False)
+            content_correct = result.get("content_correct", False)
+            field_matches = result.get("field_matches", {})
+            explanation = result.get("explanation", "")
+
+            # Map match type to score
+            score_map = {
+                "total_match": 1.0,
+                "content_match": 0.8,
+                "format_match": 0.3,
+                "failure": 0.0,
+            }
+            score = score_map.get(match_type, 0.0)
+
+            # Success only for total_match or content_match
+            success = match_type in ("total_match", "content_match")
+
+            return EvaluationResult(
+                success=success,
+                score=score,
+                details={
+                    "match_type": match_type,
+                    "format_correct": format_correct,
+                    "content_correct": content_correct,
+                    "field_matches": field_matches,
+                    "explanation": explanation,
+                },
+            )
+
+        except (json.JSONDecodeError, ValueError) as e:
+            # Fallback to heuristic parsing if JSON parsing fails
+            response_lower = response_text.lower()
+
+            if "total_match" in response_lower or ("format" in response_lower and "content" in response_lower and "correct" in response_lower):
+                return EvaluationResult(success=True, score=1.0, details={"match_type": "total_match", "raw_response": response_text[:500]})
+            elif "content_match" in response_lower or "content correct" in response_lower:
+                return EvaluationResult(success=True, score=0.8, details={"match_type": "content_match", "raw_response": response_text[:500]})
+            elif "format_match" in response_lower or "format correct" in response_lower:
+                return EvaluationResult(success=False, score=0.3, details={"match_type": "format_match", "raw_response": response_text[:500]})
+            else:
+                return EvaluationResult(success=False, score=0.0, details={"match_type": "failure", "raw_response": response_text[:500], "parse_error": str(e)})
