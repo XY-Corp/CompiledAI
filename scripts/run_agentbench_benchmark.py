@@ -22,6 +22,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from compiled_ai.runner import BenchmarkConfig, BenchmarkRunner, DatasetLoader
 from compiled_ai.runner.loader import AgentBenchAdapter
+from compiled_ai.baselines import list_baselines
 
 
 # Available AgentBench environments
@@ -31,7 +32,13 @@ AGENTBENCH_ENVIRONMENTS = list(AgentBenchAdapter.ENVIRONMENTS.keys())
 def parse_args() -> argparse.Namespace:
     """Parse command line arguments."""
     parser = argparse.ArgumentParser(
-        description="Run AgentBench with Direct LLM baseline"
+        description="Run AgentBench with various baselines"
+    )
+    parser.add_argument(
+        "--baseline",
+        choices=list_baselines(),
+        default="direct_llm",
+        help=f"Baseline to run (default: direct_llm, available: {list_baselines()})",
     )
     parser.add_argument(
         "--provider",
@@ -119,6 +126,7 @@ def list_environments(console: Console) -> None:
 def run_benchmark(args: argparse.Namespace, console: Console) -> None:
     """Run the benchmark with given arguments."""
     console.print("\n[bold blue]AgentBench Benchmark Runner[/bold blue]")
+    console.print(f"Baseline: [cyan]{args.baseline}[/cyan]")
     console.print(f"Provider: [cyan]{args.provider}[/cyan]")
     if args.model:
         console.print(f"Model: [cyan]{args.model}[/cyan]")
@@ -169,7 +177,7 @@ def run_benchmark(args: argparse.Namespace, console: Console) -> None:
     # Build config
     config = BenchmarkConfig(
         dataset_name="agentbench",
-        baseline_name="direct_llm",
+        baseline_name=args.baseline,
         max_instances=args.max_instances,
         output_dir=Path(args.output_dir),
     )
