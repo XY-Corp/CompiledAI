@@ -23,11 +23,42 @@ def sanitize_tool_name(name: str) -> str:
     return sanitized[:128]
 
 
+def fix_json_schema(schema: dict) -> dict:
+    """Fix common JSON Schema issues in BFCL function definitions.
+    
+    BFCL uses non-standard types that Anthropic's API rejects:
+    - "dict" -> "object"
+    - "float" -> "number"
+    - "list" -> "array"
+    """
+    if not isinstance(schema, dict):
+        return schema
+    
+    result = {}
+    for key, value in schema.items():
+        if key == "type":
+            # Fix non-standard types
+            type_mapping = {
+                "dict": "object",
+                "float": "number",
+                "list": "array",
+                "int": "integer",
+            }
+            result[key] = type_mapping.get(value, value)
+        elif isinstance(value, dict):
+            result[key] = fix_json_schema(value)
+        elif isinstance(value, list):
+            result[key] = [fix_json_schema(item) if isinstance(item, dict) else item for item in value]
+        else:
+            result[key] = value
+    return result
+
+
 def convert_bfcl_to_langchain_tools(functions: list[dict]) -> tuple[list[dict], dict[str, str]]:
     """Convert BFCL function definitions to LangChain tool format.
     
     BFCL format uses "dict" for type, LangChain/OpenAI uses "object".
-    Also sanitizes function names for API compatibility.
+    Also sanitizes function names and fixes schema issues for API compatibility.
     
     Returns:
         (tools, name_mapping): tools list and mapping from sanitized -> original names
@@ -40,10 +71,9 @@ def convert_bfcl_to_langchain_tools(functions: list[dict]) -> tuple[list[dict], 
         sanitized_name = sanitize_tool_name(original_name)
         name_mapping[sanitized_name] = original_name
         
-        # Convert parameters - BFCL uses "dict" type, LangChain uses "object"
+        # Fix and convert parameters
         params = func.get("parameters", {})
-        if params.get("type") == "dict":
-            params = {**params, "type": "object"}
+        params = fix_json_schema(params)
         
         tool = {
             "type": "function",
