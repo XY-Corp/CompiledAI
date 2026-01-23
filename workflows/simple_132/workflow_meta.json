@@ -1,0 +1,26 @@
+{
+  "workflow_id": "simple_132",
+  "name": "Function Call Extractor",
+  "description": "Extract function name and parameters from natural language query",
+  "task_id": "simple_132",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"Calculate the company's return on equity given its net income of $2,000,000, shareholder's equity of $10,000,000, and dividends paid of $200,000.\"}]], \"function\": [{\"name\": \"calculate_return_on_equity\", \"description\": \"Calculate a company's return on equity based on its net income, shareholder's equity, and dividends paid.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"net_income\": {\"type\": \"integer\", \"description\": \"The company's net income.\"}, \"shareholder_equity\": {\"type\": \"integer\", \"description\": \"The company's total shareholder's equity.\"}, \"dividends_paid\": {\"type\": \"integer\", \"description\": \"The total dividends paid by the company. Optional. If not given, default to 0.\"}}, \"required\": [\"net_income\", \"shareholder_equity\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"calculate_return_on_equity\": {\n    \"net_income\": \"integer - The company's net income.\",\n    \"shareholder_equity\": \"integer - The company's total shareholder's equity.\",\n    \"dividends_paid\": \"integer - The total dividends paid by the company. Optional. If not given, default to 0.\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "activities": [
+    "extract_function_call"
+  ],
+  "variables": [
+    {
+      "name": "prompt",
+      "default": null
+    },
+    {
+      "name": "functions",
+      "default": null
+    }
+  ],
+  "execution_pattern": "sequence",
+  "reasoning": "BFCL template: single activity for function call extraction",
+  "metrics": {
+    "total_tokens": 10603,
+    "regeneration_count": 0
+  }
+}

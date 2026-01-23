@@ -1,0 +1,26 @@
+{
+  "workflow_id": "simple_225",
+  "name": "Function Call Extractor",
+  "description": "Extract function name and parameters from natural language query",
+  "task_id": "simple_225",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"What is the percentage of population preferring digital reading over physical books?\"}]], \"function\": [{\"name\": \"psych_research.get_preference\", \"description\": \"Gathers research data on public preference between two options, based on societal category.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"category\": {\"type\": \"string\", \"description\": \"The societal category the preference data is about. E.g. reading, transportation, food\"}, \"option_one\": {\"type\": \"string\", \"description\": \"The first option people could prefer.\"}, \"option_two\": {\"type\": \"string\", \"description\": \"The second option people could prefer.\"}, \"demographic\": {\"type\": \"string\", \"description\": \"Specific demographic of society to narrow down the research.\", \"default\": \"all\"}}, \"required\": [\"category\", \"option_one\", \"option_two\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"psych_research.get_preference\": {\n    \"category\": \"string - The societal category the preference data is about. E.g. reading, transportation, food\",\n    \"option_one\": \"string - The first option people could prefer.\",\n    \"option_two\": \"string - The second option people could prefer.\",\n    \"demographic\": \"string - Specific demographic of society to narrow down the research.\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "activities": [
+    "extract_function_call"
+  ],
+  "variables": [
+    {
+      "name": "prompt",
+      "default": null
+    },
+    {
+      "name": "functions",
+      "default": null
+    }
+  ],
+  "execution_pattern": "sequence",
+  "reasoning": "BFCL template: single activity for function call extraction",
+  "metrics": {
+    "total_tokens": 9944,
+    "regeneration_count": 0
+  }
+}

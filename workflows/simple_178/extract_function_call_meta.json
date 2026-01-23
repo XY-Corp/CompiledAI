@@ -1,0 +1,34 @@
+{
+  "activity_name": "extract_function_call",
+  "description": "Parse natural language query and extract function call with parameters",
+  "task_id": "simple_178",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"Find details about lawsuit case numbered 'LAX2019080202' in the Los Angeles court.\"}]], \"function\": [{\"name\": \"get_lawsuit_details\", \"description\": \"Retrieve the detailed information about a lawsuit based on its case number and the court location.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"case_number\": {\"type\": \"string\", \"description\": \"The case number of the lawsuit.\"}, \"court_location\": {\"type\": \"string\", \"description\": \"The location of the court where the case is filed.\"}, \"additional_details\": {\"type\": \"array\", \"items\": {\"type\": \"string\", \"enum\": [\"attorneys\", \"plaintiffs\", \"defendants\", \"charges\", \"court_updates\"]}, \"description\": \"Optional. Array containing additional details to be fetched. Default is all.\"}}, \"required\": [\"case_number\", \"court_location\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"get_lawsuit_details\": {\n    \"case_number\": \"string - The case number of the lawsuit.\",\n    \"court_location\": \"string - The location of the court where the case is filed.\",\n    \"additional_details\": \"array - Optional. Array containing additional details to be fetched. Default is all.\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "inputs": [
+    {
+      "name": "prompt",
+      "type": "str",
+      "description": "The natural language query containing the function call request",
+      "required": true
+    },
+    {
+      "name": "functions",
+      "type": "list",
+      "description": "List of available function definitions with their parameter schemas",
+      "required": true
+    }
+  ],
+  "output": {
+    "type": "dict",
+    "description": "Returns a dict with function name as key and parameters as nested dict value",
+    "fields": {
+      "function_name": "dict[str, Any]"
+    }
+  },
+  "reference_activity": null,
+  "workflow_spec": {
+    "workflow_id": "simple_178",
+    "name": "Function Call Extractor",
+    "description": "Extract function name and parameters from natural language query",
+    "execution_pattern": "sequence"
+  }
+}

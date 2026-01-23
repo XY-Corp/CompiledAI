@@ -1,0 +1,26 @@
+{
+  "workflow_id": "simple_117",
+  "name": "Function Call Extractor",
+  "description": "Extract function name and parameters from natural language query",
+  "task_id": "simple_117",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"What are the odds of pulling a heart suit from a well-shuffled standard deck of 52 cards? Format it as ratio.\"}]], \"function\": [{\"name\": \"probability_of_event\", \"description\": \"Calculates the probability of an event.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"success_outcomes\": {\"type\": \"integer\", \"description\": \"The number of successful outcomes.\"}, \"total_outcomes\": {\"type\": \"integer\", \"description\": \"The total number of possible outcomes.\"}, \"format_as_ratio\": {\"type\": \"boolean\", \"description\": \"When true, formats the output as a ratio instead of a decimal. Default is false.\"}}, \"required\": [\"success_outcomes\", \"total_outcomes\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"probability_of_event\": {\n    \"success_outcomes\": \"integer - The number of successful outcomes.\",\n    \"total_outcomes\": \"integer - The total number of possible outcomes.\",\n    \"format_as_ratio\": \"boolean - When true, formats the output as a ratio instead of a decimal. Default is false.\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "activities": [
+    "extract_function_call"
+  ],
+  "variables": [
+    {
+      "name": "prompt",
+      "default": null
+    },
+    {
+      "name": "functions",
+      "default": null
+    }
+  ],
+  "execution_pattern": "sequence",
+  "reasoning": "BFCL template: single activity for function call extraction",
+  "metrics": {
+    "total_tokens": 11301,
+    "regeneration_count": 0
+  }
+}
