@@ -1,0 +1,34 @@
+{
+  "activity_name": "select_function_and_extract_params",
+  "description": "Analyzes the user prompt against available functions to select the appropriate function and extract its parameters from the prompt. Uses LLM to understand intent and map values to the required function parameters.",
+  "task_id": "simple_14",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"Calculate the derivative of the function 3x^2 + 2x - 1.\"}]], \"function\": [{\"name\": \"calculate_derivative\", \"description\": \"Calculate the derivative of a polynomial function.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"function\": {\"type\": \"string\", \"description\": \"The polynomial function.\"}, \"x_value\": {\"type\": \"float\", \"description\": \"The x-value at which the derivative is calculated. Optional, default to 0.00.\"}}, \"required\": [\"function\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"calculate_derivative\": {\n    \"function\": \"string - The polynomial function.\",\n    \"x_value\": \"float - The x-value at which the derivative is calculated. Optional, default to 0.00.\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "inputs": [
+    {
+      "name": "prompt",
+      "type": "str",
+      "description": "The user's natural language request to analyze for function selection and parameter extraction",
+      "required": true
+    },
+    {
+      "name": "functions",
+      "type": "list",
+      "description": "List of available function definitions, each containing name, description, and parameters schema",
+      "required": true
+    }
+  ],
+  "output": {
+    "type": "dict",
+    "description": "Returns a function call object with the function name as the top-level key and its parameters as a nested object. Example: {\"calculate_derivative\": {\"function\": \"3x^2 + 2x - 1\", \"x_value\": 0.0}} where the function field contains the polynomial expression extracted from the prompt and x_value defaults to 0.0 if not specified.",
+    "fields": {
+      "calculate_derivative": "dict - Contains the function parameters: 'function' (string - the polynomial expression) and 'x_value' (float - optional, defaults to 0.0)"
+    }
+  },
+  "reference_activity": "llm_extract",
+  "workflow_spec": {
+    "workflow_id": "select_function_call",
+    "name": "Function Call Selector",
+    "description": "Analyzes a user prompt to determine which function to call from a list of available functions, and extracts the appropriate parameters from the prompt to construct the function call.",
+    "execution_pattern": "sequence"
+  }
+}
