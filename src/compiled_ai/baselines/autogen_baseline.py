@@ -178,6 +178,7 @@ class AutoGenBaseline(BaseBaseline):
                 self._total_output_tokens += output_tokens
                 self._total_calls += llm_calls
 
+                print(f"AutoGen: {llm_calls} LLM calls - {latency_ms:.0f}ms")
                 return BaselineResult(
                     task_id=task_input.task_id,
                     output=output,
