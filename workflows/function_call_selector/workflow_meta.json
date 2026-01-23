@@ -1,0 +1,26 @@
+{
+  "workflow_id": "function_call_selector",
+  "name": "Function Call Selector",
+  "description": "Analyzes a natural language prompt and available function definitions to determine which function to call and extract the appropriate parameter values. Returns metadata about the function call without executing it.",
+  "task_id": "simple_12",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"Calculate the circumference of a circle with radius 3\"}]], \"function\": [{\"name\": \"geometry.circumference\", \"description\": \"Calculate the circumference of a circle given the radius.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"radius\": {\"type\": \"integer\", \"description\": \"The radius of the circle.\"}, \"units\": {\"type\": \"string\", \"description\": \"Units for the output circumference measurement. Default is 'cm'.\"}}, \"required\": [\"radius\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"geometry.circumference\": {\n    \"radius\": \"integer - The radius of the circle.\",\n    \"units\": \"string - Units for the output circumference measurement. Default is 'cm'.\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "activities": [
+    "select_function_and_extract_params"
+  ],
+  "variables": [
+    {
+      "name": "prompt",
+      "default": null
+    },
+    {
+      "name": "functions",
+      "default": null
+    }
+  ],
+  "execution_pattern": "sequence",
+  "reasoning": "This task requires analyzing natural language to determine which function to call and extracting the appropriate parameters. This is a METADATA task - we need to return information about WHAT function to call, not actually execute it.\n\nKey design decisions:\n\n1. **Single Activity**: The task is atomic - analyze the prompt, match to a function, and extract parameters. This can be done in one LLM call.\n\n2. **LLM Required**: This task requires semantic understanding because:\n   - The user's request is in natural language ('Calculate the circumference of a circle with radius 3')\n   - We need to match intent to function names\n   - We need to extract parameter values from unstructured text\n   - Parameters may be expressed in various ways (e.g., 'radius 3', 'radius of 3', 'r=3')\n\n3. **Output Structure**: The expected output format is unique - the function name IS the top-level key (e.g., `{\\\"geometry.circumference\\\": {\\\"radius\\\": 3}}`), not a generic wrapper. The activity must produce this exact structure.\n\n4. **Parameter Handling**: The activity should:\n   - Extract only required parameters\n   - Apply defaults for optional parameters when not specified\n   - Convert values to appropriate types (integer for radius)\n\n5. **Uses prompt and functions variables**: These are the exact variable names provided by the task context, ensuring proper data binding at runtime.",
+  "metrics": {
+    "total_tokens": 23951,
+    "regeneration_count": 0
+  }
+}

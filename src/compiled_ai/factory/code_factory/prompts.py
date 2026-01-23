@@ -172,6 +172,30 @@ root:
           result: result_var
 ```
 
+## CRITICAL: YAML Syntax Rules
+
+**ALWAYS use YAML block scalars (|) for description fields to avoid syntax errors:**
+
+```yaml
+# CORRECT - Use block scalar for descriptions with special characters
+description: |
+  Returns function call in format {"function_name": {"param": "value"}}
+
+# WRONG - Unquoted strings with colons cause YAML syntax errors
+description: Returns function call in format {"function_name": {"param": "value"}}
+```
+
+**Why this matters:**
+- Description fields often contain examples with JSON syntax
+- Colons `:` in unquoted strings are interpreted as YAML mapping operators
+- Block scalars (`|` or `>`) treat content as literal strings
+- This prevents YAML parsing errors
+
+**Use block scalars for:**
+- `workflow.description`
+- `activity.description` in workflow.yaml
+- Any multi-line or special-character content
+
 ## Activity Function Pattern:
 ```python
 from typing import Any, Dict, List, Optional
@@ -525,3 +549,84 @@ result = {
 - The 'items' field in foreach expects a variable name (no ${{ }} syntax)
 - The 'result' field expects a variable name (no ${{ }} syntax)
 - Only 'params' values use ${{ variable }} template syntax"""
+
+
+# ==================== BFCL Function Calling Prompts ====================
+
+
+BFCL_FUNCTION_CALL_PROMPT = """You are a function calling assistant for the Berkeley Function Calling Leaderboard (BFCL).
+
+Given a user query and a set of available functions, you must:
+1. Select the most appropriate function to call
+2. Extract the correct parameter values from the user query
+3. Return a structured function call
+
+## Your Task
+
+You will receive:
+- A user query describing what they want to do
+- A list of available function definitions with their parameters
+
+You must:
+1. Analyze the user query to understand their intent
+2. Select the function that best matches the user's request
+3. Extract parameter values from the query, matching them to the function's parameter schema
+
+## CRITICAL Rules for Parameter Extraction
+
+1. **Use EXACT parameter names** from the function definition
+   - If function has `{"base": ..., "height": ...}`, use exactly `base` and `height`
+   - NEVER use synonyms or alternate names
+
+2. **Extract values from the query**
+   - "area of a triangle with a base of 10 units" → `base: 10`
+   - "height of 5 units" → `height: 5`
+   - Pay attention to units, they may be parameters too
+
+3. **Handle required vs optional parameters**
+   - Required parameters MUST be provided
+   - Optional parameters should be included if mentioned in the query
+   - If an optional parameter has a default, omit it unless explicitly specified
+
+4. **Type conversion**
+   - "10 units" → integer `10` (not string "10 units")
+   - "true"/"yes" → boolean `true`
+   - Arrays: "Santa Barbara and Monterey" → `["Santa Barbara", "Monterey"]`
+
+5. **Function name matching**
+   - Use the EXACT function name from the definition
+   - Include any namespace (e.g., `math.factorial`, not just `factorial`)
+
+## Output Format
+
+Return a BFCLFunctionCallOutput with:
+- `function_name`: The exact name of the selected function
+- `arguments`: Dict mapping parameter names to extracted values
+- `reasoning`: Brief explanation of your choice
+
+## Example
+
+**User query:** "Find the area of a triangle with a base of 10 units and height of 5 units."
+
+**Available function:**
+```json
+{
+  "name": "calculate_triangle_area",
+  "description": "Calculate the area of a triangle given its base and height.",
+  "parameters": {
+    "type": "dict",
+    "properties": {
+      "base": {"type": "integer", "description": "The base of the triangle."},
+      "height": {"type": "integer", "description": "The height of the triangle."},
+      "unit": {"type": "string", "description": "The unit of measure (defaults to 'units' if not specified)"}
+    },
+    "required": ["base", "height"]
+  }
+}
+```
+
+**Output:**
+- function_name: "calculate_triangle_area"
+- arguments: {"base": 10, "height": 5, "unit": "units"}
+- reasoning: "User wants triangle area with base=10 and height=5 in units"
+"""

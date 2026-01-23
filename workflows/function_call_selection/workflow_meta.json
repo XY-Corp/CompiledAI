@@ -1,0 +1,26 @@
+{
+  "workflow_id": "function_call_selection",
+  "name": "Function Call Parameter Extraction",
+  "description": "Analyzes a user's natural language prompt and available function definitions to select the appropriate function and extract the required parameters from the user's request.",
+  "task_id": "simple_13",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"Calculate the area under the curve y=x^2 from x=1 to x=3.\"}]], \"function\": [{\"name\": \"calculate_area_under_curve\", \"description\": \"Calculate the area under a mathematical function within a given interval.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"function\": {\"type\": \"string\", \"description\": \"The mathematical function as a string.\"}, \"interval\": {\"type\": \"array\", \"items\": {\"type\": \"float\"}, \"description\": \"An array that defines the interval to calculate the area under the curve from the start to the end point.\"}, \"method\": {\"type\": \"string\", \"description\": \"The numerical method to approximate the area under the curve. The default value is 'trapezoidal'.\"}}, \"required\": [\"function\", \"interval\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"calculate_area_under_curve\": {\n    \"function\": \"string - The mathematical function as a string.\",\n    \"interval\": \"array - An array that defines the interval to calculate the area under the curve from the start to the end point.\",\n    \"method\": \"string - The numerical method to approximate the area under the curve. The default value is 'trapezoidal'.\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "activities": [
+    "extract_function_call"
+  ],
+  "variables": [
+    {
+      "name": "prompt",
+      "default": null
+    },
+    {
+      "name": "functions",
+      "default": null
+    }
+  ],
+  "execution_pattern": "sequence",
+  "reasoning": "This task requires understanding the user's natural language intent and mapping it to a function call with extracted parameters. \n\n**Task Analysis:**\n1. The user provides a natural language prompt like \"Calculate the area under the curve y=x^2 from x=1 to x=3\"\n2. The system has a function definition for `calculate_area_under_curve` with parameters: function (string), interval (array), method (string with default)\n3. The output must be a structured function call with the function name as a top-level key\n\n**Why LLM is Required:**\nThis task requires semantic understanding to:\n- Parse natural language mathematical expressions (\"y=x^2\" \u2192 \"x^2\")\n- Extract interval bounds from text (\"from x=1 to x=3\" \u2192 [1.0, 3.0])\n- Match the user's intent to the correct function\n- Handle variations in how users might phrase their requests\n\n**Design Decision:**\nI chose a single activity design because:\n1. The task is a single-step extraction/mapping problem\n2. All information needed (prompt + functions) is available upfront\n3. The LLM can parse, match, and structure the output in one pass\n\n**Output Structure:**\nThe output format requires the function name (`calculate_area_under_curve`) as the top-level key with parameters nested inside. This is a metadata task - we're returning WHAT function to call, not actually executing it.",
+  "metrics": {
+    "total_tokens": 22110,
+    "regeneration_count": 0
+  }
+}

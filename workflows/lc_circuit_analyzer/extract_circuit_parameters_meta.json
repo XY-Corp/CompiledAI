@@ -1,0 +1,34 @@
+{
+  "activity_name": "extract_circuit_parameters",
+  "description": "Extracts inductance and capacitance values from natural language text about LC circuit calculations, converting units as needed",
+  "task_id": "simple_42",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"Calculate the resonant frequency of an LC circuit given capacitance of 100\\u00b5F and inductance of 50mH.\"}]], \"function\": [{\"name\": \"calculate_resonant_frequency\", \"description\": \"Calculate the resonant frequency of an LC (inductor-capacitor) circuit.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"inductance\": {\"type\": \"float\", \"description\": \"The inductance (L) in henries (H).\"}, \"capacitance\": {\"type\": \"float\", \"description\": \"The capacitance (C) in farads (F).\"}, \"round_off\": {\"type\": \"integer\", \"description\": \"Rounding off the result to a certain decimal places, default is 2.\"}}, \"required\": [\"inductance\", \"capacitance\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"calculate_resonant_frequency\": {\n    \"inductance\": \"float - The inductance (L) in henries (H).\",\n    \"capacitance\": \"float - The capacitance (C) in farads (F).\",\n    \"round_off\": \"integer - Rounding off the result to a certain decimal places, default is 2.\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "inputs": [
+    {
+      "name": "circuit_text",
+      "type": "str",
+      "description": "The natural language text describing the LC circuit calculation request including inductance and capacitance values with units",
+      "required": true
+    },
+    {
+      "name": "target_function",
+      "type": "dict",
+      "description": "The function specification that defines the required parameter format and units for the LC circuit calculation",
+      "required": true
+    }
+  ],
+  "output": {
+    "type": "dict",
+    "description": "Returns the function call structure: {\"calculate_resonant_frequency\": {\"inductance\": 0.05, \"capacitance\": 0.0001, \"round_off\": 2}} where inductance is converted to henries, capacitance to farads, and round_off defaults to 2",
+    "fields": {
+      "calculate_resonant_frequency": "dict - Contains the extracted and converted parameters for the LC circuit calculation function"
+    }
+  },
+  "reference_activity": "llm_extract",
+  "workflow_spec": {
+    "workflow_id": "lc_circuit_analyzer",
+    "name": "LC Circuit Parameter Analyzer",
+    "description": "Analyzes an LC circuit calculation request and extracts the required function parameters from natural language input",
+    "execution_pattern": "sequence"
+  }
+}

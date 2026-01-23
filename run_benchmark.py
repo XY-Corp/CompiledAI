@@ -29,8 +29,15 @@ from rich import box
 # Add src to path for development
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
-from compiled_ai.runner import BenchmarkConfig, BenchmarkRunner, DatasetLoader
-from compiled_ai.runner.loader import AgentBenchAdapter, BFCLAdapter
+from compiled_ai.datasets import (
+    BFCLConverter,
+    XYConverter,
+    DatasetInstance,
+    run_benchmark as run_simple_benchmark,
+    BenchmarkResult as SimpleBenchmarkResult,
+)
+from compiled_ai.baselines.base import get_baseline
+from compiled_ai.runner.loader import AgentBenchAdapter, BFCLAdapter  # For category info only
 
 console = Console()
 
@@ -429,12 +436,24 @@ def run_benchmark(
     provider: str = "anthropic",
     model: str | None = None,
     max_instances: int | None = None,
+    max_tasks: int | None = None,
     enable_cache: bool = False,
     verbose: bool = False,
     output_dir: str = "results",
     **dataset_kwargs,
 ) -> None:
-    """Run benchmark with given configuration."""
+    """Run benchmark with given configuration.
+
+    Uses the new generic DatasetInstance format:
+    - Load via converters → {input, possible_outputs}
+    - Run baseline → output
+    - Evaluate via instance.matches(output)
+
+    No evaluators, no transformers, no complexity.
+    """
+    import json
+    from datetime import datetime
+
     print_section(f"Running {DATASETS[dataset_key]['name']}")
     console.print()
 
@@ -448,53 +467,357 @@ def run_benchmark(
         info_text.append(f"{model}\n", style=BRAND_PRIMARY)
     console.print(info_text)
 
-    dataset_info = DATASETS[dataset_key]
-    loader = DatasetLoader("datasets")
+    # Create unique run directory with timestamp
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    run_dir = Path("logs") / f"run_{timestamp}_{baseline}_{dataset_key}"
+    run_dir.mkdir(parents=True, exist_ok=True)
 
-    # Load dataset
+    # Create config file for this run
+    config = {
+        "timestamp": timestamp,
+        "baseline": baseline,
+        "dataset": dataset_key,
+        "provider": provider,
+        "model": model,
+        "max_instances": max_instances,
+        "max_tasks": max_tasks,
+        "enable_cache": enable_cache,
+        "verbose": verbose,
+        "dataset_kwargs": dataset_kwargs,
+    }
+
+    config_path = run_dir / "config.json"
+    with open(config_path, "w") as f:
+        json.dump(config, f, indent=2)
+
+    console.print(f"  [{BRAND_DIM}]Run directory:[/{BRAND_DIM}] [{BRAND_PRIMARY}]{run_dir}[/{BRAND_PRIMARY}]")
+    console.print()
+
+    dataset_info = DATASETS[dataset_key]
+
+    # Load dataset using NEW converters
     console.print(f"  [{BRAND_DIM}]Loading dataset...[/{BRAND_DIM}]", end="")
 
-    if dataset_info["type"] == "internal":
-        dataset = loader.load(dataset_key)
+    instances: list[DatasetInstance] = []
+
+    if dataset_key == "bfcl":
+        converter = BFCLConverter()
+        bfcl_path = Path(dataset_info["path"])
+
+        # Get categories to load
+        categories = dataset_kwargs.get("categories", list(BFCLAdapter.CATEGORIES.keys()))
+        max_per_cat = dataset_kwargs.get("max_per_category")
+
+        for cat in categories:
+            cat_info = BFCLAdapter.CATEGORIES.get(cat, {})
+            filename = cat_info.get("file", f"BFCL_v3_{cat}.json")
+            file_path = bfcl_path / filename
+
+            if file_path.exists():
+                cat_instances = converter.load_file(str(file_path))
+                if max_per_cat:
+                    cat_instances = cat_instances[:max_per_cat]
+                instances.extend(cat_instances)
+
+    elif dataset_key == "xy_benchmark":
+        converter = XYConverter()
+        instances = converter.load_directory(dataset_info["path"])
+
     else:
-        dataset = loader.load_external(
-            dataset_info["adapter"],
-            dataset_info["path"],
-            **dataset_kwargs,
-        )
-
-    total_instances = sum(len(t.instances) for t in dataset.tasks)
-    console.print(f" [{BRAND_SUCCESS}]✓[/{BRAND_SUCCESS}]")
-    console.print(f"  [{BRAND_DIM}]Loaded[/{BRAND_DIM}] [{BRAND_PRIMARY}]{len(dataset.tasks)}[/{BRAND_PRIMARY}] [{BRAND_DIM}]tasks with[/{BRAND_DIM}] [{BRAND_PRIMARY}]{total_instances}[/{BRAND_PRIMARY}] [{BRAND_DIM}]instances[/{BRAND_DIM}]")
-
-    if not dataset.tasks:
-        console.print(f"\n[{BRAND_ERROR}]✗ No tasks loaded.[/{BRAND_ERROR}]")
+        console.print(f" [{BRAND_ERROR}]✗[/{BRAND_ERROR}]")
+        console.print(f"\n[{BRAND_ERROR}]Dataset '{dataset_key}' not yet supported with new converters.[/{BRAND_ERROR}]")
         return
 
-    # Build config
-    config = BenchmarkConfig(
-        dataset_name=dataset_key,
-        baseline_name=baseline,
-        max_instances=max_instances,
-        output_dir=Path(output_dir),
-    )
+    # Apply max_instances limit
+    if max_instances:
+        instances = instances[:max_instances]
 
-    # Run
+    console.print(f" [{BRAND_SUCCESS}]✓[/{BRAND_SUCCESS}]")
+    console.print(f"  [{BRAND_DIM}]Loaded[/{BRAND_DIM}] [{BRAND_PRIMARY}]{len(instances)}[/{BRAND_PRIMARY}] [{BRAND_DIM}]instances[/{BRAND_DIM}]")
+
+    if not instances:
+        console.print(f"\n[{BRAND_ERROR}]✗ No instances loaded.[/{BRAND_ERROR}]")
+        return
+
+    # Initialize baseline
     console.print(f"\n  [{BRAND_ACCENT}]Running benchmark...[/{BRAND_ACCENT}]\n")
 
-    runner = BenchmarkRunner(datasets_dir="datasets")
-
-    result = runner.run_with_dataset(
-        config,
-        dataset,
+    baseline_obj = get_baseline(
+        baseline,
         provider=provider,
         model=model,
         enable_cache=enable_cache,
         verbose=verbose,
+        log_dir=str(run_dir),  # Pass run directory for logging
     )
 
-    # Display results
-    display_results(result)
+    # Run using simple benchmark runner
+    result = run_simple_benchmark(instances, baseline_obj, verbose=verbose)
+
+    # Display results using simple format
+    display_simple_results(result, baseline, dataset_key)
+
+    # Save detailed results to run directory
+    results_path = run_dir / "results.json"
+    results_data = {
+        "instances": [
+            {
+                "instance_id": r.instance_id,
+                "input": r.input,
+                "output": r.output,
+                "expected": r.expected,
+                "success": r.success,
+                "latency_ms": r.latency_ms,
+                "error": r.error,
+                "generation_time_ms": r.generation_time_ms,
+                "execution_time_ms": r.execution_time_ms,
+                "input_tokens": r.input_tokens,
+                "output_tokens": r.output_tokens,
+                "generation_input_tokens": r.generation_input_tokens,
+                "generation_output_tokens": r.generation_output_tokens,
+                "execution_input_tokens": r.execution_input_tokens,
+                "execution_output_tokens": r.execution_output_tokens,
+                "match_type": r.match_type,
+                "evaluation_score": r.evaluation_score,
+                "evaluation_details": r.evaluation_details,
+            }
+            for r in result.results
+        ]
+    }
+
+    with open(results_path, "w") as f:
+        json.dump(results_data, f, indent=2)
+
+    # Save detailed failures to separate file
+    failures = [r for r in result.results if not r.success]
+    if failures:
+        failures_path = run_dir / "failures.json"
+        failures_data = {
+            "total_failures": len(failures),
+            "failure_rate": len(failures) / len(result.results) if result.results else 0,
+            "failures": [
+                {
+                    "instance_id": r.instance_id,
+                    "input": r.input,
+                    "output": r.output,
+                    "expected": r.expected,
+                    "error": r.error,
+                    "match_type": r.match_type,
+                    "evaluation_score": r.evaluation_score,
+                    "evaluation_details": r.evaluation_details,
+                    "latency_ms": r.latency_ms,
+                    "generation_time_ms": r.generation_time_ms,
+                    "execution_time_ms": r.execution_time_ms,
+                    "tokens": {
+                        "input": r.input_tokens,
+                        "output": r.output_tokens,
+                        "generation_input": r.generation_input_tokens,
+                        "generation_output": r.generation_output_tokens,
+                        "execution_input": r.execution_input_tokens,
+                        "execution_output": r.execution_output_tokens,
+                    }
+                }
+                for r in failures
+            ]
+        }
+        with open(failures_path, "w") as f:
+            json.dump(failures_data, f, indent=2)
+
+    # Save summary to run directory
+    summary_path = run_dir / "summary.json"
+    summary_data = {
+        "success_rate": result.success_rate,
+        "duration_seconds": result.duration_seconds,
+        "total_instances": len(result.results),
+        "successful_instances": sum(1 for r in result.results if r.success),
+        "failed_instances": sum(1 for r in result.results if not r.success),
+    }
+
+    # Add token breakdown for code_factory
+    if baseline == "code_factory":
+        total_gen_input = sum(r.generation_input_tokens or 0 for r in result.results)
+        total_gen_output = sum(r.generation_output_tokens or 0 for r in result.results)
+        total_exec_input = sum(r.execution_input_tokens or 0 for r in result.results)
+        total_exec_output = sum(r.execution_output_tokens or 0 for r in result.results)
+
+        summary_data["token_breakdown"] = {
+            "compilation_input": total_gen_input,
+            "compilation_output": total_gen_output,
+            "compilation_total": total_gen_input + total_gen_output,
+            "execution_input": total_exec_input,
+            "execution_output": total_exec_output,
+            "execution_total": total_exec_input + total_exec_output,
+            "total": total_gen_input + total_gen_output + total_exec_input + total_exec_output,
+        }
+
+        compilations = sum(1 for r in result.results if r.generation_time_ms and r.generation_time_ms > 0)
+        summary_data["compilations"] = compilations
+        summary_data["cache_hits"] = len(result.results) - compilations
+
+    with open(summary_path, "w") as f:
+        json.dump(summary_data, f, indent=2)
+
+    console.print(f"\n  [{BRAND_DIM}]Results saved to:[/{BRAND_DIM}]")
+    console.print(f"    [{BRAND_PRIMARY}]{results_path}[/{BRAND_PRIMARY}]")
+    console.print(f"    [{BRAND_PRIMARY}]{summary_path}[/{BRAND_PRIMARY}]")
+    if failures:
+        console.print(f"    [{BRAND_ERROR}]{failures_path} ({len(failures)} failures)[/{BRAND_ERROR}]")
+
+
+def display_simple_results(result: SimpleBenchmarkResult, baseline_name: str, dataset_key: str) -> None:
+    """Display benchmark results from the new simple runner."""
+    print_section("Results")
+    console.print()
+
+    # Summary panel
+    success_rate = result.success_rate
+    rate_color = BRAND_SUCCESS if success_rate >= 0.8 else BRAND_ACCENT if success_rate >= 0.5 else BRAND_ERROR
+
+    # Calculate totals
+    total_tokens = sum(r.input_tokens for r in result.results)
+    compilations = sum(1 for r in result.results if r.generation_time_ms and r.generation_time_ms > 0)
+    cache_hits = len(result.results) - compilations
+
+    summary_text = Text()
+    summary_text.append("Duration: ", style=BRAND_DIM)
+    summary_text.append(f"{result.duration_seconds:.2f}s\n", style=BRAND_PRIMARY)
+    summary_text.append("Instances: ", style=BRAND_DIM)
+    summary_text.append(f"{len(result.results)}\n", style=BRAND_PRIMARY)
+    summary_text.append("Success Rate: ", style=BRAND_DIM)
+    summary_text.append(f"{success_rate:.1%}", style=f"bold {rate_color}")
+
+    # Add Code Factory specific stats with token breakdown
+    if baseline_name == "code_factory" and total_tokens > 0:
+        summary_text.append(f"\nCompilations: ", style=BRAND_DIM)
+        summary_text.append(f"{compilations}", style="yellow")
+        summary_text.append(f" | Cache Hits: ", style=BRAND_DIM)
+        summary_text.append(f"{cache_hits}", style="green")
+
+        # Calculate token breakdown
+        total_gen_input = sum(r.generation_input_tokens or 0 for r in result.results)
+        total_gen_output = sum(r.generation_output_tokens or 0 for r in result.results)
+        total_exec_input = sum(r.execution_input_tokens or 0 for r in result.results)
+        total_exec_output = sum(r.execution_output_tokens or 0 for r in result.results)
+
+        total_gen_tokens = total_gen_input + total_gen_output
+        total_exec_tokens = total_exec_input + total_exec_output
+        total_all_tokens = total_gen_tokens + total_exec_tokens
+
+        summary_text.append(f"\n\nToken Breakdown:", style=f"bold {BRAND_PRIMARY}")
+        summary_text.append(f"\n  Compilation: ", style=BRAND_DIM)
+        summary_text.append(f"{total_gen_tokens:,}", style="yellow")
+        summary_text.append(f" tokens ", style=BRAND_DIM)
+        summary_text.append(f"(in: {total_gen_input:,}, out: {total_gen_output:,})", style=BRAND_DIM)
+        summary_text.append(f"\n  Execution: ", style=BRAND_DIM)
+        summary_text.append(f"{total_exec_tokens:,}", style="green")
+        summary_text.append(f" tokens ", style=BRAND_DIM)
+        summary_text.append(f"(in: {total_exec_input:,}, out: {total_exec_output:,})", style=BRAND_DIM)
+        summary_text.append(f"\n  Total: ", style=BRAND_DIM)
+        summary_text.append(f"{total_all_tokens:,}", style=BRAND_PRIMARY)
+        summary_text.append(f" tokens", style=BRAND_DIM)
+
+        # Amortization analysis
+        if len(result.results) > 0:
+            avg_tokens_per_instance = total_all_tokens / len(result.results)
+            avg_exec_per_instance = total_exec_tokens / len(result.results)
+
+            summary_text.append(f"\n\nAmortization:", style=f"bold {BRAND_PRIMARY}")
+            summary_text.append(f"\n  Avg per instance: ", style=BRAND_DIM)
+            summary_text.append(f"{avg_tokens_per_instance:,.0f}", style=BRAND_PRIMARY)
+            summary_text.append(f" tokens", style=BRAND_DIM)
+
+            # Show how cost decreases with more executions
+            if compilations > 0 and avg_exec_per_instance < total_gen_tokens:
+                # Break-even point: when compilation cost is amortized
+                # Total cost with N instances: compilation + (execution × N)
+                # At N=1: full compilation + 1 execution
+                # At N=100: same compilation + 100 executions
+                # Cost per instance decreases: (compilation + execution × N) / N
+
+                summary_text.append(f"\n  Execution only: ", style=BRAND_DIM)
+                summary_text.append(f"{avg_exec_per_instance:,.0f}", style="green")
+                summary_text.append(f" tokens/instance", style=BRAND_DIM)
+
+                # Show cost at different scales
+                summary_text.append(f"\n  At 10 runs: ", style=BRAND_DIM)
+                cost_10 = (total_gen_tokens + avg_exec_per_instance * 10) / 10
+                summary_text.append(f"{cost_10:,.0f}", style=BRAND_ACCENT)
+                summary_text.append(f" tokens/instance", style=BRAND_DIM)
+
+                summary_text.append(f"\n  At 100 runs: ", style=BRAND_DIM)
+                cost_100 = (total_gen_tokens + avg_exec_per_instance * 100) / 100
+                summary_text.append(f"{cost_100:,.0f}", style=BRAND_ACCENT)
+                summary_text.append(f" tokens/instance", style=BRAND_DIM)
+
+    console.print(Panel(
+        summary_text,
+        title=f"[{BRAND_PRIMARY}]Summary[/{BRAND_PRIMARY}]",
+        border_style=rate_color,
+        box=box.ROUNDED,
+    ))
+
+    # Instance results table
+    console.print()
+    table = Table(
+        title=f"[{BRAND_PRIMARY}]Instance Results[/{BRAND_PRIMARY}]",
+        box=box.ROUNDED,
+        border_style=BRAND_DIM,
+        title_style=f"bold {BRAND_PRIMARY}",
+    )
+    table.add_column("Instance", style=BRAND_PRIMARY)
+    table.add_column("Status", justify="center")
+    table.add_column("Latency", justify="right", style=BRAND_DIM)
+
+    # Add Code Factory specific columns
+    is_code_factory = baseline_name == "code_factory"
+    if is_code_factory:
+        table.add_column("Gen (ms)", justify="right", style="yellow")
+        table.add_column("Exec (ms)", justify="right", style="green")
+        table.add_column("Tokens", justify="right", style=BRAND_DIM)
+
+    # Show first 20 results
+    for inst_result in result.results[:20]:
+        status = f"[{BRAND_SUCCESS}]✓[/{BRAND_SUCCESS}]" if inst_result.success else f"[{BRAND_ERROR}]✗[/{BRAND_ERROR}]"
+
+        row_data = [
+            inst_result.instance_id[:40],
+            status,
+            f"{inst_result.latency_ms:.0f}ms",
+        ]
+
+        if is_code_factory:
+            gen_ms = f"{inst_result.generation_time_ms:.0f}" if inst_result.generation_time_ms else "-"
+            exec_ms = f"{inst_result.execution_time_ms:.0f}" if inst_result.execution_time_ms else "-"
+            # Show token breakdown: compilation tokens / execution tokens
+            gen_tokens = (inst_result.generation_input_tokens or 0) + (inst_result.generation_output_tokens or 0)
+            exec_tokens = (inst_result.execution_input_tokens or 0) + (inst_result.execution_output_tokens or 0)
+            if gen_tokens > 0:
+                tokens = f"{gen_tokens:,} / {exec_tokens:,}"
+            elif exec_tokens > 0:
+                tokens = f"0 / {exec_tokens:,}"
+            else:
+                tokens = "-"
+            row_data.extend([gen_ms, exec_ms, tokens])
+
+        table.add_row(*row_data)
+
+    if len(result.results) > 20:
+        table.add_row("...", "...", "...", *(["-"] * 3 if is_code_factory else []))
+
+    console.print(table)
+
+    # Show failures
+    failures = [r for r in result.results if not r.success]
+    if failures:
+        print_section("Failed Instances")
+        for r in failures[:10]:
+            console.print(f"\n  [{BRAND_ERROR}]✗[/{BRAND_ERROR}] [{BRAND_PRIMARY}]{r.instance_id}[/{BRAND_PRIMARY}]")
+            if r.error:
+                console.print(f"    [{BRAND_DIM}]Error:[/{BRAND_DIM}] [{BRAND_ERROR}]{r.error[:200]}[/{BRAND_ERROR}]")
+            console.print(f"    [{BRAND_DIM}]Expected:[/{BRAND_DIM}] [{BRAND_SUCCESS}]{str(r.expected)[:100]}...[/{BRAND_SUCCESS}]")
+            console.print(f"    [{BRAND_DIM}]Actual:[/{BRAND_DIM}]   [{BRAND_ACCENT}]{r.output[:100]}...[/{BRAND_ACCENT}]")
+
+    console.print()
 
 
 def display_results(result) -> None:
@@ -662,8 +985,10 @@ Examples:
   python run_benchmark.py                                    # Interactive mode
   python run_benchmark.py --dataset xy_benchmark             # Run XY Benchmark
   python run_benchmark.py --dataset bfcl --categories simple # Run BFCL simple
+  python run_benchmark.py --dataset bfcl -b code_factory --categories simple --max-instances 5
   python run_benchmark.py --dataset agentbench --environments os db
   python run_benchmark.py --list                             # List datasets
+  python run_benchmark.py --dataset bfcl --max-tasks 1 --max-instances 2  # Quick debug
         """,
     )
 
@@ -692,6 +1017,11 @@ Examples:
         "--max-instances",
         type=int,
         help="Max instances per task",
+    )
+    parser.add_argument(
+        "--max-tasks",
+        type=int,
+        help="Max number of tasks to run (for quick debugging)",
     )
     parser.add_argument(
         "--enable-cache",
@@ -799,6 +1129,7 @@ def main() -> None:
                 provider=args.provider,
                 model=args.model,
                 max_instances=args.max_instances,
+                max_tasks=args.max_tasks,
                 enable_cache=args.enable_cache,
                 verbose=args.verbose,
                 output_dir=args.output_dir,

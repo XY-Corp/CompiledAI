@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run the BFCL v4 dataset with the Direct LLM baseline.
+"""Run the BFCL v4 dataset with Direct LLM or Code Factory baseline.
 
 Berkeley Function Calling Leaderboard evaluates function calling accuracy
 across multiple categories: simple, multiple, parallel, and more.
@@ -8,6 +8,7 @@ Usage:
     python scripts/run_bfcl_benchmark.py --provider anthropic
     python scripts/run_bfcl_benchmark.py --provider gemini --categories simple multiple
     python scripts/run_bfcl_benchmark.py --provider anthropic --max-per-category 10
+    python scripts/run_bfcl_benchmark.py --baseline code_factory --categories simple
 """
 
 import argparse
@@ -31,7 +32,13 @@ BFCL_CATEGORIES = list(BFCLAdapter.CATEGORIES.keys())
 def parse_args() -> argparse.Namespace:
     """Parse command line arguments."""
     parser = argparse.ArgumentParser(
-        description="Run BFCL v4 with Direct LLM baseline"
+        description="Run BFCL v4 with Direct LLM or Code Factory baseline"
+    )
+    parser.add_argument(
+        "--baseline",
+        choices=["direct_llm", "code_factory"],
+        default="direct_llm",
+        help="Baseline to use (default: direct_llm)",
     )
     parser.add_argument(
         "--provider",
@@ -121,6 +128,7 @@ def list_categories(console: Console) -> None:
 def run_benchmark(args: argparse.Namespace, console: Console) -> None:
     """Run the benchmark with given arguments."""
     console.print("\n[bold blue]BFCL v4 Benchmark Runner[/bold blue]")
+    console.print(f"Baseline: [cyan]{args.baseline}[/cyan]")
     console.print(f"Provider: [cyan]{args.provider}[/cyan]")
     if args.model:
         console.print(f"Model: [cyan]{args.model}[/cyan]")
@@ -158,7 +166,7 @@ def run_benchmark(args: argparse.Namespace, console: Console) -> None:
     # Build config
     config = BenchmarkConfig(
         dataset_name="bfcl_v4",
-        baseline_name="direct_llm",
+        baseline_name=args.baseline,
         max_instances=args.max_instances,
         output_dir=Path(args.output_dir),
     )

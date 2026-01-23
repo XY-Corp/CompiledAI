@@ -1,0 +1,15 @@
+workflow_id: prime_factors_function_selection
+name: Prime Factors Function Selection
+description: Analyzes a natural language request to find prime factors and maps it to the appropriate function call with correct parameters
+variables:
+  prompt: null
+  functions: null
+root:
+  sequence:
+    elements:
+      - activity:
+          name: analyze_and_map_function
+          params:
+            user_prompt: ${{ prompt }}
+            available_functions: ${{ functions }}
+          result: function_mapping

@@ -1,0 +1,17 @@
+workflow_id: entropy_function_extractor
+name: Entropy Change Function Parameter Extractor
+description: Analyzes a user prompt asking for entropy change calculations and extracts the required parameters to construct a function call with initial temperature, final temperature, heat capacity, and isothermal flag
+
+variables:
+  prompt: null
+  functions: null
+
+root:
+  sequence:
+    elements:
+      - activity:
+          name: extract_entropy_parameters
+          params:
+            prompt_text: ${{ prompt }}
+            function_schema: ${{ functions }}
+          result: entropy_function_call

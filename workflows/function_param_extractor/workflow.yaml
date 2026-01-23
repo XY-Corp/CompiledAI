@@ -1,0 +1,12 @@
+workflow_id: function_param_extractor
+name: Function Parameter Extractor
+description: Extracts function parameters from natural language user queries and returns a structured function call with parameter values
+variables:
+  prompt: None
+  functions: None
+root:
+  activity:
+    name: parse_function_call_request
+    params:
+      query_text: ${{ prompt }}
+      available_functions: ${{ functions }}

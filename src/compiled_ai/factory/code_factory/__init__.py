@@ -1,6 +1,6 @@
 """PydanticAI-based Code Factory for generating Temporal workflow YAMLs and activities."""
 
-from .factory import CodeFactory, FactoryResult
+from .factory import CodeFactory, FactoryResult, BFCLResult
 from .models import (
     ActivityParam,
     ActivitySpec,
@@ -8,7 +8,9 @@ from .models import (
     WorkflowSpec,
     GeneratedActivity,
     GeneratedFiles,
+    BFCLFunctionCallOutput,
 )
+# NOTE: Dataset conversion is now handled by compiled_ai.datasets converters
 from .template_registry import (
     TemplateRegistry,
     TemplateCategory,
@@ -34,6 +36,7 @@ __all__ = [
     # Core factory
     "CodeFactory",
     "FactoryResult",
+    "BFCLResult",
     # Models
     "ActivityParam",
     "ActivitySpec",
@@ -41,6 +44,7 @@ __all__ = [
     "WorkflowSpec",
     "GeneratedActivity",
     "GeneratedFiles",
+    "BFCLFunctionCallOutput",
     # Template registry
     "TemplateRegistry",
     "TemplateCategory",

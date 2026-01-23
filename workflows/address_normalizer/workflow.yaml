@@ -1,13 +1,13 @@
 workflow_id: address_normalizer
-name: Address Normalization
-description: Normalize address string to standard format with separated components (street, city, state, zip, country)
+name: Address Normalization Workflow
+description: Parses and normalizes address strings into structured format with street, city, state, zip, and country fields
+
 variables:
-  address: None
+  prompt: null
+
 root:
-  sequence:
-    elements:
-      - activity:
-          name: normalize_address
-          params:
-            address_text: ${{ address }}
-          result: normalized_address
+  activity:
+    name: parse_address_components
+    params:
+      address_text: ${{ prompt }}
+    result: final_result

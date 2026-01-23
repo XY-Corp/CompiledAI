@@ -1,0 +1,26 @@
+{
+  "workflow_id": "geometry_area_calculator",
+  "name": "Geometry Area Calculator",
+  "description": "Parse a user request to calculate circle area and extract the radius parameter, then format as a function call to geometry.calculate_area_circle",
+  "task_id": "simple_9",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"Calculate the area of a circle with a radius of 5 units.\"}]], \"function\": [{\"name\": \"geometry.calculate_area_circle\", \"description\": \"Calculate the area of a circle given its radius.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"radius\": {\"type\": \"integer\", \"description\": \"The radius of the circle.\"}, \"unit\": {\"type\": \"string\", \"description\": \"The measurement unit of the radius (optional parameter, default is 'units').\"}}, \"required\": [\"radius\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"geometry.calculate_area_circle\": {\n    \"radius\": \"integer - The radius of the circle.\",\n    \"unit\": \"string - The measurement unit of the radius (optional parameter, default is 'units').\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "activities": [
+    "parse_circle_area_request"
+  ],
+  "variables": [
+    {
+      "name": "prompt",
+      "default": null
+    },
+    {
+      "name": "functions",
+      "default": null
+    }
+  ],
+  "execution_pattern": "sequence",
+  "reasoning": "This workflow is designed to parse a natural language request for circle area calculation and extract the structured function call parameters. The task requires parsing user input like 'Calculate the area of a circle with a radius of 5 units' and returning the exact function call format expected. I used the llm_extract template as inspiration since this involves extracting structured data (radius value and unit) from unstructured text. The activity uses LLM because it needs to understand natural language and extract semantic meaning from the user's request. The output format exactly matches the expected structure with geometry.calculate_area_circle as the top-level key containing the extracted parameters. The workflow processes the prompt variable which contains the raw user input that varies per instance.",
+  "metrics": {
+    "total_tokens": 18367,
+    "regeneration_count": 0
+  }
+}

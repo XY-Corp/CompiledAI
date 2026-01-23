@@ -3,9 +3,11 @@
 from .base import EvaluationResult, Evaluator, get_evaluator
 from .evaluators import (
     ASTMatchEvaluator,
+    BFCLFunctionCallEvaluator,
     ExactMatchEvaluator,
     FuzzyMatchEvaluator,
     JSONMatchEvaluator,
+    LLMEvaluator,
     SchemaEvaluator,
 )
 
@@ -17,5 +19,7 @@ __all__ = [
     "FuzzyMatchEvaluator",
     "JSONMatchEvaluator",
     "ASTMatchEvaluator",
+    "BFCLFunctionCallEvaluator",
+    "LLMEvaluator",
     "SchemaEvaluator",
 ]

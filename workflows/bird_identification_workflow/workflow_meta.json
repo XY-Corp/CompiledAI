@@ -1,0 +1,26 @@
+{
+  "workflow_id": "bird_identification_workflow",
+  "name": "Bird Identification Function Call Workflow",
+  "description": "Analyzes natural language bird identification requests and maps them to the identify_bird function call with appropriate parameters extracted from the prompt",
+  "task_id": "simple_67",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"Identify a small green bird in forest.\"}]], \"function\": [{\"name\": \"identify_bird\", \"description\": \"Identify a bird species based on certain characteristics.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"color\": {\"type\": \"string\", \"description\": \"Color of the bird.\"}, \"habitat\": {\"type\": \"string\", \"description\": \"Habitat of the bird.\"}, \"size\": {\"type\": \"string\", \"enum\": [\"small\", \"medium\", \"large\"], \"description\": \"Size of the bird. Default is 'small'\"}}, \"required\": [\"color\", \"habitat\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"identify_bird\": {\n    \"color\": \"string - Color of the bird.\",\n    \"habitat\": \"string - Habitat of the bird.\",\n    \"size\": \"string - Size of the bird. Default is 'small'\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "activities": [
+    "extract_bird_parameters"
+  ],
+  "variables": [
+    {
+      "name": "prompt",
+      "default": null
+    },
+    {
+      "name": "functions",
+      "default": null
+    }
+  ],
+  "execution_pattern": "sequence",
+  "reasoning": "This is a metadata extraction task where the user wants to identify which function to call and extract the appropriate parameters from natural language. The task requires analyzing the prompt \"Identify a small green bird in forest\" and mapping it to the identify_bird function with parameters: color=\"green\", habitat=\"forest\", size=\"small\". I used the llm_extract template as inspiration since it shows how to extract structured data from text using LLM, which is perfect for parsing natural language and mapping it to function parameters. The activity needs to return the exact structure shown in the output format specification with the function name as the top-level key and parameters nested underneath. Since this involves semantic understanding of natural language intent and mapping to function parameters, an LLM approach is appropriate rather than deterministic parsing.",
+  "metrics": {
+    "total_tokens": 28324,
+    "regeneration_count": 1
+  }
+}

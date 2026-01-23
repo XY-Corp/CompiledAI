@@ -1,0 +1,26 @@
+{
+  "workflow_id": "vegan_restaurant_function_selector",
+  "name": "Vegan Restaurant Function Call Generator",
+  "description": "Analyzes a natural language user request about finding vegan restaurants and generates the appropriate function call with extracted parameters. Returns the function name and its parameters as structured output.",
+  "task_id": "simple_35",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"Find an all vegan restaurant in New York that opens until at least 11 PM.\"}]], \"function\": [{\"name\": \"vegan_restaurant.find_nearby\", \"description\": \"Locate nearby vegan restaurants based on specific criteria like operating hours.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"location\": {\"type\": \"string\", \"description\": \"The city and state, e.g. New York, NY, you should format it as City, State.\"}, \"operating_hours\": {\"type\": \"integer\", \"description\": \"Preferred latest closing time of the restaurant. E.g. if 11 is given, then restaurants that close at or after 11 PM will be considered. This is in 24 hour format. Default is 24.\"}}, \"required\": [\"location\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"vegan_restaurant.find_nearby\": {\n    \"location\": \"string - The city and state, e.g. New York, NY, you should format it as City, State.\",\n    \"operating_hours\": \"integer - Preferred latest closing time of the restaurant. E.g. if 11 is given, then restaurants that close at or after 11 PM will be considered. This is in 24 hour format. Default is 24.\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "activities": [
+    "extract_function_call_params"
+  ],
+  "variables": [
+    {
+      "name": "prompt",
+      "default": null
+    },
+    {
+      "name": "functions",
+      "default": null
+    }
+  ],
+  "execution_pattern": "sequence",
+  "reasoning": "This task requires analyzing a natural language user request and mapping it to a specific function call with extracted parameters. This is a METADATA task - we need to return WHICH function to call and WITH WHAT PARAMETERS, not actually execute the function.\n\nKey analysis:\n1. The user query is in natural language (\"Find an all vegan restaurant in New York that opens until at least 11 PM\")\n2. We need to extract: location (New York \u2192 \"New York, NY\") and operating_hours (11 PM \u2192 23 in 24-hour format)\n3. The output must be structured with the function name as the top-level key\n\nWhy LLM is needed:\n- Natural language understanding is required to parse the user intent\n- Location formatting (extracting and normalizing to \"City, State\" format)\n- Time interpretation (\"until at least 11 PM\" \u2192 23 in 24-hour format)\n- This is semantic extraction that requires reasoning, not simple regex\n\nThe workflow uses a single activity that leverages LLM to:\n1. Understand the user's intent\n2. Select the appropriate function from the available functions list\n3. Extract and format parameters according to the function's schema\n4. Return the structured function call object",
+  "metrics": {
+    "total_tokens": 36031,
+    "regeneration_count": 1
+  }
+}

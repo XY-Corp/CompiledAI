@@ -1,0 +1,16 @@
+workflow_id: function_call_generator
+name: Function Call Generator
+description: |
+  Analyzes a user prompt and available function definitions to determine which function to call and extract the appropriate parameter values from the prompt. Returns a structured function call with the function name as the key and parameters as a nested object.
+variables:
+  prompt: null
+  functions: null
+root:
+  sequence:
+    elements:
+      - activity:
+          name: generate_function_call
+          params:
+            prompt: ${{ prompt }}
+            functions: ${{ functions }}
+          result: function_call_result

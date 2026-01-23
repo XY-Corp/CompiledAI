@@ -4,8 +4,8 @@ from typing import Optional
 
 from pydantic_ai import Agent
 
-from .models import WorkflowSpec, GeneratedFiles
-from .prompts import PLANNER_SYSTEM_PROMPT, CODER_SYSTEM_PROMPT
+from .models import WorkflowSpec, GeneratedFiles, BFCLFunctionCallOutput
+from .prompts import PLANNER_SYSTEM_PROMPT, CODER_SYSTEM_PROMPT, BFCL_FUNCTION_CALL_PROMPT
 from .llm_adapter import create_model, AdapterMetrics, ProviderType
 from .template_registry import TemplateRegistry, TemplateCategory
 
@@ -119,3 +119,32 @@ def create_agents(
     coder = create_coder_agent(provider, model)
 
     return planner, coder, metrics
+
+
+# ==================== BFCL Function Calling Agent ====================
+
+
+def create_bfcl_agent(
+    provider: ProviderType = "anthropic",
+    model: str | None = None,
+) -> Agent[None, BFCLFunctionCallOutput]:
+    """Create an agent for BFCL function calling tasks.
+
+    This agent takes a user query and available functions, then returns
+    a structured function call in BFCL format.
+
+    Args:
+        provider: LLM provider ("anthropic", "openai", or "gemini")
+        model: Specific model name, or None for provider default
+
+    Returns:
+        PydanticAI Agent configured to output BFCLFunctionCallOutput
+    """
+    # BFCL tasks are simple function calls - no need for extended thinking
+    # Use a lighter model for faster/cheaper execution
+    return Agent(
+        create_model(provider, model, enable_thinking=False),
+        output_type=BFCLFunctionCallOutput,
+        instructions=BFCL_FUNCTION_CALL_PROMPT,
+        retries=2,
+    )

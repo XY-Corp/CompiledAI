@@ -1,0 +1,16 @@
+workflow_id: temperature_mixing_calculator
+name: Temperature Mixing Calculator  
+description: Parses water mixing temperature calculation requests from natural language prompts and returns function call parameters for temperature calculation
+
+variables:
+  prompt: null
+  functions: null
+
+root:
+  sequence:
+    elements:
+      - activity:
+          name: extract_temperature_parameters
+          params:
+            prompt_text: ${{ prompt }}
+          result: calculation_params

@@ -1,0 +1,16 @@
+workflow_id: extract_and_call_math_function
+name: Extract Number and Generate Math Function Call
+description: Parses the user prompt to extract the number for factorial calculation and generates a structured function call with the extracted parameter
+
+variables:
+  prompt: null
+  functions: null
+
+root:
+  sequence:
+    elements:
+      - activity:
+          name: extract_factorial_number
+          params:
+            user_text: ${{ prompt }}
+          result: factorial_call

@@ -1,0 +1,26 @@
+{
+  "workflow_id": "heat_capacity_parameter_extraction",
+  "name": "Heat Capacity Parameter Extraction",
+  "description": "Extracts function parameters from natural language request about calculating heat capacity and formats them for function execution",
+  "task_id": "simple_52",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"Calculate the heat capacity at constant pressure for air, given its temperature is 298K and volume is 10 m^3.\"}]], \"function\": [{\"name\": \"calc_heat_capacity\", \"description\": \"Calculate the heat capacity at constant pressure of air using its temperature and volume.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"temp\": {\"type\": \"integer\", \"description\": \"The temperature of the gas in Kelvin.\"}, \"volume\": {\"type\": \"integer\", \"description\": \"The volume of the gas in m^3.\"}, \"gas\": {\"type\": \"string\", \"description\": \"Type of gas, with 'air' as default.\"}}, \"required\": [\"temp\", \"volume\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"calc_heat_capacity\": {\n    \"temp\": \"integer - The temperature of the gas in Kelvin.\",\n    \"volume\": \"integer - The volume of the gas in m^3.\",\n    \"gas\": \"string - Type of gas, with 'air' as default.\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "activities": [
+    "extract_heat_capacity_params"
+  ],
+  "variables": [
+    {
+      "name": "prompt",
+      "default": null
+    },
+    {
+      "name": "functions",
+      "default": null
+    }
+  ],
+  "execution_pattern": "sequence",
+  "reasoning": "This task requires extracting specific parameters (temperature, volume, gas type) from a natural language request and formatting them as a function call structure. Since the request contains unstructured text that needs semantic understanding to identify the correct parameters, an LLM-based extraction approach is most appropriate. The workflow uses a single activity that parses the prompt text and returns the structured function call format exactly as specified in the task requirements.",
+  "metrics": {
+    "total_tokens": 17219,
+    "regeneration_count": 0
+  }
+}

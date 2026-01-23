@@ -1,0 +1,17 @@
+workflow_id: elephant_population_function_extraction
+name: Elephant Population Function Extraction
+description: Extracts parameters from natural language text about elephant population estimation and structures them into a function call format with the function name as the top-level key
+
+variables:
+  prompt: "Estimate the elephant population in 5 years given a current population of 35000 elephants and an annual growth rate of 1.5%."
+  functions: null
+
+root:
+  sequence:
+    elements:
+      - activity:
+          name: extract_population_parameters
+          params:
+            text: ${{ prompt }}
+            function_schema: ${{ functions }}
+          result: extracted_function_call

@@ -1,0 +1,26 @@
+{
+  "workflow_id": "parse_database_query_request",
+  "name": "Parse Database Query Request",
+  "description": "Parse natural language database query requests and convert them into structured function calls for database operations",
+  "task_id": "simple_96",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"Find records in database in user table where age is greater than 25 and job is 'engineer'.\"}]], \"function\": [{\"name\": \"database.query\", \"description\": \"Query the database based on certain conditions.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"table\": {\"type\": \"string\", \"description\": \"Name of the table to query.\"}, \"conditions\": {\"type\": \"array\", \"items\": {\"type\": \"dict\", \"properties\": {\"field\": {\"type\": \"string\", \"description\": \"The field to apply the condition.\"}, \"operation\": {\"type\": \"string\", \"description\": \"The operation to be performed.\", \"enum\": [\"<\", \">\", \"=\", \">=\", \"<=\"]}, \"value\": {\"type\": \"string\", \"description\": \"The value to be compared.\"}}, \"required\": [\"field\", \"operation\", \"value\"]}, \"description\": \"Conditions for the query.\"}}, \"required\": [\"table\", \"conditions\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"database.query\": {\n    \"table\": \"string - Name of the table to query.\",\n    \"conditions\": \"array - Conditions for the query.\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "activities": [
+    "parse_database_query_request"
+  ],
+  "variables": [
+    {
+      "name": "prompt",
+      "default": null
+    },
+    {
+      "name": "functions",
+      "default": null
+    }
+  ],
+  "execution_pattern": "sequence",
+  "reasoning": "This workflow requires parsing natural language into structured database query parameters. Since this involves understanding semantic intent and mapping natural language conditions to database operations, an LLM-based approach is most appropriate. The activity uses the llm_extract pattern to convert the unstructured query text into the exact structured format required by the database.query function. The output schema exactly matches the expected format with database.query as the top-level key containing table and conditions parameters.",
+  "metrics": {
+    "total_tokens": 23711,
+    "regeneration_count": 0
+  }
+}

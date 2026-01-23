@@ -1,0 +1,15 @@
+workflow_id: parse_calculus_request
+name: Parse Calculus Derivative Request
+description: Analyzes a user's calculus derivative request and returns the appropriate function call with extracted parameters for calculus.derivative function
+variables:
+  prompt: null
+  functions: null
+root:
+  sequence:
+    elements:
+      - activity:
+          name: parse_calculus_request
+          params:
+            user_request: ${{ prompt }}
+            available_functions: ${{ functions }}
+          result: result

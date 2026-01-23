@@ -1,0 +1,27 @@
+{
+  "workflow_id": "lc_circuit_analysis",
+  "name": "LC Circuit Resonant Frequency Calculator",
+  "description": "Parses user query about LC circuit parameters and returns the appropriate function call to calculate resonant frequency with extracted values",
+  "task_id": "simple_42",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"Calculate the resonant frequency of an LC circuit given capacitance of 100\\u00b5F and inductance of 50mH.\"}]], \"function\": [{\"name\": \"calculate_resonant_frequency\", \"description\": \"Calculate the resonant frequency of an LC (inductor-capacitor) circuit.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"inductance\": {\"type\": \"float\", \"description\": \"The inductance (L) in henries (H).\"}, \"capacitance\": {\"type\": \"float\", \"description\": \"The capacitance (C) in farads (F).\"}, \"round_off\": {\"type\": \"integer\", \"description\": \"Rounding off the result to a certain decimal places, default is 2.\"}}, \"required\": [\"inductance\", \"capacitance\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"calculate_resonant_frequency\": {\n    \"inductance\": \"float - The inductance (L) in henries (H).\",\n    \"capacitance\": \"float - The capacitance (C) in farads (F).\",\n    \"round_off\": \"integer - Rounding off the result to a certain decimal places, default is 2.\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "activities": [
+    "extract_lc_parameters",
+    "format_function_call"
+  ],
+  "variables": [
+    {
+      "name": "prompt",
+      "default": null
+    },
+    {
+      "name": "functions",
+      "default": null
+    }
+  ],
+  "execution_pattern": "sequence",
+  "reasoning": "This workflow follows a two-step sequential approach: 1) Extract and normalize the LC circuit parameters from the user's natural language query, converting units (\u00b5F to F, mH to H) to standard SI units, and 2) Format the extracted values into the exact function call structure required. The first activity uses deterministic parsing/regex for unit conversion (preferred over LLM for structured data extraction), while the second activity performs a simple data transformation to match the expected output format. This design ensures accurate parameter extraction and proper function call formatting while maintaining the exact field structure specified in the requirements.",
+  "metrics": {
+    "total_tokens": 19962,
+    "regeneration_count": 0
+  }
+}

@@ -1,0 +1,15 @@
+workflow_id: parse_histogram_request
+name: Parse Histogram Request and Extract Function Call
+description: Parses natural language request to extract histogram function parameters and returns a properly formatted function call object
+variables:
+  prompt: null
+  functions: null
+root:
+  sequence:
+    elements:
+      - activity:
+          name: parse_histogram_request
+          params:
+            user_request: ${{ prompt }}
+            available_functions: ${{ functions }}
+          result: result

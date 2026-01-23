@@ -1,0 +1,18 @@
+workflow_id: extract_velocity_parameters
+name: Extract Final Velocity Function Parameters
+description: |
+  Extracts initial velocity, acceleration, and time parameters from natural language physics problem text and returns them structured for the final_velocity function call.
+
+variables:
+  prompt: null
+  functions: null
+
+root:
+  sequence:
+    elements:
+      - activity:
+          name: extract_velocity_params
+          params:
+            prompt: ${{ prompt }}
+            functions: ${{ functions }}
+          result: extraction_result

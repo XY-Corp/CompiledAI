@@ -1,0 +1,26 @@
+{
+  "workflow_id": "turtle_population_inquiry",
+  "name": "Parse and Execute Turtle Population Inquiry",
+  "description": "Analyzes natural language user request to extract function call parameters and return the structured function call for turtle population data",
+  "task_id": "simple_69",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"Find out the population and species of turtles in Mississippi river in 2020.\"}]], \"function\": [{\"name\": \"ecology.get_turtle_population\", \"description\": \"Get the population and species of turtles in a specific location.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"location\": {\"type\": \"string\", \"description\": \"The name of the location.\"}, \"year\": {\"type\": \"integer\", \"description\": \"The year of the data requested. Default is 2001.\"}, \"species\": {\"type\": \"boolean\", \"description\": \"Whether to include species information. Default is false.\"}}, \"required\": [\"location\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"ecology.get_turtle_population\": {\n    \"location\": \"string - The name of the location.\",\n    \"year\": \"integer - The year of the data requested. Default is 2001.\",\n    \"species\": \"boolean - Whether to include species information. Default is false.\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "activities": [
+    "parse_turtle_inquiry"
+  ],
+  "variables": [
+    {
+      "name": "prompt",
+      "default": null
+    },
+    {
+      "name": "functions",
+      "default": null
+    }
+  ],
+  "execution_pattern": "sequence",
+  "reasoning": "This workflow analyzes the task as a metadata/analysis task where the user wants to know WHICH function to call rather than actually execute it. The task asks to parse a natural language request and return a structured function call object. I designed a single activity that uses LLM extraction (inspired by llm_extract template) to parse the user's natural language request and extract the relevant parameters (location: Mississippi river, year: 2020, species: true) into the exact output format specified. The activity returns the function name as the top-level key with parameters nested underneath, matching the expected structure exactly. Since this is a simple linear task with one step, I used sequence execution pattern.",
+  "metrics": {
+    "total_tokens": 27660,
+    "regeneration_count": 1
+  }
+}

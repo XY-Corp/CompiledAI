@@ -1,0 +1,34 @@
+{
+  "activity_name": "extract_function_call",
+  "description": "Analyzes the user prompt and available functions to determine which function to call and extract the required parameters. Uses LLM to understand natural language and map it to function parameters.",
+  "task_id": "simple_3",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"Find the roots of a quadratic equation with coefficients a=1, b=-3, c=2.\"}]], \"function\": [{\"name\": \"algebra.quadratic_roots\", \"description\": \"Find the roots of a quadratic equation ax^2 + bx + c = 0.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"a\": {\"type\": \"integer\", \"description\": \"Coefficient of x^2.\"}, \"b\": {\"type\": \"integer\", \"description\": \"Coefficient of x.\"}, \"c\": {\"type\": \"integer\", \"description\": \"Constant term.\"}}, \"required\": [\"a\", \"b\", \"c\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"algebra.quadratic_roots\": {\n    \"a\": \"integer - Coefficient of x^2.\",\n    \"b\": \"integer - Coefficient of x.\",\n    \"c\": \"integer - Constant term.\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "inputs": [
+    {
+      "name": "prompt",
+      "type": "str",
+      "description": "The natural language user request containing the quadratic equation problem and coefficients to extract",
+      "required": true
+    },
+    {
+      "name": "functions",
+      "type": "list",
+      "description": "List of available function definitions with names, descriptions, and parameter schemas to match against",
+      "required": true
+    }
+  ],
+  "output": {
+    "type": "dict",
+    "description": "Returns a function call object with the function name as the top-level key and parameters as nested object. Example: {\"algebra.quadratic_roots\": {\"a\": 1, \"b\": -3, \"c\": 2}} where a is coefficient of x^2, b is coefficient of x, and c is the constant term extracted from the prompt.",
+    "fields": {
+      "algebra.quadratic_roots": "dict - Contains the extracted parameters: a (integer), b (integer), c (integer)"
+    }
+  },
+  "reference_activity": "llm_extract",
+  "workflow_spec": {
+    "workflow_id": "quadratic_function_call_selector",
+    "name": "Quadratic Function Call Selector",
+    "description": "Analyzes a natural language prompt about quadratic equations and returns the appropriate function call with extracted parameters. The workflow parses the user request to identify the function to call (algebra.quadratic_roots) and extracts the coefficients a, b, and c from the prompt.",
+    "execution_pattern": "sequence"
+  }
+}

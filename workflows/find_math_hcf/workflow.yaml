@@ -1,0 +1,15 @@
+workflow_id: find_math_hcf
+name: Find Mathematical Highest Common Factor
+description: Analyzes a natural language request to find the highest common factor of two numbers and returns the appropriate function call structure
+variables:
+  prompt: null
+  functions: null
+root:
+  sequence:
+    elements:
+      - activity:
+          name: extract_numbers_and_create_function_call
+          params:
+            user_prompt: ${{ prompt }}
+            available_functions: ${{ functions }}
+          result: function_call_structure

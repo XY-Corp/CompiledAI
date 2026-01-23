@@ -1,0 +1,17 @@
+workflow_id: bmi_function_mapping
+name: BMI Function Parameter Mapping
+description: Extracts weight and height values from a natural language BMI calculation request and maps them to the calculate_bmi function parameters
+
+variables:
+  prompt: null
+  functions: null
+
+root:
+  sequence:
+    elements:
+      - activity:
+          name: extract_bmi_parameters
+          params:
+            request_text: ${{ prompt }}
+            function_schema: ${{ functions }}
+          result: bmi_function_call

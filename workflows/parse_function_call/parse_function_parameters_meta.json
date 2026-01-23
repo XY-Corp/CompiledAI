@@ -1,0 +1,34 @@
+{
+  "activity_name": "parse_function_parameters",
+  "description": "Extracts function parameters from the user query and generates the appropriate function call structure",
+  "task_id": "bfcl_simple_simple_0",
+  "task_description": "You have access to the following functions:\n\n[\n  {\n    \"name\": \"calculate_triangle_area\",\n    \"description\": \"Calculate the area of a triangle given its base and height.\",\n    \"parameters\": {\n      \"type\": \"dict\",\n      \"properties\": {\n        \"base\": {\n          \"type\": \"integer\",\n          \"description\": \"The base of the triangle.\"\n        },\n        \"height\": {\n          \"type\": \"integer\",\n          \"description\": \"The height of the triangle.\"\n        },\n        \"unit\": {\n          \"type\": \"string\",\n          \"description\": \"The unit of measure (defaults to 'units' if not specified)\"\n        }\n      },\n      \"required\": [\n        \"base\",\n        \"height\"\n      ]\n    }\n  }\n]\n\nUser query: Find the area of a triangle with a base of 10 units and height of 5 units.\n\nGenerate the appropriate function call as JSON with 'name' and 'arguments' keys.\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `user_query` (str) - context for task type\n- `functions` (str) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, user_query, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"calculate_triangle_area\": {\n    \"base\": \"integer - The base of the triangle.\",\n    \"height\": \"integer - The height of the triangle.\",\n    \"unit\": \"string - The unit of measure (defaults to 'units' if not specified)\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "inputs": [
+    {
+      "name": "query_text",
+      "type": "str",
+      "description": "The user query text containing function parameters to extract (base, height, units)",
+      "required": true
+    },
+    {
+      "name": "available_functions",
+      "type": "str",
+      "description": "The available functions and their parameter specifications",
+      "required": true
+    }
+  ],
+  "output": {
+    "type": "dict",
+    "description": "Returns a function call object with the function name as the top-level key and its parameters as a nested object. Example structure: {\"calculate_triangle_area\": {\"base\": 10, \"height\": 5, \"unit\": \"units\"}}",
+    "fields": {
+      "calculate_triangle_area": "dict containing base (integer), height (integer), and unit (string) parameters"
+    }
+  },
+  "reference_activity": "llm_extract",
+  "workflow_spec": {
+    "workflow_id": "parse_function_call",
+    "name": "Parse Function Call from Query",
+    "description": "Parses a user query to extract function parameters and generate a function call with the appropriate structure",
+    "execution_pattern": "sequence"
+  }
+}

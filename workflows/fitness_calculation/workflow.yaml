@@ -1,0 +1,16 @@
+workflow_id: fitness_calculation
+name: Evolutionary Fitness Calculator
+description: Parse evolutionary fitness problem from natural language and extract trait values and contributions to generate function call parameters
+
+variables:
+  prompt: null
+  functions: null
+
+root:
+  sequence:
+    elements:
+      - activity:
+          name: parse_fitness_problem
+          params:
+            problem_text: ${{ prompt }}
+          result: fitness_function_call

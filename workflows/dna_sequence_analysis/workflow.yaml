@@ -1,0 +1,15 @@
+workflow_id: dna_sequence_analysis
+name: DNA Sequence Analysis Function Call
+description: Extracts DNA sequence analysis parameters from user prompt and generates appropriate function call
+variables:
+  prompt: null
+  functions: null
+root:
+  sequence:
+    elements:
+      - activity:
+          name: parse_dna_analysis_request
+          params:
+            user_prompt: ${{ prompt }}
+            function_specs: ${{ functions }}
+          result: function_call

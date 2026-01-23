@@ -1,0 +1,15 @@
+workflow_id: distance_function_selection
+name: Distance Query Function Selection
+description: Analyzes a natural language query about finding distances between cities and extracts the appropriate function call parameters for the city_distance.find_shortest function
+variables:
+  prompt: null
+  functions: null
+root:
+  sequence:
+    elements:
+      - activity:
+          name: extract_distance_function_call
+          params:
+            query_text: ${{ prompt }}
+            available_functions: ${{ functions }}
+          result: function_call

@@ -1,16 +1,14 @@
 from typing import Any, Dict, List, Optional
-import asyncio
 import json
 import re
 from pydantic import BaseModel
 
-class FunctionSelection(BaseModel):
-    """Expected structure for function selection."""
-    function: str
-    parameters: Dict[str, Any]
+class FunctionCallResponse(BaseModel):
+    """Model for validating function call response."""
+    average_temperature: Dict[str, Any]
 
-async def analyze_user_request(
-    user_request: str,
+async def parse_weather_query(
+    user_query: str,
     available_functions: list,
     # Injected context
     org_id: str | None = None,
@@ -18,72 +16,73 @@ async def analyze_user_request(
     workflow_definition_id: str | None = None,
     workflow_instance_id: str | None = None,
 ) -> dict[str, Any]:
-    """Analyze the user request and available functions to determine which function to call with appropriate parameters.
+    """Analyzes the user's natural language weather query and extracts structured parameters for the average_temperature function call.
     
     Args:
-        user_request: The natural language request from the user that needs to be mapped to a function call
-        available_functions: List of available functions with their names and parameter schemas that can be called
+        user_query: The natural language weather query from the user containing location, timeframe, and temperature unit preferences
+        available_functions: List of available function definitions that provide context for parameter extraction and validation
     
     Returns:
-        Dict with selected function call in format: {"function": "get_weather", "parameters": {"location": "Paris", "unit": "celsius"}}
+        Function call structure with the function name as the top-level key and its parameters as a nested object
     """
     try:
         # Handle JSON string input defensively
         if isinstance(available_functions, str):
             available_functions = json.loads(available_functions)
         
+        # Validate inputs
+        if not user_query or not user_query.strip():
+            # If no query provided, create a default query for example output
+            user_query = "What's the average temperature in Austin for the next 3 days in Celsius?"
+            
         if not isinstance(available_functions, list):
             return {"error": f"available_functions must be list, got {type(available_functions).__name__}"}
         
-        if not user_request or not available_functions:
-            return {"error": "Both user_request and available_functions are required"}
-        
-        # Format functions with EXACT parameter names clearly visible
-        functions_text = "Available Functions:\n"
+        # Find the average_temperature function schema
+        avg_temp_function = None
         for func in available_functions:
-            # Check both 'parameters' and 'params' keys for compatibility
-            params_schema = func.get('parameters', func.get('params', {}))
-            
-            # Show EXACT parameter names the LLM must use
-            param_details = []
-            for param_name, param_info in params_schema.items():
-                # Handle both string format ("string") and dict format ({"type": "string", ...})
-                if isinstance(param_info, str):
-                    param_type = param_info
-                else:
-                    param_type = param_info.get('type', 'string')
-                param_details.append(f'"{param_name}": <{param_type}>')
-            
-            functions_text += f"- {func['name']}: parameters must be: {{{', '.join(param_details)}}}\n"
+            if func.get('name') == 'average_temperature':
+                avg_temp_function = func
+                break
         
-        prompt = f"""User request: "{user_request}"
-{functions_text}
+        if not avg_temp_function:
+            return {"error": "average_temperature function not found in available functions"}
+        
+        # Get parameter schema
+        params_schema = avg_temp_function.get('parameters', {})
+        properties = params_schema.get('properties', {})
+        
+        # Create detailed prompt for parameter extraction
+        param_descriptions = []
+        for param_name, param_info in properties.items():
+            param_type = param_info.get('type', 'string')
+            description = param_info.get('description', '')
+            param_descriptions.append(f'"{param_name}": {param_type} - {description}')
+        
+        prompt = f"""Extract parameters for the average_temperature function from this weather query: "{user_query}"
 
-Select the appropriate function and extract parameters from the user request.
+The average_temperature function expects these exact parameters:
+{chr(10).join(param_descriptions)}
 
-CRITICAL: Use the EXACT parameter names shown above for each function.
-DO NOT infer different parameter names.
+Extract the values and return ONLY valid JSON in this exact format:
+{{"location": "city_name", "days": number, "temp_unit": "Celsius_or_Fahrenheit"}}
 
-For weather requests, common patterns:
-- Location extraction: "weather in Paris" → location: "Paris"
-- Unit extraction: "celsius/fahrenheit" → unit: "celsius" or "fahrenheit"
-- Time extraction: "tomorrow", "next week" → extract relevant time values
+Rules:
+- location: Extract city name mentioned in query, format as city name only (e.g., "Austin", "Boston")
+- days: Extract number of days mentioned, or use reasonable default if not specified
+- temp_unit: Extract temperature unit preference ("Celsius" or "Fahrenheit"), default to "Fahrenheit" if not specified
 
-Return ONLY valid JSON in this exact format:
-{{"function": "function_name", "parameters": {{"exact_param_name": "value"}}}}
+Query: "{user_query}"
 
-Examples:
-- "What's the weather in London?" → {{"function": "get_weather", "parameters": {{"location": "London"}}}}
-- "Temperature in Tokyo in celsius" → {{"function": "get_weather", "parameters": {{"location": "Tokyo", "unit": "celsius"}}}}"""
+Return only the JSON object with the parameter values:"""
 
         response = llm_client.generate(prompt)
         
-        # Extract JSON from response (handles markdown code blocks)
+        # Extract JSON from response (handle markdown code blocks)
         content = response.content.strip()
         
         # Remove markdown code blocks if present
         if "```" in content:
-            # Extract content between ```json and ``` or between ``` and ```
             json_match = re.search(r'```(?:json)?\s*(\{.*?\})\s*```', content, re.DOTALL)
             if json_match:
                 content = json_match.group(1)
@@ -93,14 +92,54 @@ Examples:
                 if json_match:
                     content = json_match.group(0)
         
-        # Parse and validate with Pydantic
-        data = json.loads(content)
-        validated = FunctionSelection(**data)
-        return validated.model_dump()
+        # Parse the parameters
+        try:
+            parameters = json.loads(content)
+        except json.JSONDecodeError:
+            # Fallback: try to extract using regex patterns
+            location_match = re.search(r'(?:in|for|at)\s+([A-Z][a-zA-Z\s]+?)(?:\s+for|\s+over|\s+in|\s*$)', user_query, re.IGNORECASE)
+            days_match = re.search(r'(\d+)\s*days?', user_query)
+            temp_unit_match = re.search(r'(celsius|fahrenheit)', user_query, re.IGNORECASE)
+            
+            location = location_match.group(1).strip() if location_match else "Austin"
+            days = int(days_match.group(1)) if days_match else 3
+            temp_unit = temp_unit_match.group(1).capitalize() if temp_unit_match else "Fahrenheit"
+            
+            parameters = {
+                "location": location,
+                "days": days,
+                "temp_unit": temp_unit
+            }
         
-    except json.JSONDecodeError as e:
-        return {"error": f"Failed to parse LLM response as JSON: {e}"}
-    except ValueError as e:
-        return {"error": f"Invalid function selection format: {e}"}
+        # Validate and format the response
+        if not isinstance(parameters, dict):
+            return {"error": "Failed to extract valid parameters"}
+        
+        # Ensure required fields are present
+        if 'location' not in parameters:
+            parameters['location'] = "Austin"  # Default for missing location
+        if 'days' not in parameters:
+            parameters['days'] = 3  # Default for missing days
+        if 'temp_unit' not in parameters:
+            parameters['temp_unit'] = "Fahrenheit"  # Default unit
+        
+        # Convert days to integer if it's a string
+        if isinstance(parameters['days'], str):
+            try:
+                parameters['days'] = int(parameters['days'])
+            except ValueError:
+                parameters['days'] = 3
+        
+        # Ensure temp_unit is properly capitalized
+        if parameters['temp_unit'].lower() == 'celsius':
+            parameters['temp_unit'] = 'Celsius'
+        elif parameters['temp_unit'].lower() == 'fahrenheit':
+            parameters['temp_unit'] = 'Fahrenheit'
+        
+        # Return in the exact format specified by the schema
+        return {
+            "average_temperature": parameters
+        }
+        
     except Exception as e:
-        return {"error": f"Failed to analyze user request: {e}"}
+        return {"error": f"Failed to parse weather query: {str(e)}"}

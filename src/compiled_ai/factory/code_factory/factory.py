@@ -10,8 +10,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable, Optional
 
-from .models import WorkflowSpec, GeneratedFiles
-from .agents import create_agents
+from .models import WorkflowSpec, GeneratedFiles, BFCLFunctionCallOutput
+from .agents import create_agents, create_bfcl_agent
 from .llm_adapter import AdapterMetrics, extract_usage_from_result, ProviderType
 from .template_registry import TemplateRegistry
 from .registration import ActivityRegistrar, RegistrationPolicy
@@ -31,6 +31,26 @@ from xy_local_executor.dsl.parser import build_dsl_input
 from xy_local_executor.dsl.models import DSLInput
 from xy_local_executor import LocalWorkflowExecutor
 from xy_local_executor.mocks import ActivityMocks
+
+
+@dataclass
+class BFCLResult:
+    """Result from BFCL function call generation."""
+
+    success: bool
+    function_name: str = ""
+    arguments: dict = field(default_factory=dict)
+    reasoning: str = ""
+    error: str | None = None
+    metrics: Optional[AdapterMetrics] = None
+
+    def to_bfcl_format(self) -> dict:
+        """Convert to BFCL ground truth format: {function_name: {args}}."""
+        return {self.function_name: self.arguments}
+
+    def to_json(self) -> str:
+        """Convert to JSON string for evaluation."""
+        return json.dumps(self.to_bfcl_format())
 
 
 @dataclass
@@ -95,6 +115,7 @@ class CodeFactory:
         max_regenerations: int = 3,
         enable_registry: bool = True,
         auto_register: bool = True,
+        log_dir: str | None = "logs",
     ):
         """Initialize the Code Factory.
 
@@ -105,11 +126,13 @@ class CodeFactory:
             max_regenerations: Maximum attempts to fix validation errors
             enable_registry: Enable template registry for activity search
             auto_register: Automatically register successful activities
+            log_dir: Directory for compilation logs (None to disable file logging)
         """
         self.provider = provider
         self.model = model
         self.verbose = verbose
         self.max_regenerations = max_regenerations
+        self.log_dir = Path(log_dir) if log_dir else None
 
         # Registry components
         self.registry = TemplateRegistry(enable_semantic=False) if enable_registry else None
@@ -125,10 +148,57 @@ class CodeFactory:
         self._workflow_sources: dict[str, str] = {}  # activity_name -> source code
         self._load_workflow_activities()
 
+        # Current log file for this compilation
+        self._current_log_file: Path | None = None
+
     def _log(self, message: str) -> None:
-        """Print message if verbose mode is enabled."""
+        """Print message if verbose mode is enabled and write to log file."""
         if self.verbose:
             print(message)
+        self._log_to_file(message)
+
+    def _log_to_file(self, message: str, section: str | None = None) -> None:
+        """Write message to current log file.
+
+        Args:
+            message: Message to log
+            section: Optional section header (e.g., "PLANNER PROMPT", "ERROR")
+        """
+        if not self._current_log_file:
+            return
+
+        with open(self._current_log_file, "a", encoding="utf-8") as f:
+            if section:
+                f.write(f"\n{'='*80}\n")
+                f.write(f"{section}\n")
+                f.write(f"{'='*80}\n")
+            f.write(f"{message}\n")
+
+    def _setup_log_file(self, task_id: str) -> None:
+        """Set up a new log file for this compilation.
+
+        Args:
+            task_id: Task identifier for naming the log file
+        """
+        if not self.log_dir:
+            self._current_log_file = None
+            return
+
+        # Create logs directory if it doesn't exist
+        self.log_dir.mkdir(parents=True, exist_ok=True)
+
+        # Create log file (no timestamp needed, each run has its own directory)
+        log_filename = f"{task_id}.log"
+        self._current_log_file = self.log_dir / log_filename
+
+        # Write header
+        from datetime import datetime
+        self._log_to_file(f"Code Factory Compilation Log", section="HEADER")
+        self._log_to_file(f"Task ID: {task_id}")
+        self._log_to_file(f"Timestamp: {datetime.now().isoformat()}")
+        self._log_to_file(f"Provider: {self.provider}")
+        self._log_to_file(f"Model: {self.model}")
+        self._log_to_file(f"Max Regenerations: {self.max_regenerations}")
 
     def _load_workflow_activities(self) -> None:
         """Load activities from workflows directory into semantic index.
@@ -192,20 +262,29 @@ class CodeFactory:
         """Extract complete function source code from file content."""
         import re
 
-        # Find function start
-        pattern = rf'^((?:async\s+)?def\s+{re.escape(func_name)}\s*\([^)]*\)[^:]*:)'
-        match = re.search(pattern, content, re.MULTILINE)
+        # Find function start - use DOTALL to match multi-line signatures
+        pattern = rf'^((?:async\s+)?def\s+{re.escape(func_name)}\s*\(.*?\)\s*(?:->\s*[^:]+)?\s*:)'
+        match = re.search(pattern, content, re.MULTILINE | re.DOTALL)
         if not match:
             return None
 
+        # Start from the matched function definition
         start = match.start()
+        end_of_signature = match.end()
         lines = content[start:].split("\n")
 
-        # Find function end by tracking indentation
-        func_lines = [lines[0]]
+        # Find the line where the signature ends (contains ':')
+        signature_lines = content[start:end_of_signature].split("\n")
+        func_lines = signature_lines.copy()
+
+        # Get base indentation from the 'def' line
         base_indent = len(lines[0]) - len(lines[0].lstrip())
 
-        for line in lines[1:]:
+        # Continue from after the signature
+        remaining_lines = lines[len(signature_lines):]
+        in_function_body = True
+
+        for line in remaining_lines:
             # Empty lines are part of function
             if not line.strip():
                 func_lines.append(line)
@@ -213,8 +292,10 @@ class CodeFactory:
 
             # Check indentation
             current_indent = len(line) - len(line.lstrip())
+
+            # Stop when we hit a line at base level or less (next function/class/etc)
             if current_indent <= base_indent and line.strip():
-                break  # Found next top-level statement
+                break
 
             func_lines.append(line)
 
@@ -302,6 +383,15 @@ class CodeFactory:
         # Store examples for use in coder prompt
         self._current_examples = examples or []
 
+        # Set up log file for this compilation
+        task_id = "compilation"
+        if examples and hasattr(examples[0], 'task_id'):
+            task_id = examples[0].task_id
+        self._setup_log_file(task_id)
+
+        # Log task description
+        self._log_to_file(task_description, section="TASK DESCRIPTION")
+
         # Create agents (planner gets registry for template search)
         planner, coder, _ = create_agents(
             provider=self.provider,
@@ -311,6 +401,10 @@ class CodeFactory:
 
         # Step 1: Planning Agent -> WorkflowSpec
         self._log("[Planning] Designing workflow structure...")
+
+        # Log planner prompt to file
+        self._log_to_file(task_description, section="PLANNER PROMPT")
+
         if self.verbose:
             print("\n" + "="*80)
             print("PLANNER PROMPT:")
@@ -327,6 +421,17 @@ class CodeFactory:
         input_tokens, output_tokens = extract_usage_from_result(plan_result)
         metrics.record(input_tokens, output_tokens, latency_ms)
 
+        # Log planner output
+        self._log_to_file(
+            f"Workflow ID: {result.plan.workflow_id}\n"
+            f"Name: {result.plan.name}\n"
+            f"Description: {result.plan.description}\n"
+            f"Activities: {[a.name for a in result.plan.activities]}\n"
+            f"Pattern: {result.plan.execution_pattern}\n"
+            f"Tokens: {input_tokens} in / {output_tokens} out",
+            section="PLANNER OUTPUT"
+        )
+
         self._log(f"[Planning] Created: {result.plan.name}")
         self._log(f"[Planning] Activities: {[a.name for a in result.plan.activities]}")
         self._log(f"[Planning] Pattern: {result.plan.execution_pattern}")
@@ -337,6 +442,16 @@ class CodeFactory:
             self._log(f"[Coding] Generation attempt {attempt + 1}...")
 
             coder_prompt = self._build_coder_prompt(result.plan, error_feedback)
+
+            # Log coder prompt to file
+            self._log_to_file(coder_prompt, section=f"CODER PROMPT (Attempt {attempt + 1})")
+
+            if self.verbose:
+                print("\n" + "="*80)
+                print(f"CODER PROMPT (Attempt {attempt + 1}):")
+                print("="*80)
+                print(coder_prompt)
+                print("="*80 + "\n")
             start_time = time.perf_counter()
             code_result = await coder.run(coder_prompt)
             latency_ms = (time.perf_counter() - start_time) * 1000
@@ -348,12 +463,23 @@ class CodeFactory:
             input_tokens, output_tokens = extract_usage_from_result(code_result)
             metrics.record(input_tokens, output_tokens, latency_ms)
 
+            # Log generated code
+            self._log_to_file(
+                f"Workflow YAML:\n{result.generated.workflow_yaml}\n\n"
+                f"Activities Code:\n{result.generated.activities_code}",
+                section=f"GENERATED CODE (Attempt {attempt + 1})"
+            )
+
             # Step 2a: Validate YAML structure
             yaml_error = self._validate_yaml(result)
             if yaml_error is not None:
                 error_feedback = yaml_error
                 result.validation_errors.append(f"Attempt {attempt + 1} - YAML: {yaml_error}")
                 self._log(f"[Validation] YAML failed: {yaml_error[:100]}...")
+
+                # Log validation error
+                self._log_to_file(yaml_error, section=f"YAML VALIDATION ERROR (Attempt {attempt + 1})")
+
                 continue  # Try again
 
             # YAML is valid
@@ -368,14 +494,21 @@ class CodeFactory:
 
                 if execution_error is not None:
                     error_feedback = execution_error
-                    result.validation_errors.append(f"Attempt {attempt + 1} - Execution: {execution_error[:200]}...")
-                    self._log(f"[Validation] Execution failed: {execution_error[:100]}...")
+                    result.validation_errors.append(f"Attempt {attempt + 1} - Execution: {execution_error[:500]}...")
+                    self._log(f"[Validation] Execution failed: {execution_error[:200]}...")
+
+                    # Log execution validation error
+                    self._log_to_file(execution_error, section=f"EXECUTION VALIDATION ERROR (Attempt {attempt + 1})")
+
                     result.examples_tested = len([ex for ex in self._current_examples[:3] if hasattr(ex, 'metadata') and ex.metadata and "expected_output" in ex.metadata])
                     continue  # Try again with execution feedback
 
                 result.execution_validated = True
                 result.examples_tested = len([ex for ex in self._current_examples[:3] if hasattr(ex, 'metadata') and ex.metadata and "expected_output" in ex.metadata])
                 self._log(f"[Validation] All example executions passed!")
+
+                # Log success
+                self._log_to_file("All examples passed!", section=f"EXECUTION VALIDATION SUCCESS (Attempt {attempt + 1})")
 
             # Both YAML and execution valid (or no examples to test)
             result.success = True
@@ -386,6 +519,24 @@ class CodeFactory:
 
         if not result.success:
             self._log("[Validation] Max regenerations reached without success")
+
+        # Log final result
+        if result.success:
+            self._log_to_file(
+                f"SUCCESS!\n"
+                f"YAML Validated: {result.yaml_validated}\n"
+                f"Execution Validated: {result.execution_validated}\n"
+                f"Examples Tested: {result.examples_tested}\n"
+                f"Regeneration Count: {result.regeneration_count}\n"
+                f"Total Tokens: {metrics.total_tokens}",
+                section="FINAL RESULT"
+            )
+        else:
+            self._log_to_file(
+                f"FAILED!\n"
+                f"Validation Errors:\n" + "\n".join(result.validation_errors),
+                section="FINAL RESULT"
+            )
 
         # Auto-register successful activities
         if result.success and self.registrar:
@@ -721,16 +872,21 @@ Please fix the issues and regenerate valid YAML.
         section += "**CRITICAL:** Your implementation must generalize to handle all these patterns correctly.\n"
         return section
 
-    def _select_evaluator(self, expected_output: Any, metadata: dict) -> Evaluator:
+    def _select_evaluator(self, expected_output: Any, metadata: dict, use_llm: bool = True) -> Evaluator:
         """Auto-select appropriate evaluator based on output type.
 
         Args:
             expected_output: The expected output to evaluate against
             metadata: Task metadata (may contain evaluator_type override)
+            use_llm: Whether to use LLM-based evaluation (default: True)
 
         Returns:
             Appropriate evaluator instance
         """
+        # Use LLM evaluator for format checking during regeneration
+        if use_llm:
+            return get_evaluator("llm")
+
         # Check for explicit override
         if "evaluator_type" in metadata:
             return get_evaluator(metadata["evaluator_type"])
@@ -780,6 +936,11 @@ Please fix the issues and regenerate valid YAML.
 
             # Prepare variables from context
             variables = {}
+
+            # Always include the prompt/input as a variable (matches final execution)
+            if hasattr(example, 'prompt'):
+                variables["prompt"] = example.prompt
+
             if hasattr(example, 'context') and example.context:
                 for key, value in example.context.items():
                     if isinstance(value, (dict, list)):
@@ -876,7 +1037,14 @@ Please fix the issues and regenerate valid YAML.
         result: FactoryResult,
         examples: list[Any]
     ) -> str | None:
-        """Execute workflow on examples and validate outputs.
+        """Execute workflow on examples and validate output FORMAT using LLM (haiku).
+
+        During regeneration, we use LLM evaluation to check:
+        - format_correct: Does output match expected structure?
+        - content_correct: Does output have correct values?
+
+        We accept format_match or better (format correct even if values wrong).
+        This is more lenient during compilation - final evaluation is stricter.
 
         Args:
             result: FactoryResult with compiled workflow
@@ -897,6 +1065,9 @@ Please fix the issues and regenerate valid YAML.
 
         failures = []
 
+        # Use LLM evaluator (haiku) for format validation
+        evaluator = self._select_evaluator(None, {}, use_llm=True)
+
         for idx, example in enumerate(test_examples, 1):
             try:
                 # Execute workflow
@@ -909,16 +1080,26 @@ Please fix the issues and regenerate valid YAML.
                     )
                     break  # Stop at first failure
 
-                # Evaluate output
+                # Evaluate output using LLM
                 expected = example.metadata["expected_output"]
-                evaluator = self._select_evaluator(expected, example.metadata)
+                output_format = example.metadata.get("output_format", {})
 
                 eval_result = evaluator.evaluate(
                     output=exec_result["output"],
-                    expected=expected
+                    expected=expected,
+                    output_format=output_format,
                 )
 
-                if not eval_result.success:
+                # During regeneration, accept if format is correct (format_match or better)
+                # match_type: total_match (1.0), content_match (0.8), format_match (0.3), failure (0.0)
+                format_correct = eval_result.details.get("format_correct", False)
+                match_type = eval_result.details.get("match_type", "failure")
+
+                if self.verbose:
+                    self._log(f"[Validation] Example {idx}: {match_type} (format_correct={format_correct})")
+
+                # Accept format_match or better during compilation
+                if not format_correct and match_type == "failure":
                     failures.append(self._format_evaluation_failure(
                         idx, len(test_examples), example, exec_result, eval_result
                     ))
@@ -951,12 +1132,18 @@ Please fix the issues and regenerate valid YAML.
             total: Total number of examples tested
             example: The TaskInput that failed
             exec_result: Execution result dict
-            eval_result: Evaluation result
+            eval_result: Evaluation result (from LLM evaluator)
 
         Returns:
             Formatted error message
         """
-        msg = f"Example {example_num}/{total} FAILED:\n"
+        # Extract LLM evaluation details
+        match_type = eval_result.details.get("match_type", "failure")
+        format_correct = eval_result.details.get("format_correct", False)
+        content_correct = eval_result.details.get("content_correct", False)
+        explanation = eval_result.details.get("explanation", "")
+
+        msg = f"Example {example_num}/{total} FAILED (LLM eval: {match_type}):\n"
 
         # Show inputs
         if hasattr(example, 'context') and example.context:
@@ -969,16 +1156,37 @@ Please fix the issues and regenerate valid YAML.
         # Show expected vs actual
         expected = example.metadata["expected_output"]
         msg += "  Expected: " + json.dumps(expected, indent=4).replace("\n", "\n            ") + "\n"
-        msg += "  Actual:   " + exec_result["output"][:200] + "\n"
 
-        # Show evaluation details
+        # Format actual output - try to parse as JSON for better readability
+        actual_output = exec_result["output"]
+        try:
+            actual_parsed = json.loads(actual_output)
+            actual_formatted = json.dumps(actual_parsed, indent=4).replace("\n", "\n            ")
+        except (json.JSONDecodeError, TypeError):
+            # Not JSON, show raw output (truncated if very long)
+            actual_formatted = actual_output[:1000] if len(actual_output) > 1000 else actual_output
+
+        msg += "  Actual:   " + actual_formatted + "\n"
+
+        # Show LLM evaluation summary
+        msg += f"\n  LLM Evaluation:\n"
+        msg += f"    - Match type: {match_type}\n"
+        msg += f"    - Format correct: {format_correct}\n"
+        msg += f"    - Content correct: {content_correct}\n"
+        if explanation:
+            msg += f"    - Explanation: {explanation}\n"
+
+        # Show field-level matches if available
+        field_matches = eval_result.details.get("field_matches", {})
+        if field_matches:
+            msg += "    - Field matches:\n"
+            for field, matched in field_matches.items():
+                status = "✓" if matched else "✗"
+                msg += f"      {status} {field}\n"
+
+        # Show error if any
         if eval_result.error:
             msg += f"  Error: {eval_result.error}\n"
-
-        if eval_result.details:
-            msg += "  Details:\n"
-            for key, value in eval_result.details.items():
-                msg += f"    - {key}: {value}\n"
 
         return msg
 
@@ -996,16 +1204,18 @@ Please fix the issues and regenerate valid YAML.
         Returns:
             Complete feedback message for coder
         """
-        feedback = "EXECUTION VALIDATION FAILED: Workflow executed but outputs don't match expectations\n\n"
+        feedback = "EXECUTION VALIDATION FAILED (LLM-based format check):\n"
+        feedback += "Output format does not match expected structure.\n\n"
 
         for failure in failures:
             feedback += failure + "\n"
 
-        feedback += f"\nFix these issues:\n"
-        feedback += "1. Check that activity implementations match the expected output schema EXACTLY\n"
-        feedback += "2. Ensure parameter bindings are correct (variable names match)\n"
-        feedback += "3. For LLM-based activities, verify prompts produce the expected structure\n"
-        feedback += "4. For data transformations, ensure field mapping is correct\n"
+        feedback += f"\nFix these FORMAT issues:\n"
+        feedback += "1. Ensure output has EXACTLY the right field names (check spelling, casing)\n"
+        feedback += "2. Return the correct data types (string vs number, nested objects)\n"
+        feedback += "3. Don't add extra fields that weren't requested\n"
+        feedback += "4. Don't hardcode values - extract them from the input prompt\n"
+        feedback += "5. For LLM-based activities, verify prompts ask for the exact structure\n"
 
         return feedback
 
@@ -1075,3 +1285,136 @@ Please fix the issues and regenerate valid YAML.
         except Exception as e:
             self._log(f"[Registry] Failed to extract {activity_name}: {e}")
             return None
+
+    # ==================== BFCL Function Calling ====================
+
+    async def generate_bfcl(
+        self,
+        user_query: str,
+        functions: list[dict] | str,
+    ) -> BFCLResult:
+        """Generate a function call for BFCL benchmark tasks.
+
+        This method takes a user query and available functions, then uses an
+        LLM agent to select the appropriate function and extract parameters.
+
+        Unlike the full workflow generation, this is a simpler single-step
+        process optimized for function calling tasks.
+
+        Args:
+            user_query: Natural language user request
+            functions: List of BFCL function definitions or JSON string
+
+        Returns:
+            BFCLResult with function name, arguments, and metrics
+
+        Example:
+            >>> factory = CodeFactory()
+            >>> result = await factory.generate_bfcl(
+            ...     "Find the area of a triangle with base 10 and height 5",
+            ...     [{"name": "calculate_triangle_area", "parameters": {...}}]
+            ... )
+            >>> print(result.function_name)  # "calculate_triangle_area"
+            >>> print(result.arguments)  # {"base": 10, "height": 5}
+        """
+        result = BFCLResult(success=False)
+        metrics = AdapterMetrics()
+
+        # Parse functions if JSON string
+        if isinstance(functions, str):
+            try:
+                functions = json.loads(functions)
+            except json.JSONDecodeError as e:
+                result.error = f"Failed to parse functions JSON: {e}"
+                return result
+
+        # Create BFCL agent
+        bfcl_agent = create_bfcl_agent(
+            provider=self.provider,
+            model=self.model,
+        )
+
+        # Build prompt with user query and available functions
+        prompt = self._build_bfcl_prompt(user_query, functions)
+
+        self._log(f"[BFCL] Processing query: {user_query[:50]}...")
+
+        try:
+            start_time = time.perf_counter()
+            agent_result = await bfcl_agent.run(prompt)
+            latency_ms = (time.perf_counter() - start_time) * 1000
+
+            # Track metrics
+            input_tokens, output_tokens = extract_usage_from_result(agent_result)
+            metrics.record(input_tokens, output_tokens, latency_ms)
+
+            # Extract output
+            output: BFCLFunctionCallOutput = agent_result.output
+
+            result.success = True
+            result.function_name = output.function_name
+            result.arguments = output.arguments
+            result.reasoning = output.reasoning
+            result.metrics = metrics
+
+            self._log(f"[BFCL] Selected: {output.function_name}")
+            self._log(f"[BFCL] Arguments: {output.arguments}")
+
+        except Exception as e:
+            result.error = str(e)
+            result.metrics = metrics
+            self._log(f"[BFCL] Error: {e}")
+
+        return result
+
+    def _build_bfcl_prompt(
+        self,
+        user_query: str,
+        functions: list[dict],
+    ) -> str:
+        """Build prompt for BFCL function calling agent.
+
+        Args:
+            user_query: User's natural language request
+            functions: List of available function definitions
+
+        Returns:
+            Formatted prompt string
+        """
+        # Format functions for the prompt
+        functions_text = "## Available Functions:\n\n"
+
+        for func in functions:
+            functions_text += f"### {func['name']}\n"
+            functions_text += f"Description: {func.get('description', 'No description')}\n"
+
+            params = func.get('parameters', {})
+            properties = params.get('properties', {})
+            required = params.get('required', [])
+
+            if properties:
+                functions_text += "Parameters:\n"
+                for param_name, param_info in properties.items():
+                    param_type = param_info.get('type', 'any')
+                    param_desc = param_info.get('description', 'No description')
+                    is_required = param_name in required
+                    req_str = "(required)" if is_required else "(optional)"
+                    functions_text += f"  - {param_name}: {param_type} {req_str} - {param_desc}\n"
+
+            functions_text += "\n"
+
+        prompt = f"""## User Query:
+{user_query}
+
+{functions_text}
+
+Based on the user query and available functions, select the most appropriate function and extract the parameter values.
+
+Remember:
+- Use EXACT parameter names from the function definition
+- Extract values from the user query
+- Include optional parameters if mentioned in the query
+- Convert types appropriately (strings to numbers, etc.)
+"""
+
+        return prompt

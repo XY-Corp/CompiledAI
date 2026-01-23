@@ -1,0 +1,18 @@
+workflow_id: function_call_parameter_extractor
+name: Function Call Parameter Extractor
+description: |
+  Extracts function call parameters from a user prompt and returns a structured function call object with the function name as top-level key and extracted parameters as nested values.
+
+variables:
+  prompt: null
+  functions: null
+
+root:
+  sequence:
+    elements:
+      - activity:
+          name: extract_function_call_params
+          params:
+            prompt: ${{ prompt }}
+            functions: ${{ functions }}
+          result: function_call_result

@@ -1,0 +1,26 @@
+{
+  "workflow_id": "route_time_estimate_request",
+  "name": "Route Time Estimation Request Parser",
+  "description": "Parses user travel time requests and extracts route parameters (start location, end location, and stops) to format them for the route.estimate_time function call",
+  "task_id": "simple_37",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"Find the estimated travel time by car from San Francisco to Los Angeles with stops at Santa Barbara and Monterey.\"}]], \"function\": [{\"name\": \"route.estimate_time\", \"description\": \"Estimate the travel time for a specific route with optional stops.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"start_location\": {\"type\": \"string\", \"description\": \"The starting point for the journey. It should be format as city name such as Boston.\"}, \"end_location\": {\"type\": \"string\", \"description\": \"The destination for the journey. It should be format as city name such as Boston.\"}, \"stops\": {\"type\": \"array\", \"items\": {\"type\": \"string\"}, \"description\": \"Additional cities or points of interest to stop at during the journey. Default is an empty list.\"}}, \"required\": [\"start_location\", \"end_location\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"route.estimate_time\": {\n    \"start_location\": \"string - The starting point for the journey. It should be format as city name such as Boston.\",\n    \"end_location\": \"string - The destination for the journey. It should be format as city name such as Boston.\",\n    \"stops\": \"array - Additional cities or points of interest to stop at during the journey. Default is an empty list.\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "activities": [
+    "parse_route_request"
+  ],
+  "variables": [
+    {
+      "name": "prompt",
+      "default": null
+    },
+    {
+      "name": "functions",
+      "default": null
+    }
+  ],
+  "execution_pattern": "sequence",
+  "reasoning": "This workflow needs to parse a natural language travel request and extract structured parameters for the route.estimate_time function. The task is metadata extraction (determining WHAT function to call with WHAT parameters) rather than actually executing route estimation. \n\nThe single activity uses LLM-based extraction because:\n1. Natural language parsing requires semantic understanding (\"San Francisco to Los Angeles with stops at Santa Barbara and Monterey\")\n2. The extraction needs to map free-form locations to structured function parameters\n3. Understanding the intent and context requires AI reasoning rather than simple regex patterns\n\nThe workflow takes the raw prompt as input and processes it through an LLM to extract the exact function call structure expected by the system. The output matches the specified format with route.estimate_time as the top-level key containing the required parameters.",
+  "metrics": {
+    "total_tokens": 40445,
+    "regeneration_count": 2
+  }
+}

@@ -1,0 +1,17 @@
+workflow_id: entropy_function_parser
+name: Entropy Calculation Function Call Parser
+description: Parse physics problem text and extract parameters for entropy change calculation function call
+
+variables:
+  prompt: null
+  functions: null
+
+root:
+  sequence:
+    elements:
+      - activity:
+          name: parse_entropy_parameters
+          params:
+            problem_text: ${{ prompt }}
+            available_functions: ${{ functions }}
+          result: parsed_result

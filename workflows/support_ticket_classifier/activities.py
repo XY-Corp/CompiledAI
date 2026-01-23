@@ -3,74 +3,85 @@ import json
 from pydantic import BaseModel
 
 
-class TicketClassification(BaseModel):
-    """Expected structure for ticket classification."""
-    category: str
-
-
 async def classify_support_ticket(
-    ticket_text: str,
-    categories: list,
+    ticket_content: str,
+    available_categories: list,
     # Injected context
     org_id: str | None = None,
     user_id: str | None = None,
     workflow_definition_id: str | None = None,
     workflow_instance_id: str | None = None,
 ) -> str:
-    """Classifies the support ticket text into one of four predefined categories using LLM semantic understanding.
+    """Analyzes the support ticket content using LLM to determine the appropriate category from the predefined list.
     
     Args:
-        ticket_text: The complete support ticket text containing the customer's issue or request to be classified
-        categories: List of predefined category options for classification: [billing, technical, account, general]
-        
+        ticket_content: The complete support ticket text content that needs to be analyzed and classified into a category
+        available_categories: List of valid category names that the ticket can be classified into (billing, technical, account, general)
+    
     Returns:
-        str: The single category name as a string
+        The most appropriate category classification for the support ticket content as a lowercase string
     """
+    # Handle JSON string inputs defensively
+    if isinstance(available_categories, str):
+        try:
+            available_categories = json.loads(available_categories)
+        except json.JSONDecodeError:
+            # If it's not valid JSON, treat as single category
+            available_categories = [available_categories]
+    
+    if not isinstance(available_categories, list):
+        available_categories = ["billing", "technical", "account", "general"]
+    
+    # Ensure categories are lowercase strings
+    categories = [str(cat).lower() for cat in available_categories]
+    
+    # Create classification schema for validation
+    class TicketClassification(BaseModel):
+        category: str
+    
+    # Create prompt for LLM classification
+    prompt = f"""Classify this support ticket into exactly one of these categories: {', '.join(categories)}
+
+Categories:
+- billing: Issues related to payments, charges, refunds, subscription billing
+- technical: Technical problems, bugs, software issues, functionality problems
+- account: Account access, login issues, profile management, account settings
+- general: General inquiries, questions, requests that don't fit other categories
+
+Support Ticket Content:
+{ticket_content}
+
+Return ONLY the category name as a single lowercase word from the list above."""
+
+    # Use LLM to classify the ticket
+    response = llm_client.generate(prompt)
+    
+    # Extract and validate the classification
+    classification = response.content.strip().lower()
+    
+    # Ensure the classification is in the available categories
+    if classification not in categories:
+        # Try to find a partial match or default to general
+        for category in categories:
+            if category in classification:
+                classification = category
+                break
+        else:
+            # If no match found, analyze content with keyword mapping
+            content_lower = ticket_content.lower()
+            if any(word in content_lower for word in ['charge', 'bill', 'payment', 'refund', 'subscription', 'invoice']):
+                classification = 'billing'
+            elif any(word in content_lower for word in ['bug', 'error', 'not working', 'broken', 'crash', 'technical']):
+                classification = 'technical'
+            elif any(word in content_lower for word in ['login', 'password', 'account', 'access', 'profile']):
+                classification = 'account'
+            else:
+                classification = 'general'
+    
+    # Validate the result using Pydantic
     try:
-        # Handle JSON string input defensively for categories
-        if isinstance(categories, str):
-            categories = json.loads(categories)
-        
-        # Validate categories is a list
-        if not isinstance(categories, list):
-            return "general"  # Default fallback
-            
-        # Create a clear classification prompt
-        categories_text = ", ".join(categories)
-        prompt = f"""Classify this support ticket into exactly ONE of these categories: {categories_text}
-
-Support ticket text:
-{ticket_text}
-
-Rules:
-- billing: issues with payments, charges, invoices, refunds, subscriptions
-- technical: software bugs, system errors, integration issues, performance problems
-- account: login problems, password resets, profile changes, permissions
-- general: everything else including questions, feedback, feature requests
-
-Return ONLY the category name as a single word: {categories_text}"""
-
-        # Use LLM for semantic classification
-        response = llm_client.generate(prompt)
-        
-        # Extract and validate the response
-        result = response.content.strip().lower()
-        
-        # Ensure the result is one of the valid categories
-        valid_categories = [cat.lower() for cat in categories]
-        if result in valid_categories:
-            # Return the original case from the categories list
-            original_index = valid_categories.index(result)
-            return categories[original_index]
-        
-        # Fallback: try to find partial match
-        for i, cat in enumerate(valid_categories):
-            if cat in result or result in cat:
-                return categories[i]
-                
-        # Ultimate fallback
-        return "general"
-        
-    except Exception as e:
-        # Return safe default on any error
-        return "general"
+        validated = TicketClassification(category=classification)
+        return validated.category
+    except ValueError:
+        # Fallback to general if validation fails
+        return 'general'

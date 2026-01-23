@@ -1,0 +1,16 @@
+workflow_id: fitness_calculation_workflow
+name: Evolutionary Fitness Calculation
+description: Parses a fitness calculation query and extracts trait values and contributions to generate the appropriate function call parameters
+
+variables:
+  prompt: null
+  functions: null
+
+root:
+  sequence:
+    elements:
+      - activity:
+          name: parse_fitness_query
+          params:
+            query_text: ${{ prompt }}
+          result: fitness_parameters

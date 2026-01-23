@@ -1,0 +1,15 @@
+workflow_id: travel_itinerary_function_parser
+name: Travel Itinerary Function Parameter Parser
+description: Parses natural language travel requests and extracts function call parameters for travel itinerary generation
+variables:
+  prompt: null
+  functions: null
+root:
+  sequence:
+    elements:
+      - activity:
+          name: parse_travel_request
+          params:
+            request_text: ${{ prompt }}
+            function_schema: ${{ functions }}
+          result: parsed_request

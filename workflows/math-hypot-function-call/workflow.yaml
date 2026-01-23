@@ -1,0 +1,17 @@
+workflow_id: math-hypot-function-call
+name: Math Hypotenuse Function Call Builder
+description: Parse a natural language math problem about right triangle hypotenuse calculation and format it as a function call with the appropriate parameters
+
+variables:
+  prompt: null
+  functions: null
+
+root:
+  sequence:
+    elements:
+      - activity:
+          name: parse_math_problem
+          params:
+            problem_text: ${{ prompt }}
+            available_functions: ${{ functions }}
+          result: function_call

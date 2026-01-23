@@ -1,0 +1,34 @@
+{
+  "activity_name": "extract_genetics_parameters",
+  "description": "Parses genetics question text to extract allele frequency and genotype information for function call generation",
+  "task_id": "simple_64",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"What is the genotype frequency of AA genotype in a population, given that allele frequency of A is 0.3?\"}]], \"function\": [{\"name\": \"calculate_genotype_frequency\", \"description\": \"Calculate the frequency of homozygous dominant genotype based on the allele frequency using Hardy Weinberg Principle.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"allele_frequency\": {\"type\": \"float\", \"description\": \"The frequency of the dominant allele in the population.\"}, \"genotype\": {\"type\": \"string\", \"description\": \"The genotype which frequency is needed.\", \"enum\": [\"AA\", \"Aa\", \"aa\"]}}, \"required\": [\"allele_frequency\", \"genotype\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"calculate_genotype_frequency\": {\n    \"allele_frequency\": \"float - The frequency of the dominant allele in the population.\",\n    \"genotype\": \"string - The genotype which frequency is needed.\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "inputs": [
+    {
+      "name": "question_text",
+      "type": "str",
+      "description": "The complete genetics question text containing allele frequency and genotype information that needs to be parsed",
+      "required": true
+    },
+    {
+      "name": "available_functions",
+      "type": "list",
+      "description": "List of available function definitions to provide context for parameter extraction",
+      "required": true
+    }
+  ],
+  "output": {
+    "type": "dict",
+    "description": "Returns a function call structure with calculate_genotype_frequency as the key and a nested object containing allele_frequency (float) and genotype (string) parameters. Example: {\"calculate_genotype_frequency\": {\"allele_frequency\": 0.3, \"genotype\": \"AA\"}}",
+    "fields": {
+      "calculate_genotype_frequency": "dict containing allele_frequency (float) and genotype (str) parameters"
+    }
+  },
+  "reference_activity": "llm_extract",
+  "workflow_spec": {
+    "workflow_id": "genetics_function_parameter_extraction",
+    "name": "Genetics Function Parameter Extraction",
+    "description": "Extracts parameters from genetics questions to generate proper function calls with allele frequency and genotype parameters",
+    "execution_pattern": "sequence"
+  }
+}

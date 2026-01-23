@@ -1,0 +1,17 @@
+workflow_id: parse_math_hypotenuse_calculation
+name: Parse Mathematical Problem and Generate Function Call
+description: Parse a mathematical problem from natural language prompt and extract the required parameters to call the appropriate function (math.hypot)
+
+variables:
+  prompt: null
+  functions: null
+
+root:
+  sequence:
+    elements:
+      - activity:
+          name: parse_math_problem_parameters
+          params:
+            problem_text: ${{ prompt }}
+            available_functions: ${{ functions }}
+          result: function_call

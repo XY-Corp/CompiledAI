@@ -1,0 +1,15 @@
+workflow_id: dna_mutation_function_call
+name: DNA Mutation Analysis Function Call
+description: Parses a DNA sequence analysis request from natural language prompt and extracts the function parameters needed to call analyze_dna_sequence with proper sequence data and mutation type
+variables:
+  prompt: null
+  functions: null
+root:
+  sequence:
+    elements:
+      - activity:
+          name: extract_dna_function_call
+          params:
+            prompt_text: ${{ prompt }}
+            available_functions: ${{ functions }}
+          result: result

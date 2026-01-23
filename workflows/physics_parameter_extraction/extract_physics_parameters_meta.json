@@ -1,0 +1,34 @@
+{
+  "activity_name": "extract_physics_parameters",
+  "description": "Extract electromagnetic force calculation parameters from physics problem text and format as function call",
+  "task_id": "simple_41",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"Calculate the electromagnetic force between two charges of 5C and 7C placed 3 meters apart.\"}]], \"function\": [{\"name\": \"electromagnetic_force\", \"description\": \"Calculate the electromagnetic force between two charges placed at a certain distance.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"charge1\": {\"type\": \"integer\", \"description\": \"The magnitude of the first charge in coulombs.\"}, \"charge2\": {\"type\": \"integer\", \"description\": \"The magnitude of the second charge in coulombs.\"}, \"distance\": {\"type\": \"integer\", \"description\": \"The distance between the two charges in meters.\"}, \"medium_permittivity\": {\"type\": \"float\", \"description\": \"The relative permittivity of the medium in which the charges are present. Default is 8.854e-12 (Vacuum Permittivity).\"}}, \"required\": [\"charge1\", \"charge2\", \"distance\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"electromagnetic_force\": {\n    \"charge1\": \"integer - The magnitude of the first charge in coulombs.\",\n    \"charge2\": \"integer - The magnitude of the second charge in coulombs.\",\n    \"distance\": \"integer - The distance between the two charges in meters.\",\n    \"medium_permittivity\": \"float - The relative permittivity of the medium in which the charges are present. Default is 8.854e-12 (Vacuum Permittivity).\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "inputs": [
+    {
+      "name": "problem_text",
+      "type": "str",
+      "description": "The complete physics problem text describing charges, distances, and electromagnetic force calculation requirements",
+      "required": true
+    },
+    {
+      "name": "function_definitions",
+      "type": "list",
+      "description": "List of available function definitions with parameter specifications to guide extraction format",
+      "required": true
+    }
+  ],
+  "output": {
+    "type": "dict",
+    "description": "Returns a function call object with the electromagnetic_force function name as key and extracted parameters as nested object: {\"electromagnetic_force\": {\"charge1\": 5, \"charge2\": 7, \"distance\": 3, \"medium_permittivity\": 8.854e-12}}. The charge1 and charge2 fields contain integer values representing charge magnitudes in coulombs, distance contains integer value in meters, and medium_permittivity contains float value for relative permittivity (defaults to vacuum permittivity 8.854e-12 if not specified in problem).",
+    "fields": {
+      "electromagnetic_force": "dict containing charge1 (integer), charge2 (integer), distance (integer), and medium_permittivity (float) parameters"
+    }
+  },
+  "reference_activity": "llm_extract",
+  "workflow_spec": {
+    "workflow_id": "physics_parameter_extraction",
+    "name": "Physics Parameter Extraction for Function Calls",
+    "description": "Analyze physics problem prompts to extract parameters for electromagnetic force calculation function calls",
+    "execution_pattern": "sequence"
+  }
+}

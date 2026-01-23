@@ -1,0 +1,16 @@
+workflow_id: triangle_function_caller
+name: Triangle Area Function Call Generator
+description: Parses user query to extract triangle parameters and generates appropriate function call for calculating triangle area
+variables:
+  prompt: null
+  user_query: null
+  functions: null
+root:
+  sequence:
+    elements:
+      - activity:
+          name: parse_triangle_function_call
+          params:
+            user_input: ${{ user_query }}
+            available_functions: ${{ functions }}
+          result: function_call_result

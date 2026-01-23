@@ -1,0 +1,34 @@
+{
+  "activity_name": "parse_user_request",
+  "description": "Analyzes the user question and function definitions to generate the appropriate function call with extracted parameters",
+  "task_id": "simple_55",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"Find me detailed information about the structure of human cell\"}]], \"function\": [{\"name\": \"biology.get_cell_info\", \"description\": \"Retrieve information about the structure and functioning of a specified type of cell\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"cell_type\": {\"type\": \"string\", \"description\": \"Type of cell you want information about\"}, \"detailed\": {\"type\": \"boolean\", \"description\": \"Indicate if you want a detailed description of the cell\", \"default\": \"false\"}}, \"required\": [\"cell_type\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"biology.get_cell_info\": {\n    \"cell_type\": \"string - Type of cell you want information about\",\n    \"detailed\": \"boolean - Indicate if you want a detailed description of the cell\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "inputs": [
+    {
+      "name": "user_question",
+      "type": "str",
+      "description": "The user's question or request that needs to be mapped to a function call",
+      "required": true
+    },
+    {
+      "name": "available_functions",
+      "type": "list",
+      "description": "List of function definitions containing name, description, and parameter specifications",
+      "required": true
+    }
+  ],
+  "output": {
+    "type": "dict",
+    "description": "Returns a function call object with the function name as the top-level key and its parameters as a nested object. Example structure: {\"biology.get_cell_info\": {\"cell_type\": \"human\", \"detailed\": true}}. The exact function name and parameter values are extracted from analyzing the user question against the available function definitions.",
+    "fields": {
+      "function_name": "dict containing the extracted parameter values for the selected function"
+    }
+  },
+  "reference_activity": "llm_extract",
+  "workflow_spec": {
+    "workflow_id": "function_call_generator",
+    "name": "Function Call Generator",
+    "description": "Analyzes user questions and generates the appropriate function call with extracted parameters based on available function definitions",
+    "execution_pattern": "sequence"
+  }
+}

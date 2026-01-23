@@ -1,0 +1,15 @@
+workflow_id: parse_carbon_footprint_query
+name: Parse Carbon Footprint Question and Map to Function Call
+description: Analyzes a natural language question about vehicle carbon emissions and extracts the necessary parameters to call the calculate_vehicle_emission function
+variables:
+  prompt: None
+  functions: None
+root:
+  sequence:
+    elements:
+      - activity:
+          name: extract_vehicle_parameters
+          params:
+            question_text: ${{ prompt }}
+            available_functions: ${{ functions }}
+          result: vehicle_function_call

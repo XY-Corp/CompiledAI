@@ -1,282 +1,1825 @@
 {
   "version": "1.0",
-  "last_updated": "2026-01-20T22:49:00.817865",
+  "last_updated": "2026-01-23T11:20:41.365231",
   "workflows": {
-    "support_ticket_classification": {
-      "workflow_id": "support_ticket_classification",
-      "category": "classification",
-      "usage_count": 4,
-      "success_count": 4,
+    "triangle_area_function_call": {
+      "workflow_id": "triangle_area_function_call",
+      "category": "bfcl_simple_simple",
+      "usage_count": 1,
+      "success_count": 1,
       "failure_count": 0,
       "success_rate": 1.0,
-      "last_used": "2026-01-20T13:29:56.654392",
-      "created_at": "2026-01-20T13:29:46.984594",
+      "last_used": "2026-01-22T14:10:59.860779",
+      "created_at": "2026-01-22T14:10:57.055063",
       "recent_failures": []
     },
-    "address_normalizer": {
-      "workflow_id": "address_normalizer",
-      "category": "normalize",
-      "usage_count": 4,
-      "success_count": 4,
+    "calculate_factorial_function_call": {
+      "workflow_id": "calculate_factorial_function_call",
+      "category": "bfcl_simple_simple",
+      "usage_count": 1,
+      "success_count": 1,
       "failure_count": 0,
       "success_rate": 1.0,
-      "last_used": "2026-01-20T20:39:38.860773",
-      "created_at": "2026-01-20T13:30:54.867164",
+      "last_used": "2026-01-22T14:11:34.702540",
+      "created_at": "2026-01-22T14:11:34.700663",
       "recent_failures": []
     },
-    "function_selection": {
-      "workflow_id": "function_selection",
-      "category": "function_call",
-      "usage_count": 2,
+    "function_call_generator": {
+      "workflow_id": "function_call_generator",
+      "category": "bfcl_simple_simple",
+      "usage_count": 6,
+      "success_count": 6,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-23T10:41:52.067888",
+      "created_at": "2026-01-22T14:12:26.068038",
+      "recent_failures": []
+    },
+    "parse_function_call": {
+      "workflow_id": "parse_function_call",
+      "category": "bfcl_simple_simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T14:25:04.998046",
+      "created_at": "2026-01-22T14:25:02.306775",
+      "recent_failures": []
+    },
+    "triangle_area_calculator": {
+      "workflow_id": "triangle_area_calculator",
+      "category": "simple",
+      "usage_count": 3,
       "success_count": 2,
-      "failure_count": 0,
-      "success_rate": 1.0,
-      "last_used": "2026-01-20T13:31:38.267034",
-      "created_at": "2026-01-20T13:31:34.501172",
-      "recent_failures": []
-    },
-    "json_transform_workflow": {
-      "workflow_id": "json_transform_workflow",
-      "category": "json_transform",
-      "usage_count": 8,
-      "success_count": 8,
-      "failure_count": 0,
-      "success_rate": 1.0,
-      "last_used": "2026-01-20T20:41:30.076650",
-      "created_at": "2026-01-20T13:32:09.206708",
-      "recent_failures": []
-    },
-    "email_field_extraction": {
-      "workflow_id": "email_field_extraction",
-      "category": "text_extraction",
-      "usage_count": 10,
-      "success_count": 10,
-      "failure_count": 0,
-      "success_rate": 1.0,
-      "last_used": "2026-01-20T20:41:56.810806",
-      "created_at": "2026-01-20T13:33:33.689555",
-      "recent_failures": []
-    },
-    "function_selector": {
-      "workflow_id": "function_selector",
-      "category": "test",
-      "usage_count": 7,
-      "success_count": 7,
-      "failure_count": 0,
-      "success_rate": 1.0,
-      "last_used": "2026-01-20T20:40:23.636658",
-      "created_at": "2026-01-20T13:55:45.737791",
-      "recent_failures": []
-    },
-    "support_ticket_classifier": {
-      "workflow_id": "support_ticket_classifier",
-      "category": "classification",
-      "usage_count": 25,
-      "success_count": 24,
       "failure_count": 1,
-      "success_rate": 0.96,
-      "last_used": "2026-01-20T20:38:14.498160",
-      "created_at": "2026-01-20T15:28:00.125528",
+      "success_rate": 0.667,
+      "last_used": "2026-01-22T18:02:23.429087",
+      "created_at": "2026-01-22T14:51:50.163010",
       "recent_failures": [
         {
-          "task_id": "classification_01_ticket_004",
-          "error": "Compilation failed: ['Attempt 1 - Execution: EXECUTION VALIDATION FAILED: Workflow executed but outputs don\\'t match expectations\\n\\nExample 1/1 FAILED:\\n  Input: {\\n             \"ticket_text\": \"What ",
-          "timestamp": "2026-01-20T16:19:10.021522"
+          "task_id": "simple_10",
+          "error": "Compilation failed: ['Attempt 1 - YAML: mapping values are not allowed here\\n  in \"<unicode string>\", line 3, column 145:\\n     ... ngled triangle using the formula: area = (base * height) / 2\\n      ",
+          "timestamp": "2026-01-22T16:29:00.706609"
         }
       ]
     },
-    "address_normalization": {
-      "workflow_id": "address_normalization",
-      "category": "normalize",
-      "usage_count": 8,
-      "success_count": 8,
+    "factorial-function-call-workflow": {
+      "workflow_id": "factorial-function-call-workflow",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
       "failure_count": 0,
       "success_rate": 1.0,
-      "last_used": "2026-01-20T16:34:09.086112",
-      "created_at": "2026-01-20T15:29:02.159252",
+      "last_used": "2026-01-22T14:53:53.655987",
+      "created_at": "2026-01-22T14:53:50.891187",
       "recent_failures": []
     },
-    "function_selector_weather": {
-      "workflow_id": "function_selector_weather",
-      "category": "function_call",
+    "triangle_function_selector": {
+      "workflow_id": "triangle_function_selector",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T14:54:39.481330",
+      "created_at": "2026-01-22T14:54:39.478829",
+      "recent_failures": []
+    },
+    "quadratic_function_parser": {
+      "workflow_id": "quadratic_function_parser",
+      "category": "simple",
       "usage_count": 2,
       "success_count": 2,
       "failure_count": 0,
       "success_rate": 1.0,
-      "last_used": "2026-01-20T15:39:23.933008",
-      "created_at": "2026-01-20T15:39:19.033362",
+      "last_used": "2026-01-22T15:00:00.974200",
+      "created_at": "2026-01-22T14:55:28.456275",
       "recent_failures": []
     },
-    "ticket_categorization": {
-      "workflow_id": "ticket_categorization",
-      "category": "classification",
+    "parse_quadratic_function_call": {
+      "workflow_id": "parse_quadratic_function_call",
+      "category": "simple",
+      "usage_count": 2,
+      "success_count": 2,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T16:16:59.291626",
+      "created_at": "2026-01-22T14:56:24.960778",
+      "recent_failures": []
+    },
+    "parse-quadratic-function-call": {
+      "workflow_id": "parse-quadratic-function-call",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T14:58:29.143870",
+      "created_at": "2026-01-22T14:58:29.141181",
+      "recent_failures": []
+    },
+    "parse-function-call-request": {
+      "workflow_id": "parse-function-call-request",
+      "category": "simple",
       "usage_count": 1,
       "success_count": 0,
       "failure_count": 1,
       "success_rate": 0.0,
-      "last_used": "2026-01-20T16:14:05.653354",
-      "created_at": "2026-01-20T16:14:05.651497",
+      "last_used": "2026-01-22T15:02:49.236319",
+      "created_at": "2026-01-22T15:02:49.235988",
       "recent_failures": [
         {
-          "task_id": "classification_01_ticket_001",
-          "error": "Compilation failed: ['Attempt 1 - Execution: EXECUTION VALIDATION FAILED: Workflow executed but outputs don\\'t match expectations\\n\\nExample 1/1 FAILED:\\n  Input: {\\n             \"ticket_text\": \"I was",
-          "timestamp": "2026-01-20T16:14:05.653364"
+          "task_id": "simple_7",
+          "error": "Compilation failed: ['Attempt 1 - Execution: EXECUTION VALIDATION FAILED (LLM-based format check):\\nOutput format does not match expected structure.\\n\\nExample 1/1 FAILED (LLM eval: failure):\\n  Input",
+          "timestamp": "2026-01-22T15:02:49.236321"
         }
       ]
     },
-    "ticket_classification": {
-      "workflow_id": "ticket_classification",
-      "category": "classification",
+    "function_parameter_extraction": {
+      "workflow_id": "function_parameter_extraction",
+      "category": "simple",
+      "usage_count": 10,
+      "success_count": 7,
+      "failure_count": 3,
+      "success_rate": 0.7,
+      "last_used": "2026-01-23T10:53:34.816081",
+      "created_at": "2026-01-22T15:06:12.437445",
+      "recent_failures": [
+        {
+          "task_id": "simple_9",
+          "error": "Compilation failed: ['Attempt 1 - Execution: EXECUTION VALIDATION FAILED (LLM-based format check):\\nOutput format does not match expected structure.\\n\\nExample 1/1 FAILED (LLM eval: failure):\\n  Input",
+          "timestamp": "2026-01-22T15:08:58.382006"
+        },
+        {
+          "task_id": "simple_8",
+          "error": "Compilation failed: ['Attempt 1 - Execution: EXECUTION VALIDATION FAILED (LLM-based format check):\\nOutput format does not match expected structure.\\n\\nExample 1/1 FAILED (LLM eval: failure):\\n  Input",
+          "timestamp": "2026-01-22T16:24:16.541530"
+        },
+        {
+          "task_id": "simple_12",
+          "error": "Compilation failed: ['Attempt 1 - Execution: EXECUTION VALIDATION FAILED (LLM-based format check):\\nOutput format does not match expected structure.\\n\\nExample 1/1 FAILED (LLM eval: failure):\\n  Input",
+          "timestamp": "2026-01-22T18:20:50.141314"
+        }
+      ]
+    },
+    "extract_function_call_parameters": {
+      "workflow_id": "extract_function_call_parameters",
+      "category": "simple",
+      "usage_count": 5,
+      "success_count": 5,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-23T10:39:58.247482",
+      "created_at": "2026-01-22T15:12:00.126912",
+      "recent_failures": []
+    },
+    "exception": {
+      "workflow_id": "exception",
+      "category": "simple",
+      "usage_count": 88,
+      "success_count": 0,
+      "failure_count": 88,
+      "success_rate": 0.0,
+      "last_used": "2026-01-23T09:39:17.426540",
+      "created_at": "2026-01-22T15:51:37.899069",
+      "recent_failures": [
+        {
+          "task_id": "simple_0",
+          "error": "AnthropicModel.__init__() got an unexpected keyword argument 'thinking'",
+          "timestamp": "2026-01-23T09:37:56.876889"
+        },
+        {
+          "task_id": "simple_1",
+          "error": "AnthropicModel.__init__() got an unexpected keyword argument 'thinking'",
+          "timestamp": "2026-01-23T09:37:59.150091"
+        },
+        {
+          "task_id": "simple_2",
+          "error": "AnthropicModel.__init__() got an unexpected keyword argument 'thinking'",
+          "timestamp": "2026-01-23T09:38:01.159263"
+        },
+        {
+          "task_id": "simple_0",
+          "error": "status_code: 400, model_name: claude-opus-4-5-20251101, body: {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'Thinking may not be enabled when tool_choice forces tool use.'}, ",
+          "timestamp": "2026-01-23T09:39:14.527275"
+        },
+        {
+          "task_id": "simple_1",
+          "error": "status_code: 400, model_name: claude-opus-4-5-20251101, body: {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'Thinking may not be enabled when tool_choice forces tool use.'}, ",
+          "timestamp": "2026-01-23T09:39:17.426548"
+        }
+      ]
+    },
+    "triangle_area_calculation_workflow": {
+      "workflow_id": "triangle_area_calculation_workflow",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T15:56:56.040315",
+      "created_at": "2026-01-22T15:56:56.035254",
+      "recent_failures": []
+    },
+    "parse_function_call_workflow": {
+      "workflow_id": "parse_function_call_workflow",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T16:01:05.586212",
+      "created_at": "2026-01-22T16:01:02.446772",
+      "recent_failures": []
+    },
+    "math_function_parser": {
+      "workflow_id": "math_function_parser",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T16:02:38.338680",
+      "created_at": "2026-01-22T16:02:38.336428",
+      "recent_failures": []
+    },
+    "parse_math_hypotenuse_calculation": {
+      "workflow_id": "parse_math_hypotenuse_calculation",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T16:03:50.647746",
+      "created_at": "2026-01-22T16:03:50.643556",
+      "recent_failures": []
+    },
+    "quadratic_equation_parser": {
+      "workflow_id": "quadratic_equation_parser",
+      "category": "simple",
+      "usage_count": 2,
+      "success_count": 2,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T18:06:18.605724",
+      "created_at": "2026-01-22T16:05:39.794982",
+      "recent_failures": []
+    },
+    "extract_quadratic_params": {
+      "workflow_id": "extract_quadratic_params",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T16:07:11.547373",
+      "created_at": "2026-01-22T16:07:11.544597",
+      "recent_failures": []
+    },
+    "quadratic_equation_solver": {
+      "workflow_id": "quadratic_equation_solver",
+      "category": "simple",
+      "usage_count": 4,
+      "success_count": 4,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T18:08:10.051682",
+      "created_at": "2026-01-22T16:08:15.776240",
+      "recent_failures": []
+    },
+    "triangle_area_calculation": {
+      "workflow_id": "triangle_area_calculation",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T16:10:06.679635",
+      "created_at": "2026-01-22T16:10:06.675078",
+      "recent_failures": []
+    },
+    "math_factorial_calculator": {
+      "workflow_id": "math_factorial_calculator",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T16:10:57.009809",
+      "created_at": "2026-01-22T16:10:57.005034",
+      "recent_failures": []
+    },
+    "math_hypotenuse_calculator": {
+      "workflow_id": "math_hypotenuse_calculator",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T16:12:10.650032",
+      "created_at": "2026-01-22T16:12:10.646616",
+      "recent_failures": []
+    },
+    "function_param_extractor": {
+      "workflow_id": "function_param_extractor",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T16:19:05.652914",
+      "created_at": "2026-01-22T16:19:03.137579",
+      "recent_failures": []
+    },
+    "function_parameter_extractor": {
+      "workflow_id": "function_parameter_extractor",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 0,
+      "failure_count": 1,
+      "success_rate": 0.0,
+      "last_used": "2026-01-22T16:26:51.205801",
+      "created_at": "2026-01-22T16:26:51.204887",
+      "recent_failures": [
+        {
+          "task_id": "simple_9",
+          "error": "Compilation failed: ['Attempt 1 - Execution: EXECUTION VALIDATION FAILED (LLM-based format check):\\nOutput format does not match expected structure.\\n\\nExample 1/1 FAILED (LLM eval: failure):\\n  Input",
+          "timestamp": "2026-01-22T16:26:51.205805"
+        }
+      ]
+    },
+    "extract_function_call_workflow": {
+      "workflow_id": "extract_function_call_workflow",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T16:31:11.775740",
+      "created_at": "2026-01-22T16:31:09.159979",
+      "recent_failures": []
+    },
+    "function_selection_geometry": {
+      "workflow_id": "function_selection_geometry",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T16:32:22.125524",
+      "created_at": "2026-01-22T16:32:22.121271",
+      "recent_failures": []
+    },
+    "calculate_curve_area_parser": {
+      "workflow_id": "calculate_curve_area_parser",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T16:33:28.863864",
+      "created_at": "2026-01-22T16:33:26.255126",
+      "recent_failures": []
+    },
+    "derivative_function_selector": {
+      "workflow_id": "derivative_function_selector",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T16:35:37.209052",
+      "created_at": "2026-01-22T16:35:37.205033",
+      "recent_failures": []
+    },
+    "parse_calculus_request": {
+      "workflow_id": "parse_calculus_request",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T16:37:39.755912",
+      "created_at": "2026-01-22T16:37:36.258608",
+      "recent_failures": []
+    },
+    "extract_prime_factors_params": {
+      "workflow_id": "extract_prime_factors_params",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T16:39:27.247246",
+      "created_at": "2026-01-22T16:39:27.243117",
+      "recent_failures": []
+    },
+    "parse_and_call_function": {
+      "workflow_id": "parse_and_call_function",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T16:41:41.076747",
+      "created_at": "2026-01-22T16:41:41.072829",
+      "recent_failures": []
+    },
+    "gcd_function_call_generator": {
+      "workflow_id": "gcd_function_call_generator",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T16:42:40.494241",
+      "created_at": "2026-01-22T16:42:40.490301",
+      "recent_failures": []
+    },
+    "hcf_function_mapper": {
+      "workflow_id": "hcf_function_mapper",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T16:44:17.924149",
+      "created_at": "2026-01-22T16:44:17.920133",
+      "recent_failures": []
+    },
+    "gcd_function_selector": {
+      "workflow_id": "gcd_function_selector",
+      "category": "simple",
+      "usage_count": 2,
+      "success_count": 2,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-23T10:36:26.798706",
+      "created_at": "2026-01-22T16:46:06.305245",
+      "recent_failures": []
+    },
+    "gcd_calculator": {
+      "workflow_id": "gcd_calculator",
+      "category": "simple",
+      "usage_count": 3,
+      "success_count": 3,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T18:33:12.211289",
+      "created_at": "2026-01-22T16:46:51.906472",
+      "recent_failures": []
+    },
+    "parse_prime_factorization_request": {
+      "workflow_id": "parse_prime_factorization_request",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T16:48:00.729127",
+      "created_at": "2026-01-22T16:48:00.724829",
+      "recent_failures": []
+    },
+    "physics_function_call_parser": {
+      "workflow_id": "physics_function_call_parser",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T16:51:18.179346",
+      "created_at": "2026-01-22T16:51:14.855724",
+      "recent_failures": []
+    },
+    "velocity_calculator_function_selector": {
+      "workflow_id": "velocity_calculator_function_selector",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T16:52:07.773732",
+      "created_at": "2026-01-22T16:52:07.767974",
+      "recent_failures": []
+    },
+    "function_parameter_extraction_workflow": {
+      "workflow_id": "function_parameter_extraction_workflow",
+      "category": "simple",
+      "usage_count": 2,
+      "success_count": 1,
+      "failure_count": 1,
+      "success_rate": 0.5,
+      "last_used": "2026-01-22T18:25:44.321221",
+      "created_at": "2026-01-22T16:54:08.063010",
+      "recent_failures": [
+        {
+          "task_id": "simple_14",
+          "error": "Compilation failed: ['Attempt 1 - Execution: EXECUTION VALIDATION FAILED (LLM-based format check):\\nOutput format does not match expected structure.\\n\\nExample 1/1 FAILED (LLM eval: failure):\\n  Input",
+          "timestamp": "2026-01-22T18:25:44.321244"
+        }
+      ]
+    },
+    "calculate_displacement_params": {
+      "workflow_id": "calculate_displacement_params",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T16:56:55.303093",
+      "created_at": "2026-01-22T16:56:51.704989",
+      "recent_failures": []
+    },
+    "physics_function_extraction": {
+      "workflow_id": "physics_function_extraction",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T16:58:03.459023",
+      "created_at": "2026-01-22T16:58:00.329940",
+      "recent_failures": []
+    },
+    "extract_physics_parameters_and_generate_function_call": {
+      "workflow_id": "extract_physics_parameters_and_generate_function_call",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T17:00:51.256893",
+      "created_at": "2026-01-22T17:00:51.249761",
+      "recent_failures": []
+    },
+    "physics_calculation_workflow": {
+      "workflow_id": "physics_calculation_workflow",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T17:02:51.838106",
+      "created_at": "2026-01-22T17:02:51.830224",
+      "recent_failures": []
+    },
+    "physics_parameter_extraction": {
+      "workflow_id": "physics_parameter_extraction",
+      "category": "simple",
+      "usage_count": 2,
+      "success_count": 2,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T18:59:58.059593",
+      "created_at": "2026-01-22T17:05:04.481843",
+      "recent_failures": []
+    },
+    "directions_request_parser": {
+      "workflow_id": "directions_request_parser",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T17:06:49.843641",
+      "created_at": "2026-01-22T17:06:46.785022",
+      "recent_failures": []
+    },
+    "travel_function_extractor": {
+      "workflow_id": "travel_function_extractor",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T17:08:24.744665",
+      "created_at": "2026-01-22T17:08:21.165701",
+      "recent_failures": []
+    },
+    "vegan_restaurant_finder": {
+      "workflow_id": "vegan_restaurant_finder",
+      "category": "simple",
+      "usage_count": 2,
+      "success_count": 2,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T18:49:20.397978",
+      "created_at": "2026-01-22T17:10:53.704235",
+      "recent_failures": []
+    },
+    "function_selection_workflow": {
+      "workflow_id": "function_selection_workflow",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T17:12:41.682310",
+      "created_at": "2026-01-22T17:12:38.769193",
+      "recent_failures": []
+    },
+    "travel_time_route_planner": {
+      "workflow_id": "travel_time_route_planner",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T17:13:46.682032",
+      "created_at": "2026-01-22T17:13:43.813186",
+      "recent_failures": []
+    },
+    "electrostatic_potential_function_call": {
+      "workflow_id": "electrostatic_potential_function_call",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T17:15:54.060933",
+      "created_at": "2026-01-22T17:15:50.758271",
+      "recent_failures": []
+    },
+    "parse_math_function_call": {
+      "workflow_id": "parse_math_function_call",
+      "category": "simple",
+      "usage_count": 2,
+      "success_count": 2,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T18:22:01.277465",
+      "created_at": "2026-01-22T18:03:17.332792",
+      "recent_failures": []
+    },
+    "math-hypot-function-call": {
+      "workflow_id": "math-hypot-function-call",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T18:04:08.708272",
+      "created_at": "2026-01-22T18:04:08.705056",
+      "recent_failures": []
+    },
+    "quadratic_equation_function_selector": {
+      "workflow_id": "quadratic_equation_function_selector",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T18:05:15.599597",
+      "created_at": "2026-01-22T18:05:15.596157",
+      "recent_failures": []
+    },
+    "quadratic_solver_function_call": {
+      "workflow_id": "quadratic_solver_function_call",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T18:07:06.841592",
+      "created_at": "2026-01-22T18:07:06.837574",
+      "recent_failures": []
+    },
+    "function-parameter-extraction": {
+      "workflow_id": "function-parameter-extraction",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 0,
+      "failure_count": 1,
+      "success_rate": 0.0,
+      "last_used": "2026-01-22T18:11:21.116025",
+      "created_at": "2026-01-22T18:11:21.114407",
+      "recent_failures": [
+        {
+          "task_id": "simple_7",
+          "error": "Compilation failed: ['Attempt 1 - Execution: EXECUTION VALIDATION FAILED (LLM-based format check):\\nOutput format does not match expected structure.\\n\\nExample 1/1 FAILED (LLM eval: failure):\\n  Input",
+          "timestamp": "2026-01-22T18:11:21.116063"
+        }
+      ]
+    },
+    "function_call_parser": {
+      "workflow_id": "function_call_parser",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T18:13:39.001787",
+      "created_at": "2026-01-22T18:13:36.387428",
+      "recent_failures": []
+    },
+    "circle_area_calculation": {
+      "workflow_id": "circle_area_calculation",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T18:14:22.997306",
+      "created_at": "2026-01-22T18:14:22.994287",
+      "recent_failures": []
+    },
+    "calculate_triangle_area_workflow": {
+      "workflow_id": "calculate_triangle_area_workflow",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T18:15:26.189220",
+      "created_at": "2026-01-22T18:15:26.185257",
+      "recent_failures": []
+    },
+    "extract_function_call": {
+      "workflow_id": "extract_function_call",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T18:26:57.993535",
+      "created_at": "2026-01-22T18:26:55.330894",
+      "recent_failures": []
+    },
+    "parse_calculus_function": {
+      "workflow_id": "parse_calculus_function",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T18:28:00.353822",
+      "created_at": "2026-01-22T18:28:00.350429",
+      "recent_failures": []
+    },
+    "prime_factors_function_selection": {
+      "workflow_id": "prime_factors_function_selection",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T18:28:57.712294",
+      "created_at": "2026-01-22T18:28:57.708977",
+      "recent_failures": []
+    },
+    "number_analysis_prime_factors": {
+      "workflow_id": "number_analysis_prime_factors",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T18:29:37.040156",
+      "created_at": "2026-01-22T18:29:37.036969",
+      "recent_failures": []
+    },
+    "parse_and_call_math_function": {
+      "workflow_id": "parse_and_call_math_function",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T18:30:42.634494",
+      "created_at": "2026-01-22T18:30:42.630541",
+      "recent_failures": []
+    },
+    "find_math_hcf": {
+      "workflow_id": "find_math_hcf",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T18:31:20.926554",
+      "created_at": "2026-01-22T18:31:20.922544",
+      "recent_failures": []
+    },
+    "gcd_function_call": {
+      "workflow_id": "gcd_function_call",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T18:32:24.259082",
+      "created_at": "2026-01-22T18:32:24.255621",
+      "recent_failures": []
+    },
+    "function_call_extraction_workflow": {
+      "workflow_id": "function_call_extraction_workflow",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T18:35:12.060026",
+      "created_at": "2026-01-22T18:35:09.539996",
+      "recent_failures": []
+    },
+    "gcd_function_call_extraction": {
+      "workflow_id": "gcd_function_call_extraction",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T18:36:07.311368",
+      "created_at": "2026-01-22T18:36:07.303237",
+      "recent_failures": []
+    },
+    "physics_function_parameter_extraction": {
+      "workflow_id": "physics_function_parameter_extraction",
+      "category": "simple",
+      "usage_count": 2,
+      "success_count": 2,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T18:55:59.456530",
+      "created_at": "2026-01-22T18:37:32.650699",
+      "recent_failures": []
+    },
+    "velocity_calculator_function_mapper": {
+      "workflow_id": "velocity_calculator_function_mapper",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T18:38:34.120810",
+      "created_at": "2026-01-22T18:38:34.114287",
+      "recent_failures": []
+    },
+    "physics_function_selector": {
+      "workflow_id": "physics_function_selector",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T18:39:35.936639",
+      "created_at": "2026-01-22T18:39:35.927630",
+      "recent_failures": []
+    },
+    "physics_displacement_calculator": {
+      "workflow_id": "physics_displacement_calculator",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T18:40:40.345807",
+      "created_at": "2026-01-22T18:40:40.342485",
+      "recent_failures": []
+    },
+    "physics_function_executor": {
+      "workflow_id": "physics_function_executor",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T18:41:40.965136",
+      "created_at": "2026-01-22T18:41:40.957648",
+      "recent_failures": []
+    },
+    "kinematics_function_selector": {
+      "workflow_id": "kinematics_function_selector",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T18:42:37.592721",
+      "created_at": "2026-01-22T18:42:37.585473",
+      "recent_failures": []
+    },
+    "physics_function_call_workflow": {
+      "workflow_id": "physics_function_call_workflow",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T18:43:23.772500",
+      "created_at": "2026-01-22T18:43:23.765920",
+      "recent_failures": []
+    },
+    "physics_calculation_router": {
+      "workflow_id": "physics_calculation_router",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T18:45:54.740161",
+      "created_at": "2026-01-22T18:45:52.242673",
+      "recent_failures": []
+    },
+    "directions_function_parser": {
+      "workflow_id": "directions_function_parser",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T18:46:45.761959",
+      "created_at": "2026-01-22T18:46:42.946408",
+      "recent_failures": []
+    },
+    "travel_itinerary_function_parser": {
+      "workflow_id": "travel_itinerary_function_parser",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T18:48:30.136494",
+      "created_at": "2026-01-22T18:48:27.364006",
+      "recent_failures": []
+    },
+    "find-driving-distance-function-call": {
+      "workflow_id": "find-driving-distance-function-call",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T18:50:26.238802",
+      "created_at": "2026-01-22T18:50:23.391627",
+      "recent_failures": []
+    },
+    "route_time_estimate_request": {
+      "workflow_id": "route_time_estimate_request",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T18:52:59.057225",
+      "created_at": "2026-01-22T18:52:56.427324",
+      "recent_failures": []
+    },
+    "extract_electrostatic_params": {
+      "workflow_id": "extract_electrostatic_params",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T18:54:43.166302",
+      "created_at": "2026-01-22T18:54:40.195414",
+      "recent_failures": []
+    },
+    "physics_function_mapper": {
+      "workflow_id": "physics_function_mapper",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 0,
+      "failure_count": 1,
+      "success_rate": 0.0,
+      "last_used": "2026-01-22T18:58:51.325471",
+      "created_at": "2026-01-22T18:58:51.320853",
+      "recent_failures": [
+        {
+          "task_id": "simple_40",
+          "error": "Compilation failed: ['Attempt 1 - Execution: EXECUTION VALIDATION FAILED (LLM-based format check):\\nOutput format does not match expected structure.\\n\\nExample 1/1 FAILED (LLM eval: failure):\\n  Input",
+          "timestamp": "2026-01-22T18:58:51.325486"
+        }
+      ]
+    },
+    "lc_circuit_analysis": {
+      "workflow_id": "lc_circuit_analysis",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T19:00:54.817277",
+      "created_at": "2026-01-22T19:00:54.812083",
+      "recent_failures": []
+    },
+    "electric_field_function_executor": {
+      "workflow_id": "electric_field_function_executor",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T19:04:28.500136",
+      "created_at": "2026-01-22T19:04:25.628740",
+      "recent_failures": []
+    },
+    "thermodynamics-phase-change-calculator": {
+      "workflow_id": "thermodynamics-phase-change-calculator",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T19:06:04.378231",
+      "created_at": "2026-01-22T19:06:01.613219",
+      "recent_failures": []
+    },
+    "temperature_mixing_parameter_extraction": {
+      "workflow_id": "temperature_mixing_parameter_extraction",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T19:07:08.279271",
+      "created_at": "2026-01-22T19:07:08.276140",
+      "recent_failures": []
+    },
+    "extract_function_params_workflow": {
+      "workflow_id": "extract_function_params_workflow",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T19:09:39.181969",
+      "created_at": "2026-01-22T19:09:36.224239",
+      "recent_failures": []
+    },
+    "density_function_parser": {
+      "workflow_id": "density_function_parser",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 0,
+      "failure_count": 1,
+      "success_rate": 0.0,
+      "last_used": "2026-01-22T19:12:25.356072",
+      "created_at": "2026-01-22T19:12:25.353370",
+      "recent_failures": [
+        {
+          "task_id": "simple_48",
+          "error": "Compilation failed: ['Attempt 1 - Execution: EXECUTION VALIDATION FAILED (LLM-based format check):\\nOutput format does not match expected structure.\\n\\nExample 1/1 FAILED (LLM eval: failure):\\n  Input",
+          "timestamp": "2026-01-22T19:12:25.356080"
+        }
+      ]
+    },
+    "parse_pressure_calculation_request": {
+      "workflow_id": "parse_pressure_calculation_request",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T19:13:49.973295",
+      "created_at": "2026-01-22T19:13:49.969047",
+      "recent_failures": []
+    },
+    "entropy_function_parser": {
+      "workflow_id": "entropy_function_parser",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T19:14:55.907861",
+      "created_at": "2026-01-22T19:14:53.057912",
+      "recent_failures": []
+    },
+    "entropy_function_extractor": {
+      "workflow_id": "entropy_function_extractor",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T19:16:03.459552",
+      "created_at": "2026-01-22T19:16:00.702809",
+      "recent_failures": []
+    },
+    "heat_capacity_function_extractor": {
+      "workflow_id": "heat_capacity_function_extractor",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T19:17:14.291435",
+      "created_at": "2026-01-22T19:17:11.466133",
+      "recent_failures": []
+    },
+    "dna_sequence_retrieval": {
+      "workflow_id": "dna_sequence_retrieval",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T19:18:11.384072",
+      "created_at": "2026-01-22T19:18:08.512065",
+      "recent_failures": []
+    },
+    "gene-protein-function-extractor": {
+      "workflow_id": "gene-protein-function-extractor",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T19:19:01.189850",
+      "created_at": "2026-01-22T19:18:57.374598",
+      "recent_failures": []
+    },
+    "function_call_analyzer": {
+      "workflow_id": "function_call_analyzer",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 0,
+      "failure_count": 1,
+      "success_rate": 0.0,
+      "last_used": "2026-01-22T19:22:48.800256",
+      "created_at": "2026-01-22T19:22:48.795899",
+      "recent_failures": [
+        {
+          "task_id": "simple_55",
+          "error": "Compilation failed: ['Attempt 1 - Execution: EXECUTION VALIDATION FAILED (LLM-based format check):\\nOutput format does not match expected structure.\\n\\nExample 1/1 FAILED (LLM eval: failure):\\n  Input",
+          "timestamp": "2026-01-22T19:22:48.800263"
+        }
+      ]
+    },
+    "function_parameter_analyzer": {
+      "workflow_id": "function_parameter_analyzer",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T19:25:50.142367",
+      "created_at": "2026-01-22T19:25:47.362040",
+      "recent_failures": []
+    },
+    "cell_density_extraction": {
+      "workflow_id": "cell_density_extraction",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T19:26:45.287842",
+      "created_at": "2026-01-22T19:26:42.728367",
+      "recent_failures": []
+    },
+    "molecular_weight_calculator": {
+      "workflow_id": "molecular_weight_calculator",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T19:29:10.786479",
+      "created_at": "2026-01-22T19:29:10.781454",
+      "recent_failures": []
+    },
+    "snp_mutation_analyzer": {
+      "workflow_id": "snp_mutation_analyzer",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T19:30:35.528112",
+      "created_at": "2026-01-22T19:30:35.525594",
+      "recent_failures": []
+    },
+    "diabetes_prediction_parser": {
+      "workflow_id": "diabetes_prediction_parser",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 0,
+      "failure_count": 1,
+      "success_rate": 0.0,
+      "last_used": "2026-01-22T19:33:39.999623",
+      "created_at": "2026-01-22T19:33:39.996388",
+      "recent_failures": [
+        {
+          "task_id": "simple_61",
+          "error": "Compilation failed: ['Attempt 1 - Execution: EXECUTION VALIDATION FAILED (LLM-based format check):\\nOutput format does not match expected structure.\\n\\nExample 1/1 FAILED (LLM eval: failure):\\n  Input",
+          "timestamp": "2026-01-22T19:33:39.999631"
+        }
+      ]
+    },
+    "dna_sequence_analysis": {
+      "workflow_id": "dna_sequence_analysis",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T19:36:34.102528",
+      "created_at": "2026-01-22T19:36:31.069951",
+      "recent_failures": []
+    },
+    "genetic_similarity_function_generator": {
+      "workflow_id": "genetic_similarity_function_generator",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T19:38:37.700737",
+      "created_at": "2026-01-22T19:38:35.050745",
+      "recent_failures": []
+    },
+    "genetics_function_parameter_extraction": {
+      "workflow_id": "genetics_function_parameter_extraction",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T19:40:43.590650",
+      "created_at": "2026-01-22T19:40:40.218350",
+      "recent_failures": []
+    },
+    "function_call_extractor": {
+      "workflow_id": "function_call_extractor",
+      "category": "simple",
       "usage_count": 5,
       "success_count": 4,
       "failure_count": 1,
       "success_rate": 0.8,
-      "last_used": "2026-01-20T16:33:14.387152",
-      "created_at": "2026-01-20T16:15:48.692015",
+      "last_used": "2026-01-23T11:17:09.791386",
+      "created_at": "2026-01-22T19:44:44.444872",
       "recent_failures": [
         {
-          "task_id": "classification_01_ticket_002",
-          "error": "Compilation failed: ['Attempt 1 - YAML: mapping values are not allowed here\\n  in \"<unicode string>\", line 3, column 67:\\n     ... cket into one of four categories: billing, technical, account, o ... ",
-          "timestamp": "2026-01-20T16:15:48.693373"
+          "task_id": "simple_66",
+          "error": "Compilation failed: ['Attempt 1 - Execution: EXECUTION VALIDATION FAILED (LLM-based format check):\\nOutput format does not match expected structure.\\n\\nExample 1/1 FAILED (LLM eval: failure):\\n  Input",
+          "timestamp": "2026-01-22T19:44:44.445991"
         }
       ]
     },
-    "support-ticket-classifier": {
-      "workflow_id": "support-ticket-classifier",
-      "category": "classification",
+    "bird_identification_function_call": {
+      "workflow_id": "bird_identification_function_call",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T19:45:35.149371",
+      "created_at": "2026-01-22T19:45:31.980443",
+      "recent_failures": []
+    },
+    "forest_growth_function_parser": {
+      "workflow_id": "forest_growth_function_parser",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T19:46:43.567185",
+      "created_at": "2026-01-22T19:46:40.801781",
+      "recent_failures": []
+    },
+    "turtle_function_parser": {
+      "workflow_id": "turtle_function_parser",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T19:48:40.464258",
+      "created_at": "2026-01-22T19:48:37.680556",
+      "recent_failures": []
+    },
+    "vehicle_emission_query": {
+      "workflow_id": "vehicle_emission_query",
+      "category": "simple",
       "usage_count": 1,
       "success_count": 0,
       "failure_count": 1,
       "success_rate": 0.0,
-      "last_used": "2026-01-20T16:17:36.408206",
-      "created_at": "2026-01-20T16:17:36.406674",
+      "last_used": "2026-01-22T19:51:24.747146",
+      "created_at": "2026-01-22T19:51:24.743033",
       "recent_failures": [
         {
-          "task_id": "classification_01_ticket_003",
-          "error": "Compilation failed: ['Attempt 1 - Execution: EXECUTION VALIDATION FAILED: Workflow executed but outputs don\\'t match expectations\\n\\nExample 1/1 FAILED:\\n  Input: {\\n             \"ticket_text\": \"I nee",
-          "timestamp": "2026-01-20T16:17:36.408208"
+          "task_id": "simple_70",
+          "error": "Compilation failed: ['Attempt 1 - Execution: EXECUTION VALIDATION FAILED (LLM-based format check):\\nOutput format does not match expected structure.\\n\\nExample 1/1 FAILED (LLM eval: failure):\\n  Input",
+          "timestamp": "2026-01-22T19:51:24.747154"
         }
       ]
     },
-    "classify_support_ticket": {
-      "workflow_id": "classify_support_ticket",
-      "category": "classification",
-      "usage_count": 2,
-      "success_count": 2,
-      "failure_count": 0,
-      "success_rate": 1.0,
-      "last_used": "2026-01-20T16:24:43.698333",
-      "created_at": "2026-01-20T16:24:37.152575",
-      "recent_failures": []
-    },
-    "json_field_transformer": {
-      "workflow_id": "json_field_transformer",
-      "category": "json_transform",
-      "usage_count": 2,
-      "success_count": 2,
-      "failure_count": 0,
-      "success_rate": 1.0,
-      "last_used": "2026-01-20T16:35:42.373343",
-      "created_at": "2026-01-20T16:26:50.079220",
-      "recent_failures": []
-    },
-    "json_field_transformation": {
-      "workflow_id": "json_field_transformation",
-      "category": "json_transform",
+    "dna_function_extractor": {
+      "workflow_id": "dna_function_extractor",
+      "category": "simple",
       "usage_count": 1,
       "success_count": 1,
       "failure_count": 0,
       "success_rate": 1.0,
-      "last_used": "2026-01-20T16:27:24.391328",
-      "created_at": "2026-01-20T16:27:24.389360",
+      "last_used": "2026-01-22T19:52:57.558654",
+      "created_at": "2026-01-22T19:52:54.512789",
       "recent_failures": []
     },
-    "function_selector_workflow": {
-      "workflow_id": "function_selector_workflow",
-      "category": "function_call",
+    "fitness_calculation": {
+      "workflow_id": "fitness_calculation",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T19:54:04.404570",
+      "created_at": "2026-01-22T19:54:04.400721",
+      "recent_failures": []
+    },
+    "parse_function_call_query": {
+      "workflow_id": "parse_function_call_query",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T19:56:39.339070",
+      "created_at": "2026-01-22T19:56:36.616831",
+      "recent_failures": []
+    },
+    "bacteria_evolution_function_call": {
+      "workflow_id": "bacteria_evolution_function_call",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T19:57:45.059753",
+      "created_at": "2026-01-22T19:57:42.259041",
+      "recent_failures": []
+    },
+    "elephant_population_function_parser": {
+      "workflow_id": "elephant_population_function_parser",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T19:58:39.495129",
+      "created_at": "2026-01-22T19:58:39.491140",
+      "recent_failures": []
+    },
+    "evolution_prediction_function_call": {
+      "workflow_id": "evolution_prediction_function_call",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T19:59:40.242406",
+      "created_at": "2026-01-22T19:59:37.379907",
+      "recent_failures": []
+    },
+    "restaurant_function_parser": {
+      "workflow_id": "restaurant_function_parser",
+      "category": "simple",
       "usage_count": 2,
       "success_count": 2,
       "failure_count": 0,
       "success_rate": 1.0,
-      "last_used": "2026-01-20T16:34:54.241930",
-      "created_at": "2026-01-20T16:34:49.830755",
+      "last_used": "2026-01-22T20:06:53.438379",
+      "created_at": "2026-01-22T20:01:20.215960",
       "recent_failures": []
     },
-    "extract_email_fields": {
-      "workflow_id": "extract_email_fields",
-      "category": "text_extraction",
+    "parse_histogram_request": {
+      "workflow_id": "parse_histogram_request",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T20:05:42.534256",
+      "created_at": "2026-01-22T20:05:39.737187",
+      "recent_failures": []
+    },
+    "route_function_extractor": {
+      "workflow_id": "route_function_extractor",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T20:07:52.145249",
+      "created_at": "2026-01-22T20:07:49.628646",
+      "recent_failures": []
+    },
+    "calculate_average_function_call": {
+      "workflow_id": "calculate_average_function_call",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T20:09:48.112482",
+      "created_at": "2026-01-22T20:09:45.349222",
+      "recent_failures": []
+    },
+    "gps_distance_calculator": {
+      "workflow_id": "gps_distance_calculator",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T20:10:49.780047",
+      "created_at": "2026-01-22T20:10:49.772313",
+      "recent_failures": []
+    },
+    "bmi_calculation_workflow": {
+      "workflow_id": "bmi_calculation_workflow",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T20:11:43.745092",
+      "created_at": "2026-01-22T20:11:40.701330",
+      "recent_failures": []
+    },
+    "geo_distance_function_selector": {
+      "workflow_id": "geo_distance_function_selector",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T20:14:43.644934",
+      "created_at": "2026-01-22T20:14:40.710084",
+      "recent_failures": []
+    },
+    "user_request_to_function": {
+      "workflow_id": "user_request_to_function",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 0,
+      "failure_count": 1,
+      "success_rate": 0.0,
+      "last_used": "2026-01-22T20:18:22.243281",
+      "created_at": "2026-01-22T20:18:22.236093",
+      "recent_failures": [
+        {
+          "task_id": "simple_86",
+          "error": "Compilation failed: ['Attempt 1 - Execution: EXECUTION VALIDATION FAILED (LLM-based format check):\\nOutput format does not match expected structure.\\n\\nExample 1/1 FAILED (LLM eval: failure):\\n  Input",
+          "timestamp": "2026-01-22T20:18:22.243328"
+        }
+      ]
+    },
+    "sort_array_function_call": {
+      "workflow_id": "sort_array_function_call",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T20:20:41.847316",
+      "created_at": "2026-01-22T20:20:41.843069",
+      "recent_failures": []
+    },
+    "bmi_parameter_extractor": {
+      "workflow_id": "bmi_parameter_extractor",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T20:22:49.310644",
+      "created_at": "2026-01-22T20:22:49.302117",
+      "recent_failures": []
+    },
+    "db-query-extractor": {
+      "workflow_id": "db-query-extractor",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T20:24:21.859406",
+      "created_at": "2026-01-22T20:24:19.123069",
+      "recent_failures": []
+    },
+    "employee_data_function_parser": {
+      "workflow_id": "employee_data_function_parser",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T20:25:29.588711",
+      "created_at": "2026-01-22T20:25:26.842034",
+      "recent_failures": []
+    },
+    "parse_restaurant_request": {
+      "workflow_id": "parse_restaurant_request",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T20:26:34.564405",
+      "created_at": "2026-01-22T20:26:31.858191",
+      "recent_failures": []
+    },
+    "function_extraction_and_parameter_matching": {
+      "workflow_id": "function_extraction_and_parameter_matching",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T20:28:10.511802",
+      "created_at": "2026-01-22T20:28:07.854815",
+      "recent_failures": []
+    },
+    "movie_function_extraction": {
+      "workflow_id": "movie_function_extraction",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T20:29:15.615150",
+      "created_at": "2026-01-22T20:29:15.608188",
+      "recent_failures": []
+    },
+    "parse_function_call_request": {
+      "workflow_id": "parse_function_call_request",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T20:31:48.583992",
+      "created_at": "2026-01-22T20:31:46.067033",
+      "recent_failures": []
+    },
+    "extract_triangle_area_params": {
+      "workflow_id": "extract_triangle_area_params",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T20:32:47.780827",
+      "created_at": "2026-01-22T20:32:47.772507",
+      "recent_failures": []
+    },
+    "parse_database_query_request": {
+      "workflow_id": "parse_database_query_request",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T20:33:51.977839",
+      "created_at": "2026-01-22T20:33:49.474393",
+      "recent_failures": []
+    },
+    "factorial_function_selector": {
+      "workflow_id": "factorial_function_selector",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T20:35:38.324614",
+      "created_at": "2026-01-22T20:35:35.541311",
+      "recent_failures": []
+    },
+    "function_selection_clock_angle": {
+      "workflow_id": "function_selection_clock_angle",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T20:38:02.632836",
+      "created_at": "2026-01-22T20:38:02.626750",
+      "recent_failures": []
+    },
+    "parse_sine_wave_request": {
+      "workflow_id": "parse_sine_wave_request",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-22T20:39:17.497588",
+      "created_at": "2026-01-22T20:39:14.510465",
+      "recent_failures": []
+    },
+    "function_call_extraction": {
+      "workflow_id": "function_call_extraction",
+      "category": "simple",
+      "usage_count": 3,
+      "success_count": 3,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-23T10:33:48.721928",
+      "created_at": "2026-01-23T09:41:30.972355",
+      "recent_failures": []
+    },
+    "function_call_selector": {
+      "workflow_id": "function_call_selector",
+      "category": "simple",
+      "usage_count": 19,
+      "success_count": 18,
+      "failure_count": 1,
+      "success_rate": 0.947,
+      "last_used": "2026-01-23T11:18:19.913135",
+      "created_at": "2026-01-23T09:44:35.827687",
+      "recent_failures": [
+        {
+          "task_id": "simple_1",
+          "error": "Compilation failed: ['Attempt 1 - YAML: mapping values are not allowed here\\n  in \"<unicode string>\", line 3, column 231:\\n     ... a in the format {\"function_name\": {\"param\": \"value\"}}.\\n            ",
+          "timestamp": "2026-01-23T09:44:35.828917"
+        }
+      ]
+    },
+    "function_call_mapper": {
+      "workflow_id": "function_call_mapper",
+      "category": "simple",
+      "usage_count": 5,
+      "success_count": 5,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-23T11:16:02.285595",
+      "created_at": "2026-01-23T10:05:00.807003",
+      "recent_failures": []
+    },
+    "function-call-router": {
+      "workflow_id": "function-call-router",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 0,
+      "failure_count": 1,
+      "success_rate": 0.0,
+      "last_used": "2026-01-23T10:29:14.161065",
+      "created_at": "2026-01-23T10:29:14.159512",
+      "recent_failures": [
+        {
+          "task_id": "simple_17",
+          "error": "Compilation failed: ['Attempt 1 - Execution: EXECUTION VALIDATION FAILED (LLM-based format check):\\nOutput format does not match expected structure.\\n\\nExample 1/1 FAILED (LLM eval: failure):\\n  Input",
+          "timestamp": "2026-01-23T10:29:14.161068"
+        }
+      ]
+    },
+    "function_call_gcd": {
+      "workflow_id": "function_call_gcd",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-23T10:31:14.743904",
+      "created_at": "2026-01-23T10:31:14.739301",
+      "recent_failures": []
+    },
+    "function_call_builder": {
+      "workflow_id": "function_call_builder",
+      "category": "simple",
       "usage_count": 4,
-      "success_count": 4,
-      "failure_count": 0,
-      "success_rate": 1.0,
-      "last_used": "2026-01-20T22:49:00.817846",
-      "created_at": "2026-01-20T16:36:54.871764",
-      "recent_failures": []
-    },
-    "normalize_address": {
-      "workflow_id": "normalize_address",
-      "category": "normalize",
-      "usage_count": 4,
-      "success_count": 4,
-      "failure_count": 0,
-      "success_rate": 1.0,
-      "last_used": "2026-01-20T22:46:33.785232",
-      "created_at": "2026-01-20T16:53:02.748872",
-      "recent_failures": []
-    },
-    "json_field_transform": {
-      "workflow_id": "json_field_transform",
-      "category": "json_transform",
-      "usage_count": 1,
-      "success_count": 1,
-      "failure_count": 0,
-      "success_rate": 1.0,
-      "last_used": "2026-01-20T20:40:55.483148",
-      "created_at": "2026-01-20T20:40:55.478796",
-      "recent_failures": []
-    },
-    "support_ticket_categorization": {
-      "workflow_id": "support_ticket_categorization",
-      "category": "classification",
-      "usage_count": 4,
-      "success_count": 4,
-      "failure_count": 0,
-      "success_rate": 1.0,
-      "last_used": "2026-01-20T22:45:39.685167",
-      "created_at": "2026-01-20T22:45:30.906131",
-      "recent_failures": []
-    },
-    "function-selector-workflow": {
-      "workflow_id": "function-selector-workflow",
-      "category": "function_call",
-      "usage_count": 2,
       "success_count": 2,
-      "failure_count": 0,
-      "success_rate": 1.0,
-      "last_used": "2026-01-20T22:47:17.888508",
-      "created_at": "2026-01-20T22:47:13.221828",
-      "recent_failures": []
+      "failure_count": 2,
+      "success_rate": 0.5,
+      "last_used": "2026-01-23T11:11:17.354544",
+      "created_at": "2026-01-23T10:45:09.316374",
+      "recent_failures": [
+        {
+          "task_id": "simple_26",
+          "error": "Compilation failed: ['Attempt 1 - Execution: EXECUTION VALIDATION FAILED (LLM-based format check):\\nOutput format does not match expected structure.\\n\\nExample 1/1 FAILED (LLM eval: failure):\\n  Input",
+          "timestamp": "2026-01-23T10:45:09.319972"
+        },
+        {
+          "task_id": "simple_28",
+          "error": "Compilation failed: ['Attempt 1 - Execution: EXECUTION VALIDATION FAILED (LLM-based format check):\\nOutput format does not match expected structure.\\n\\nExample 1/1 FAILED (LLM eval: failure):\\n  Input",
+          "timestamp": "2026-01-23T10:49:30.362869"
+        }
+      ]
     },
-    "transform_json_structure": {
-      "workflow_id": "transform_json_structure",
-      "category": "json_transform",
+    "extract_velocity_parameters": {
+      "workflow_id": "extract_velocity_parameters",
+      "category": "simple",
       "usage_count": 1,
       "success_count": 1,
       "failure_count": 0,
       "success_rate": 1.0,
-      "last_used": "2026-01-20T22:47:47.845934",
-      "created_at": "2026-01-20T22:47:47.842316",
+      "last_used": "2026-01-23T10:46:21.346667",
+      "created_at": "2026-01-23T10:46:21.341436",
       "recent_failures": []
     },
-    "json_transform_exact": {
-      "workflow_id": "json_transform_exact",
-      "category": "json_transform",
+    "kinematics_function_call_generator": {
+      "workflow_id": "kinematics_function_call_generator",
+      "category": "simple",
       "usage_count": 1,
       "success_count": 1,
       "failure_count": 0,
       "success_rate": 1.0,
-      "last_used": "2026-01-20T22:48:20.275082",
-      "created_at": "2026-01-20T22:48:20.271732",
+      "last_used": "2026-01-23T10:52:30.684430",
+      "created_at": "2026-01-23T10:52:30.680281",
+      "recent_failures": []
+    },
+    "function_call_parameter_extraction": {
+      "workflow_id": "function_call_parameter_extraction",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-23T10:55:30.991714",
+      "created_at": "2026-01-23T10:55:28.881931",
+      "recent_failures": []
+    },
+    "function_call_parameter_extractor": {
+      "workflow_id": "function_call_parameter_extractor",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-23T10:59:18.778214",
+      "created_at": "2026-01-23T10:59:15.304904",
+      "recent_failures": []
+    },
+    "vegan_restaurant_function_selector": {
+      "workflow_id": "vegan_restaurant_function_selector",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-23T11:01:06.350115",
+      "created_at": "2026-01-23T11:01:04.104648",
+      "recent_failures": []
+    },
+    "function_call_router": {
+      "workflow_id": "function_call_router",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-23T11:04:35.163341",
+      "created_at": "2026-01-23T11:04:32.756305",
+      "recent_failures": []
+    },
+    "quadratic_function_call_selector": {
+      "workflow_id": "quadratic_function_call_selector",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-23T11:08:02.512295",
+      "created_at": "2026-01-23T11:08:00.270874",
+      "recent_failures": []
+    },
+    "extract_function_call_params": {
+      "workflow_id": "extract_function_call_params",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-23T11:09:02.560338",
+      "created_at": "2026-01-23T11:09:00.282953",
+      "recent_failures": []
+    },
+    "quadratic_function_call_builder": {
+      "workflow_id": "quadratic_function_call_builder",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-23T11:10:09.648460",
+      "created_at": "2026-01-23T11:10:09.638334",
+      "recent_failures": []
+    },
+    "function_call_selection": {
+      "workflow_id": "function_call_selection",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-23T11:19:29.650662",
+      "created_at": "2026-01-23T11:19:27.513853",
+      "recent_failures": []
+    },
+    "select_function_call": {
+      "workflow_id": "select_function_call",
+      "category": "simple",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-23T11:20:41.365124",
+      "created_at": "2026-01-23T11:20:39.005541",
       "recent_failures": []
     }
   }

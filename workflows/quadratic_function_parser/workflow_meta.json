@@ -1,0 +1,26 @@
+{
+  "workflow_id": "quadratic_function_parser",
+  "name": "Quadratic Function Parser and Caller",
+  "description": "Analyzes natural language text to extract quadratic equation parameters and returns the appropriate function call format",
+  "task_id": "simple_6",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"What are the roots of the quadratic equation where a=2, b=5 and c=3 ?\"}]], \"function\": [{\"name\": \"solve_quadratic\", \"description\": \"Find the roots of a quadratic equation. Returns both roots.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"a\": {\"type\": \"integer\", \"description\": \"Coefficient of x\\u00b2.\"}, \"b\": {\"type\": \"integer\", \"description\": \"Coefficient of x.\"}, \"c\": {\"type\": \"integer\", \"description\": \"Constant term.\"}}, \"required\": [\"a\", \"b\", \"c\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"solve_quadratic\": {\n    \"a\": \"integer - Coefficient of x\\u00b2.\",\n    \"b\": \"integer - Coefficient of x.\",\n    \"c\": \"integer - Constant term.\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "activities": [
+    "extract_function_call"
+  ],
+  "variables": [
+    {
+      "name": "prompt",
+      "default": null
+    },
+    {
+      "name": "functions",
+      "default": null
+    }
+  ],
+  "execution_pattern": "sequence",
+  "reasoning": "This workflow is designed as a function call parser that analyzes natural language mathematical queries and returns the appropriate function call format. Since the task asks to determine which function to call and extract parameters (not execute the function), I designed an activity that uses LLM extraction to parse the query text and identify the function name and parameters. The workflow uses sequence execution since there's only one activity needed. The activity leverages the llm_extract template pattern but is customized to handle function call extraction specifically, returning the exact structure format specified in the requirements where the function name becomes the top-level key.",
+  "metrics": {
+    "total_tokens": 26610,
+    "regeneration_count": 1
+  }
+}

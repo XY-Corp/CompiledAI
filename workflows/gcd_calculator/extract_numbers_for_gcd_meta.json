@@ -1,0 +1,28 @@
+{
+  "activity_name": "extract_numbers_for_gcd",
+  "description": "Parse the user prompt to extract two numbers and format them as a function call for GCD calculation",
+  "task_id": "simple_22",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"Calculate the greatest common divisor of two given numbers, for example 12 and 15.\"}]], \"function\": [{\"name\": \"math.gcd\", \"description\": \"Calculate the greatest common divisor (gcd) of the two integers.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"num1\": {\"type\": \"integer\", \"description\": \"The first number.\"}, \"num2\": {\"type\": \"integer\", \"description\": \"The second number.\"}}, \"required\": [\"num1\", \"num2\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"math.gcd\": {\n    \"num1\": \"integer - The first number.\",\n    \"num2\": \"integer - The second number.\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "inputs": [
+    {
+      "name": "user_prompt",
+      "type": "str",
+      "description": "The natural language input containing two numbers to find the GCD of",
+      "required": true
+    }
+  ],
+  "output": {
+    "type": "dict",
+    "description": "Returns a function call structure with math.gcd as the key and parameters as nested object: {\"math.gcd\": {\"num1\": 12, \"num2\": 15}}",
+    "fields": {
+      "math.gcd": "dict containing num1 and num2 integer parameters"
+    }
+  },
+  "reference_activity": "llm_extract",
+  "workflow_spec": {
+    "workflow_id": "gcd_calculator",
+    "name": "GCD Calculator Workflow",
+    "description": "Extracts two numbers from a natural language prompt and returns a function call structure for calculating their greatest common divisor",
+    "execution_pattern": "sequence"
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "workflow_id": "elephant_population_function_parser",
+  "name": "Elephant Population Function Parser",
+  "description": "Parses natural language input about elephant population estimation and extracts numerical parameters to return a structured function call",
+  "task_id": "simple_75",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"Estimate the population size of elephants of 35000 in the next 5 years given the current growth rate of 0.015.\"}]], \"function\": [{\"name\": \"elephant_population_estimate\", \"description\": \"Estimate future population of elephants given current population and growth rate.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"current_population\": {\"type\": \"integer\", \"description\": \"The current number of elephants.\"}, \"growth_rate\": {\"type\": \"float\", \"description\": \"The annual population growth rate of elephants.\"}, \"years\": {\"type\": \"integer\", \"description\": \"The number of years to project the population.\"}}, \"required\": [\"current_population\", \"growth_rate\", \"years\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"elephant_population_estimate\": {\n    \"current_population\": \"integer - The current number of elephants.\",\n    \"growth_rate\": \"float - The annual population growth rate of elephants.\",\n    \"years\": \"integer - The number of years to project the population.\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "activities": [
+    "parse_population_parameters"
+  ],
+  "variables": [
+    {
+      "name": "prompt",
+      "default": null
+    },
+    {
+      "name": "functions",
+      "default": null
+    }
+  ],
+  "execution_pattern": "sequence",
+  "reasoning": "This workflow requires parsing natural language text to extract specific numerical parameters and format them as a function call. The task is about extracting structured data from unstructured text, which requires deterministic parsing to identify numbers (current population: 35000, growth rate: 0.015, years: 5) and map them to the correct parameter names. The input contains a clear request format that can be parsed with regex patterns to extract the numerical values. The output must match the exact structure specified with elephant_population_estimate as the top-level key containing the three required parameters. A single sequential activity is sufficient since we just need to parse the input text and return the structured function call format.",
+  "metrics": {
+    "total_tokens": 18590,
+    "regeneration_count": 0
+  }
+}

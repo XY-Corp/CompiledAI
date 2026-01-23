@@ -1,0 +1,18 @@
+workflow_id: function_call_mapper
+name: Function Call Parameter Mapper
+description: |
+  Analyzes a user prompt and available function definitions to extract the appropriate function name and parameter values, returning them in a structured function call format.
+
+variables:
+  prompt: null
+  functions: null
+
+root:
+  sequence:
+    elements:
+      - activity:
+          name: map_prompt_to_function_call
+          params:
+            prompt: ${{ prompt }}
+            functions: ${{ functions }}
+          result: function_call_result

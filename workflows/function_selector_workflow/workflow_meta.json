@@ -1,13 +1,21 @@
 {
   "workflow_id": "function_selector_workflow",
-  "name": "Function Selection Workflow",
-  "description": "Analyzes user request and available functions to determine which function to call with appropriate parameters",
+  "name": "Function Selection and Parameter Extraction Workflow",
+  "description": "Analyzes a user request and available functions to determine which function to call and extract the appropriate parameters",
   "task_id": "function_call_01_func_001",
-  "task_description": "Given these available functions:\n[{'name': 'get_weather', 'parameters': {'location': 'string', 'unit': 'celsius|fahrenheit'}}, {'name': 'send_email', 'parameters': {'to': 'string', 'subject': 'string', 'body': 'string'}}, {'name': 'create_reminder', 'parameters': {'title': 'string', 'time': 'datetime'}}]\n\nUser request: What's the weather in Paris in Celsius?\n\nReturn the function call as JSON with 'function' and 'parameters' keys.\n\n**IMPORTANT: The task provides these input variables:**\n- `functions` (list)\n- `user_request` (str)\n\nYour workflow MUST use these exact variable names: functions, user_request\n\n**CRITICAL - OUTPUT FORMAT (EXACT STRUCTURE REQUIRED):**\nYour activity must return this structure:\n```json\n{\n  \"function\": \"get_weather\",\n  \"parameters\": {\n    \"location\": \"Paris\",\n    \"unit\": \"celsius\"\n  }\n}\n```\n\n**Rules:**\n- Match this structure (field names, nesting, types) EXACTLY\n- Values will vary by instance, but structure stays the same\n- Do NOT add extra fields\n- Do NOT change field names",
+  "task_description": "{\"prompt_template\": \"Given these available functions:\\n{functions}\\n\\nUser request: {user_request}\\n\\nReturn the function call as JSON with 'function' and 'parameters' keys.\", \"input\": {\"functions\": [{\"name\": \"get_weather\", \"parameters\": {\"location\": \"string\", \"unit\": \"celsius|fahrenheit\"}}, {\"name\": \"send_email\", \"parameters\": {\"to\": \"string\", \"subject\": \"string\", \"body\": \"string\"}}, {\"name\": \"create_reminder\", \"parameters\": {\"title\": \"string\", \"time\": \"datetime\"}}], \"user_request\": \"What's the weather in Paris in Celsius?\"}}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `_task_schema` (dict) - context for task type\n- `functions` (list) - context for task type\n- `user_request` (str) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, _task_schema, functions, user_request\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"fields\": {\n    \"function\": \"string - name of the function to call from the available functions list\",\n    \"parameters\": \"object - key-value pairs matching the function's parameter schema\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
   "activities": [
-    "analyze_user_intent"
+    "analyze_request_and_select_function"
   ],
   "variables": [
+    {
+      "name": "prompt",
+      "default": null
+    },
+    {
+      "name": "_task_schema",
+      "default": null
+    },
     {
       "name": "functions",
       "default": null
@@ -18,9 +26,9 @@
     }
   ],
   "execution_pattern": "sequence",
-  "reasoning": "This workflow requires semantic understanding of natural language requests to map them to structured function calls. The task is asking for metadata (which function to call) rather than execution. I designed a single activity that uses LLM capabilities to analyze the user intent against available functions and extract the appropriate parameters. The activity uses the llm_extract pattern for structured output generation, ensuring the exact JSON format is returned as specified in the task requirements. This is a clear case where LLM is needed because it requires understanding natural language intent and mapping it to function signatures - something that cannot be done with deterministic code patterns.",
+  "reasoning": "This workflow handles the intent analysis task of determining which function to call based on a user request. It uses a single LLM-based activity because this requires semantic understanding of user intent and mapping it to available function capabilities. The activity takes the user request and function list as inputs, then uses an LLM to analyze the request semantically and return the appropriate function name with extracted parameters. This is a metadata task (returning what function to call rather than executing it), so the output describes the function selection rather than performing the actual operation. The LLM approach is necessary here because it requires understanding natural language intent and matching it to function capabilities, which cannot be reliably done with deterministic code patterns.",
   "metrics": {
-    "total_tokens": 16676,
+    "total_tokens": 27397,
     "regeneration_count": 0
   }
 }

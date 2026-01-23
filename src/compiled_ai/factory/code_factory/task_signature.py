@@ -32,10 +32,13 @@ class TaskSignature:
         """
         Calculate similarity score between two task signatures.
 
-        Uses weighted scoring:
-        - Category match: 50% weight (must be same task type)
-        - Prompt structure match: 30% weight (similar logic flow)
-        - I/O schema match: 20% weight (compatible interfaces)
+        CRITICAL: I/O schema must match EXACTLY for workflow reuse.
+        Different function schemas = different workflows, always.
+
+        Scoring:
+        - I/O schema mismatch: Returns 0.0 immediately (no reuse)
+        - Category match: 50% weight
+        - Prompt structure match: 50% weight
 
         Args:
             other: Another task signature to compare against
@@ -50,19 +53,20 @@ class TaskSignature:
             >>> sig1.similarity_score(sig2)
             1.0
         """
+        # CRITICAL: I/O schema MUST match exactly for workflow reuse
+        # Different function schemas require different compiled workflows
+        if self.io_schema != other.io_schema:
+            return 0.0
+
         score = 0.0
 
-        # Category match (50% weight) - exact match required
+        # Category match (50% weight)
         if self.category == other.category:
             score += 0.5
 
-        # Prompt hash match (30% weight) - structural similarity
+        # Prompt hash match (50% weight) - structural similarity
         if self.prompt_hash == other.prompt_hash:
-            score += 0.3
-
-        # I/O schema match (20% weight) - interface compatibility
-        if self.io_schema == other.io_schema:
-            score += 0.2
+            score += 0.5
 
         return score
 
@@ -188,18 +192,20 @@ class TaskSignatureExtractor:
         Extract I/O schema from task context.
 
         Creates a serialized representation including schema values.
-        For transformation tasks, includes the actual schema structure
-        to prevent incorrect workflow reuse across different schemas.
+        For tasks with structured context (functions, schemas, etc.),
+        includes content hashes to prevent incorrect workflow reuse.
 
         Args:
             context: Task context dictionary
 
         Returns:
-            Serialized schema string with value hashes for schemas
+            Serialized schema string with value hashes
 
         Examples:
             >>> TaskSignatureExtractor.extract_io_schema({"text": "...", "categories": []})
-            'in:categories,text'
+            'keys:categories,text'
+            >>> TaskSignatureExtractor.extract_io_schema({"functions": [...]})
+            'keys:functions|functions:abc12345'
             >>> TaskSignatureExtractor.extract_io_schema({})
             'empty'
         """
@@ -210,11 +216,13 @@ class TaskSignatureExtractor:
         keys = sorted(context.keys())
         schema_parts = [f"keys:{','.join(keys)}"]
 
-        # For schema-dependent tasks (transformations), include schema structure
+        # Keys that define task type and should be hashed for signature
+        signature_keys = {"schema", "functions", "tools", "api", "spec"}
+
         import json
         for key in keys:
-            if "schema" in key.lower():
-                # Hash the schema value to distinguish different schemas
+            # Hash values for keys that define the task type
+            if any(sig_key in key.lower() for sig_key in signature_keys):
                 value = context[key]
                 if isinstance(value, (dict, list)):
                     schema_str = json.dumps(value, sort_keys=True)

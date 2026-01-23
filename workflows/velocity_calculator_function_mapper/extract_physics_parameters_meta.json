@@ -1,0 +1,34 @@
+{
+  "activity_name": "extract_physics_parameters",
+  "description": "Parse the natural language physics problem to extract distance, duration, and determine appropriate unit for velocity calculation",
+  "task_id": "simple_26",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"Calculate the velocity of a car that travels a distance of 50 kilometers for a duration of 2 hours?\"}]], \"function\": [{\"name\": \"calculate_velocity\", \"description\": \"Calculate the velocity for a certain distance travelled within a specific duration.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"distance\": {\"type\": \"integer\", \"description\": \"The distance travelled by the object, typically in kilometers.\"}, \"duration\": {\"type\": \"integer\", \"description\": \"The duration of the journey, typically in hours.\"}, \"unit\": {\"type\": \"string\", \"description\": \"Optional parameter. The unit to return the velocity in. If not provided, the default is km/h.\"}}, \"required\": [\"distance\", \"duration\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"calculate_velocity\": {\n    \"distance\": \"integer - The distance travelled by the object, typically in kilometers.\",\n    \"duration\": \"integer - The duration of the journey, typically in hours.\",\n    \"unit\": \"string - Optional parameter. The unit to return the velocity in. If not provided, the default is km/h.\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "inputs": [
+    {
+      "name": "problem_text",
+      "type": "str",
+      "description": "The natural language physics problem containing distance, duration, and velocity calculation request",
+      "required": true
+    },
+    {
+      "name": "function_schema",
+      "type": "list",
+      "description": "The available calculate_velocity function schema with parameter definitions for context",
+      "required": true
+    }
+  ],
+  "output": {
+    "type": "dict",
+    "description": "Returns function call mapping with calculate_velocity as key and extracted parameters as nested object: {\"calculate_velocity\": {\"distance\": 50, \"duration\": 2, \"unit\": \"km/h\"}}",
+    "fields": {
+      "calculate_velocity": "dict containing distance (integer), duration (integer), and optional unit (string) parameters"
+    }
+  },
+  "reference_activity": "llm_extract",
+  "workflow_spec": {
+    "workflow_id": "velocity_calculator_function_mapper",
+    "name": "Velocity Calculator Function Mapper",
+    "description": "Parse natural language physics problem and map it to calculate_velocity function with extracted parameters",
+    "execution_pattern": "sequence"
+  }
+}

@@ -1,0 +1,17 @@
+workflow_id: calculate_triangle_area_workflow
+name: Calculate Triangle Area Workflow
+description: Extracts base and height values from user prompt and calculates the area of a right-angled triangle by calling the appropriate function
+
+variables:
+  prompt: null
+  functions: null
+
+root:
+  sequence:
+    elements:
+      - activity:
+          name: extract_triangle_parameters
+          params:
+            prompt: ${{ prompt }}
+            functions: ${{ functions }}
+          result: extracted_params

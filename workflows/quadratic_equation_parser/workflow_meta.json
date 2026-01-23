@@ -1,0 +1,26 @@
+{
+  "workflow_id": "quadratic_equation_parser",
+  "name": "Quadratic Equation Parameter Parser",
+  "description": "Parses user input to extract quadratic equation coefficients and returns a structured function call",
+  "task_id": "simple_4",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"Solve a quadratic equation where a=2, b=6, and c=5\"}]], \"function\": [{\"name\": \"solve_quadratic_equation\", \"description\": \"Function solves the quadratic equation and returns its roots.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"a\": {\"type\": \"integer\", \"description\": \"Coefficient of x squared\"}, \"b\": {\"type\": \"integer\", \"description\": \"Coefficient of x\"}, \"c\": {\"type\": \"integer\", \"description\": \"Constant term in the quadratic equation.\"}}, \"required\": [\"a\", \"b\", \"c\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"solve_quadratic_equation\": {\n    \"a\": \"integer - Coefficient of x squared\",\n    \"b\": \"integer - Coefficient of x\",\n    \"c\": \"integer - Constant term in the quadratic equation.\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "activities": [
+    "parse_quadratic_parameters"
+  ],
+  "variables": [
+    {
+      "name": "prompt",
+      "default": null
+    },
+    {
+      "name": "functions",
+      "default": null
+    }
+  ],
+  "execution_pattern": "sequence",
+  "reasoning": "This workflow addresses the task of parsing user input to extract quadratic equation parameters and format them as a structured function call. The task requires analyzing natural language input like 'Solve a quadratic equation where a=2, b=6, and c=5' and returning a specific JSON structure with the function name as a key and parameters as nested values. Since this involves understanding natural language patterns and extracting numerical values based on mathematical context, an LLM-based approach using the llm_extract pattern is most appropriate. The activity uses deterministic parsing would be challenging given the variability in how users might express quadratic equation parameters. The LLM can handle various phrasings like 'a=2', 'coefficient a is 2', 'a equals 2', etc. The output schema precisely matches the required format with solve_quadratic_equation as the top-level key containing the three integer coefficients.",
+  "metrics": {
+    "total_tokens": 20385,
+    "regeneration_count": 0
+  }
+}

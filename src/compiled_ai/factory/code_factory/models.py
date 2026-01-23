@@ -166,3 +166,28 @@ class GeneratedFiles(BaseModel):
     activities_code: str = Field(description="Python module with activity functions")
     activities: list[GeneratedActivity] = Field(default_factory=list)
     validation_notes: list[str] = Field(default_factory=list)
+
+
+# ==================== BFCL Function Calling Models ====================
+
+
+class BFCLFunctionCallOutput(BaseModel):
+    """Output from the BFCL Function Calling Agent.
+
+    Represents a single function call with name and arguments,
+    matching BFCL's expected format.
+    """
+
+    function_name: str = Field(description="The name of the function to call")
+    arguments: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Arguments to pass to the function as key-value pairs"
+    )
+    reasoning: str = Field(
+        default="",
+        description="Brief explanation of why this function was selected"
+    )
+
+    def to_bfcl_format(self) -> dict:
+        """Convert to BFCL ground truth format: {function_name: {args}}."""
+        return {self.function_name: self.arguments}

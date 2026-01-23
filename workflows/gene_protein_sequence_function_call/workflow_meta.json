@@ -1,0 +1,26 @@
+{
+  "workflow_id": "gene_protein_sequence_function_call",
+  "name": "Gene Protein Sequence Function Call Generator",
+  "description": "Analyzes a user prompt about gene protein sequence identification and generates the appropriate function call with extracted parameters",
+  "task_id": "simple_54",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"Identify the protein sequence of a given human gene 'BRCA1'.\"}]], \"function\": [{\"name\": \"get_protein_sequence\", \"description\": \"Retrieve the protein sequence encoded by a human gene.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"gene\": {\"type\": \"string\", \"description\": \"The human gene of interest.\"}, \"species\": {\"type\": \"string\", \"description\": \"The species for which the gene is to be analyzed.\", \"default\": \"Homo sapiens\"}}, \"required\": [\"gene\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"get_protein_sequence\": {\n    \"gene\": \"string - The human gene of interest.\",\n    \"species\": \"string - The species for which the gene is to be analyzed.\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "activities": [
+    "extract_gene_function_call"
+  ],
+  "variables": [
+    {
+      "name": "prompt",
+      "default": null
+    },
+    {
+      "name": "functions",
+      "default": null
+    }
+  ],
+  "execution_pattern": "sequence",
+  "reasoning": "This workflow is designed to understand task intent as a METADATA task - the user wants to identify which function to call and with what parameters, not actually execute the function. The workflow uses a single LLM-based extraction activity because:\n\n1. **Task Intent Analysis**: The task asks to \"identify the protein sequence\" but provides function definitions, indicating this is about generating the appropriate function call metadata, not executing it.\n\n2. **Parameter Extraction**: The activity uses LLM to intelligently extract the gene name (BRCA1) from natural language and determine the appropriate species parameter (defaulting to Homo sapiens for human genes).\n\n3. **Structured Output**: The output schema exactly matches the expected format with the function name as the top-level key and parameters nested inside, enabling proper function call generation.\n\n4. **LLM Choice**: This requires semantic understanding to extract gene names from natural language and map them to function parameters, making LLM the appropriate choice over deterministic parsing.\n\nThe workflow processes the raw prompt variable to extract actual values and generate the complete function call structure needed for gene protein sequence identification.",
+  "metrics": {
+    "total_tokens": 37997,
+    "regeneration_count": 2
+  }
+}

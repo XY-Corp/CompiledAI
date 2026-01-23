@@ -1,0 +1,73 @@
+{
+  "instances": [
+    {
+      "instance_id": "simple_0",
+      "input": "{\"question\": [[{\"role\": \"user\", \"content\": \"Find the area of a triangle with a base of 10 units and height of 5 units.\"}]], \"function\": [{\"name\": \"calculate_triangle_area\", \"description\": \"Calculate the area of a triangle given its base and height.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"base\": {\"type\": \"integer\", \"description\": \"The base of the triangle.\"}, \"height\": {\"type\": \"integer\", \"description\": \"The height of the triangle.\"}, \"unit\": {\"type\": \"string\", \"description\": \"The unit of measure (defaults to 'units' if not specified)\"}}, \"required\": [\"base\", \"height\"]}}]}",
+      "output": "{\"calculate_triangle_area\": {\"base\": 10, \"height\": 5, \"unit\": \"meters\"}}",
+      "expected": {
+        "calculate_triangle_area": {
+          "base": 10,
+          "height": 5,
+          "unit": "units"
+        }
+      },
+      "success": true,
+      "latency_ms": 121376.98854133487,
+      "error": null,
+      "generation_time_ms": 121371.81091681123,
+      "execution_time_ms": 4.948541522026062,
+      "input_tokens": 45211,
+      "output_tokens": 0,
+      "generation_input_tokens": 35793,
+      "generation_output_tokens": 9418,
+      "execution_input_tokens": 0,
+      "execution_output_tokens": 0,
+      "match_type": "content_match",
+      "evaluation_score": 0.8,
+      "evaluation_details": {
+        "match_type": "content_match",
+        "format_correct": true,
+        "content_correct": false,
+        "field_matches": {
+          "base": true,
+          "height": true,
+          "unit": false
+        },
+        "explanation": "Structure matches expected, but 'unit' value differs from default 'units' to 'meters'"
+      }
+    },
+    {
+      "instance_id": "simple_1",
+      "input": "{\"question\": [[{\"role\": \"user\", \"content\": \"Calculate the factorial of 5 using math functions.\"}]], \"function\": [{\"name\": \"math.factorial\", \"description\": \"Calculate the factorial of a given number.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"number\": {\"type\": \"integer\", \"description\": \"The number for which factorial needs to be calculated.\"}}, \"required\": [\"number\"]}}]}",
+      "output": "{\"math.factorial\": {\"number\": 5}}",
+      "expected": {
+        "math.factorial": {
+          "number": 5
+        }
+      },
+      "success": true,
+      "latency_ms": 47450.146624818444,
+      "error": null,
+      "generation_time_ms": 47447.675249539316,
+      "execution_time_ms": 2.230750396847725,
+      "input_tokens": 18581,
+      "output_tokens": 0,
+      "generation_input_tokens": 15452,
+      "generation_output_tokens": 3129,
+      "execution_input_tokens": 0,
+      "execution_output_tokens": 0,
+      "match_type": "total_match",
+      "evaluation_score": 1.0,
+      "evaluation_details": {
+        "match_type": "total_match",
+        "format_correct": true,
+        "content_correct": true,
+        "field_matches": {
+          "math.factorial": true,
+          "number": true
+        },
+        "explanation": "Exact match in both structure and value"
+      }
+    }
+  ]
+}

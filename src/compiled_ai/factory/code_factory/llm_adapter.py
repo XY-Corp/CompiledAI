@@ -8,6 +8,7 @@ from dataclasses import dataclass, field
 from typing import Literal
 
 # PydanticAI model imports
+from pydantic_ai import ModelSettings
 from pydantic_ai.models.anthropic import AnthropicModel
 from pydantic_ai.models.openai import OpenAIModel
 from pydantic_ai.models.gemini import GeminiModel
@@ -68,7 +69,7 @@ class AdapterMetrics:
 def create_model(
     provider: ProviderType = "anthropic",
     model: str | None = None,
-    enable_thinking: bool = True,
+    enable_thinking: bool = False,  # Disabled: incompatible with structured outputs
     thinking_budget_tokens: int = 8000,
 ) -> AnthropicModel | OpenAIModel | GeminiModel:
     """Create a PydanticAI model for the specified provider.
@@ -76,24 +77,24 @@ def create_model(
     Args:
         provider: LLM provider ("anthropic", "openai", or "gemini")
         model: Specific model name, or None for provider default
-        enable_thinking: Enable extended thinking for Anthropic models (default: True)
-        thinking_budget_tokens: Token budget for extended thinking (default: 8000, min: 1024)
+        enable_thinking: Extended thinking (disabled - incompatible with structured outputs)
+        thinking_budget_tokens: Token budget for extended thinking (unused)
 
     Returns:
-        Configured PydanticAI model instance with extended thinking enabled
+        Configured PydanticAI model instance
+
+    Note:
+        Extended thinking cannot be used with PydanticAI's structured outputs
+        because tool_choice is forced, which conflicts with thinking mode.
+        Code Factory requires structured outputs (WorkflowSpec, GeneratedFiles),
+        so extended thinking is disabled.
     """
     model_name = model or DEFAULT_MODELS.get(provider, DEFAULT_MODELS["anthropic"])
 
     if provider == "anthropic":
-        # Enable extended thinking for Opus 4.5
-        # Ref: https://docs.anthropic.com/en/docs/build-with-claude/extended-thinking
-        if enable_thinking and "opus" in model_name.lower():
-            # Ensure minimum budget
-            budget = max(thinking_budget_tokens, 1024)
-            return AnthropicModel(
-                model_name,
-                thinking={"type": "enabled", "budget_tokens": budget}
-            )
+        # Note: Extended thinking is disabled because it's incompatible with
+        # structured outputs (tool_choice forced). Code Factory needs structured
+        # outputs for WorkflowSpec and GeneratedFiles Pydantic models.
         return AnthropicModel(model_name)
     elif provider == "openai":
         return OpenAIModel(model_name)

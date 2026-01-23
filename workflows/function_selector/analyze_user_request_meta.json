@@ -1,0 +1,41 @@
+{
+  "activity_name": "analyze_user_request",
+  "description": "Analyzes the user request to determine which function to call and what parameters to extract",
+  "task_id": "function_call_01_func_001",
+  "task_description": "{\"prompt_template\": \"Given these available functions:\\n{functions}\\n\\nUser request: {user_request}\\n\\nReturn the function call as JSON with 'function' and 'parameters' keys.\", \"input\": {\"functions\": [{\"name\": \"get_weather\", \"parameters\": {\"location\": \"string\", \"unit\": \"celsius|fahrenheit\"}}, {\"name\": \"send_email\", \"parameters\": {\"to\": \"string\", \"subject\": \"string\", \"body\": \"string\"}}, {\"name\": \"create_reminder\", \"parameters\": {\"title\": \"string\", \"time\": \"datetime\"}}], \"user_request\": \"What's the weather in Paris in Celsius?\"}}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `_task_schema` (dict) - context for task type\n- `functions` (list) - context for task type\n- `user_request` (str) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, _task_schema, functions, user_request\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"fields\": {\n    \"function\": \"string - name of the function to call from the available functions list\",\n    \"parameters\": \"object - key-value pairs matching the function's parameter schema\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "inputs": [
+    {
+      "name": "prompt_data",
+      "type": "str",
+      "description": "The complete prompt data containing template, functions, and user request information",
+      "required": true
+    },
+    {
+      "name": "available_functions",
+      "type": "list",
+      "description": "List of function definitions with names and parameter schemas that can be called",
+      "required": true
+    },
+    {
+      "name": "user_request_text",
+      "type": "str",
+      "description": "The natural language user request that needs to be mapped to a function call",
+      "required": true
+    }
+  ],
+  "output": {
+    "type": "dict",
+    "description": "Returns function selection result with exact structure: {\"function\": \"get_weather\", \"parameters\": {\"location\": \"Paris\", \"unit\": \"celsius\"}}. The function field contains the name of the selected function from the available functions list, and parameters contains a key-value object matching that function's parameter schema with actual values extracted from the user request.",
+    "fields": {
+      "function": "str",
+      "parameters": "dict"
+    }
+  },
+  "reference_activity": "llm_extract",
+  "workflow_spec": {
+    "workflow_id": "function_selector",
+    "name": "Function Selection Workflow",
+    "description": "Analyzes user requests to select the appropriate function from available options and extract the required parameters",
+    "execution_pattern": "sequence"
+  }
+}

@@ -1,0 +1,17 @@
+workflow_id: dna_sequence_retrieval_workflow
+name: DNA Sequence Retrieval Function Call Workflow
+description: Parses user prompts requesting DNA sequence retrieval, extracts parameters, and returns the appropriate function call structure for DNA sequence database queries.
+
+variables:
+  prompt: null
+  functions: null
+
+root:
+  sequence:
+    elements:
+      - activity:
+          name: extract_dna_parameters
+          params:
+            user_prompt: ${{ prompt }}
+            available_functions: ${{ functions }}
+          result: dna_function_call

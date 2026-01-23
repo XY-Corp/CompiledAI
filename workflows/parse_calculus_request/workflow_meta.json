@@ -1,0 +1,26 @@
+{
+  "workflow_id": "parse_calculus_request",
+  "name": "Parse Calculus Derivative Request",
+  "description": "Analyzes a user's calculus derivative request and returns the appropriate function call with extracted parameters for calculus.derivative function",
+  "task_id": "simple_16",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"Calculate the derivative of the function 2x^2 at x = 1.\"}]], \"function\": [{\"name\": \"calculus.derivative\", \"description\": \"Compute the derivative of a function at a specific value.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"function\": {\"type\": \"string\", \"description\": \"The function to calculate the derivative of.\"}, \"value\": {\"type\": \"integer\", \"description\": \"The value where the derivative needs to be calculated at.\"}, \"function_variable\": {\"type\": \"string\", \"description\": \"The variable present in the function, for instance x or y, etc. Default is 'x'.\"}}, \"required\": [\"function\", \"value\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"calculus.derivative\": {\n    \"function\": \"string - The function to calculate the derivative of.\",\n    \"value\": \"integer - The value where the derivative needs to be calculated at.\",\n    \"function_variable\": \"string - The variable present in the function, for instance x or y, etc. Default is 'x'.\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "activities": [
+    "parse_calculus_request"
+  ],
+  "variables": [
+    {
+      "name": "prompt",
+      "default": null
+    },
+    {
+      "name": "functions",
+      "default": null
+    }
+  ],
+  "execution_pattern": "sequence",
+  "reasoning": "This workflow is designed to parse a user's natural language request for calculating derivatives and extract the structured parameters needed for the calculus.derivative function. \n\nThe task requires analyzing the user input to identify:\n1. The mathematical function (e.g., \"2x^2\")  \n2. The evaluation point (e.g., x = 1)\n3. The variable symbol (defaults to 'x')\n\nSince this involves understanding mathematical expressions from natural language, an LLM approach is appropriate. The llm_extract template provides the perfect pattern for extracting structured data from unstructured text.\n\nThe output must match the exact structure specified: a dictionary with \"calculus.derivative\" as the top-level key containing the three required parameters. The activity will parse the prompt variable containing the raw user request and return the properly formatted function call structure.\n\nA single activity in sequence pattern is sufficient since this is a straightforward parsing task with no dependencies or parallel processing needs.",
+  "metrics": {
+    "total_tokens": 17227,
+    "regeneration_count": 0
+  }
+}

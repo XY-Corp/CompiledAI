@@ -1,0 +1,17 @@
+workflow_id: parse_quadratic_equation
+name: Parse Quadratic Equation Parameters
+description: Parses a quadratic equation request from natural language text and extracts the coefficients (a, b, c) to format them as function call parameters
+
+variables:
+  prompt: null
+  functions: null
+
+root:
+  sequence:
+    elements:
+      - activity:
+          name: parse_equation_parameters
+          params:
+            prompt_text: ${{ prompt }}
+            functions_list: ${{ functions }}
+          result: parsed_equation

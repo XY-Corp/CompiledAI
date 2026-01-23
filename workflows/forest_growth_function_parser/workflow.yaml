@@ -1,0 +1,17 @@
+workflow_id: forest_growth_function_parser
+name: Forest Growth Function Parameter Parser
+description: Parses a natural language query about forest growth prediction and extracts the required function parameters (location, years, include_human_impact) for the forest_growth_forecast function call
+
+variables:
+  prompt: null
+  functions: null
+
+root:
+  sequence:
+    elements:
+      - activity:
+          name: parse_forest_growth_request
+          params:
+            user_query: ${{ prompt }}
+            available_functions: ${{ functions }}
+          result: parsed_parameters

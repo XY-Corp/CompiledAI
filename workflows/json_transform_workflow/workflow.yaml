@@ -1,8 +1,10 @@
 workflow_id: json_transform_workflow
-name: JSON Format Transformation
-description: Transforms JSON data from source format to target schema by mapping fields and calculating derived values
+name: JSON Transformation Workflow
+description: Transform JSON data from source format to target schema by parsing input data and mapping fields according to target structure
 
 variables:
+  prompt: null
+  _task_schema: null
   source_json: null
   target_schema: null
 
@@ -10,8 +12,9 @@ root:
   sequence:
     elements:
       - activity:
-          name: transform_json_structure
+          name: transform_json_data
           params:
-            source_json: ${{ source_json }}
-            target_schema: ${{ target_schema }}
-          result: transformed_result
+            input_prompt: ${{ prompt }}
+            source_context: ${{ _task_schema }}
+            target_context: ${{ target_schema }}
+          result: transformed_data

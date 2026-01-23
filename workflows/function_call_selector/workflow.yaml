@@ -1,0 +1,18 @@
+workflow_id: function_call_selector
+name: Function Call Selector
+description: |
+  Analyzes a natural language prompt and available function definitions to determine which function to call and extract the appropriate parameter values. Returns metadata about the function call without executing it.
+
+variables:
+  prompt: null
+  functions: null
+
+root:
+  sequence:
+    elements:
+      - activity:
+          name: select_function_and_extract_params
+          params:
+            prompt: ${{ prompt }}
+            functions: ${{ functions }}
+          result: function_call_result

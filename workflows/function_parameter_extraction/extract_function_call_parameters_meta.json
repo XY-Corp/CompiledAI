@@ -1,0 +1,34 @@
+{
+  "activity_name": "extract_function_call_parameters",
+  "description": "Extracts function parameters from natural language text and returns a properly structured function call object",
+  "task_id": "simple_43",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"Calculate the magnetic field strength 10 meters away from a long wire carrying a current of 20 Amperes.\"}]], \"function\": [{\"name\": \"calculate_magnetic_field_strength\", \"description\": \"Calculate the magnetic field strength at a point a certain distance away from a long wire carrying a current.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"current\": {\"type\": \"integer\", \"description\": \"The current flowing through the wire in Amperes.\"}, \"distance\": {\"type\": \"integer\", \"description\": \"The perpendicular distance from the wire to the point where the magnetic field is being calculated.\"}, \"permeability\": {\"type\": \"float\", \"description\": \"The permeability of the medium. Default is 12.57e-7 (Vacuum Permeability).\"}}, \"required\": [\"current\", \"distance\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"calculate_magnetic_field_strength\": {\n    \"current\": \"integer - The current flowing through the wire in Amperes.\",\n    \"distance\": \"integer - The perpendicular distance from the wire to the point where the magnetic field is being calculated.\",\n    \"permeability\": \"float - The permeability of the medium. Default is 12.57e-7 (Vacuum Permeability).\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "inputs": [
+    {
+      "name": "user_prompt",
+      "type": "str",
+      "description": "The raw natural language input text containing the user's request with specific parameter values to extract",
+      "required": true
+    },
+    {
+      "name": "available_functions",
+      "type": "list",
+      "description": "List of function definitions with their parameter schemas that can be called",
+      "required": true
+    }
+  ],
+  "output": {
+    "type": "dict",
+    "description": "Returns a function call object with the function name as the top-level key containing the extracted parameters. Example structure: {\"calculate_magnetic_field_strength\": {\"current\": 20, \"distance\": 10, \"permeability\": 12.57e-7}}",
+    "fields": {
+      "function_name": "dict containing the extracted parameters as key-value pairs matching the function schema"
+    }
+  },
+  "reference_activity": "llm_extract",
+  "workflow_spec": {
+    "workflow_id": "function_parameter_extraction",
+    "name": "Function Parameter Extraction from Natural Language",
+    "description": "Analyzes user prompts to extract specific function parameters and returns a function call object with the appropriate function name and extracted parameters",
+    "execution_pattern": "sequence"
+  }
+}

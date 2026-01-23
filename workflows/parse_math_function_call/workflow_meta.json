@@ -1,0 +1,26 @@
+{
+  "workflow_id": "parse_math_function_call",
+  "name": "Parse Mathematical Function Call",
+  "description": "Analyze a natural language mathematical request and extract the function name and parameters needed to call calculate_area_under_curve function",
+  "task_id": "simple_13",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"Calculate the area under the curve y=x^2 from x=1 to x=3.\"}]], \"function\": [{\"name\": \"calculate_area_under_curve\", \"description\": \"Calculate the area under a mathematical function within a given interval.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"function\": {\"type\": \"string\", \"description\": \"The mathematical function as a string.\"}, \"interval\": {\"type\": \"array\", \"items\": {\"type\": \"float\"}, \"description\": \"An array that defines the interval to calculate the area under the curve from the start to the end point.\"}, \"method\": {\"type\": \"string\", \"description\": \"The numerical method to approximate the area under the curve. The default value is 'trapezoidal'.\"}}, \"required\": [\"function\", \"interval\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"calculate_area_under_curve\": {\n    \"function\": \"string - The mathematical function as a string.\",\n    \"interval\": \"array - An array that defines the interval to calculate the area under the curve from the start to the end point.\",\n    \"method\": \"string - The numerical method to approximate the area under the curve. The default value is 'trapezoidal'.\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "activities": [
+    "parse_math_request"
+  ],
+  "variables": [
+    {
+      "name": "prompt",
+      "default": null
+    },
+    {
+      "name": "functions",
+      "default": null
+    }
+  ],
+  "execution_pattern": "sequence",
+  "reasoning": "The task requires parsing a natural language mathematical request to extract the function name and parameters needed for a function call. Based on the example, the input is 'Calculate the area under the curve y=x^2 from x=1 to x=3' and the expected output structure has 'calculate_area_under_curve' as the top-level key with nested parameters. Since this involves understanding natural language intent and mapping to structured function parameters, an LLM-based extraction approach is most appropriate. The activity will parse the prompt variable to extract the mathematical function (y=x^2 becomes 'x^2'), the interval bounds ([1, 3]), and determine the appropriate method (defaulting to 'trapezoidal'). The workflow uses a single sequence step since we only need one parsing operation to generate the complete function call structure.",
+  "metrics": {
+    "total_tokens": 20640,
+    "regeneration_count": 0
+  }
+}

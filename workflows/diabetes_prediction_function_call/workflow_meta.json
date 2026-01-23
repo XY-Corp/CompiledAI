@@ -1,0 +1,26 @@
+{
+  "workflow_id": "diabetes_prediction_function_call",
+  "name": "Diabetes Prediction Function Call",
+  "description": "Parse user query to extract health parameters and format them as a diabetes_prediction function call",
+  "task_id": "simple_61",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"Predict whether a person with weight 150lbs and height 5ft 10in who is lightly active will get type 2 diabetes.\"}]], \"function\": [{\"name\": \"diabetes_prediction\", \"description\": \"Predict the likelihood of diabetes type 2 based on a person's weight and height.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"weight\": {\"type\": \"integer\", \"description\": \"Weight of the person in lbs.\"}, \"height\": {\"type\": \"integer\", \"description\": \"Height of the person in inches.\"}, \"activity_level\": {\"type\": \"string\", \"enum\": [\"sedentary\", \"lightly active\", \"moderately active\", \"very active\", \"extra active\"], \"description\": \"Physical activity level of the person.\"}}, \"required\": [\"weight\", \"height\", \"activity_level\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"diabetes_prediction\": {\n    \"weight\": \"integer - Weight of the person in lbs.\",\n    \"height\": \"integer - Height of the person in inches.\",\n    \"activity_level\": \"string - Physical activity level of the person.\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "activities": [
+    "extract_health_parameters"
+  ],
+  "variables": [
+    {
+      "name": "prompt",
+      "default": null
+    },
+    {
+      "name": "functions",
+      "default": null
+    }
+  ],
+  "execution_pattern": "sequence",
+  "reasoning": "This workflow requires extracting structured health parameters from natural language input and formatting them as a function call. I chose a single LLM-based extraction activity because:\n\n1. **Parameter Extraction**: The task requires parsing unstructured text like \"weight 150lbs and height 5ft 10in who is lightly active\" into structured parameters (weight: 150, height: 70, activity_level: \"lightly active\")\n\n2. **Unit Conversion**: The LLM can handle conversions like \"5ft 10in\" \u2192 70 inches automatically during extraction\n\n3. **Activity Level Mapping**: The LLM can map \"lightly active\" to the exact enum value required by the function schema\n\n4. **Structured Output**: Using the llm_extract pattern ensures the output matches the exact function call format expected by the system\n\n5. **Single Activity Design**: Since this is a straightforward extraction task that produces one output format, a sequential workflow with one activity is the most efficient approach\n\nThe activity uses the actual prompt variable (containing the user query) and function schema to extract and validate the parameters, then formats them as a proper function call structure.",
+  "metrics": {
+    "total_tokens": 33913,
+    "regeneration_count": 2
+  }
+}

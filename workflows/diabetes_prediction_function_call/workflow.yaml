@@ -1,0 +1,17 @@
+workflow_id: diabetes_prediction_function_call
+name: Diabetes Prediction Function Call
+description: Parse user query to extract health parameters and format them as a diabetes_prediction function call
+
+variables:
+  prompt: null
+  functions: null
+
+root:
+  sequence:
+    elements:
+      - activity:
+          name: extract_health_parameters
+          params:
+            user_query: ${{ prompt }}
+            function_schema: ${{ functions }}
+          result: function_call

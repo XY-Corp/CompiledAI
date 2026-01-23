@@ -1,8 +1,10 @@
 workflow_id: function_selector
-name: Function Selector Workflow
-description: Analyzes user requests to select the appropriate function and extract parameters from available function definitions
+name: Function Selection Workflow
+description: Analyzes user requests to select the appropriate function from available options and extract the required parameters
 
 variables:
+  prompt: null
+  _task_schema: null
   functions: null
   user_request: null
 
@@ -10,8 +12,9 @@ root:
   sequence:
     elements:
       - activity:
-          name: analyze_request_and_select_function
+          name: analyze_user_request
           params:
-            user_request: ${{ user_request }}
-            functions: ${{ functions }}
-          result: selection_result
+            prompt_data: ${{ prompt }}
+            available_functions: ${{ functions }}
+            user_request_text: ${{ user_request }}
+          result: function_selection

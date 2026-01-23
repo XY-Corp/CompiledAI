@@ -1,0 +1,28 @@
+{
+  "activity_name": "extract_density_params",
+  "description": "Parse the natural language text to extract mass, volume, and unit parameters for density calculation and format them into a function call structure",
+  "task_id": "simple_48",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"What is the density of a substance with a mass of 45 kg and a volume of 15 m\\u00b3?\"}]], \"function\": [{\"name\": \"calculate_density\", \"description\": \"Calculate the density of a substance based on its mass and volume.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"mass\": {\"type\": \"integer\", \"description\": \"The mass of the substance in kilograms.\"}, \"volume\": {\"type\": \"integer\", \"description\": \"The volume of the substance in cubic meters.\"}, \"unit\": {\"type\": \"string\", \"description\": \"The unit of density. Default is kg/m\\u00b3\"}}, \"required\": [\"mass\", \"volume\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"calculate_density\": {\n    \"mass\": \"integer - The mass of the substance in kilograms.\",\n    \"volume\": \"integer - The volume of the substance in cubic meters.\",\n    \"unit\": \"string - The unit of density. Default is kg/m\\u00b3\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "inputs": [
+    {
+      "name": "text",
+      "type": "str",
+      "description": "The natural language text containing the density calculation question with mass and volume values",
+      "required": true
+    }
+  ],
+  "output": {
+    "type": "dict",
+    "description": "Returns a function call object with 'calculate_density' as the key and parameters dict containing mass (integer), volume (integer), and unit (string with default 'kg/m\u00b3') as nested values: {\"calculate_density\": {\"mass\": 45, \"volume\": 15, \"unit\": \"kg/m\u00b3\"}}",
+    "fields": {
+      "calculate_density": "dict"
+    }
+  },
+  "reference_activity": "llm_extract",
+  "workflow_spec": {
+    "workflow_id": "density_function_extraction",
+    "name": "Extract Density Function Call from Text",
+    "description": "Extract density calculation parameters from natural language text and format them as a function call structure",
+    "execution_pattern": "sequence"
+  }
+}

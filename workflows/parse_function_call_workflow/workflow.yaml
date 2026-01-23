@@ -1,0 +1,17 @@
+workflow_id: parse_function_call_workflow
+name: Parse Function Call from Prompt
+description: Parses user prompt to extract function parameters and format them as function calls for triangle area calculation
+
+variables:
+  prompt: None
+  functions: None
+
+root:
+  sequence:
+    elements:
+      - activity:
+          name: extract_function_parameters
+          params:
+            prompt: ${{ prompt }}
+            functions: ${{ functions }}
+          result: function_call_result

@@ -1,0 +1,15 @@
+workflow_id: extract_electrostatic_params
+name: Extract Electrostatic Potential Parameters
+description: Analyzes a natural language physics question to extract the specific function name and parameters needed to calculate electrostatic potential between charged bodies
+variables:
+  prompt: null
+  functions: null
+root:
+  sequence:
+    elements:
+      - activity:
+          name: extract_physics_parameters
+          params:
+            question_text: ${{ prompt }}
+            function_definitions: ${{ functions }}
+          result: extracted_params

@@ -1,0 +1,26 @@
+{
+  "workflow_id": "parse_pressure_calculation_request",
+  "name": "Parse Pressure Calculation Request",
+  "description": "Parse a natural language pressure calculation request and extract the function call with atmospheric and gauge pressure parameters",
+  "task_id": "simple_49",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"Calculate the absolute pressure in pascals given atmospheric pressure of 1 atm and a gauge pressure of 2 atm.\"}]], \"function\": [{\"name\": \"calc_absolute_pressure\", \"description\": \"Calculates the absolute pressure from gauge and atmospheric pressures.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"atm_pressure\": {\"type\": \"integer\", \"description\": \"The atmospheric pressure in atmospheres (atm). Default is 1 atm if not provided.\"}, \"gauge_pressure\": {\"type\": \"integer\", \"description\": \"The gauge pressure in atmospheres (atm). Must be provided.\"}}, \"required\": [\"gauge_pressure\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"calc_absolute_pressure\": {\n    \"atm_pressure\": \"integer - The atmospheric pressure in atmospheres (atm). Default is 1 atm if not provided.\",\n    \"gauge_pressure\": \"integer - The gauge pressure in atmospheres (atm). Must be provided.\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "activities": [
+    "parse_pressure_request"
+  ],
+  "variables": [
+    {
+      "name": "prompt",
+      "default": null
+    },
+    {
+      "name": "functions",
+      "default": null
+    }
+  ],
+  "execution_pattern": "sequence",
+  "reasoning": "This workflow handles a metadata extraction task - it needs to parse natural language and return which function to call with what parameters, not execute the calculation itself. The task shows the expected output format with calc_absolute_pressure as the top-level key containing the extracted parameters. I'm using a single activity that leverages LLM extraction (inspired by llm_extract template) to parse the unstructured text and extract the numerical values for atmospheric and gauge pressure. The activity uses deterministic parsing where possible but relies on LLM understanding to handle the natural language variations in how pressures might be expressed. The output schema exactly matches the expected format with calc_absolute_pressure as the function name key and the extracted parameters as nested values.",
+  "metrics": {
+    "total_tokens": 27455,
+    "regeneration_count": 1
+  }
+}

@@ -1,0 +1,15 @@
+workflow_id: function_extraction_and_parameter_matching
+name: Function Extraction and Parameter Matching
+description: Extracts function call details from natural language user prompt and matches them to available function parameters
+variables:
+  prompt: null
+  functions: null
+root:
+  sequence:
+    elements:
+      - activity:
+          name: extract_function_call_details
+          params:
+            prompt: ${{ prompt }}
+            functions: ${{ functions }}
+          result: result

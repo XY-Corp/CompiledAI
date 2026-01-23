@@ -1,0 +1,26 @@
+{
+  "workflow_id": "function_extraction_and_parameter_matching",
+  "name": "Function Extraction and Parameter Matching",
+  "description": "Extracts function call details from natural language user prompt and matches them to available function parameters",
+  "task_id": "simple_92",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"Find all movies starring Leonardo DiCaprio in the year 2010 from IMDB database.\"}]], \"function\": [{\"name\": \"imdb.find_movies_by_actor\", \"description\": \"Searches the database to find all movies by a specific actor within a certain year.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"actor_name\": {\"type\": \"string\", \"description\": \"The name of the actor.\"}, \"year\": {\"type\": \"integer\", \"description\": \"The specific year to search in.\"}, \"category\": {\"type\": \"string\", \"description\": \"The category of the film (e.g. Drama, Comedy, etc). Default is 'all'\"}}, \"required\": [\"actor_name\", \"year\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"imdb.find_movies_by_actor\": {\n    \"actor_name\": \"string - The name of the actor.\",\n    \"year\": \"integer - The specific year to search in.\",\n    \"category\": \"string - The category of the film (e.g. Drama, Comedy, etc). Default is 'all'\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "activities": [
+    "extract_function_call_details"
+  ],
+  "variables": [
+    {
+      "name": "prompt",
+      "default": null
+    },
+    {
+      "name": "functions",
+      "default": null
+    }
+  ],
+  "execution_pattern": "sequence",
+  "reasoning": "This workflow needs to analyze a natural language prompt to identify which function to call and extract the appropriate parameters. Since this is an intent analysis task that requires understanding natural language and mapping it to structured function calls, an LLM-based approach is most appropriate. The task requires semantic understanding of user intent (\"Find all movies starring Leonardo DiCaprio in the year 2010\") and mapping it to function parameters. A single activity using llm_extract provides the most efficient solution, as it can analyze the prompt, identify the correct function (imdb.find_movies_by_actor), and extract the parameter values (actor_name: \"Leonardo DiCaprio\", year: 2010) in one step. The output format matches exactly what the task specifies - a dict with the function name as the top-level key and parameters as nested values.",
+  "metrics": {
+    "total_tokens": 29152,
+    "regeneration_count": 1
+  }
+}

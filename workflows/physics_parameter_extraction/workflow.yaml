@@ -1,0 +1,15 @@
+workflow_id: physics_parameter_extraction
+name: Physics Parameter Extraction for Function Calls
+description: Analyze physics problem prompts to extract parameters for electromagnetic force calculation function calls
+variables:
+  prompt: null
+  functions: null
+root:
+  sequence:
+    elements:
+      - activity:
+          name: extract_physics_parameters
+          params:
+            problem_text: ${{ prompt }}
+            function_definitions: ${{ functions }}
+          result: physics_call

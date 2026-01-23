@@ -1,0 +1,17 @@
+workflow_id: parse_calculus_function
+name: Parse Calculus Function from Text
+description: Analyzes natural language mathematical queries to extract function parameters and structure them for calculus operations
+
+variables:
+  prompt: null
+  functions: null
+
+root:
+  sequence:
+    elements:
+      - activity:
+          name: parse_calculus_query
+          params:
+            query_text: ${{ prompt }}
+            available_functions: ${{ functions }}
+          result: parsed_function

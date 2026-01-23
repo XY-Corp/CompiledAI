@@ -6,6 +6,16 @@
   "difficulty": "medium",
   "prompt_template": "Normalize this address to the standard format:\n{address}\n\nReturn JSON with: street, city, state, zip, country",
   "evaluation_type": "schema",
+  "output_format": {
+    "type": "object",
+    "fields": {
+      "street": "string - normalized street address without abbreviations (e.g., 'St.' -> 'St', remove commas)",
+      "city": "string - city name",
+      "state": "string - 2-letter US state code",
+      "zip": "string - 5-digit zip code",
+      "country": "string - 3-letter country code (USA for United States)"
+    }
+  },
   "schema": {
     "type": "object",
     "properties": {

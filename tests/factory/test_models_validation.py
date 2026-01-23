@@ -164,7 +164,7 @@ class TestActivityInputParamValidation:
             ActivityInputParam(
                 name="address",
                 type="str",
-                description="Address string",
+                description="Address string value",  # 20 chars, only 3 words
                 required=True
             )
         assert "too generic" in str(exc_info.value).lower()
@@ -175,7 +175,7 @@ class TestActivityInputParamValidation:
             ActivityInputParam(
                 name="data",
                 type="dict",
-                description="Input data",
+                description="Input data values",  # 18 chars, only 3 words
                 required=True
             )
         assert "too generic" in str(exc_info.value).lower()
@@ -186,7 +186,7 @@ class TestActivityInputParamValidation:
             ActivityInputParam(
                 name="text",
                 type="str",
-                description="The email text",
+                description="The complete text",  # 17 chars, 3 words
                 required=True
             )
         assert "too generic" in str(exc_info.value).lower()
@@ -229,7 +229,7 @@ class TestEdgeCases:
         """Output description with exactly 20 characters should pass if it has semantic keywords."""
         schema = ActivityOutputSchema(
             type="str",
-            description="Returns the result",  # Exactly 20 chars
+            description="Returns the category",  # Exactly 20 chars
             fields=None
         )
         assert len(schema.description) == 20

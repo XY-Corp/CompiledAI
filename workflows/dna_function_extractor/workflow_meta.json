@@ -1,0 +1,26 @@
+{
+  "workflow_id": "dna_function_extractor",
+  "name": "DNA Sequence Function Call Extractor",
+  "description": "Extracts function call parameters from natural language DNA sequence generation requests and returns structured function call data",
+  "task_id": "simple_71",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"Generate a DNA sequence with 100 bases including more G (Guanine) and C (Cytosine).\"}]], \"function\": [{\"name\": \"generate_DNA_sequence\", \"description\": \"Generate a random DNA sequence with a specific length and nucleotide preference.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"length\": {\"type\": \"integer\", \"description\": \"The length of the DNA sequence to be generated.\"}, \"preferences\": {\"type\": \"array\", \"items\": {\"type\": \"string\", \"enum\": [\"A\", \"T\", \"C\", \"G\"]}, \"description\": \"Preferred nucleotides to include more frequently in the DNA sequence.\"}}, \"required\": [\"length\", \"preferences\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"generate_DNA_sequence\": {\n    \"length\": \"integer - The length of the DNA sequence to be generated.\",\n    \"preferences\": \"array - Preferred nucleotides to include more frequently in the DNA sequence.\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "activities": [
+    "extract_dna_function_call"
+  ],
+  "variables": [
+    {
+      "name": "prompt",
+      "default": null
+    },
+    {
+      "name": "functions",
+      "default": null
+    }
+  ],
+  "execution_pattern": "sequence",
+  "reasoning": "This workflow is designed to extract structured function call parameters from natural language DNA generation requests. The task is a metadata extraction task - it needs to analyze the prompt and return which function to call with what parameters, not actually generate the DNA sequence.\n\nI designed a single activity that uses LLM extraction (inspired by llm_extract) to parse the natural language prompt and identify:\n1. The sequence length (100 bases from the example)\n2. The nucleotide preferences (G and C from \"more G and C\")\n\nThe activity takes the raw prompt as input and returns the exact structure specified - a dictionary with generate_DNA_sequence as the key and the extracted parameters as values. This matches the expected output format where the function name is the top-level key.\n\nThe LLM approach is appropriate here because it requires understanding natural language intent (\"more G and C\" needs to be interpreted as preferences for those nucleotides) rather than simple pattern matching. The workflow uses sequence execution since there's only one activity.",
+  "metrics": {
+    "total_tokens": 28007,
+    "regeneration_count": 1
+  }
+}

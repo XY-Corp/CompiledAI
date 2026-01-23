@@ -1,0 +1,17 @@
+workflow_id: extract_triangle_area_params
+name: Extract Triangle Area Parameters
+description: Extracts base and height parameters from a natural language request to calculate triangle area and formats them for the calc_area_triangle function
+
+variables:
+  prompt: null
+  functions: null
+
+root:
+  sequence:
+    elements:
+      - activity:
+          name: extract_triangle_parameters
+          params:
+            user_request: ${{ prompt }}
+            available_functions: ${{ functions }}
+          result: result

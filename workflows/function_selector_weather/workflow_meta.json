@@ -1,26 +1,26 @@
 {
   "workflow_id": "function_selector_weather",
-  "name": "Function Selector for Weather Query",
-  "description": "Analyzes a user request and selects the appropriate function call from available functions, with proper parameter extraction for weather queries",
-  "task_id": "function_call_01_func_001",
-  "task_description": "Given these available functions:\n[{'name': 'get_weather', 'parameters': {'location': 'string', 'unit': 'celsius|fahrenheit'}}, {'name': 'send_email', 'parameters': {'to': 'string', 'subject': 'string', 'body': 'string'}}, {'name': 'create_reminder', 'parameters': {'title': 'string', 'time': 'datetime'}}]\n\nUser request: What's the weather in Paris in Celsius?\n\nReturn the function call as JSON with 'function' and 'parameters' keys.\n\n**IMPORTANT: The task provides these input variables:**\n- `functions` (list)\n- `user_request` (str)\n\nYour workflow MUST use these exact variable names: functions, user_request\n\n**CRITICAL - OUTPUT FORMAT (EXACT STRUCTURE REQUIRED):**\nYour activity must return this structure:\n```json\n{\n  \"function\": \"get_weather\",\n  \"parameters\": {\n    \"location\": \"Paris\",\n    \"unit\": \"celsius\"\n  }\n}\n```\n\n**Rules:**\n- Match this structure (field names, nesting, types) EXACTLY\n- Values will vary by instance, but structure stays the same\n- Do NOT add extra fields\n- Do NOT change field names",
+  "name": "Function Selection for Weather Query",
+  "description": "Analyzes a natural language weather query and returns the appropriate function call with properly extracted parameters to get average temperature data",
+  "task_id": "simple_78",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"Get the average temperature in Austin for the next 3 days in Celsius.\"}]], \"function\": [{\"name\": \"average_temperature\", \"description\": \"Retrieves the average temperature for a specific location over the defined timeframe.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"location\": {\"type\": \"string\", \"description\": \"The city to get the average temperature for. It should format as city name such as Boston.\"}, \"days\": {\"type\": \"integer\", \"description\": \"The number of days to get the average temperature for.\"}, \"temp_unit\": {\"type\": \"string\", \"description\": \"The temperature unit ('Celsius' or 'Fahrenheit'). Default is 'Fahrenheit'.\"}}, \"required\": [\"location\", \"days\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"average_temperature\": {\n    \"location\": \"string - The city to get the average temperature for. It should format as city name such as Boston.\",\n    \"days\": \"integer - The number of days to get the average temperature for.\",\n    \"temp_unit\": \"string - The temperature unit ('Celsius' or 'Fahrenheit'). Default is 'Fahrenheit'.\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
   "activities": [
-    "analyze_user_request"
+    "parse_weather_query"
   ],
   "variables": [
     {
-      "name": "functions",
+      "name": "prompt",
       "default": null
     },
     {
-      "name": "user_request",
+      "name": "functions",
       "default": null
     }
   ],
   "execution_pattern": "sequence",
-  "reasoning": "This is a function selection/metadata task where we need to analyze the user request and return which function to call with what parameters. The task requires understanding natural language intent and mapping it to available function signatures. Since this involves semantic understanding of user intent (not just pattern matching), we use LLM-based analysis. The output must match the exact JSON structure specified in the requirements.",
+  "reasoning": "This workflow is designed to parse user intent and return metadata about which function to call with what parameters, rather than executing the actual function. Based on the task structure, this is a function selection workflow that analyzes natural language input and maps it to specific function calls. The activity uses LLM because it requires semantic understanding of natural language queries to extract location, timeframe, and temperature units. The output format follows the exact structure specified in the task - a function name as the top-level key with its parameters nested underneath.",
   "metrics": {
-    "total_tokens": 17899,
-    "regeneration_count": 0
+    "total_tokens": 45803,
+    "regeneration_count": 3
   }
 }

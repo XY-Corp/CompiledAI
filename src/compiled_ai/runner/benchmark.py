@@ -301,16 +301,23 @@ class BenchmarkRunner:
             prompt = task.prompt_template.format(**instance.input_data)
 
             # Convert to TaskInput
+            # Build metadata with output_format if available (CRITICAL for Code Factory)
+            metadata = {
+                "task_name": task.name,
+                "category": task.category.value,
+                "difficulty": task.difficulty.value,
+                "expected_output": instance.expected_output,  # Include for format reference
+            }
+
+            # Add output_format if available (needed for Code Factory compilation)
+            if hasattr(instance, 'metadata') and instance.metadata and "output_format" in instance.metadata:
+                metadata["output_format"] = instance.metadata["output_format"]
+
             task_input = TaskInput(
                 task_id=f"{task.task_id}_{instance.instance_id}",
                 prompt=prompt,
                 context=instance.input_data,
-                metadata={
-                    "task_name": task.name,
-                    "category": task.category.value,
-                    "difficulty": task.difficulty.value,
-                    "expected_output": instance.expected_output,  # Include for format reference
-                },
+                metadata=metadata,
             )
 
             # Run baseline

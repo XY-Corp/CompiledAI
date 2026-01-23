@@ -1,0 +1,21 @@
+workflow_id: physics_displacement_calculator
+name: Physics Displacement Calculator
+description: Extract physics parameters from user query and format them for displacement calculation function
+
+variables:
+  prompt: null
+  functions: null
+
+root:
+  sequence:
+    elements:
+      - activity:
+          name: extract_physics_parameters
+          params:
+            query_text: ${{ prompt }}
+          result: physics_params
+      - activity:
+          name: format_function_call
+          params:
+            physics_params: ${{ physics_params }}
+          result: function_call

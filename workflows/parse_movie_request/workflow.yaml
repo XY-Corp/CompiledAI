@@ -1,0 +1,17 @@
+workflow_id: parse_movie_request
+name: Parse IMAX Movie Request
+description: Analyzes user requests for movie showtimes and extracts the appropriate function call parameters for theater movie release queries
+
+variables:
+  prompt: null
+  functions: null
+
+root:
+  sequence:
+    elements:
+      - activity:
+          name: parse_movie_request
+          params:
+            user_request: ${{ prompt }}
+            available_functions: ${{ functions }}
+          result: parsed_result

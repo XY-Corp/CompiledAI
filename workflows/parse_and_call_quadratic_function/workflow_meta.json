@@ -1,0 +1,31 @@
+{
+  "workflow_id": "parse_and_call_quadratic_function",
+  "name": "Parse Quadratic Equation and Generate Function Call",
+  "description": "Parses a quadratic equation query to extract coefficients and generates the appropriate function call with parameters",
+  "task_id": "bfcl_simple_simple_4",
+  "task_description": "You have access to the following functions:\n\n[\n  {\n    \"name\": \"solve_quadratic_equation\",\n    \"description\": \"Function solves the quadratic equation and returns its roots.\",\n    \"parameters\": {\n      \"type\": \"dict\",\n      \"properties\": {\n        \"a\": {\n          \"type\": \"integer\",\n          \"description\": \"Coefficient of x squared\"\n        },\n        \"b\": {\n          \"type\": \"integer\",\n          \"description\": \"Coefficient of x\"\n        },\n        \"c\": {\n          \"type\": \"integer\",\n          \"description\": \"Constant term in the quadratic equation.\"\n        }\n      },\n      \"required\": [\n        \"a\",\n        \"b\",\n        \"c\"\n      ]\n    }\n  }\n]\n\nUser query: Solve a quadratic equation where a=2, b=6, and c=5\n\nGenerate the appropriate function call as JSON with 'name' and 'arguments' keys.\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `user_query` (str) - context for task type\n- `functions` (str) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, user_query, functions\n\n**OUTPUT FORMAT (STRUCTURE REFERENCE - VALUES ARE EXAMPLES ONLY!):**\nYour activity must return this structure:\n```json\n[\n  {\n    \"solve_quadratic_equation\": {\n      \"a\": [\n        2\n      ],\n      \"b\": [\n        6\n      ],\n      \"c\": [\n        5\n      ]\n    }\n  }\n]\n```\n\n**CRITICAL RULES:**\n- The values above are EXAMPLES ONLY - do NOT hardcode them\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Match the structure (field names, nesting, types) EXACTLY\n- Do NOT add extra fields",
+  "activities": [
+    "extract_quadratic_coefficients",
+    "generate_function_call"
+  ],
+  "variables": [
+    {
+      "name": "prompt",
+      "default": null
+    },
+    {
+      "name": "user_query",
+      "default": null
+    },
+    {
+      "name": "functions",
+      "default": null
+    }
+  ],
+  "execution_pattern": "sequence",
+  "reasoning": "This workflow uses a two-step sequential approach: First, it extracts the quadratic equation coefficients (a, b, c) from the natural language prompt using deterministic pattern matching (regex). This is preferred over LLM since coefficient extraction follows clear patterns like 'a=2, b=6, c=5'. Second, it formats these coefficients into the exact function call structure required by the output format. The workflow processes the 'prompt' variable as specified, extracting actual values at runtime rather than hardcoding them. The sequential execution ensures coefficients are extracted before being formatted into the function call structure.",
+  "metrics": {
+    "total_tokens": 25545,
+    "regeneration_count": 0
+  }
+}

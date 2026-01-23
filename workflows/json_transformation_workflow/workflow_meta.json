@@ -1,0 +1,34 @@
+{
+  "workflow_id": "json_transformation_workflow",
+  "name": "JSON Transformation Workflow",
+  "description": "Transforms JSON data from source format to target format by parsing the transformation requirements from the prompt and performing field mapping and value transformation",
+  "task_id": "json_transform_01_transform_001",
+  "task_description": "{\"prompt_template\": \"Transform this JSON from the source format to the target format.\\n\\nSource:\\n{source_json}\\n\\nTarget Schema:\\n{target_schema}\\n\\nReturn only the transformed JSON.\", \"input\": {\"source_json\": {\"first_name\": \"John\", \"last_name\": \"Doe\", \"email_address\": \"john@example.com\"}, \"target_schema\": {\"fullName\": \"string\", \"email\": \"string\"}}}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `_task_schema` (dict) - context for task type\n- `source_json` (dict) - context for task type\n- `target_schema` (dict) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, _task_schema, source_json, target_schema\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"JSON object matching the target_schema structure provided in input. Fields are dynamically determined by target_schema - map source fields to target fields, combining or computing values as needed.\"\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "activities": [
+    "transform_json_structure"
+  ],
+  "variables": [
+    {
+      "name": "prompt",
+      "default": null
+    },
+    {
+      "name": "_task_schema",
+      "default": null
+    },
+    {
+      "name": "source_json",
+      "default": null
+    },
+    {
+      "name": "target_schema",
+      "default": null
+    }
+  ],
+  "execution_pattern": "sequence",
+  "reasoning": "This workflow needs to handle JSON transformation tasks where the prompt contains source JSON and target schema information. Since this is a structured data transformation with clear patterns (field mapping), we use deterministic code rather than LLM. The workflow parses the prompt to extract source data and target schema, then performs the transformation using field mapping logic. A single activity is sufficient since the transformation is straightforward - map source fields to target fields based on the schema provided.",
+  "metrics": {
+    "total_tokens": 18088,
+    "regeneration_count": 0
+  }
+}

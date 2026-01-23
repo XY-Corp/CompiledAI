@@ -1,0 +1,26 @@
+{
+  "workflow_id": "extract_function_params_workflow",
+  "name": "Extract Function Parameters from Natural Language",
+  "description": "Analyzes natural language user queries to extract function parameters and format them as function calls. This workflow processes user prompts to identify the appropriate function and its required parameters, then structures the output as a function call with the function name as the top-level key.",
+  "task_id": "simple_47",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"Find the boiling point and melting point of water under the sea level of 5000m.\"}]], \"function\": [{\"name\": \"get_boiling_melting_points\", \"description\": \"Retrieve the boiling point and melting point of a substance based on its name and the sea level.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"substance\": {\"type\": \"string\", \"description\": \"The name of the substance.\"}, \"sea_level\": {\"type\": \"integer\", \"description\": \"The sea level in meters.\"}}, \"required\": [\"substance\", \"sea_level\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"get_boiling_melting_points\": {\n    \"substance\": \"string - The name of the substance.\",\n    \"sea_level\": \"integer - The sea level in meters.\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "activities": [
+    "extract_function_parameters"
+  ],
+  "variables": [
+    {
+      "name": "prompt",
+      "default": null
+    },
+    {
+      "name": "functions",
+      "default": null
+    }
+  ],
+  "execution_pattern": "sequence",
+  "reasoning": "This workflow addresses the core task of analyzing natural language queries to extract function parameters. The task requires understanding the user's intent from the prompt and mapping it to the appropriate function call format. \n\nKey design decisions:\n1. **Single Activity Design**: Since this is fundamentally a semantic understanding task that requires parsing natural language and mapping it to structured function calls, a single LLM-based extraction activity is the most appropriate approach. The LLM can understand context, identify the relevant function, and extract parameter values.\n\n2. **LLM vs Deterministic Logic**: While I generally prefer deterministic code, this task specifically requires semantic understanding of natural language queries. The LLM can understand variations in how users express requests (e.g., \"find boiling point of water at 5000m depth\" vs \"get water properties below sea level\"), making it the right tool for this job.\n\n3. **Output Structure**: The task specifies a unique output format where the function name becomes the top-level key. This is different from typical function call formats, so the activity must be specifically designed to produce this structure.\n\n4. **Variable Naming**: Using the exact context variable names (`prompt` and `functions`) ensures proper data binding at runtime.\n\n5. **Template Reference**: Based the design on `llm_extract` since it handles structured data extraction from unstructured text, which matches our need to extract structured function parameters from natural language.",
+  "metrics": {
+    "total_tokens": 47623,
+    "regeneration_count": 1
+  }
+}

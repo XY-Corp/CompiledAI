@@ -1,0 +1,17 @@
+workflow_id: parse_function_call_request
+name: Parse Function Call Request
+description: Parses a user request to extract function call information and parameters for database operations
+
+variables:
+  prompt: None
+  functions: None
+
+root:
+  sequence:
+    elements:
+      - activity:
+          name: parse_user_request
+          params:
+            user_request: ${{ prompt }}
+            available_functions: ${{ functions }}
+          result: function_call_result

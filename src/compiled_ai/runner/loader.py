@@ -6,6 +6,8 @@ from pathlib import Path
 from typing import Any
 
 from .dataset import Dataset, Task, TaskCategory, TaskDifficulty, TaskInstance
+from .standardized import StandardizedDataset
+from .transformers import get_transformer, transform_dataset
 
 
 class DatasetAdapter(ABC):
@@ -145,6 +147,13 @@ class BFCLAdapter(DatasetAdapter):
                                 instance_id, data.get("ground_truth", {})
                             )
 
+                            # Generate output_format from function definitions (CRITICAL for Code Factory)
+                            output_format = self._generate_output_format_from_functions(functions)
+
+                            # Expand ground truth arrays into first valid output
+                            # BFCL format: {"func": {"param": [val1, val2]}} means val1 OR val2
+                            expected_output = self._expand_ground_truth_to_first(ground_truth)
+
                             instances.append(
                                 TaskInstance(
                                     instance_id=instance_id,
@@ -152,12 +161,13 @@ class BFCLAdapter(DatasetAdapter):
                                         "user_query": question,
                                         "functions": functions_str,
                                     },
-                                    expected_output=ground_truth,
+                                    expected_output=expected_output,
                                     metadata={
                                         "category": category,
                                         "execution_result_type": data.get(
                                             "execution_result_type", ""
                                         ),
+                                        "output_format": output_format,  # Add output_format for Code Factory
                                     },
                                 )
                             )
@@ -184,6 +194,91 @@ class BFCLAdapter(DatasetAdapter):
                 dataset.tasks.append(task)
 
         return dataset
+
+    def _expand_ground_truth_to_first(self, ground_truth: list[dict]) -> dict:
+        """Expand BFCL ground truth arrays to first valid output.
+
+        BFCL format: [{"func_name": {"param": [val1, val2]}}]
+        Where arrays mean "any of these values is valid"
+
+        We take the first value from each array to create a single valid output.
+
+        Args:
+            ground_truth: Raw BFCL ground truth with arrays
+
+        Returns:
+            Single valid output dict: {"func_name": {"param": val1}}
+        """
+        if not ground_truth or not isinstance(ground_truth, list):
+            return {}
+
+        # Take first function call
+        first_call = ground_truth[0] if ground_truth else {}
+        if not isinstance(first_call, dict):
+            return {}
+
+        result = {}
+        for func_name, params in first_call.items():
+            if not isinstance(params, dict):
+                result[func_name] = params
+                continue
+
+            # Expand parameter arrays
+            expanded_params = {}
+            for param_name, values in params.items():
+                if isinstance(values, list) and values:
+                    # Take first non-empty value
+                    first_val = values[0]
+                    # Empty string means optional - skip it
+                    if first_val != "":
+                        expanded_params[param_name] = first_val
+                else:
+                    expanded_params[param_name] = values
+
+            result[func_name] = expanded_params
+
+        return result
+
+    def _generate_output_format_from_functions(self, functions: list[dict]) -> dict:
+        """Generate output_format from function definitions.
+
+        The output format describes the structure WITHOUT specific values.
+        For BFCL, output is a function call: {func_name: {param: value, ...}}
+
+        IMPORTANT: Function names are TOP-LEVEL keys, not nested under "functions".
+
+        Args:
+            functions: List of function definitions with name and parameters
+
+        Returns:
+            Output format dict with function names as top-level keys
+        """
+        if not functions:
+            return {
+                "type": "object",
+                "description": "A single function call with the function name as the top-level key and its parameters as a nested object"
+            }
+
+        output_format = {
+            "type": "object",
+            "description": "A single function call with the function name as the top-level key and its parameters as a nested object"
+        }
+
+        for func in functions:
+            func_name = func.get("name", "unknown")
+            params_schema = func.get("parameters", {})
+            properties = params_schema.get("properties", {})
+
+            func_params = {}
+            for param_name, param_def in properties.items():
+                param_type = param_def.get("type", "any")
+                param_desc = param_def.get("description", param_name)
+                func_params[param_name] = f"{param_type} - {param_desc}"
+
+            # Add function name as TOP-LEVEL key (not under "functions")
+            output_format[func_name] = func_params
+
+        return output_format
 
     def _load_ground_truth(self, path: Path, category: str) -> dict[str, Any]:
         """Load ground truth from possible_answer directory.
@@ -772,3 +867,45 @@ class DatasetLoader:
             List of adapter names
         """
         return list(_ADAPTER_REGISTRY.keys())
+
+    def load_standardized(self, name: str, **kwargs: Any) -> StandardizedDataset:
+        """Load a dataset and convert to standardized format.
+
+        Args:
+            name: Dataset name (e.g., "xy_benchmark", "bfcl_v4")
+            **kwargs: Additional arguments for the adapter
+
+        Returns:
+            StandardizedDataset with unified format
+
+        Raises:
+            ValueError: If dataset not found or no compatible adapter
+        """
+        dataset = self.load(name, **kwargs)
+        return transform_dataset(dataset)
+
+    def load_external_standardized(
+        self, adapter_name: str, path: Path | str, **kwargs: Any
+    ) -> StandardizedDataset:
+        """Load an external dataset and convert to standardized format.
+
+        Args:
+            adapter_name: Name of the adapter to use
+            path: Path to the dataset
+            **kwargs: Additional arguments for the adapter
+
+        Returns:
+            StandardizedDataset with unified format
+
+        Raises:
+            ValueError: If adapter not found
+        """
+        dataset = self.load_external(adapter_name, path, **kwargs)
+
+        # Use adapter-specific transformer if available
+        try:
+            transformer = get_transformer(adapter_name)
+            return transformer.transform(dataset)
+        except ValueError:
+            # Fall back to auto-detection
+            return transform_dataset(dataset)

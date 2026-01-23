@@ -1,0 +1,17 @@
+workflow_id: gene_protein_sequence_function_call
+name: Gene Protein Sequence Function Call Generator
+description: Analyzes a user prompt about gene protein sequence identification and generates the appropriate function call with extracted parameters
+
+variables:
+  prompt: null
+  functions: null
+
+root:
+  sequence:
+    elements:
+      - activity:
+          name: extract_gene_function_call
+          params:
+            user_prompt: ${{ prompt }}
+            available_functions: ${{ functions }}
+          result: function_call

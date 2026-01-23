@@ -1,0 +1,26 @@
+{
+  "workflow_id": "precipitation_function_selection",
+  "name": "Amazon Precipitation Function Selection",
+  "description": "Analyzes natural language query to select appropriate ecology precipitation function with extracted parameters",
+  "task_id": "simple_66",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"Get me data on average precipitation in the Amazon rainforest for the last six months.\"}]], \"function\": [{\"name\": \"ecology_data.precipitation_stats\", \"description\": \"Retrieve precipitation data for a specified location and time period.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"location\": {\"type\": \"string\", \"description\": \"The name of the location, e.g., 'Amazon rainforest'.\"}, \"time_frame\": {\"type\": \"string\", \"enum\": [\"six_months\", \"year\", \"five_years\"], \"description\": \"The time period for which data is required.\"}}, \"required\": [\"location\", \"time_frame\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"ecology_data.precipitation_stats\": {\n    \"location\": \"string - The name of the location, e.g., 'Amazon rainforest'.\",\n    \"time_frame\": \"string - The time period for which data is required.\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "activities": [
+    "analyze_precipitation_request"
+  ],
+  "variables": [
+    {
+      "name": "prompt",
+      "default": null
+    },
+    {
+      "name": "functions",
+      "default": null
+    }
+  ],
+  "execution_pattern": "sequence",
+  "reasoning": "This workflow processes a natural language query about precipitation data and returns the appropriate function call structure. The task is clearly asking for metadata selection (which function to call) rather than execution of the function itself.\n\nI designed a single activity that uses LLM capabilities to:\n1. Parse the natural language query to extract location (\"Amazon rainforest\") and time period (\"last six months\")\n2. Map the time period to the correct enum value (\"six_months\")\n3. Return the exact function call structure expected\n\nThe activity uses the llm_extract template as inspiration since it needs to parse unstructured text and return structured data. However, I customized it specifically for function selection rather than general extraction.\n\nThe output schema exactly matches the expected format with \"ecology_data.precipitation_stats\" as the top-level key and location/time_frame as nested parameters. The description includes the complete example structure to guide the code generation.",
+  "metrics": {
+    "total_tokens": 36287,
+    "regeneration_count": 2
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "activity_name": "extract_bacteria_parameters",
+  "description": "Extract bacteria evolution parameters from natural language text and format as function call",
+  "task_id": "simple_74",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"Calculate the evolution rate of a bacteria population, start with 5000 bacteria, each bacteria duplicates every hour for 6 hours.\"}]], \"function\": [{\"name\": \"calculate_bacteria_evolution_rate\", \"description\": \"Calculate the evolution rate of bacteria given the starting number, duplication frequency and total duration.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"start_population\": {\"type\": \"integer\", \"description\": \"The starting population of bacteria.\"}, \"duplication_frequency\": {\"type\": \"integer\", \"description\": \"The frequency of bacteria duplication per hour.\"}, \"duration\": {\"type\": \"integer\", \"description\": \"Total duration in hours.\"}, \"generation_time\": {\"type\": \"integer\", \"description\": \"The average generation time of the bacteria in minutes. Default is 20 minutes\"}}, \"required\": [\"start_population\", \"duplication_frequency\", \"duration\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"calculate_bacteria_evolution_rate\": {\n    \"start_population\": \"integer - The starting population of bacteria.\",\n    \"duplication_frequency\": \"integer - The frequency of bacteria duplication per hour.\",\n    \"duration\": \"integer - Total duration in hours.\",\n    \"generation_time\": \"integer - The average generation time of the bacteria in minutes. Default is 20 minutes\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "inputs": [
+    {
+      "name": "user_prompt",
+      "type": "str",
+      "description": "The natural language text describing bacteria population, duplication rate, and time duration",
+      "required": true
+    },
+    {
+      "name": "available_functions",
+      "type": "list",
+      "description": "List of available function definitions to understand expected parameter structure",
+      "required": true
+    }
+  ],
+  "output": {
+    "type": "dict",
+    "description": "Returns a function call structure: {\"calculate_bacteria_evolution_rate\": {\"start_population\": 5000, \"duplication_frequency\": 1, \"duration\": 6, \"generation_time\": 20}}",
+    "fields": {
+      "calculate_bacteria_evolution_rate": "dict - Contains the extracted parameters for bacteria evolution calculation"
+    }
+  },
+  "reference_activity": "llm_extract",
+  "workflow_spec": {
+    "workflow_id": "bacteria_evolution_function_call",
+    "name": "Bacteria Evolution Function Call Generator",
+    "description": "Extracts bacteria population parameters from natural language text and formats them as a function call for calculate_bacteria_evolution_rate",
+    "execution_pattern": "sequence"
+  }
+}

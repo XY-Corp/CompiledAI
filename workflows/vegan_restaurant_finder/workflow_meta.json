@@ -1,0 +1,26 @@
+{
+  "workflow_id": "vegan_restaurant_finder",
+  "name": "Vegan Restaurant Finder",
+  "description": "Analyzes user requests to find vegan restaurants and extracts the appropriate function call with location and operating hours parameters",
+  "task_id": "simple_35",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"Find an all vegan restaurant in New York that opens until at least 11 PM.\"}]], \"function\": [{\"name\": \"vegan_restaurant.find_nearby\", \"description\": \"Locate nearby vegan restaurants based on specific criteria like operating hours.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"location\": {\"type\": \"string\", \"description\": \"The city and state, e.g. New York, NY, you should format it as City, State.\"}, \"operating_hours\": {\"type\": \"integer\", \"description\": \"Preferred latest closing time of the restaurant. E.g. if 11 is given, then restaurants that close at or after 11 PM will be considered. This is in 24 hour format. Default is 24.\"}}, \"required\": [\"location\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"vegan_restaurant.find_nearby\": {\n    \"location\": \"string - The city and state, e.g. New York, NY, you should format it as City, State.\",\n    \"operating_hours\": \"integer - Preferred latest closing time of the restaurant. E.g. if 11 is given, then restaurants that close at or after 11 PM will be considered. This is in 24 hour format. Default is 24.\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "activities": [
+    "extract_restaurant_function_call"
+  ],
+  "variables": [
+    {
+      "name": "prompt",
+      "default": null
+    },
+    {
+      "name": "functions",
+      "default": null
+    }
+  ],
+  "execution_pattern": "sequence",
+  "reasoning": "This is a metadata extraction task where the user wants to return which function to call based on natural language input, not actually execute the function. The workflow needs one activity that uses LLM to parse the user request and extract the location ('New York') and operating hours requirement ('at least 11 PM' = 23 in 24-hour format), then format it as the expected function call structure. The LLM is necessary because it requires semantic understanding to extract location and time preferences from natural language. The activity must return the exact structure specified in the output format with the function name as the top-level key and parameters nested within.",
+  "metrics": {
+    "total_tokens": 18004,
+    "regeneration_count": 0
+  }
+}

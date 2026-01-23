@@ -1,0 +1,15 @@
+workflow_id: restaurant_request_parser
+name: Restaurant Request Parser
+description: Parses user requests about restaurants and extracts function call parameters for get_restaurant function
+variables:
+  prompt: null
+  functions: null
+root:
+  sequence:
+    elements:
+      - activity:
+          name: parse_restaurant_request
+          params:
+            user_request: ${{ prompt }}
+            function_schema: ${{ functions }}
+          result: parsed_result

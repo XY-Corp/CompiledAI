@@ -4,91 +4,87 @@ import re
 from pydantic import BaseModel
 
 
-class FunctionCallResult(BaseModel):
-    """Defines the expected structure for function call result."""
+class FunctionCall(BaseModel):
+    """Function call result."""
     function: str
     parameters: Dict[str, Any]
 
 
-async def analyze_user_intent(
+async def analyze_request_and_select_function(
     user_request: str,
-    functions: list,
+    available_functions: list,
     # Injected context
     org_id: str | None = None,
     user_id: str | None = None,
     workflow_definition_id: str | None = None,
     workflow_instance_id: str | None = None,
 ) -> dict[str, Any]:
-    """Analyzes user request against available functions to determine the appropriate function call with parameters.
-    
+    """Analyzes the user request against available functions to determine the appropriate function to call and extract parameters.
+
     Args:
-        user_request: The user's natural language request describing what they want to accomplish
-        functions: List of available function definitions with name and parameter specifications
-        
+        user_request: The user's natural language request that needs to be mapped to a function call
+        available_functions: List of function definitions with their names and parameter schemas that can be called
+
     Returns:
-        Dict with function name and parameters extracted from the user request
+        Dict with exact structure: {"function": "function_name", "parameters": {...}}
     """
     try:
         # Handle JSON string input defensively
-        if isinstance(functions, str):
-            functions = json.loads(functions)
+        if isinstance(available_functions, str):
+            available_functions = json.loads(available_functions)
         
-        # Validate that functions is a list
-        if not isinstance(functions, list):
-            return {"error": f"functions must be list, got {type(functions).__name__}"}
-        
-        if not functions:
-            return {"error": "No functions available"}
+        if not isinstance(available_functions, list):
+            return {"error": f"available_functions must be list, got {type(available_functions).__name__}"}
         
         # Format functions with EXACT parameter names clearly visible
         functions_text = "Available Functions:\n"
-        for func in functions:
+        for func in available_functions:
+            func_name = func.get('name', 'unknown')
             # Handle both 'parameters' and 'params' keys for compatibility
             params_schema = func.get('parameters', func.get('params', {}))
             
             # Show EXACT parameter names the LLM must use
-            param_details = []
-            for param_name, param_info in params_schema.items():
-                # Handle both string format ("string") and dict format ({"type": "string", ...})
-                if isinstance(param_info, str):
-                    param_type = param_info
-                    param_details.append(f'"{param_name}": <{param_type}>')
-                elif isinstance(param_info, dict):
-                    param_type = param_info.get('type', 'string')
-                    description = param_info.get('description', '')
-                    if description:
-                        param_details.append(f'"{param_name}": <{param_type}> ({description})')
-                    else:
+            if params_schema:
+                param_details = []
+                for param_name, param_info in params_schema.items():
+                    # Handle both string format ("string") and dict format ({"type": "string", ...})
+                    if isinstance(param_info, str):
+                        param_type = param_info
                         param_details.append(f'"{param_name}": <{param_type}>')
-                else:
-                    param_details.append(f'"{param_name}": <any>')
-            
-            functions_text += f"- {func['name']}: parameters must be: {{{', '.join(param_details)}}}\n"
+                    elif isinstance(param_info, dict):
+                        param_type = param_info.get('type', 'any')
+                        param_details.append(f'"{param_name}": <{param_type}>')
+                    else:
+                        param_details.append(f'"{param_name}": <any>')
+                
+                functions_text += f"- {func_name}: parameters must be: {{{', '.join(param_details)}}}\n"
+            else:
+                functions_text += f"- {func_name}: no parameters\n"
         
-        # Create prompt for function selection
         prompt = f"""User request: "{user_request}"
 
 {functions_text}
 
-Select the appropriate function and extract parameters from the user request.
+Select the most appropriate function and extract parameters from the user request.
 
-CRITICAL RULES:
-1. Use the EXACT parameter names shown above for each function
-2. DO NOT infer different parameter names
-3. Extract parameter values from the user's request
-4. If a parameter value is not clear from the request, make a reasonable guess
+CRITICAL: Use the EXACT parameter names shown above for each function.
+DO NOT infer different parameter names.
+
+For example, if get_weather has parameters {{"location": "string", "unit": "celsius|fahrenheit"}}:
+- User says "weather in Paris in Celsius"
+- Return: {{"function": "get_weather", "parameters": {{"location": "Paris", "unit": "celsius"}}}}
 
 Return ONLY valid JSON in this exact format:
 {{"function": "function_name", "parameters": {{"exact_param_name": "extracted_value"}}}}
 
-Example for get_weather with params {{"location": "string", "unit": "string"}}:
-{{"function": "get_weather", "parameters": {{"location": "Paris", "unit": "celsius"}}}}"""
-        
-        # Use LLM to analyze and select function
+If no function matches, use the closest match."""
+
         response = llm_client.generate(prompt)
-        content = response.content.strip()
         
         # Extract JSON from response (handles markdown code blocks)
+        content = response.content.strip()
+        
+        # Remove markdown code blocks if present
         if "```" in content:
             # Extract content between ```json and ``` or between ``` and ```
             json_match = re.search(r'```(?:json)?\s*(\{.*?\})\s*```', content, re.DOTALL)
@@ -101,35 +97,15 @@ Example for get_weather with params {{"location": "string", "unit": "string"}}:
                     content = json_match.group(0)
         
         # Parse and validate with Pydantic
-        try:
-            data = json.loads(content)
-            validated = FunctionCallResult(**data)
-            return validated.model_dump()
-        except (json.JSONDecodeError, ValueError) as e:
-            # Fallback: try to extract function and parameters using regex
-            function_match = re.search(r'"function"\s*:\s*"([^"]+)"', content)
-            params_match = re.search(r'"parameters"\s*:\s*(\{[^}]+\})', content)
-            
-            if function_match:
-                function_name = function_match.group(1)
-                parameters = {}
-                
-                if params_match:
-                    try:
-                        parameters = json.loads(params_match.group(1))
-                    except:
-                        parameters = {}
-                
-                return {
-                    "function": function_name,
-                    "parameters": parameters
-                }
-            
-            return {"error": f"Failed to parse LLM response: {e}"}
+        data = json.loads(content)
+        validated = FunctionCall(**data)
+        
+        return {
+            "function": validated.function,
+            "parameters": validated.parameters
+        }
         
     except json.JSONDecodeError as e:
-        return {"error": f"Invalid JSON in functions list: {e}"}
-    except KeyError as e:
-        return {"error": f"Missing field in function definition: {e}"}
+        return {"error": f"Failed to parse LLM response as JSON: {e}"}
     except Exception as e:
-        return {"error": f"Unexpected error: {e}"}
+        return {"error": f"Error processing request: {e}"}

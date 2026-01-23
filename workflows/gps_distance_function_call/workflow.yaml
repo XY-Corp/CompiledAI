@@ -1,0 +1,17 @@
+workflow_id: gps_distance_function_call
+name: GPS Distance Calculation Function Call
+description: Parse GPS coordinates from user prompt and format as a function call for distance calculation
+
+variables:
+  prompt: null
+  functions: null
+
+root:
+  sequence:
+    elements:
+      - activity:
+          name: parse_gps_coordinates_and_format_function_call
+          params:
+            user_prompt: ${{ prompt }}
+            available_functions: ${{ functions }}
+          result: function_call_result

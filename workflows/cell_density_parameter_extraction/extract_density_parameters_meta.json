@@ -1,0 +1,34 @@
+{
+  "activity_name": "extract_density_parameters",
+  "description": "Extract optical density, dilution, and calibration factor parameters from natural language text using LLM for function call formatting",
+  "task_id": "simple_57",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"Calculate the cell density in a sample with an optical density of 0.6, where the experiment dilution is 5 times.\"}]], \"function\": [{\"name\": \"calculate_cell_density\", \"description\": \"Calculate the cell density of a biological sample based on its optical density and the experiment dilution.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"optical_density\": {\"type\": \"float\", \"description\": \"The optical density of the sample, usually obtained from a spectrophotometer reading.\"}, \"dilution\": {\"type\": \"integer\", \"description\": \"The dilution factor applied during the experiment.\"}, \"calibration_factor\": {\"type\": \"float\", \"description\": \"The calibration factor to adjust the density, default value is 1e9 assuming cell density is in CFU/mL.\"}}, \"required\": [\"optical_density\", \"dilution\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"calculate_cell_density\": {\n    \"optical_density\": \"float - The optical density of the sample, usually obtained from a spectrophotometer reading.\",\n    \"dilution\": \"integer - The dilution factor applied during the experiment.\",\n    \"calibration_factor\": \"float - The calibration factor to adjust the density, default value is 1e9 assuming cell density is in CFU/mL.\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "inputs": [
+    {
+      "name": "prompt_text",
+      "type": "str",
+      "description": "The natural language text containing parameter values like optical density readings and dilution factors",
+      "required": true
+    },
+    {
+      "name": "function_schema",
+      "type": "str",
+      "description": "JSON string describing the expected parameter structure and types for the calculate_cell_density function",
+      "required": true
+    }
+  ],
+  "output": {
+    "type": "dict",
+    "description": "Returns function call structure: {\"calculate_cell_density\": {\"optical_density\": 0.6, \"dilution\": 5, \"calibration_factor\": 1000000000.0}} where optical_density is the extracted float value, dilution is the extracted integer factor, and calibration_factor defaults to 1e9 if not specified",
+    "fields": {
+      "calculate_cell_density": "dict"
+    }
+  },
+  "reference_activity": "llm_extract",
+  "workflow_spec": {
+    "workflow_id": "cell_density_parameter_extraction",
+    "name": "Cell Density Parameter Extraction",
+    "description": "Extracts parameters from natural language text and formats them for the calculate_cell_density function call",
+    "execution_pattern": "sequence"
+  }
+}

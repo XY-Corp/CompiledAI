@@ -58,6 +58,7 @@ class CodeFactoryBaseline(BaseBaseline):
         enable_cache: bool = False,
         cache_size: int = 50,
         similarity_threshold: float = 0.7,
+        log_dir: str | None = "logs",
     ) -> None:
         """Initialize the Code Factory baseline.
 
@@ -71,6 +72,7 @@ class CodeFactoryBaseline(BaseBaseline):
             enable_cache: Enable LLM response caching (passed to CodeFactory)
             cache_size: Maximum number of workflows to cache (default: 50)
             similarity_threshold: Minimum similarity for workflow reuse (default: 0.7)
+            log_dir: Directory for compilation logs (None to disable file logging)
         """
         self.provider = provider
         self.model = model or self._default_model(provider)
@@ -80,6 +82,7 @@ class CodeFactoryBaseline(BaseBaseline):
         self.auto_register = auto_register
         self.enable_cache = enable_cache
         self.similarity_threshold = similarity_threshold
+        self.log_dir = log_dir
 
         # NEW: Task classification and caching
         self.signature_extractor = TaskSignatureExtractor()
@@ -117,16 +120,17 @@ class CodeFactoryBaseline(BaseBaseline):
     def _default_model(self, provider: str) -> str:
         """Get default model for provider."""
         defaults = {
-            "anthropic": "claude-sonnet-4-20250514",
+            "anthropic": "claude-opus-4-5-20251101",  # Opus 4.5 with extended thinking
             "openai": "gpt-4o",
             "gemini": "gemini-2.0-flash",
         }
-        return defaults.get(provider, "claude-sonnet-4-20250514")
+        return defaults.get(provider, "claude-opus-4-5-20251101")
 
     def run(self, task_input: TaskInput) -> BaselineResult:
         """Execute Code Factory baseline on a single task.
 
-        First task triggers compilation phase. Subsequent tasks use compiled workflow.
+        Strategy: Compile once, run many times.
+        All datasets treated the same - no special cases.
 
         Args:
             task_input: Task input with prompt and context
@@ -134,7 +138,6 @@ class CodeFactoryBaseline(BaseBaseline):
         Returns:
             BaselineResult with output and metrics
         """
-        # Run async code in sync context
         return asyncio.run(self._run_async(task_input))
 
     def run_batch(self, inputs: list[TaskInput]) -> list[BaselineResult]:
@@ -340,16 +343,28 @@ class CodeFactoryBaseline(BaseBaseline):
                     signature=signature, latency_ms=total_latency_ms
                 )
 
-            # Calculate tokens to report
+            # Calculate tokens to report with full breakdown
             if needs_compilation:
-                compilation_tokens = self.metrics_tracker.get_compilation_tokens(signature)
+                # Get compilation token breakdown from factory result
+                if factory_result.metrics:
+                    gen_input_tokens = factory_result.metrics.total_input_tokens
+                    gen_output_tokens = factory_result.metrics.total_output_tokens
+                    compilation_tokens = factory_result.metrics.total_tokens
+                else:
+                    gen_input_tokens = 0
+                    gen_output_tokens = 0
+                    compilation_tokens = 0
                 input_tokens = compilation_tokens
             else:
+                gen_input_tokens = None
+                gen_output_tokens = None
                 compilation_tokens = 0
                 input_tokens = 0  # Cached execution = 0 tokens
 
-            # Track execution tokens (should be 0 for deterministic code, >0 if LLM used)
-            execution_tokens = exec_result.get("tokens_used", 0)
+            # Track execution tokens (from LLM activities during workflow execution)
+            exec_input_tokens = exec_result.get("input_tokens", 0)
+            exec_output_tokens = exec_result.get("output_tokens", 0)
+            execution_tokens = exec_input_tokens + exec_output_tokens
 
             # Record execution in activity registry
             workflow_id = "unknown"
@@ -373,15 +388,15 @@ class CodeFactoryBaseline(BaseBaseline):
                 error=error,
                 latency_ms=total_latency_ms,
                 input_tokens=input_tokens,
-                output_tokens=0,
+                output_tokens=execution_tokens,
                 llm_calls=0,
                 generation_time_ms=generation_time_ms,
                 execution_time_ms=execution_time_ms,
                 # Token breakdown
-                generation_input_tokens=compilation_tokens if needs_compilation else None,
-                generation_output_tokens=0 if needs_compilation else None,  # TODO: Track separately
-                execution_input_tokens=execution_tokens,
-                execution_output_tokens=0,  # TODO: Track from LLM calls during execution
+                generation_input_tokens=gen_input_tokens,
+                generation_output_tokens=gen_output_tokens,
+                execution_input_tokens=exec_input_tokens,
+                execution_output_tokens=exec_output_tokens,
             )
 
         except Exception as e:
@@ -443,6 +458,7 @@ class CodeFactoryBaseline(BaseBaseline):
             max_regenerations=self.max_regenerations,
             enable_registry=self.enable_registry,
             auto_register=self.auto_register,
+            log_dir=self.log_dir,
         )
 
         # Generate workflow from task prompt with context information
@@ -472,29 +488,51 @@ class CodeFactoryBaseline(BaseBaseline):
                     expected_preview = expected_str[:150] + "..." if len(expected_str) > 150 else expected_str
                     task_description += f"**Expected Output:** {expected_preview}\n"
 
-        # Document input variables from first example
+        # Document input variables - CRITICAL: prompt is the varying input!
+        task_description += f"\n\n**IMPORTANT: The task provides these input variables:**\n"
+        task_description += f"- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n"
+
         if task_input.context:
             context_keys = list(task_input.context.keys())
-            task_description += f"\n\n**IMPORTANT: The task provides these input variables:**\n"
             for key in context_keys:
                 value = task_input.context[key]
                 value_type = type(value).__name__
-                task_description += f"- `{key}` ({value_type})\n"
-            task_description += f"\nYour workflow MUST use these exact variable names: {', '.join(context_keys)}"
+                task_description += f"- `{key}` ({value_type}) - context for task type\n"
 
-        # Add expected output format from first example
-        if task_input.metadata and "expected_output" in task_input.metadata:
+        all_vars = ["prompt"] + (list(task_input.context.keys()) if task_input.context else [])
+        task_description += f"\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process."
+        task_description += f"\nAvailable variables: {', '.join(all_vars)}"
+
+        # Use output_format (structure description) for compilation - NO specific values!
+        # This prevents baking in example values into the compiled workflow
+        if task_input.metadata and "output_format" in task_input.metadata:
+            output_format = task_input.metadata["output_format"]
+            if output_format:
+                format_str = json.dumps(output_format, indent=2) if isinstance(output_format, dict) else str(output_format)
+
+                task_description += f"\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\n"
+                task_description += f"Your activity must return data matching this structure:\n"
+                task_description += f"```json\n{format_str}\n```\n"
+                task_description += f"\n**CRITICAL RULES:**\n"
+                task_description += f"- The format above describes FIELD NAMES and TYPES only\n"
+                task_description += f"- Extract ACTUAL values from the `prompt` variable at runtime\n"
+                task_description += f"- Do NOT hardcode any values from examples\n"
+                task_description += f"- Do NOT add extra fields\n"
+                task_description += f"- Match field names EXACTLY as specified"
+
+        # Fallback to expected_output for legacy datasets without output_format
+        elif task_input.metadata and "expected_output" in task_input.metadata:
             expected = task_input.metadata["expected_output"]
             expected_str = json.dumps(expected, indent=2) if isinstance(expected, (dict, list)) else str(expected)
 
-            task_description += f"\n\n**CRITICAL - OUTPUT FORMAT (EXACT STRUCTURE REQUIRED):**\n"
+            task_description += f"\n\n**OUTPUT FORMAT (STRUCTURE REFERENCE - VALUES ARE EXAMPLES ONLY!):**\n"
             task_description += f"Your activity must return this structure:\n"
             task_description += f"```json\n{expected_str}\n```\n"
-            task_description += f"\n**Rules:**\n"
-            task_description += f"- Match this structure (field names, nesting, types) EXACTLY\n"
-            task_description += f"- Values will vary by instance, but structure stays the same\n"
-            task_description += f"- Do NOT add extra fields\n"
-            task_description += f"- Do NOT change field names"
+            task_description += f"\n**CRITICAL RULES:**\n"
+            task_description += f"- The values above are EXAMPLES ONLY - do NOT hardcode them\n"
+            task_description += f"- Extract ACTUAL values from the `prompt` variable at runtime\n"
+            task_description += f"- Match the structure (field names, nesting, types) EXACTLY\n"
+            task_description += f"- Do NOT add extra fields"
 
         if self.verbose:
             with Progress(
@@ -646,7 +684,7 @@ class CodeFactoryBaseline(BaseBaseline):
             factory_result: Compiled workflow to execute
 
         Returns:
-            Execution result dict
+            Execution result dict with token tracking
         """
         try:
             if self.verbose:
@@ -654,11 +692,28 @@ class CodeFactoryBaseline(BaseBaseline):
                     f"\n[bold blue]▸[/bold blue] Executing task: [cyan]{task_input.task_id}[/cyan]"
                 )
 
-            # NEW: Load activities dynamically from generated code with LLM client
+            # Create a token tracker for this execution
+            execution_tracker = TokenTracker()
+
+            # Wrap the LLM client to track execution tokens
+            class TrackedLLMClient:
+                """Wrapper that tracks token usage during execution."""
+                def __init__(self, client, tracker):
+                    self.client = client
+                    self.tracker = tracker
+
+                def generate(self, prompt: str, **kwargs):
+                    response = self.client.generate(prompt, **kwargs)
+                    self.tracker.record(response)
+                    return response
+
+            tracked_client = TrackedLLMClient(self.llm_client, execution_tracker)
+
+            # NEW: Load activities dynamically from generated code with tracked client
             activities = self.module_loader.load(
                 activities_code=factory_result.activities_code,
                 workflow_id=factory_result.plan.workflow_id,
-                llm_client=self.llm_client,
+                llm_client=tracked_client,
             )
 
             if self.verbose:
@@ -679,10 +734,14 @@ class CodeFactoryBaseline(BaseBaseline):
                 verbose=self.verbose,
             )
 
-            # Prepare input variables from context
+            # Prepare input variables from context AND prompt
             variables = {}
 
-            # Use context data AS-IS - executor handles Python objects directly
+            # Always include the prompt/input as a variable
+            # This is the user query that contains values to extract
+            variables["prompt"] = task_input.prompt
+
+            # Add context data AS-IS - executor handles Python objects directly
             if task_input.context:
                 for key, value in task_input.context.items():
                     # For scalar values, convert to string. For complex types, pass as-is
@@ -692,13 +751,6 @@ class CodeFactoryBaseline(BaseBaseline):
                     else:
                         # Convert scalars to strings
                         variables[key] = str(value)
-            else:
-                # Fallback: use prompt if no context provided
-                if factory_result.plan.variables:
-                    first_var_name = factory_result.plan.variables[0].name
-                    variables[first_var_name] = task_input.prompt
-                else:
-                    variables["input"] = task_input.prompt
 
             if self.verbose:
                 console.print(f"  [dim]Variables: {list(variables.keys())}[/dim]")
@@ -731,8 +783,8 @@ class CodeFactoryBaseline(BaseBaseline):
             return {
                 "success": True,
                 "output": str(output),
-                "input_tokens": 0,  # Deterministic code execution
-                "output_tokens": 0,
+                "input_tokens": execution_tracker.input_tokens,
+                "output_tokens": execution_tracker.output_tokens,
             }
 
         except Exception as e:

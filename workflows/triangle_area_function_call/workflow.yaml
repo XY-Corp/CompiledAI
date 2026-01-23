@@ -1,0 +1,13 @@
+workflow_id: triangle_area_function_call
+name: Triangle Area Function Call
+description: Parse a natural language request for calculating triangle area and generate a structured function call with extracted parameters
+variables:
+  prompt: null
+root:
+  sequence:
+    elements:
+      - activity:
+          name: parse_triangle_request
+          params:
+            prompt_text: ${{ prompt }}
+          result: triangle_function_call

@@ -1,195 +1,166 @@
 from typing import Any, Dict, List, Optional
-import re
+import asyncio
 import json
+import re
 
 
-async def normalize_address(
+async def parse_address_components(
     address_text: str,
-    # Injected context (always include)
+    # Injected context
     org_id: str | None = None,
     user_id: str | None = None,
     workflow_definition_id: str | None = None,
     workflow_instance_id: str | None = None,
 ) -> dict[str, Any]:
-    """Parse and normalize address string into standardized components using regex patterns."""
+    """Extract and normalize address components from raw address text using deterministic parsing.
+    
+    Args:
+        address_text: Complete address string containing street, apartment, city, state, and zip code information
+    
+    Returns:
+        Dict with normalized address fields: street, city, state, zip, country
+    """
     try:
-        # Defensive input handling
-        if isinstance(address_text, dict):
-            # If somehow passed as dict, try to extract from a common field
-            address_text = str(address_text.get('address', address_text))
-        elif not isinstance(address_text, str):
-            address_text = str(address_text)
-        
-        # Clean up the address text
-        address = address_text.strip()
-        
-        # Initialize components with defaults
-        street = ""
-        city = ""
-        state = ""
-        zip_code = ""
-        country = "USA"
-        
-        # Pattern 1: Full address with apartment/unit
-        # "123 Main St., Apt 4B, New York, NY 10001"
-        # "123 Main St, Unit 2A, Springfield, IL 62701"
-        pattern1 = re.compile(r'^(.+?)(?:,\s*((?:apt|apartment|unit|suite|ste)\.?\s*\w+))?,\s*(.+?),\s*([A-Z]{2})\s+(\d{5}(?:-\d{4})?)(?:,\s*(.+?))?$', re.IGNORECASE)
-        
-        match = pattern1.match(address)
-        if match:
-            street_part = match.group(1).strip()
-            apt_part = match.group(2)
-            city = match.group(3).strip()
-            state = match.group(4).strip().upper()
-            zip_code = match.group(5).strip()
-            country_part = match.group(6)
-            
-            # Combine street and apartment
-            if apt_part:
-                # Clean up apartment format - remove periods and normalize spacing
-                apt_clean = re.sub(r'\.', '', apt_part.strip())
-                apt_clean = re.sub(r'\s+', ' ', apt_clean)
-                street = f"{street_part} {apt_clean}".strip()
-            else:
-                street = street_part.strip()
-                
-            # Remove periods from street
-            street = re.sub(r'\.', '', street)
-            street = re.sub(r'\s+', ' ', street)  # Normalize spaces
-            
-            if country_part:
-                country = country_part.strip()
-                
+        # Handle empty or null input
+        if not address_text or not isinstance(address_text, str):
             return {
-                "street": street,
-                "city": city, 
-                "state": state,
-                "zip": zip_code,
-                "country": country
+                "street": "",
+                "city": "",
+                "state": "",
+                "zip": "",
+                "country": "USA"
             }
         
-        # Pattern 2: Simple address without apartment
-        # "456 Oak Ave, Boston, MA 02101"
-        pattern2 = re.compile(r'^(.+?),\s*(.+?),\s*([A-Z]{2})\s+(\d{5}(?:-\d{4})?)(?:,\s*(.+?))?$', re.IGNORECASE)
+        # Clean the input - remove extra whitespace and common punctuation
+        cleaned_address = re.sub(r'\s+', ' ', address_text.strip())
+        cleaned_address = cleaned_address.replace(',', ', ')  # Normalize commas
+        cleaned_address = re.sub(r'\s*,\s*', ', ', cleaned_address)  # Fix comma spacing
+        cleaned_address = re.sub(r'\.\s*,', ',', cleaned_address)  # Remove period before comma
+        cleaned_address = cleaned_address.replace('.', '')  # Remove periods
         
-        match = pattern2.match(address)
+        # Pattern 1: Full format with apartment - "123 Main St, Apt 4B, New York, NY 10001"
+        full_pattern = r'^(.+?),\s*(.+?),\s*([A-Z]{2})\s+(\d{5}(?:-\d{4})?)$'
+        match = re.match(full_pattern, cleaned_address)
+        
+        if match:
+            street_and_apt = match.group(1).strip()
+            city = match.group(2).strip()
+            state = match.group(3).strip()
+            zip_code = match.group(4).strip()
+            
+            return {
+                "street": street_and_apt,
+                "city": city,
+                "state": state,
+                "zip": zip_code,
+                "country": "USA"
+            }
+        
+        # Pattern 2: Without apartment - "123 Main St, New York, NY 10001"
+        no_apt_pattern = r'^(.+?),\s*(.+?),\s*([A-Z]{2})\s+(\d{5}(?:-\d{4})?)$'
+        match = re.match(no_apt_pattern, cleaned_address)
+        
         if match:
             street = match.group(1).strip()
             city = match.group(2).strip()
-            state = match.group(3).strip().upper()
+            state = match.group(3).strip()
             zip_code = match.group(4).strip()
-            country_part = match.group(5)
             
-            # Remove periods from street
-            street = re.sub(r'\.', '', street)
-            street = re.sub(r'\s+', ' ', street)  # Normalize spaces
-            
-            if country_part:
-                country = country_part.strip()
-                
             return {
                 "street": street,
                 "city": city,
-                "state": state, 
+                "state": state,
                 "zip": zip_code,
-                "country": country
+                "country": "USA"
             }
         
-        # Pattern 3: Address with state spelled out
-        # "789 Pine St, Los Angeles, California 90210"
-        state_abbrevs = {
-            'alabama': 'AL', 'alaska': 'AK', 'arizona': 'AZ', 'arkansas': 'AR', 'california': 'CA',
-            'colorado': 'CO', 'connecticut': 'CT', 'delaware': 'DE', 'florida': 'FL', 'georgia': 'GA',
-            'hawaii': 'HI', 'idaho': 'ID', 'illinois': 'IL', 'indiana': 'IN', 'iowa': 'IA',
-            'kansas': 'KS', 'kentucky': 'KY', 'louisiana': 'LA', 'maine': 'ME', 'maryland': 'MD',
-            'massachusetts': 'MA', 'michigan': 'MI', 'minnesota': 'MN', 'mississippi': 'MS', 'missouri': 'MO',
-            'montana': 'MT', 'nebraska': 'NE', 'nevada': 'NV', 'new hampshire': 'NH', 'new jersey': 'NJ',
-            'new mexico': 'NM', 'new york': 'NY', 'north carolina': 'NC', 'north dakota': 'ND', 'ohio': 'OH',
-            'oklahoma': 'OK', 'oregon': 'OR', 'pennsylvania': 'PA', 'rhode island': 'RI', 'south carolina': 'SC',
-            'south dakota': 'SD', 'tennessee': 'TN', 'texas': 'TX', 'utah': 'UT', 'vermont': 'VT',
-            'virginia': 'VA', 'washington': 'WA', 'west virginia': 'WV', 'wisconsin': 'WI', 'wyoming': 'WY'
-        }
+        # Pattern 3: Space-separated format - "123 Main St New York NY 10001"
+        space_pattern = r'^(.+?)\s+([A-Za-z\s]+)\s+([A-Z]{2})\s+(\d{5}(?:-\d{4})?)$'
+        match = re.match(space_pattern, cleaned_address)
         
-        # Try to find state name and zip
-        for state_name, state_abbrev in state_abbrevs.items():
-            pattern3 = re.compile(rf'^(.+?),\s*(.+?),\s*{re.escape(state_name)}\s+(\d{{5}}(?:-\d{{4}})?)(?:,\s*(.+?))?$', re.IGNORECASE)
-            match = pattern3.match(address)
-            if match:
-                street = match.group(1).strip()
-                city = match.group(2).strip()
-                state = state_abbrev
-                zip_code = match.group(3).strip()
-                country_part = match.group(4)
-                
-                # Remove periods from street
-                street = re.sub(r'\.', '', street)
-                street = re.sub(r'\s+', ' ', street)  # Normalize spaces
-                
-                if country_part:
-                    country = country_part.strip()
-                    
-                return {
-                    "street": street,
-                    "city": city,
-                    "state": state,
-                    "zip": zip_code,
-                    "country": country
-                }
+        if match:
+            street = match.group(1).strip()
+            city = match.group(2).strip()
+            state = match.group(3).strip()
+            zip_code = match.group(4).strip()
+            
+            return {
+                "street": street,
+                "city": city,
+                "state": state,
+                "zip": zip_code,
+                "country": "USA"
+            }
         
-        # If no patterns match, try to extract what we can
-        # Look for zip code first
-        zip_match = re.search(r'\b(\d{5}(?:-\d{4})?)\b', address)
+        # Pattern 4: Try to extract zip code and work backwards
+        zip_pattern = r'(\d{5}(?:-\d{4})?)$'
+        zip_match = re.search(zip_pattern, cleaned_address)
+        
         if zip_match:
             zip_code = zip_match.group(1)
-            # Remove zip from address for further parsing
-            remaining = address.replace(zip_code, '').strip().rstrip(',').strip()
+            remaining = cleaned_address[:zip_match.start()].strip()
             
-            # Look for state (2 letters before zip)
-            state_match = re.search(r'\b([A-Z]{2})\s*$', remaining, re.IGNORECASE)
+            # Look for state (2 capital letters at the end)
+            state_pattern = r'\b([A-Z]{2})\s*$'
+            state_match = re.search(state_pattern, remaining)
+            
             if state_match:
-                state = state_match.group(1).upper()
-                remaining = remaining.replace(state_match.group(0), '').strip().rstrip(',').strip()
+                state = state_match.group(1)
+                remaining = remaining[:state_match.start()].strip()
                 
-                # Split remaining by commas - first part is street, last part is city
-                parts = [p.strip() for p in remaining.split(',') if p.strip()]
-                if len(parts) >= 2:
-                    street = parts[0]
-                    city = parts[-1]
-                elif len(parts) == 1:
-                    # Assume it's the street, city unknown
-                    street = parts[0]
-                    city = ""
+                # Split remaining into street and city
+                if ', ' in remaining:
+                    parts = remaining.split(', ')
+                    if len(parts) >= 2:
+                        street = ', '.join(parts[:-1])
+                        city = parts[-1]
+                    else:
+                        street = parts[0] if parts else ""
+                        city = ""
                 else:
-                    street = remaining
+                    # Try to identify common street indicators
+                    street_indicators = r'\b(st|street|ave|avenue|rd|road|blvd|boulevard|dr|drive|ln|lane|ct|court|pl|place|way|apt|apartment|unit|#)\b'
+                    words = remaining.split()
                     
-                # Clean up street
-                street = re.sub(r'\.', '', street)
-                street = re.sub(r'\s+', ' ', street)
+                    # Find the last street indicator
+                    street_end_idx = -1
+                    for i, word in enumerate(words):
+                        if re.search(street_indicators, word.lower()):
+                            street_end_idx = i
+                    
+                    if street_end_idx >= 0 and street_end_idx < len(words) - 1:
+                        street = ' '.join(words[:street_end_idx + 1])
+                        city = ' '.join(words[street_end_idx + 1:])
+                    else:
+                        # Default split - assume first part is street, rest is city
+                        if len(words) >= 3:
+                            street = ' '.join(words[:2])
+                            city = ' '.join(words[2:])
+                        else:
+                            street = remaining
+                            city = ""
                 
                 return {
-                    "street": street,
-                    "city": city,
+                    "street": street.strip(),
+                    "city": city.strip(),
                     "state": state,
                     "zip": zip_code,
-                    "country": country
+                    "country": "USA"
                 }
         
-        # Last resort - return the whole address as street
-        street = re.sub(r'\.', '', address)
-        street = re.sub(r'\s+', ' ', street)
-        
+        # Fallback: Return the original text as street if no pattern matches
         return {
-            "street": street,
+            "street": cleaned_address,
             "city": "",
             "state": "",
             "zip": "",
-            "country": country
+            "country": "USA"
         }
         
     except Exception as e:
-        # Return error structure matching the schema
+        # Return empty structure with error indication in street field
         return {
-            "street": f"Error parsing address: {str(e)}",
+            "street": f"Error parsing: {str(e)}",
             "city": "",
             "state": "",
             "zip": "",

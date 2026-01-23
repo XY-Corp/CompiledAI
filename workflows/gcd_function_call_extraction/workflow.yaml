@@ -1,0 +1,17 @@
+workflow_id: gcd_function_call_extraction
+name: GCD Function Call Extraction
+description: Extracts function name and parameters from a natural language math request and formats them as a function call object
+
+variables:
+  prompt: null
+  functions: null
+
+root:
+  sequence:
+    elements:
+      - activity:
+          name: extract_function_call
+          params:
+            user_prompt: ${{ prompt }}
+            available_functions: ${{ functions }}
+          result: function_call
