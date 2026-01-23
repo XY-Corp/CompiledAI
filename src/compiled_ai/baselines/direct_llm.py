@@ -71,11 +71,11 @@ class DirectLLMBaseline(BaseBaseline):
             Default model name for the provider
         """
         defaults = {
-            "anthropic": "claude-sonnet-4-20250514",
+            "anthropic": "claude-opus-4-5-20251101",
             "openai": "gpt-4o",
             "gemini": "gemini-2.0-flash",
         }
-        return defaults.get(provider, "claude-sonnet-4-20250514")
+        return defaults.get(provider, "claude-opus-4-5-20251101")
 
     def _log(self, message: str) -> None:
         """Print message if verbose mode is enabled and write to log file."""

@@ -46,10 +46,10 @@ class AutoGenBaseline(BaseBaseline):
 
     def _default_model(self, provider: str) -> str:
         defaults = {
-            "anthropic": "claude-sonnet-4-20250514",
+            "anthropic": "claude-opus-4-5-20251101",
             "openai": "gpt-4o",
         }
-        return defaults.get(provider, "claude-sonnet-4-20250514")
+        return defaults.get(provider, "claude-opus-4-5-20251101")
 
     def _get_model_client(self) -> Any:
         """Get the appropriate AutoGen model client."""
@@ -152,10 +152,28 @@ class AutoGenBaseline(BaseBaseline):
         # Count LLM calls (each message from an agent = 1 LLM call)
         llm_calls = sum(1 for msg in result.messages if hasattr(msg, "source") and msg.source in ["Planner", "Executor"])
 
-        # Token tracking - AutoGen doesn't expose this directly in basic usage
-        # We estimate based on message lengths (rough approximation)
+        # Token tracking - AutoGen doesn't expose this directly
+        # Estimate tokens from message content (~4 chars per token)
         input_tokens = 0
         output_tokens = 0
+        
+        for msg in result.messages:
+            content = msg.content if hasattr(msg, "content") else str(msg)
+            if not content:
+                continue
+            # Rough estimate: ~4 characters per token
+            estimated_tokens = len(content) // 4
+            
+            source = getattr(msg, "source", None)
+            if source in ["Planner", "Executor"]:
+                # Agent output = output tokens
+                output_tokens += estimated_tokens
+            else:
+                # User/system message = input tokens
+                input_tokens += estimated_tokens
+        
+        # Add system prompt tokens to input (rough estimate for each agent)
+        input_tokens += 100 * llm_calls  # ~100 tokens per system prompt
 
         return output, input_tokens, output_tokens, llm_calls
 
@@ -178,7 +196,7 @@ class AutoGenBaseline(BaseBaseline):
                 self._total_output_tokens += output_tokens
                 self._total_calls += llm_calls
 
-                print(f"AutoGen: {llm_calls} LLM calls - {latency_ms:.0f}ms")
+                print(f"AutoGen: ~{input_tokens} in / ~{output_tokens} out ({llm_calls} calls) - {latency_ms:.0f}ms")
                 return BaselineResult(
                     task_id=task_input.task_id,
                     output=output,

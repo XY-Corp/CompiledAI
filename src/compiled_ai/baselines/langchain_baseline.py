@@ -1,5 +1,6 @@
-"""LangChain Baseline: Standard LangChain usage for comparison."""
+"""LangChain Baseline: LangChain with native tool calling for comparison."""
 
+import json
 import os
 import time
 from typing import Any
@@ -11,15 +12,60 @@ from .base import BaseBaseline, BaselineResult, TaskInput, register_baseline
 load_dotenv()
 
 
+import re
+
+
+def sanitize_tool_name(name: str) -> str:
+    """Sanitize function name to match Anthropic's pattern: ^[a-zA-Z0-9_-]{1,128}$"""
+    # Replace dots and other invalid chars with underscores
+    sanitized = re.sub(r'[^a-zA-Z0-9_-]', '_', name)
+    # Truncate to 128 chars
+    return sanitized[:128]
+
+
+def convert_bfcl_to_langchain_tools(functions: list[dict]) -> tuple[list[dict], dict[str, str]]:
+    """Convert BFCL function definitions to LangChain tool format.
+    
+    BFCL format uses "dict" for type, LangChain/OpenAI uses "object".
+    Also sanitizes function names for API compatibility.
+    
+    Returns:
+        (tools, name_mapping): tools list and mapping from sanitized -> original names
+    """
+    tools = []
+    name_mapping = {}  # sanitized_name -> original_name
+    
+    for func in functions:
+        original_name = func["name"]
+        sanitized_name = sanitize_tool_name(original_name)
+        name_mapping[sanitized_name] = original_name
+        
+        # Convert parameters - BFCL uses "dict" type, LangChain uses "object"
+        params = func.get("parameters", {})
+        if params.get("type") == "dict":
+            params = {**params, "type": "object"}
+        
+        tool = {
+            "type": "function",
+            "function": {
+                "name": sanitized_name,
+                "description": func.get("description", ""),
+                "parameters": params,
+            }
+        }
+        tools.append(tool)
+    return tools, name_mapping
+
+
 @register_baseline("langchain")
 class LangChainBaseline(BaseBaseline):
-    """LangChain baseline - standard LangChain invoke.
+    """LangChain baseline with native tool calling.
 
-    Fair comparison showing LangChain framework overhead vs raw API calls.
-    Uses same approach as DirectLLM but through LangChain abstractions.
+    Uses LangChain's bind_tools() for proper function calling comparison.
+    This represents realistic LangChain usage for function calling tasks.
     """
 
-    description = "LangChain standard invoke"
+    description = "LangChain with native tool calling"
 
     def __init__(
         self,
@@ -39,10 +85,10 @@ class LangChainBaseline(BaseBaseline):
 
     def _default_model(self, provider: str) -> str:
         defaults = {
-            "anthropic": "claude-sonnet-4-20250514",
+            "anthropic": "claude-opus-4-5-20251101",
             "openai": "gpt-4o",
         }
-        return defaults.get(provider, "claude-sonnet-4-20250514")
+        return defaults.get(provider, "claude-opus-4-5-20251101")
 
     @property
     def llm(self) -> Any:
@@ -81,29 +127,59 @@ class LangChainBaseline(BaseBaseline):
 
         start_time = time.perf_counter()
 
-        # Build prompt (same as DirectLLM)
-        prompt = task_input.prompt
-        if task_input.context:
-            context_str = "\n".join(f"{k}: {v}" for k, v in task_input.context.items())
-            prompt = f"Context:\n{context_str}\n\nTask:\n{prompt}"
+        # Check if we have function definitions in context (BFCL tasks)
+        functions_str = task_input.context.get("functions", "")
+        functions = []
+        if functions_str:
+            try:
+                functions = json.loads(functions_str)
+            except json.JSONDecodeError:
+                pass
 
+        # Build the user message
+        user_query = task_input.context.get("user_query", task_input.prompt)
+        
         messages = []
         if self.system_prompt:
             messages.append(SystemMessage(content=self.system_prompt))
-        messages.append(HumanMessage(content=prompt))
+        messages.append(HumanMessage(content=user_query))
 
         # Retry logic
         last_error: str | None = None
         for attempt in range(self.max_retries):
             try:
-                response = self.llm.invoke(messages)
-                latency_ms = (time.perf_counter() - start_time) * 1000
+                # If we have functions, use tool calling
+                if functions:
+                    tools, name_mapping = convert_bfcl_to_langchain_tools(functions)
+                    llm_with_tools = self.llm.bind_tools(tools)
+                    response = llm_with_tools.invoke(messages)
+                    
+                    # Extract tool calls from response
+                    if response.tool_calls:
+                        # Format as BFCL expected output
+                        tool_call = response.tool_calls[0]
+                        # Map sanitized name back to original
+                        original_name = name_mapping.get(tool_call["name"], tool_call["name"])
+                        output = json.dumps({
+                            "name": original_name,
+                            "arguments": tool_call["args"]
+                        })
+                    else:
+                        # Model didn't make a tool call, use content
+                        output = response.content
+                else:
+                    # No functions - standard invoke
+                    response = self.llm.invoke(messages)
+                    output = response.content
 
+                latency_ms = (time.perf_counter() - start_time) * 1000
                 usage = response.usage_metadata or {}
+                
                 print(f"LangChain: {usage.get('input_tokens', 0)} in / {usage.get('output_tokens', 0)} out - {latency_ms:.0f}ms")
+                
                 return BaselineResult(
                     task_id=task_input.task_id,
-                    output=response.content,
+                    output=output,
                     success=True,
                     latency_ms=latency_ms,
                     input_tokens=usage.get("input_tokens", 0),
