@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Run the XY_Benchmark dataset with the Direct LLM baseline.
+"""Run the XY_Benchmark dataset with various baselines.
 
 Usage:
-    python scripts/run_xy_benchmark.py --provider anthropic
+    python scripts/run_xy_benchmark.py --baseline direct_llm --provider anthropic
+    python scripts/run_xy_benchmark.py --baseline langchain --provider anthropic
     python scripts/run_xy_benchmark.py --provider gemini --max-instances 2
-    python scripts/run_xy_benchmark.py --provider anthropic --task classification_01
 """
 
 import argparse
@@ -18,6 +18,7 @@ from rich.table import Table
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from compiled_ai.runner import BenchmarkConfig, BenchmarkRunner, DatasetLoader
+from compiled_ai.baselines import list_baselines
 
 
 def parse_args() -> argparse.Namespace:
