@@ -1,0 +1,18 @@
+workflow_id: function_call_builder_gcd
+name: GCD Function Call Builder
+description: |
+  Parses a natural language prompt to extract parameters for a math.gcd function call, returning the structured function call metadata with the function name as the top-level key.
+
+variables:
+  prompt: null
+  functions: null
+
+root:
+  sequence:
+    elements:
+      - activity:
+          name: build_function_call
+          params:
+            prompt: ${{ prompt }}
+            functions: ${{ functions }}
+          result: function_call_result

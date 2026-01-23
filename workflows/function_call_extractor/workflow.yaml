@@ -1,10 +1,12 @@
 workflow_id: function_call_extractor
-name: Function Call Parameter Extractor
+name: Function Call Extractor
 description: |
-  Extracts function name and parameters from natural language user queries by analyzing the prompt against available function definitions and returning a structured function call object.
+  Analyzes a natural language prompt and available function definitions to determine which function to call and extracts the appropriate parameters from the prompt. Returns the function name as the top-level key with parameters nested inside.
+
 variables:
   prompt: null
   functions: null
+
 root:
   sequence:
     elements:

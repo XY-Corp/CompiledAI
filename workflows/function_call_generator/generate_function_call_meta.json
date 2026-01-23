@@ -1,34 +1,34 @@
 {
   "activity_name": "generate_function_call",
-  "description": "Analyzes the user prompt against available function definitions to determine which function should be called and extracts the appropriate parameter values from the prompt. Returns a function call object with the function name as the top-level key and parameters as nested object.",
-  "task_id": "simple_25",
-  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"Calculate the final velocity of an object falling from a 150 meter building, assuming initial velocity is zero.\"}]], \"function\": [{\"name\": \"calculate_final_velocity\", \"description\": \"Calculate the final velocity of a free falling object given the height it's dropped from, the initial velocity and acceleration due to gravity. Ignore air resistance.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"height\": {\"type\": \"integer\", \"description\": \"The height the object is dropped from, in meters.\"}, \"initial_velocity\": {\"type\": \"integer\", \"description\": \"The initial velocity of the object in m/s. Default is zero.\"}, \"gravity\": {\"type\": \"float\", \"description\": \"Acceleration due to gravity. Default value is 9.81 m/s^2, earth's gravity.\"}}, \"required\": [\"height\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"calculate_final_velocity\": {\n    \"height\": \"integer - The height the object is dropped from, in meters.\",\n    \"initial_velocity\": \"integer - The initial velocity of the object in m/s. Default is zero.\",\n    \"gravity\": \"float - Acceleration due to gravity. Default value is 9.81 m/s^2, earth's gravity.\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "description": "Analyzes the user prompt to identify the appropriate function to call and extracts the required parameters from the prompt. Returns a function call object with the function name as the top-level key and parameters as nested object.",
+  "task_id": "simple_17",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"Find the prime factors of 450\"}]], \"function\": [{\"name\": \"get_prime_factors\", \"description\": \"Function to retrieve prime factors of a number.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"number\": {\"type\": \"integer\", \"description\": \"Number for which prime factors need to be calculated\"}, \"formatted\": {\"type\": \"boolean\", \"description\": \"Return formatted string if true, array if false. Default is true.\"}}, \"required\": [\"number\", \"formatted\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"get_prime_factors\": {\n    \"number\": \"integer - Number for which prime factors need to be calculated\",\n    \"formatted\": \"boolean - Return formatted string if true, array if false. Default is true.\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
   "inputs": [
     {
-      "name": "prompt",
+      "name": "user_prompt",
       "type": "str",
-      "description": "The raw user query/prompt that describes what the user wants to calculate or accomplish, from which we need to extract function parameters",
+      "description": "The user's natural language query/request that needs to be parsed to identify intent and extract parameter values (e.g., 'Find the prime factors of 450')",
       "required": true
     },
     {
-      "name": "functions",
+      "name": "available_functions",
       "type": "list",
-      "description": "List of available function definitions, each containing name, description, and parameters schema with required fields and types",
+      "description": "List of function definition objects, each containing 'name', 'description', and 'parameters' fields that describe available functions to choose from",
       "required": true
     }
   ],
   "output": {
     "type": "dict",
-    "description": "Returns a function call object where the function name is the top-level key and parameters are nested. Example: {\"calculate_final_velocity\": {\"height\": 150, \"initial_velocity\": 0, \"gravity\": 9.81}}. The function name comes from matching the prompt intent to available functions. Parameter values are extracted from the prompt (e.g., '150 meter building' -> height: 150, 'initial velocity is zero' -> initial_velocity: 0). Default values from function schema are used when not specified in prompt.",
+    "description": "Returns a function call object with the function name as the top-level key. Example: {\"get_prime_factors\": {\"number\": 450, \"formatted\": true}} where the function name is determined by analyzing the user prompt, 'number' is an integer extracted from the prompt representing the number for which prime factors need to be calculated, and 'formatted' is a boolean indicating return format preference (defaults to true if not specified).",
     "fields": {
-      "calculate_final_velocity": "object - Nested object containing the extracted parameters: height (integer), initial_velocity (integer), gravity (float)"
+      "<function_name>": "dict - The selected function name as key with its parameters as a nested object containing the extracted values"
     }
   },
   "reference_activity": "llm_extract",
   "workflow_spec": {
     "workflow_id": "function_call_generator",
     "name": "Function Call Generator",
-    "description": "Analyzes a user prompt and available function definitions to determine which function to call and extract the appropriate parameter values from the prompt. Returns a structured function call with the function name as the key and parameters as a nested object.",
+    "description": "Analyzes a user prompt and available functions to generate the appropriate function call with extracted parameters. Returns a function call object with the function name as key and parameters as values.",
     "execution_pattern": "sequence"
   }
 }

@@ -1,7 +1,7 @@
 workflow_id: function_call_builder
-name: Function Call Parameter Extraction
+name: Function Call Parameter Extraction Workflow
 description: |
-  Parses a natural language user prompt to identify which function to call and extracts the appropriate parameter values, returning a properly structured function call object
+  Analyzes a natural language user prompt and available function definitions to select the appropriate function and extract the required parameters to build a function call object.
 variables:
   prompt: null
   functions: null

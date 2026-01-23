@@ -1,9 +1,16 @@
 from typing import Any, Dict, List, Optional
 import json
 import re
+from pydantic import BaseModel
 
 
-async def select_function_and_extract_params(
+class FunctionCallResult(BaseModel):
+    """Model for validating LLM response structure."""
+    function_name: str
+    parameters: Dict[str, Any]
+
+
+async def extract_function_call(
     prompt: str,
     functions: list,
     # Injected context
@@ -12,17 +19,17 @@ async def select_function_and_extract_params(
     workflow_definition_id: str | None = None,
     workflow_instance_id: str | None = None,
 ) -> dict[str, Any]:
-    """Analyzes a user prompt against available function definitions to select the appropriate function and extract parameter values.
+    """Analyzes the user's natural language prompt against available functions and extracts the function name and its parameters.
     
-    Returns the function name as the top-level key with its parameters as a nested object.
+    Uses LLM to understand user intent and map it to the correct function with properly typed parameters.
     
     Args:
-        prompt: The natural language user request to analyze
-        functions: List of available function definitions with name, description, and parameters schema
+        prompt: The natural language user request describing what operation they want to perform
+        functions: List of available function definitions, each containing name, description, and parameters schema
         
     Returns:
-        Dict with function name as top-level key and parameters as nested object.
-        Example: {"geometry.circumference": {"radius": 3, "units": "cm"}}
+        A function call object with the function name as the top-level key and parameters as nested object.
+        Example: {"calculus.derivative": {"function": "2x^2", "value": 1, "function_variable": "x"}}
     """
     try:
         # Handle JSON string input defensively
@@ -35,9 +42,13 @@ async def select_function_and_extract_params(
         if not functions:
             return {"error": "No functions available"}
         
+        # Handle empty or None prompt
+        if not prompt or (isinstance(prompt, str) and prompt.strip() == ""):
+            return {"error": "Prompt is required"}
+        
         # Build function descriptions for the LLM with EXACT parameter names
         functions_text = "Available Functions:\n"
-        function_details = {}
+        function_param_map = {}
         
         for func in functions:
             func_name = func.get('name', 'unknown')
@@ -48,68 +59,64 @@ async def select_function_and_extract_params(
             
             functions_text += f"\n**{func_name}**: {func_desc}\n"
             
-            param_info_list = []
-            param_defaults = {}
+            param_types = {}
             
             # Extract parameter details with exact names and types
             if isinstance(params_schema, dict):
+                # Handle both direct properties and nested properties
                 properties = params_schema.get('properties', {})
                 required = params_schema.get('required', [])
+                
+                # If no properties found, try treating the schema itself as properties
+                if not properties and 'type' not in params_schema:
+                    properties = params_schema
                 
                 if properties:
                     functions_text += "  Parameters (use EXACT names):\n"
                     for param_name, param_info in properties.items():
+                        if param_name in ('type', 'required', 'properties'):
+                            continue
+                            
                         if isinstance(param_info, dict):
                             param_type = param_info.get('type', 'string')
                             param_desc = param_info.get('description', '')
-                            param_default = param_info.get('default', None)
-                            param_enum = param_info.get('enum', None)
                         else:
                             param_type = str(param_info)
                             param_desc = ''
-                            param_default = None
-                            param_enum = None
                         
-                        required_marker = " (REQUIRED)" if param_name in required else f" (optional, default: {param_default})"
-                        enum_text = f", allowed values: {param_enum}" if param_enum else ""
-                        functions_text += f"    - \"{param_name}\": {param_type}{required_marker} - {param_desc}{enum_text}\n"
-                        
-                        param_info_list.append({
-                            'name': param_name,
-                            'type': param_type,
-                            'required': param_name in required,
-                            'default': param_default
-                        })
-                        
-                        if param_default is not None:
-                            param_defaults[param_name] = param_default
+                        required_marker = " (required)" if param_name in required else ""
+                        functions_text += f"    - \"{param_name}\": {param_type}{required_marker} - {param_desc}\n"
+                        param_types[param_name] = param_type
             
-            function_details[func_name] = {
-                'params': param_info_list,
-                'defaults': param_defaults
-            }
+            function_param_map[func_name] = param_types
         
-        # Create the LLM prompt for function selection and parameter extraction
-        llm_prompt = f"""Analyze this user request and determine which function to call with what parameters.
+        # Create clean prompt asking for the exact format required
+        llm_prompt = f"""Analyze this user request and extract the function call parameters.
 
 User Request: "{prompt}"
 
 {functions_text}
 
-INSTRUCTIONS:
-1. Select the most appropriate function based on the user's request
-2. Extract parameter values from the user's request
-3. Use EXACT parameter names as shown above
-4. For optional parameters not mentioned, use the default value
-5. Convert numeric values to integers or floats as appropriate for the parameter type
+Your task:
+1. Identify which function best matches the user's intent
+2. Extract the parameter values from the user's request
+3. Return a JSON object with the function name as the top-level key
 
-Return ONLY valid JSON in this exact format (no other text):
-{{"<function_name>": {{"<param1>": <value1>, "<param2>": <value2>}}}}
+CRITICAL INSTRUCTIONS:
+- Use the EXACT parameter names shown above (case-sensitive)
+- For mathematical expressions, convert common notation to Python syntax (e.g., "2x^2" becomes "2x**2")
+- For numeric values, return them as numbers (not strings)
+- For string values, return them as strings
 
-Example for geometry.circumference with radius 5:
-{{"geometry.circumference": {{"radius": 5, "units": "cm"}}}}"""
+Return ONLY a JSON object in this exact format:
+{{"function_name": {{"param1": value1, "param2": value2}}}}
 
-        # Call the LLM
+For example, if the user wants to compute a derivative:
+{{"calculus.derivative": {{"function": "2x**2", "value": 1, "function_variable": "x"}}}}
+
+JSON response:"""
+
+        # Call LLM to extract function and parameters
         response = llm_client.generate(llm_prompt)
         content = response.content.strip()
         
@@ -121,41 +128,50 @@ Example for geometry.circumference with radius 5:
                 content = json_match.group(1)
             else:
                 # Try to find any JSON object
-                json_match = re.search(r'\{[^{}]*\{[^{}]*\}[^{}]*\}', content, re.DOTALL)
+                json_match = re.search(r'\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}', content, re.DOTALL)
                 if json_match:
                     content = json_match.group(0)
         else:
-            # Try to extract JSON object directly
-            json_match = re.search(r'\{[^{}]*\{[^{}]*\}[^{}]*\}', content, re.DOTALL)
+            # Try to find JSON object in content
+            json_match = re.search(r'\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}', content, re.DOTALL)
             if json_match:
                 content = json_match.group(0)
         
         # Parse the JSON response
-        result = json.loads(content)
+        parsed = json.loads(content)
         
-        # Validate structure and apply defaults
-        if isinstance(result, dict) and len(result) == 1:
-            func_name = list(result.keys())[0]
-            params = result[func_name]
-            
-            # Ensure params is a dict
-            if not isinstance(params, dict):
-                params = {}
-            
-            # Apply defaults for missing optional parameters
-            if func_name in function_details:
-                defaults = function_details[func_name]['defaults']
-                for default_param, default_value in defaults.items():
-                    if default_param not in params:
-                        params[default_param] = default_value
-            
-            # Return the properly formatted result
-            return {func_name: params}
+        # Validate structure - should have function name as top-level key
+        if not isinstance(parsed, dict) or len(parsed) == 0:
+            return {"error": "Invalid response structure from LLM"}
         
-        # If structure is unexpected, return as-is
-        return result
+        # Get the function name (first key) and parameters
+        func_name = list(parsed.keys())[0]
+        params = parsed[func_name]
+        
+        # Type coercion based on function schema
+        if func_name in function_param_map:
+            expected_types = function_param_map[func_name]
+            for param_name, param_value in params.items():
+                if param_name in expected_types:
+                    expected_type = expected_types[param_name]
+                    # Coerce types as needed
+                    if expected_type in ('integer', 'int') and not isinstance(param_value, int):
+                        try:
+                            params[param_name] = int(param_value)
+                        except (ValueError, TypeError):
+                            pass
+                    elif expected_type in ('number', 'float') and not isinstance(param_value, (int, float)):
+                        try:
+                            params[param_name] = float(param_value)
+                        except (ValueError, TypeError):
+                            pass
+                    elif expected_type == 'string' and not isinstance(param_value, str):
+                        params[param_name] = str(param_value)
+        
+        # Return in the expected format: {"function_name": {"param": value}}
+        return {func_name: params}
         
     except json.JSONDecodeError as e:
         return {"error": f"Failed to parse LLM response as JSON: {e}"}
     except Exception as e:
-        return {"error": f"Error processing request: {str(e)}"}
+        return {"error": f"Failed to extract function call: {str(e)}"}
