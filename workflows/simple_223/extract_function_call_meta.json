@@ -1,0 +1,34 @@
+{
+  "activity_name": "extract_function_call",
+  "description": "Parse natural language query and extract function call with parameters",
+  "task_id": "simple_223",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"Find social behaviors and patterns in a group size of 50 with extroverted members being 15 and introverted members being 35.\"}]], \"function\": [{\"name\": \"group_dynamics.pattern\", \"description\": \"Examine the social dynamics and interactions within a group based on the personality traits and group size.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"total\": {\"type\": \"integer\", \"description\": \"The total group size.\"}, \"extroverts\": {\"type\": \"integer\", \"description\": \"The number of extroverted members in the group.\"}, \"introverts\": {\"type\": \"integer\", \"description\": \"The number of introverted members in the group.\"}}, \"required\": [\"total\", \"extroverts\", \"introverts\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"group_dynamics.pattern\": {\n    \"total\": \"integer - The total group size.\",\n    \"extroverts\": \"integer - The number of extroverted members in the group.\",\n    \"introverts\": \"integer - The number of introverted members in the group.\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "inputs": [
+    {
+      "name": "prompt",
+      "type": "str",
+      "description": "The natural language query containing the function call request",
+      "required": true
+    },
+    {
+      "name": "functions",
+      "type": "list",
+      "description": "List of available function definitions with their parameter schemas",
+      "required": true
+    }
+  ],
+  "output": {
+    "type": "dict",
+    "description": "Returns a dict with function name as key and parameters as nested dict value",
+    "fields": {
+      "function_name": "dict[str, Any]"
+    }
+  },
+  "reference_activity": null,
+  "workflow_spec": {
+    "workflow_id": "simple_223",
+    "name": "Function Call Extractor",
+    "description": "Extract function name and parameters from natural language query",
+    "execution_pattern": "sequence"
+  }
+}

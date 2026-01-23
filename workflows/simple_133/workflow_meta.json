@@ -1,0 +1,26 @@
+{
+  "workflow_id": "simple_133",
+  "name": "Function Call Extractor",
+  "description": "Extract function name and parameters from natural language query",
+  "task_id": "simple_133",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"Predict the future value of a $5000 investment with an annual interest rate of 5% in 3 years with monthly compounding.\"}]], \"function\": [{\"name\": \"finance.predict_future_value\", \"description\": \"Calculate the future value of an investment given its present value, interest rate, the number of compounding periods per year, and the time horizon.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"present_value\": {\"type\": \"integer\", \"description\": \"The present value of the investment.\"}, \"annual_interest_rate\": {\"type\": \"float\", \"description\": \"The annual interest rate of the investment.\"}, \"compounding_periods_per_year\": {\"type\": \"integer\", \"description\": \"The number of times that interest is compounded per year. Default is 1 (annually).\"}, \"time_years\": {\"type\": \"integer\", \"description\": \"The investment horizon in years.\"}}, \"required\": [\"present_value\", \"annual_interest_rate\", \"time_years\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"finance.predict_future_value\": {\n    \"present_value\": \"integer - The present value of the investment.\",\n    \"annual_interest_rate\": \"float - The annual interest rate of the investment.\",\n    \"compounding_periods_per_year\": \"integer - The number of times that interest is compounded per year. Default is 1 (annually).\",\n    \"time_years\": \"integer - The investment horizon in years.\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "activities": [
+    "extract_function_call"
+  ],
+  "variables": [
+    {
+      "name": "prompt",
+      "default": null
+    },
+    {
+      "name": "functions",
+      "default": null
+    }
+  ],
+  "execution_pattern": "sequence",
+  "reasoning": "BFCL template: single activity for function call extraction",
+  "metrics": {
+    "total_tokens": 11097,
+    "regeneration_count": 0
+  }
+}

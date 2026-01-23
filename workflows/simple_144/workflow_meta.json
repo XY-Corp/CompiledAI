@@ -1,0 +1,26 @@
+{
+  "workflow_id": "simple_144",
+  "name": "Function Call Extractor",
+  "description": "Extract function name and parameters from natural language query",
+  "task_id": "simple_144",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"Find the market performance of the S&P 500 and the Dow Jones over the past 5 days.\"}]], \"function\": [{\"name\": \"market_performance.get_data\", \"description\": \"Retrieve the market performance data for specified indexes over a specified time period.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"indexes\": {\"type\": \"array\", \"items\": {\"type\": \"string\"}, \"description\": \"Array of stock market indexes. Supported indexes are 'S&P 500', 'Dow Jones', 'NASDAQ', 'FTSE 100', 'DAX' etc.\"}, \"days\": {\"type\": \"integer\", \"description\": \"Number of days in the past for which the performance data is required.\"}, \"detailed\": {\"type\": \"boolean\", \"description\": \"Whether to return detailed performance data. If set to true, returns high, low, opening, and closing prices. If false, returns only closing prices. Default is false.\"}}, \"required\": [\"indexes\", \"days\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"market_performance.get_data\": {\n    \"indexes\": \"array - Array of stock market indexes. Supported indexes are 'S&P 500', 'Dow Jones', 'NASDAQ', 'FTSE 100', 'DAX' etc.\",\n    \"days\": \"integer - Number of days in the past for which the performance data is required.\",\n    \"detailed\": \"boolean - Whether to return detailed performance data. If set to true, returns high, low, opening, and closing prices. If false, returns only closing prices. Default is false.\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "activities": [
+    "extract_function_call"
+  ],
+  "variables": [
+    {
+      "name": "prompt",
+      "default": null
+    },
+    {
+      "name": "functions",
+      "default": null
+    }
+  ],
+  "execution_pattern": "sequence",
+  "reasoning": "BFCL template: single activity for function call extraction",
+  "metrics": {
+    "total_tokens": 10239,
+    "regeneration_count": 0
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "workflow_id": "simple_195",
+  "name": "Function Call Extractor",
+  "description": "Extract function name and parameters from natural language query",
+  "task_id": "simple_195",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"Calculate the carbon footprint of my lifestyle, assuming I drive 20 miles a day, consume 3 meat meals a week, and produce 500 lbs of trash in a year.\"}]], \"function\": [{\"name\": \"calculate_carbon_footprint\", \"description\": \"Calculate the estimated carbon footprint of a lifestyle based on factors such as daily driving distance, weekly meat consumption, and yearly trash production.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"daily_miles\": {\"type\": \"integer\", \"description\": \"The daily driving distance in miles.\"}, \"meat_meals_per_week\": {\"type\": \"integer\", \"description\": \"The number of meat-based meals consumed per week.\"}, \"annual_trash_weight\": {\"type\": \"integer\", \"description\": \"The yearly weight of trash production in pounds.\"}, \"flights_per_year\": {\"type\": \"integer\", \"description\": \"The number of flights taken per year. Default is 0.\"}}, \"required\": [\"daily_miles\", \"meat_meals_per_week\", \"annual_trash_weight\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"calculate_carbon_footprint\": {\n    \"daily_miles\": \"integer - The daily driving distance in miles.\",\n    \"meat_meals_per_week\": \"integer - The number of meat-based meals consumed per week.\",\n    \"annual_trash_weight\": \"integer - The yearly weight of trash production in pounds.\",\n    \"flights_per_year\": \"integer - The number of flights taken per year. Default is 0.\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "activities": [
+    "extract_function_call"
+  ],
+  "variables": [
+    {
+      "name": "prompt",
+      "default": null
+    },
+    {
+      "name": "functions",
+      "default": null
+    }
+  ],
+  "execution_pattern": "sequence",
+  "reasoning": "BFCL template: single activity for function call extraction",
+  "metrics": {
+    "total_tokens": 11341,
+    "regeneration_count": 0
+  }
+}

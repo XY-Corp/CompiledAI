@@ -1,0 +1,26 @@
+{
+  "workflow_id": "simple_104",
+  "name": "Function Call Extractor",
+  "description": "Extract function name and parameters from natural language query",
+  "task_id": "simple_104",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"Calculate the area of a triangle with base 6 and height 10.\"}]], \"function\": [{\"name\": \"geometry.area_triangle\", \"description\": \"Calculate the area of a triangle.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"base\": {\"type\": \"integer\", \"description\": \"The length of the base of the triangle.\"}, \"height\": {\"type\": \"integer\", \"description\": \"The height of the triangle from the base.\"}, \"unit\": {\"type\": \"string\", \"description\": \"The measurement unit for the area. Defaults to square meters.\"}}, \"required\": [\"base\", \"height\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"geometry.area_triangle\": {\n    \"base\": \"integer - The length of the base of the triangle.\",\n    \"height\": \"integer - The height of the triangle from the base.\",\n    \"unit\": \"string - The measurement unit for the area. Defaults to square meters.\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "activities": [
+    "extract_function_call"
+  ],
+  "variables": [
+    {
+      "name": "prompt",
+      "default": null
+    },
+    {
+      "name": "functions",
+      "default": null
+    }
+  ],
+  "execution_pattern": "sequence",
+  "reasoning": "BFCL template: single activity for function call extraction",
+  "metrics": {
+    "total_tokens": 10622,
+    "regeneration_count": 0
+  }
+}

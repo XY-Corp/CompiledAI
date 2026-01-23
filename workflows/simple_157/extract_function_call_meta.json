@@ -1,0 +1,34 @@
+{
+  "activity_name": "extract_function_call",
+  "description": "Parse natural language query and extract function call with parameters",
+  "task_id": "simple_157",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"Find out if an individual John Doe with a birthday 01-01-1980 has any prior felony convictions in California.\"}]], \"function\": [{\"name\": \"criminal_history.check_felonies\", \"description\": \"This function checks if an individual has any prior felony convictions based on their full name and birth date.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"full_name\": {\"type\": \"string\", \"description\": \"The full name of the individual.\"}, \"birth_date\": {\"type\": \"string\", \"description\": \"The birth date of the individual. Must be in MM-DD-YYYY format.\"}, \"state\": {\"type\": \"string\", \"description\": \"The state to search the criminal record in. Default to 'None', which the function will search across all states.\"}}, \"required\": [\"full_name\", \"birth_date\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"criminal_history.check_felonies\": {\n    \"full_name\": \"string - The full name of the individual.\",\n    \"birth_date\": \"string - The birth date of the individual. Must be in MM-DD-YYYY format.\",\n    \"state\": \"string - The state to search the criminal record in. Default to 'None', which the function will search across all states.\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "inputs": [
+    {
+      "name": "prompt",
+      "type": "str",
+      "description": "The natural language query containing the function call request",
+      "required": true
+    },
+    {
+      "name": "functions",
+      "type": "list",
+      "description": "List of available function definitions with their parameter schemas",
+      "required": true
+    }
+  ],
+  "output": {
+    "type": "dict",
+    "description": "Returns a dict with function name as key and parameters as nested dict value",
+    "fields": {
+      "function_name": "dict[str, Any]"
+    }
+  },
+  "reference_activity": null,
+  "workflow_spec": {
+    "workflow_id": "simple_157",
+    "name": "Function Call Extractor",
+    "description": "Extract function name and parameters from natural language query",
+    "execution_pattern": "sequence"
+  }
+}
