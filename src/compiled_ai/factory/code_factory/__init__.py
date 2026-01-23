@@ -31,6 +31,7 @@ from .task_signature import TaskSignature, TaskSignatureExtractor
 from .workflow_cache import WorkflowCacheManager, CachedWorkflow
 from .dynamic_loader import DynamicModuleLoader, DynamicLoadError
 from .compilation_metrics import CompilationMetricsTracker, CompilationStats
+from .retry import retry_with_backoff, run_agent_with_retry
 
 __all__ = [
     # Core factory
@@ -71,4 +72,7 @@ __all__ = [
     # Metrics tracking
     "CompilationMetricsTracker",
     "CompilationStats",
+    # Retry utilities
+    "retry_with_backoff",
+    "run_agent_with_retry",
 ]

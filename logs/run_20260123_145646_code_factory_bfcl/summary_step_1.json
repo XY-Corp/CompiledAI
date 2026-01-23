@@ -1,0 +1,30 @@
+{
+  "step": 1,
+  "completed": 2,
+  "success_count": 1,
+  "success_rate": 0.5,
+  "elapsed_seconds": 41.71296691894531,
+  "total_tokens": 10309,
+  "compilation_tokens": 10309,
+  "execution_tokens": 0,
+  "instances": [
+    {
+      "instance_id": "simple_0",
+      "success": true,
+      "latency_ms": 35837.07475010306,
+      "generation_time_ms": 35832.92954135686,
+      "execution_time_ms": 3.700166940689087,
+      "tokens": 10309,
+      "match_type": "total_match"
+    },
+    {
+      "instance_id": "simple_1",
+      "success": false,
+      "latency_ms": 2578.4997921437025,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "tokens": 0,
+      "match_type": "failure"
+    }
+  ]
+}

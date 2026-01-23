@@ -552,7 +552,7 @@ def run_benchmark(
     )
 
     # Run using simple benchmark runner
-    result = run_simple_benchmark(instances, baseline_obj, verbose=verbose)
+    result = run_simple_benchmark(instances, baseline_obj, verbose=verbose, log_dir=run_dir)
 
     # Display results using simple format
     display_simple_results(result, baseline, dataset_key)

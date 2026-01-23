@@ -14,9 +14,15 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Literal
 
+from rich.console import Console
+from rich.table import Table
+from rich import box
+
 from .base import DatasetInstance
 from ..baselines.base import BaseBaseline, BaselineResult, TaskInput, get_baseline
 from ..evaluation import LLMEvaluator, EvaluationResult
+
+console = Console()
 
 
 EvaluationMode = Literal["exact", "llm"]
@@ -76,6 +82,7 @@ def run_benchmark(
     baseline: BaseBaseline,
     verbose: bool = False,
     evaluation_mode: EvaluationMode = "llm",
+    log_dir: str | Path | None = None,
 ) -> BenchmarkResult:
     """Run benchmark on instances using a baseline.
 
@@ -86,12 +93,18 @@ def run_benchmark(
         baseline: Any baseline that implements run(TaskInput) -> BaselineResult
         verbose: Print progress
         evaluation_mode: "exact" for exact match, "llm" for semantic LLM evaluation
+        log_dir: Directory to save incremental results (summary_step_N.json)
 
     Returns:
         BenchmarkResult with all instance results
     """
+    import json
+
     result = BenchmarkResult()
     result.start_time = time.time()
+
+    # Ensure log_dir is a Path
+    log_path = Path(log_dir) if log_dir else None
 
     # Initialize LLM evaluator if needed
     llm_evaluator = LLMEvaluator() if evaluation_mode == "llm" else None
@@ -154,6 +167,10 @@ def run_benchmark(
             evaluation_details=evaluation_details,
         )
         result.results.append(inst_result)
+
+        # Save incremental results to log directory
+        if log_path:
+            _save_incremental_results(result, log_path, len(result.results) - 1)
 
         if verbose:
             # Calculate running statistics
@@ -240,6 +257,96 @@ def _evaluate_with_llm(
             error=f"LLM evaluation failed: {str(e)}",
             details={"match_type": "failure"},
         )
+
+
+def _save_incremental_results(result: BenchmarkResult, log_dir: Path, step: int) -> None:
+    """Save incremental results after each instance.
+
+    Args:
+        result: Current benchmark result with all completed instances
+        log_dir: Directory to save results
+        step: Current step number (0-indexed)
+    """
+    import json
+
+    # Build summary data
+    completed = len(result.results)
+    success_count = sum(1 for r in result.results if r.success)
+    elapsed = time.time() - result.start_time
+
+    # Token breakdown
+    total_gen_tokens = sum(
+        (r.generation_input_tokens or 0) + (r.generation_output_tokens or 0)
+        for r in result.results
+    )
+    total_exec_tokens = sum(
+        (r.execution_input_tokens or 0) + (r.execution_output_tokens or 0)
+        for r in result.results
+    )
+
+    summary_data = {
+        "step": step,
+        "completed": completed,
+        "success_count": success_count,
+        "success_rate": success_count / completed if completed > 0 else 0,
+        "elapsed_seconds": elapsed,
+        "total_tokens": total_gen_tokens + total_exec_tokens,
+        "compilation_tokens": total_gen_tokens,
+        "execution_tokens": total_exec_tokens,
+        "instances": [
+            {
+                "instance_id": r.instance_id,
+                "success": r.success,
+                "latency_ms": r.latency_ms,
+                "generation_time_ms": r.generation_time_ms,
+                "execution_time_ms": r.execution_time_ms,
+                "tokens": (r.generation_input_tokens or 0) + (r.generation_output_tokens or 0),
+                "match_type": r.match_type,
+            }
+            for r in result.results
+        ]
+    }
+
+    # Save to step file
+    step_file = log_dir / f"summary_step_{step}.json"
+    with open(step_file, "w") as f:
+        json.dump(summary_data, f, indent=2)
+
+    # Also print a compact table
+    _print_results_table(result.results)
+
+
+def _print_results_table(results: list[InstanceResult]) -> None:
+    """Print a compact results table."""
+    table = Table(
+        title="Instance Results",
+        box=box.ROUNDED,
+        show_header=True,
+    )
+    table.add_column("Instance", style="cyan")
+    table.add_column("Status", justify="center")
+    table.add_column("Latency", justify="right")
+    table.add_column("Gen (ms)", justify="right", style="yellow")
+    table.add_column("Exec (ms)", justify="right", style="green")
+    table.add_column("Tokens", justify="right")
+
+    for r in results:
+        status = "[green]✓[/green]" if r.success else "[red]✗[/red]"
+        gen_ms = f"{r.generation_time_ms:.0f}" if r.generation_time_ms else "-"
+        exec_ms = f"{r.execution_time_ms:.0f}" if r.execution_time_ms else "-"
+        tokens = (r.generation_input_tokens or 0) + (r.generation_output_tokens or 0)
+        tokens_str = f"{tokens:,} / {(r.execution_input_tokens or 0) + (r.execution_output_tokens or 0)}"
+
+        table.add_row(
+            r.instance_id[:20],
+            status,
+            f"{r.latency_ms:.0f}ms",
+            gen_ms,
+            exec_ms,
+            tokens_str,
+        )
+
+    console.print(table)
 
 
 def run_benchmark_with_baseline_name(

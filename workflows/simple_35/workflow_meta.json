@@ -1,0 +1,26 @@
+{
+  "workflow_id": "simple_35",
+  "name": "Function Call Extractor",
+  "description": "Extract function name and parameters from natural language query",
+  "task_id": "simple_35",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"Find an all vegan restaurant in New York that opens until at least 11 PM.\"}]], \"function\": [{\"name\": \"vegan_restaurant.find_nearby\", \"description\": \"Locate nearby vegan restaurants based on specific criteria like operating hours.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"location\": {\"type\": \"string\", \"description\": \"The city and state, e.g. New York, NY, you should format it as City, State.\"}, \"operating_hours\": {\"type\": \"integer\", \"description\": \"Preferred latest closing time of the restaurant. E.g. if 11 is given, then restaurants that close at or after 11 PM will be considered. This is in 24 hour format. Default is 24.\"}}, \"required\": [\"location\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"vegan_restaurant.find_nearby\": {\n    \"location\": \"string - The city and state, e.g. New York, NY, you should format it as City, State.\",\n    \"operating_hours\": \"integer - Preferred latest closing time of the restaurant. E.g. if 11 is given, then restaurants that close at or after 11 PM will be considered. This is in 24 hour format. Default is 24.\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "activities": [
+    "extract_function_call"
+  ],
+  "variables": [
+    {
+      "name": "prompt",
+      "default": null
+    },
+    {
+      "name": "functions",
+      "default": null
+    }
+  ],
+  "execution_pattern": "sequence",
+  "reasoning": "BFCL template: single activity for function call extraction",
+  "metrics": {
+    "total_tokens": 9845,
+    "regeneration_count": 0
+  }
+}
