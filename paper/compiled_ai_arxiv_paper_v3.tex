@@ -51,7 +51,7 @@
 \begin{abstract}
 % ============================================================================
 
-We study \emph{compiled AI}, a paradigm in which large language models generate executable code artifacts during a compilation phase, after which workflows execute deterministically without further model invocation. By constraining generation to narrow business-logic functions embedded in validated templates, compiled AI trades runtime flexibility for predictability, auditability, and cost efficiency---while retaining the ability to improve artifacts through observed execution patterns.
+We study \emph{compiled AI}, a hybrid paradigm in which large language models generate executable code artifacts during a compilation phase, after which workflows execute deterministically without further model invocation. By constraining generation to narrow business-logic functions embedded in validated templates, compiled AI trades runtime flexibility for predictability, auditability, and cost efficiency---while retaining the ability to improve artifacts through observed execution patterns. Critically, our approach supports \emph{bounded agentic invocations}: specific workflow steps may invoke LLMs for well-defined subtasks (e.g., document classification), combining deterministic orchestration with targeted intelligence where needed.
 
 We introduce (i) a system architecture for constrained LLM-based code generation, (ii) a four-stage generation-and-validation pipeline that converts probabilistic model output into production-ready code artifacts, and (iii) an evaluation framework that measures operational metrics including token amortization, determinism, reliability, validation effectiveness, and cost. In preliminary evaluation on function-calling tasks (n=499 across two BFCL categories), compiled AI achieves 96\% task completion with zero execution tokens, breaking even with runtime inference at approximately 21 transactions and reducing token consumption by 47$\times$ at 1,000 transactions.
 
@@ -770,7 +770,7 @@ Our approach is well-suited for workflows that are:
     \item \textbf{Latency-sensitive}: Runtime inference latency is unacceptable
 \end{itemize}
 
-Healthcare administrative workflows exemplify these requirements. \citet{qiu2024healthcare} identify administrative workflow automation as a candidate application for LLM-based systems, while regulatory frameworks increasingly emphasize auditability \citep{fda2025}.
+Healthcare administrative workflows exemplify these requirements. \citet{qiu2024healthcare} identify administrative workflow automation as a candidate application for LLM-based systems, while regulatory frameworks increasingly emphasize auditability \citep{fda2025}. Notably, healthcare presents a natural division: \emph{provider-facing} workflows (clinical protocols, surgical procedures, billing) demand deterministic execution where outcomes must be reproducible and auditable, while \emph{consumer-facing} applications (symptom triage, patient education) may benefit from generative flexibility. Compiled AI is well-suited for the former category, where established protocols ``will not change'' and any deviation would be ``heavily disputed.''
 
 \subsection{When Runtime Inference Excels}
 
@@ -785,7 +785,9 @@ Runtime approaches remain appropriate for:
 
 Constraining generation improves reliability. By limiting LLM output to narrow functions within tested templates, we bound the space of possible errors. The model cannot hallucinate incorrect API calls or database schemas---these come from pre-tested templates.
 
-This trades flexibility for reliability: appropriate for enterprise deployments where predictability matters more than generality. Moreover, deterministic execution yields full observability---when accuracy degrades, we can identify precisely which code segment underperformed and trigger targeted regeneration rather than debugging opaque model reasoning. This positions compiled AI not as a one-shot generation process, but as an \emph{evolutionary system}---deterministic execution with adaptive improvement, where production metrics continuously inform artifact refinement.
+This trades flexibility for reliability: appropriate for enterprise deployments where predictability matters more than generality. Moreover, deterministic execution yields full observability---when accuracy degrades, we can identify precisely which code segment underperformed and trigger targeted regeneration rather than debugging opaque model reasoning.
+
+\paragraph{The Evolutionary Compiler.} This positions compiled AI not as a one-shot generation process, but as an \emph{evolutionary compiler}---a bridge between the predictability of traditional software and the adaptability of AI. Unlike static compilers that produce immutable artifacts, our system supports continuous refinement: production metrics identify underperforming segments, review agents analyze failure cases, and the code factory regenerates improved versions. The result is deterministic execution with adaptive improvement, where compiled artifacts evolve based on observed behavior while maintaining execution-time guarantees.
 
 \subsection{Relationship to Existing Benchmarks}
 
@@ -811,7 +813,7 @@ We argue that capability benchmarks alone are insufficientâ€”production dep
 
 \textbf{Model dependence.} Generated code quality depends on the underlying LLM. Model updates may change behavior, requiring re-validation.
 
-\textbf{Benchmark limitations.} Our proposed framework has not yet been adopted by other systems, limiting cross-system comparability. We release our benchmark suite to encourage adoption.
+\textbf{Benchmark limitations.} Our preliminary evaluation uses BFCL function-calling tasks, which represent the simplest case for compiled AI: single-function extraction with well-defined parameters. Real enterprise workflows involve multi-step orchestration, conditional branching, error handling, and state management---complexity not captured by function-calling benchmarks. While BFCL validates the core compilation-vs-runtime trade-off, stronger claims about production viability require evaluation on more complex workflow benchmarks. Our proposed framework has not yet been adopted by other systems, limiting cross-system comparability. We release our benchmark suite to encourage adoption and plan future evaluation on multi-step workflow tasks.
 
 % ============================================================================
 \section{Conclusion}
@@ -832,6 +834,7 @@ The approach trades flexibility for determinism, cost efficiency, and auditabili
 
 \paragraph{Future Work.}
 \begin{itemize}
+    \item \textbf{Complex workflow benchmarks}: Evaluation on multi-step workflows with conditional logic, state management, and error handling---beyond single-function extraction
     \item Natural language specification (currently YAML)
     \item Automatic workflow decomposition from high-level intent
     \item Continuous optimization: runtime accuracy metrics identifying underperforming segments, enabling targeted regeneration cycles that evolve compiled artifacts while preserving execution-time determinism
