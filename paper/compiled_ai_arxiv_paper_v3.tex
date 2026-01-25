@@ -68,7 +68,7 @@ Empirical studies and industrial deployments have highlighted persistent reliabi
 
 This paper investigates an alternative design point: \emph{compiled AI}, a paradigm in which LLMs generate executable code artifacts during a one-time compilation phase, after which workflows execute deterministically without further model inference. The key observation motivating this work is that many enterprise workflows require intelligence to \emph{design} but not to \emph{execute} repeatedly. Once business logic is specified and validated, repeated execution can be handled by conventional software infrastructure---with full observability that enables targeted refinement of the compiled artifacts over time.
 
-Compiled AI represents a trade-off between flexibility and determinism. Rather than interpreting natural language or reasoning at runtime, an LLM is constrained to generate narrow business-logic functions within pre-validated templates. These generated artifacts are subjected to a multi-stage validation pipelineâ€”including security analysis, syntactic verification, execution testing, and output accuracy checksâ€”before deployment. After validation, workflows execute as static code with predictable latency, zero stochasticity, and near-zero marginal inference cost.
+Compiled AI represents a trade-off between flexibility and determinism. Rather than interpreting natural language or reasoning at runtime, an LLM is constrained to generate narrow business-logic functions within pre-validated templates. These generated artifacts are subjected to a multi-stage validation pipeline---including security analysis, syntactic verification, execution testing, and output accuracy checks---before deployment. After validation, workflows execute as static code with predictable latency, zero stochasticity, and near-zero marginal inference cost.
 
 \begin{figure}[ht]
 \centering
@@ -141,7 +141,7 @@ This paper makes three contributions:
     \item We define an evaluation framework that measures the operational viability of LLM-based workflow systems using metrics for token amortization, determinism, reliability, validation effectiveness, and cost (Section~\ref{sec:framework}).
 \end{itemize}
 
-Our goal is not to replace runtime inference in all settings, but to provide a principled basis for identifying regimesâ€”such as well-specified, high-volume workflowsâ€”where compilation yields operational advantages.
+Our goal is not to replace runtime inference in all settings, but to provide a principled basis for identifying regimes---such as well-specified, high-volume workflows---where compilation yields operational advantages.
 
 % ============================================================================
 \section{Related Work}
@@ -149,11 +149,11 @@ Our goal is not to replace runtime inference in all settings, but to provide a p
 % ============================================================================
 
 \paragraph{Novelty and Scope.}
-Prior work on LLM-based agents, program-aided reasoning, and workflow synthesis has focused primarily on model capabilityâ€”whether systems can generate or reason over programs. In contrast, this work treats production viability as a first-class concern. Our contributions are not a new code generation algorithm per se, but a systems-oriented study of how probabilistic LLM outputs can be converted into deterministic, auditable execution artifacts. To our knowledge, this is the first systematic evaluation of LLM-based workflow automation using operational and economic metrics such as token amortization, execution determinism, validation convergence, and cost at scale.
+Prior work on LLM-based agents, program-aided reasoning, and workflow synthesis has focused primarily on model capability---whether systems can generate or reason over programs. In contrast, this work treats production viability as a first-class concern. Our contributions are not a new code generation algorithm per se, but a systems-oriented study of how probabilistic LLM outputs can be converted into deterministic, auditable execution artifacts. To our knowledge, this is the first systematic evaluation of LLM-based workflow automation using operational and economic metrics such as token amortization, execution determinism, validation convergence, and cost at scale.
 
 \subsection{LLM Code Generation}
 
-Code generation capabilities have improved rapidly. On SWE-Bench Verified \citep{jimenez2024swebench}, models improved from 49.0\% (Claude 3.5 Sonnet, late 2024) to 80.9\% (Claude Opus 4.5, November 2025)â€”a 31.9 percentage point gain in twelve months.
+Code generation capabilities have improved rapidly. On SWE-Bench Verified \citep{jimenez2024swebench}, models improved from 49.0\% (Claude 3.5 Sonnet, late 2024) to 80.9\% (Claude Opus 4.5, November 2025)---a 31.9 percentage point gain in twelve months.
 
 \begin{table}[ht]
 \centering
@@ -204,7 +204,7 @@ Our work combines LLM code generation with durable execution, generating Tempora
 
 \subsection{LLM-Based Workflow Automation}
 
-Recent work has explored LLM-driven workflow generation. WorkflowLLM \citep{fan2024workflowllm} constructs WorkflowBench with 106,763 samples covering 1,503 APIs, training models to generate Python-style workflow code from specificationsâ€”a paradigm shift from traditional RPA to ``Agentic Process Automation.'' FlowMind \citep{zeng2024flowmind} generates workflows that prevent runtime hallucinations via structured intermediate representations. In embedded systems, spec2code \citep{patil2024spec2code} combines LLM generation with formal verification critics, producing industrial-quality code from ACSL specifications.
+Recent work has explored LLM-driven workflow generation. WorkflowLLM \citep{fan2024workflowllm} constructs WorkflowBench with 106,763 samples covering 1,503 APIs, training models to generate Python-style workflow code from specifications---a paradigm shift from traditional RPA to ``Agentic Process Automation.'' FlowMind \citep{zeng2024flowmind} generates workflows that prevent runtime hallucinations via structured intermediate representations. In embedded systems, spec2code \citep{patil2024spec2code} combines LLM generation with formal verification critics, producing industrial-quality code from ACSL specifications.
 
 These approaches share our insight that LLMs should generate \textit{artifacts} rather than reason at runtime. Our contribution extends this to enterprise workflow automation with explicit evaluation metrics.
 
@@ -213,11 +213,11 @@ These approaches share our insight that LLMs should generate \textit{artifacts} 
 Recent large-scale deployments of agentic systems demonstrate growing demand for automated task execution. These systems typically rely on runtime inference, motivating exploration of alternative architectures that reduce execution-time variance and inference cost.
 
 \paragraph{Relation to Program Synthesis.}
-Compiled AI shares surface similarities with prior work on program synthesis and specification-driven code generation. However, our focus differs in two respects. First, we evaluate generated artifacts primarily through operational metricsâ€”such as determinism, regeneration convergence, and token amortizationâ€”rather than synthesis correctness alone. Second, we study LLM generation as a component within a production workflow system, where validation, retries, and execution cost are first-class concerns. As a result, our contributions are systems-oriented rather than algorithmic.
+Compiled AI shares surface similarities with prior work on program synthesis and specification-driven code generation. However, our focus differs in two respects. First, we evaluate generated artifacts primarily through operational metrics---such as determinism, regeneration convergence, and token amortization---rather than synthesis correctness alone. Second, we study LLM generation as a component within a production workflow system, where validation, retries, and execution cost are first-class concerns. As a result, our contributions are systems-oriented rather than algorithmic.
 
 \subsection{Formal Methods and Constrained Generation}
 
-The challenge of verifying LLM-generated code has sparked renewed interest in formal methods integration. \citet{dalrymple2024guaranteed} propose a ``Guaranteed Safe AI'' framework combining world models, safety specifications, and formal verifiersâ€”conceptually aligned with our validation pipeline approach.
+The challenge of verifying LLM-generated code has sparked renewed interest in formal methods integration. \citet{dalrymple2024guaranteed} propose a ``Guaranteed Safe AI'' framework combining world models, safety specifications, and formal verifiers---conceptually aligned with our validation pipeline approach.
 
 Constrained decoding provides compile-time constraints: \citet{mundler2025typeconstrained} demonstrate that type-constrained generation reduces compilation errors by $>$50\% while improving pass@1 by 3.5--37\%. For healthcare specifically, \citet{neupane2025hipaa} present a framework for HIPAA-compliant agentic AI systems, integrating attribute-based access control with PHI sanitization pipelines.
 
@@ -236,7 +236,7 @@ Our system implements four principles:
 
 \textbf{Principle 2: Compilation over Interpretation.} Generated code is validated, tested, and deployed as static artifacts. Runtime behavior is deterministic. The LLM exits the execution loop.
 
-\textbf{Principle 3: Validation as Requirement.} Every artifact passes a four-stage pipeline before deploymentâ€”possible precisely because we generate code rather than interpret configurations.
+\textbf{Principle 3: Validation as Requirement.} Every artifact passes a four-stage pipeline before deployment---possible precisely because we generate code rather than interpret configurations.
 
 \textbf{Principle 4: Compliance by Construction.} Regulatory constraints (HIPAA, PCI-DSS, SOC 2) are encoded in templates and prompt blocks, ensuring generated code inherits compliance properties.
 
@@ -312,7 +312,7 @@ Our system implements four principles:
 
 \end{tikzpicture}
 }%
-\caption{The code foundry architecture. Business intent (YAML) enters the fab; validated Temporal activities emerge. Dashed red arrows show the regeneration loop on validation failure. The LLM runs once at generation timeâ€”not at transaction time.}
+\caption{The code foundry architecture. Business intent (YAML) enters the fab; validated Temporal activities emerge. Dashed red arrows show the regeneration loop on validation failure. The LLM runs once at generation time---not at transaction time.}
 \label{fig:architecture}
 \end{figure}
 
@@ -523,7 +523,7 @@ Metric & Definition \\
 \end{tabular}
 \end{table}
 
-This data is novelâ€”no published work reports validation pipeline effectiveness for LLM-generated production code.
+This data is novel---no published work reports validation pipeline effectiveness for LLM-generated production code.
 
 \subsection{Cost Metrics}
 
@@ -798,14 +798,14 @@ Our evaluation framework complements existing benchmarks:
     \item \textbf{Our framework}: Measures production viability (token economics, consistency, reliability)
 \end{itemize}
 
-We argue that capability benchmarks alone are insufficientâ€”production deployment requires the operational metrics we define.
+We argue that capability benchmarks alone are insufficient---production deployment requires the operational metrics we define.
 
 % ============================================================================
 \section{Limitations}
 \label{sec:limitations}
 % ============================================================================
 
-\textbf{Specification quality.} Our approach assumes users can accurately specify workflows. The ``specification problem'' remains fundamentalâ€”iterative refinement is often necessary.
+\textbf{Specification quality.} Our approach assumes users can accurately specify workflows. The ``specification problem'' remains fundamental---iterative refinement is often necessary.
 
 \textbf{Bounded applicability.} Not all workflows reduce to deterministic code. Tasks requiring genuine creativity or adaptation to novel situations may require runtime inference.
 
@@ -967,8 +967,8 @@ David Dalrymple, Joar Skalse, Yoshua Bengio, Stuart Russell, Max Tegmark, Sanjit
 \newblock Towards Guaranteed Safe AI: A Framework for Ensuring Robust and Reliable AI Systems.
 \newblock \emph{arXiv:2405.06624}, May 2024.
 
-\bibitem[M\"{u}ndler et al.(2025)]{mundler2025typeconstrained}
-Niels M\"{u}ndler, Jingxuan He, Erin Summers, and Martin Vechev.
+\bibitem[M\''{u}ndler et al.(2025)]{mundler2025typeconstrained}
+Niels M\''{u}ndler, Jingxuan He, Erin Summers, and Martin Vechev.
 \newblock Type-Constrained Code Generation with Language Models.
 \newblock In \emph{PLDI}, 2025.
 \newblock arXiv:2504.09246.
@@ -1013,26 +1013,26 @@ Shishir~G. Patil, Tianjun Zhang, Xin Wang, and Joseph~E. Gonzalez.
 # Validation: PASS (Security, Syntax, Execution, Accuracy)
 
 def process_business_logic(eob_data: dict) -> ProcessedEOB:
-    """Extract and validate EOB fields.
+    ''''''Extract and validate EOB fields.
     
     Generated: 2025-12-15 | Tokens: 847 | LOC: 42
-    """
-    claim_id = eob_data.get("claim_id")
-    patient_id = eob_data.get("patient", {}).get("id")
+    ''''''
+    claim_id = eob_data.get(''claim_id'')
+    patient_id = eob_data.get(''patient'', {}).get(''id'')
     
     # Validate required fields
     if not claim_id or not patient_id:
-        raise ValidationError("Missing required identifiers")
+        raise ValidationError(''Missing required identifiers'')
     
     # Extract payment information
     payments = []
-    for line in eob_data.get("line_items", []):
+    for line in eob_data.get(''line_items'', []):
         payment = Payment(
-            service_code=line["code"],
-            billed=Decimal(line["billed_amount"]),
-            allowed=Decimal(line["allowed_amount"]),
-            paid=Decimal(line["paid_amount"]),
-            reason_code=line.get("adjustment_reason")
+            service_code=line[''code''],
+            billed=Decimal(line[''billed_amount'']),
+            allowed=Decimal(line[''allowed_amount'']),
+            paid=Decimal(line[''paid_amount'']),
+            reason_code=line.get(''adjustment_reason'')
         )
         payments.append(payment)
     
