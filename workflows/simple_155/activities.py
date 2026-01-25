@@ -59,7 +59,7 @@ async def extract_function_call(
     for pattern in money_patterns:
         match = re.search(pattern, query, re.IGNORECASE)
         if match:
-            money_value = int(match.group(1).replace(',', '').split('.')[0])
+            money_value = float(match.group(1).replace(',', ''))
             break
     
     # Extract percentage (for interest_rate)
@@ -100,7 +100,7 @@ async def extract_function_call(
     # Extract compounding frequency (optional)
     # Patterns: compounded monthly, compounded 12 times
     compound_patterns = [
-        r'compounded\s+(\d+)\s*times?',  # compounded 12 times
+        r'compounded\s+(\d+)\s*times',  # compounded 12 times
         r'compounded\s+monthly',  # compounded monthly -> 12
         r'compounded\s+quarterly',  # compounded quarterly -> 4
         r'compounded\s+daily',  # compounded daily -> 365
@@ -123,17 +123,17 @@ async def extract_function_call(
                 compound_value = int(match.group(1))
             break
     
-    # Build params dict based on schema
-    if "initial_investment" in props and money_value is not None:
-        params["initial_investment"] = money_value
-    
-    if "interest_rate" in props and rate_value is not None:
-        params["interest_rate"] = rate_value
-    
-    if "duration" in props and duration_value is not None:
-        params["duration"] = duration_value
-    
-    if "compounded" in props and compound_value is not None:
-        params["compounded"] = compound_value
+    # Map extracted values to parameter names based on schema
+    for param_name, param_info in props.items():
+        param_type = param_info.get("type", "string")
+        
+        if param_name == "initial_investment" and money_value is not None:
+            params[param_name] = int(money_value) if param_type == "integer" else money_value
+        elif param_name == "interest_rate" and rate_value is not None:
+            params[param_name] = rate_value
+        elif param_name == "duration" and duration_value is not None:
+            params[param_name] = duration_value
+        elif param_name == "compounded" and compound_value is not None:
+            params[param_name] = compound_value
     
     return {func_name: params}

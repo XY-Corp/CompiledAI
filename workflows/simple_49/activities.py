@@ -87,13 +87,12 @@ async def extract_function_call(
         for param_name, param_info in params_schema.items():
             if num_idx < len(numbers):
                 param_type = param_info.get("type", "string")
-                value = numbers[num_idx]
                 if param_type == "integer":
-                    params[param_name] = int(float(value))
+                    params[param_name] = int(float(numbers[num_idx]))
                 elif param_type in ["number", "float"]:
-                    params[param_name] = float(value)
+                    params[param_name] = float(numbers[num_idx])
                 else:
-                    params[param_name] = value
+                    params[param_name] = numbers[num_idx]
                 num_idx += 1
     
     return {func_name: params}

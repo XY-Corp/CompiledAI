@@ -39,7 +39,7 @@ async def extract_function_call(
     except (json.JSONDecodeError, TypeError):
         funcs = []
     
-    # Get function details
+    # Get function schema
     func = funcs[0] if funcs else {}
     func_name = func.get("name", "")
     params_schema = func.get("parameters", {}).get("properties", {})
@@ -52,53 +52,45 @@ async def extract_function_call(
         param_type = param_info.get("type", "string")
         param_desc = param_info.get("description", "").lower()
         
-        if param_name == "location":
-            # Extract city name - look for "in [City]" pattern
-            location_patterns = [
-                r'\bin\s+([A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+)*)',  # "in Austin", "in New York"
-                r'(?:for|at)\s+([A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+)*)',  # "for Austin"
+        if param_type == "integer":
+            # Extract numbers - look for patterns like "next 3 days", "for 5 days"
+            number_patterns = [
+                r'(?:next|for|past|last)\s+(\d+)\s+days?',
+                r'(\d+)\s+days?',
+                r'(\d+)',
             ]
-            for pattern in location_patterns:
-                match = re.search(pattern, query)
-                if match:
-                    params[param_name] = match.group(1).strip()
-                    break
-        
-        elif param_name == "days":
-            # Extract number of days - look for "next X days" or just numbers near "days"
-            days_patterns = [
-                r'(?:next|for|over)\s+(\d+)\s+days?',  # "next 3 days"
-                r'(\d+)\s+days?',  # "3 days"
-            ]
-            for pattern in days_patterns:
+            for pattern in number_patterns:
                 match = re.search(pattern, query_lower)
                 if match:
                     params[param_name] = int(match.group(1))
                     break
         
-        elif param_name == "temp_unit":
-            # Extract temperature unit - look for Celsius or Fahrenheit
-            if "celsius" in query_lower:
-                params[param_name] = "Celsius"
-            elif "fahrenheit" in query_lower:
-                params[param_name] = "Fahrenheit"
-            # If not specified, don't include (use default)
-        
-        elif param_type == "integer":
-            # Generic integer extraction
-            numbers = re.findall(r'\d+', query)
-            if numbers:
-                params[param_name] = int(numbers[0])
-        
         elif param_type == "string":
-            # Generic string extraction - try common patterns
-            string_patterns = [
-                r'(?:for|in|at|of)\s+([A-Za-z][A-Za-z\s]+?)(?:\s+(?:for|in|and|with|,)|$)',
-            ]
-            for pattern in string_patterns:
-                match = re.search(pattern, query, re.IGNORECASE)
-                if match:
-                    params[param_name] = match.group(1).strip()
-                    break
+            # Check if this is a location/city parameter
+            if "city" in param_desc or "location" in param_desc:
+                # Extract city name - look for patterns like "in Austin", "for Boston"
+                city_patterns = [
+                    r'(?:in|for|at)\s+([A-Z][a-zA-Z\s]+?)(?:\s+for|\s+over|\s+in|\s*$)',
+                    r'(?:in|for|at)\s+([A-Z][a-zA-Z]+)',
+                ]
+                for pattern in city_patterns:
+                    match = re.search(pattern, query)
+                    if match:
+                        params[param_name] = match.group(1).strip()
+                        break
+            
+            # Check if this is a temperature unit parameter
+            elif "unit" in param_desc or "celsius" in param_desc or "fahrenheit" in param_desc:
+                if "celsius" in query_lower:
+                    params[param_name] = "Celsius"
+                elif "fahrenheit" in query_lower:
+                    params[param_name] = "Fahrenheit"
+                # If not specified and not required, skip (use default)
+            
+            else:
+                # Generic string extraction - try to find quoted strings or key phrases
+                quoted_match = re.search(r'"([^"]+)"', query)
+                if quoted_match:
+                    params[param_name] = quoted_match.group(1)
     
     return {func_name: params}

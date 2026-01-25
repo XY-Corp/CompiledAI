@@ -49,44 +49,22 @@ async def extract_function_call(
     params_schema = func.get("parameters", {}).get("properties", {})
     
     # Extract numbers from query using regex
-    # Patterns for "X and Y", "X, Y", "of X and Y", etc.
-    numbers = []
+    # Pattern matches integers and floats
+    numbers = re.findall(r'\b(\d+(?:\.\d+)?)\b', query)
     
-    # Try specific patterns first
-    patterns = [
-        r'(\d+)\s+and\s+(\d+)',           # "36 and 48"
-        r'(\d+)\s*,\s*(\d+)',              # "36, 48"
-        r'of\s+(\d+)\s+and\s+(\d+)',       # "of 36 and 48"
-        r'between\s+(\d+)\s+and\s+(\d+)',  # "between 36 and 48"
-        r'say\s+(\d+)\s+and\s+(\d+)',      # "say 36 and 48"
-    ]
-    
-    for pattern in patterns:
-        match = re.search(pattern, query, re.IGNORECASE)
-        if match:
-            numbers = [int(match.group(1)), int(match.group(2))]
-            break
-    
-    # Fallback: extract all numbers if patterns didn't match
-    if not numbers:
-        all_numbers = re.findall(r'\d+', query)
-        numbers = [int(n) for n in all_numbers[:2]]  # Take first two numbers
-    
-    # Build parameters dict matching schema exactly
+    # Build parameters dict by matching extracted numbers to schema
     params = {}
     param_names = list(params_schema.keys())
     
-    # Assign extracted numbers to parameters in order
+    # Assign numbers to parameters in order
     for i, param_name in enumerate(param_names):
-        if i < len(numbers):
-            param_info = params_schema.get(param_name, {})
-            param_type = param_info.get("type", "integer")
-            
+        param_info = params_schema.get(param_name, {})
+        param_type = param_info.get("type", "string")
+        
+        if param_type in ["integer", "number", "float"] and i < len(numbers):
             if param_type == "integer":
-                params[param_name] = numbers[i]
-            elif param_type in ["float", "number"]:
-                params[param_name] = float(numbers[i])
+                params[param_name] = int(numbers[i])
             else:
-                params[param_name] = numbers[i]
+                params[param_name] = float(numbers[i])
     
     return {func_name: params}

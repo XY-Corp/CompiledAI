@@ -13,7 +13,7 @@ async def extract_function_call(
 ) -> dict[str, Any]:
     """Extract function name and parameters from user query using regex and string matching."""
     
-    # Parse prompt (may be JSON string with nested structure)
+    # Parse prompt - may be JSON string with nested structure
     try:
         if isinstance(prompt, str):
             data = json.loads(prompt)
@@ -31,7 +31,7 @@ async def extract_function_call(
     except (json.JSONDecodeError, TypeError, KeyError):
         query = str(prompt)
     
-    # Parse functions (may be JSON string)
+    # Parse functions - may be JSON string
     try:
         if isinstance(functions, str):
             funcs = json.loads(functions)
@@ -47,53 +47,55 @@ async def extract_function_call(
     
     # Extract parameters from query
     params = {}
+    query_lower = query.lower()
     
     for param_name, param_info in params_schema.items():
         param_type = param_info.get("type", "string")
+        param_desc = param_info.get("description", "").lower()
         
         if param_type == "string":
             # Extract location/city - look for patterns like "in [City], [State]" or "in [City]"
-            if param_name == "location":
+            if "location" in param_name or "city" in param_desc:
                 # Pattern: "in City, State" or "in City State" or "for City"
                 location_patterns = [
-                    r'(?:in|for|at)\s+([A-Za-z]+(?:\s+[A-Za-z]+)*,\s*[A-Za-z]+(?:\s+[A-Za-z]+)*)',  # City, State
-                    r'(?:in|for|at)\s+([A-Za-z]+(?:\s+[A-Za-z]+)*)',  # Just city/location
+                    r'(?:in|for|at)\s+([A-Z][a-zA-Z]+(?:\s*,?\s*[A-Z][a-zA-Z]+)?)',  # "in Miami, Florida"
+                    r'(?:in|for|at)\s+([A-Z][a-zA-Z\s,]+?)(?:\s+(?:in|for|over|during|the|upcoming|next|\d))',  # before time words
                 ]
+                
                 for pattern in location_patterns:
-                    match = re.search(pattern, query, re.IGNORECASE)
+                    match = re.search(pattern, query)
                     if match:
-                        params[param_name] = match.group(1).strip()
+                        location = match.group(1).strip().rstrip(',')
+                        params[param_name] = location
                         break
         
         elif param_type == "integer":
-            # Extract numbers with context
-            if param_name == "days":
-                # Look for patterns like "7 days", "next 7 days", "upcoming 7 days"
+            # Extract days - look for number followed by "days" or "day"
+            if "days" in param_name or "day" in param_desc:
                 days_patterns = [
-                    r'(?:next|upcoming|following|for)\s+(\d+)\s+days?',
-                    r'(\d+)\s+days?\s+(?:forecast|ahead|from)',
-                    r'(\d+)\s+days?',
+                    r'(?:upcoming|next|following|for)\s+(\d+)\s+days?',  # "upcoming 7 days"
+                    r'(\d+)\s+days?\s+(?:forecast|ahead|from)',  # "7 days forecast"
+                    r'(\d+)-day',  # "7-day"
                 ]
+                
                 for pattern in days_patterns:
-                    match = re.search(pattern, query, re.IGNORECASE)
+                    match = re.search(pattern, query_lower)
                     if match:
                         params[param_name] = int(match.group(1))
                         break
-            elif param_name == "min_humidity":
-                # Look for minimum humidity patterns
+            
+            # Extract other integer params (like min_humidity) - only if explicitly mentioned
+            elif "humidity" in param_name or "humidity" in param_desc:
+                # Look for explicit minimum humidity mention
                 humidity_patterns = [
                     r'(?:min(?:imum)?|at least)\s+(\d+)\s*%?\s*humidity',
                     r'humidity\s+(?:above|over|greater than|at least)\s+(\d+)',
                 ]
+                
                 for pattern in humidity_patterns:
-                    match = re.search(pattern, query, re.IGNORECASE)
+                    match = re.search(pattern, query_lower)
                     if match:
                         params[param_name] = int(match.group(1))
                         break
-            else:
-                # Generic number extraction for other integer params
-                numbers = re.findall(r'\d+', query)
-                if numbers:
-                    params[param_name] = int(numbers[0])
     
     return {func_name: params}

@@ -1,0 +1,26 @@
+{
+  "workflow_id": "simple_291",
+  "name": "Function Call Extractor",
+  "description": "Extract function name and parameters from natural language query",
+  "task_id": "simple_291",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"Generate a melody in C major scale, starting with the note C4, 16 measures long, at 120 beats per minute.\"}]], \"function\": [{\"name\": \"music_generator.generate_melody\", \"description\": \"Generate a melody based on certain musical parameters.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"key\": {\"type\": \"string\", \"description\": \"The key of the melody. E.g., 'C' for C major.\"}, \"start_note\": {\"type\": \"string\", \"description\": \"The first note of the melody, specified in scientific pitch notation. E.g., 'C4'.\"}, \"length\": {\"type\": \"integer\", \"description\": \"The number of measures in the melody.\"}, \"tempo\": {\"type\": \"integer\", \"description\": \"The tempo of the melody, in beats per minute. Optional parameter. If not specified, defaults to 120.\"}}, \"required\": [\"key\", \"start_note\", \"length\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"music_generator.generate_melody\": {\n    \"key\": \"string - The key of the melody. E.g., 'C' for C major.\",\n    \"start_note\": \"string - The first note of the melody, specified in scientific pitch notation. E.g., 'C4'.\",\n    \"length\": \"integer - The number of measures in the melody.\",\n    \"tempo\": \"integer - The tempo of the melody, in beats per minute. Optional parameter. If not specified, defaults to 120.\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "activities": [
+    "extract_function_call"
+  ],
+  "variables": [
+    {
+      "name": "prompt",
+      "default": null
+    },
+    {
+      "name": "functions",
+      "default": null
+    }
+  ],
+  "execution_pattern": "sequence",
+  "reasoning": "BFCL template: single activity for function call extraction",
+  "metrics": {
+    "total_tokens": 10921,
+    "regeneration_count": 0
+  }
+}

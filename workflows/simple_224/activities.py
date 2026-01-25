@@ -11,10 +11,8 @@ async def extract_function_call(
     workflow_definition_id: str | None = None,
     workflow_instance_id: str | None = None,
 ) -> dict[str, Any]:
-    """Extract function call parameters from user query and return as {func_name: {params}}.
+    """Extract function call parameters from user query and return as {func_name: {params}}."""
     
-    Uses regex and string parsing to extract values - no LLM calls needed.
-    """
     # Parse prompt (may be JSON string with nested structure)
     try:
         if isinstance(prompt, str):
@@ -25,15 +23,12 @@ async def extract_function_call(
         # Extract user query from BFCL format: {"question": [[{"role": "user", "content": "..."}]]}
         if "question" in data and isinstance(data["question"], list):
             if len(data["question"]) > 0 and isinstance(data["question"][0], list):
-                if len(data["question"][0]) > 0 and isinstance(data["question"][0][0], dict):
-                    query = data["question"][0][0].get("content", str(prompt))
-                else:
-                    query = str(prompt)
+                query = data["question"][0][0].get("content", str(prompt))
             else:
                 query = str(prompt)
         else:
             query = str(prompt)
-    except (json.JSONDecodeError, TypeError):
+    except (json.JSONDecodeError, TypeError, KeyError):
         query = str(prompt)
     
     # Parse functions (may be JSON string)
@@ -60,11 +55,14 @@ async def extract_function_call(
         param_desc = param_info.get("description", "").lower()
         
         if param_name == "topic":
-            # Extract main topic - look for key phrases
-            # "tweets about X related to Y" -> X is the main topic
+            # Extract main topic - look for key topic words
+            # "psychology related to behaviour and group dynamics"
+            # Main topic is "psychology"
             topic_patterns = [
-                r'(?:about|on|regarding|related to)\s+([a-zA-Z]+)',
-                r'who\s+(?:tweets?|posts?)\s+about\s+([a-zA-Z]+)',
+                r'about\s+(\w+)',
+                r'related to\s+(\w+)',
+                r'tweets about\s+(\w+)',
+                r'who tweets about\s+(\w+)',
             ]
             
             for pattern in topic_patterns:
@@ -73,33 +71,39 @@ async def extract_function_call(
                     params["topic"] = match.group(1)
                     break
             
-            # If not found, try to identify from context
+            # If not found, try to find the main subject
             if "topic" not in params:
+                # Look for common topic indicators
                 if "psychology" in query_lower:
                     params["topic"] = "psychology"
         
         elif param_name == "sub_topics":
-            # Extract sub-topics - look for "related to X and Y" or "about X, Y"
+            # Extract sub-topics - look for "related to X and Y" patterns
             sub_topics = []
             
-            # Pattern: "related to X and Y" or "related to X, Y"
-            related_match = re.search(r'related to\s+([a-zA-Z\s,]+?)(?:\.|$)', query_lower)
+            # Pattern: "related to X and Y" or "about X related to Y and Z"
+            related_match = re.search(r'related to\s+(.+?)(?:\.|$)', query_lower)
             if related_match:
                 related_text = related_match.group(1)
-                # Split by "and" or ","
-                parts = re.split(r'\s+and\s+|,\s*', related_text)
-                sub_topics = [p.strip() for p in parts if p.strip()]
+                # Split by "and" to get individual sub-topics
+                parts = re.split(r'\s+and\s+', related_text)
+                for part in parts:
+                    # Clean up the part
+                    cleaned = part.strip().rstrip('.')
+                    if cleaned and cleaned not in sub_topics:
+                        sub_topics.append(cleaned)
             
-            # Also check for specific keywords in the query
-            if not sub_topics:
-                keywords = ["behaviour", "behavior", "group dynamics", "dynamics", "social"]
-                for kw in keywords:
-                    if kw in query_lower and kw not in ["psychology"]:
-                        # Normalize behaviour/behavior
-                        if kw == "behavior":
-                            kw = "behaviour"
-                        if kw not in sub_topics:
-                            sub_topics.append(kw)
+            # Also check for specific keywords mentioned
+            keywords_to_check = ["behaviour", "behavior", "group dynamics", "dynamics"]
+            for kw in keywords_to_check:
+                if kw in query_lower:
+                    # Normalize behaviour/behavior
+                    if kw == "behavior":
+                        kw = "behaviour"
+                    if kw not in sub_topics and kw != "dynamics":  # avoid duplicate with "group dynamics"
+                        if "group dynamics" in query_lower and kw == "dynamics":
+                            continue
+                        sub_topics.append(kw)
             
             if sub_topics:
                 params["sub_topics"] = sub_topics
@@ -107,25 +111,29 @@ async def extract_function_call(
         elif param_name == "region":
             # Extract region if mentioned
             region_patterns = [
-                r'(?:in|from|region[:\s]+)\s*([a-zA-Z]+)',
-                r'([a-zA-Z]+)\s+region',
+                r'in\s+([\w\s]+?)(?:\s+who|\s+that|\.|$)',
+                r'from\s+([\w\s]+?)(?:\s+who|\s+that|\.|$)',
+                r'region[:\s]+(\w+)',
             ]
             
             for pattern in region_patterns:
                 match = re.search(pattern, query_lower)
                 if match:
                     region = match.group(1).strip()
-                    if region not in ["the", "a", "an", "twitter", "who"]:
+                    if region and region not in ["twitter", "the"]:
                         params["region"] = region
                         break
             
-            # Don't include region if not explicitly mentioned (use default)
+            # Don't set region if not explicitly mentioned (use default)
     
     # Ensure required params are present
     for req_param in required_params:
         if req_param not in params:
             # Try harder to extract required params
-            if req_param == "topic" and "psychology" in query_lower:
-                params["topic"] = "psychology"
+            if req_param == "topic":
+                # Fallback: first noun-like word after "about"
+                match = re.search(r'about\s+(\w+)', query_lower)
+                if match:
+                    params["topic"] = match.group(1)
     
     return {func_name: params}

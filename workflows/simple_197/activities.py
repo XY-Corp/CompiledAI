@@ -75,7 +75,7 @@ async def extract_function_call(
                 if match:
                     location = match.group(1).strip()
                     # Clean up trailing words that aren't part of location
-                    location = re.sub(r'\s+(at|on|during|for|the|a|an)$', '', location, flags=re.IGNORECASE)
+                    location = re.sub(r'\s+(at|on|during|for|the)$', '', location, flags=re.IGNORECASE)
                     if location:
                         params[param_name] = location
                         break
@@ -105,11 +105,16 @@ async def extract_function_call(
                 else:
                     params[param_name] = float(numbers[0])
         
-        # Generic string extraction - try to find quoted strings or key phrases
+        # Generic string extraction - try common patterns
         elif param_type == "string":
-            # Try quoted strings first
-            quoted = re.findall(r'"([^"]+)"', query)
-            if quoted:
-                params[param_name] = quoted[0]
+            # Try to extract based on common prepositions
+            string_patterns = [
+                rf'(?:for|in|at|with|to)\s+([A-Za-z][A-Za-z\s]+?)(?:\s+(?:at|on|in|for|with|$))',
+            ]
+            for pattern in string_patterns:
+                match = re.search(pattern, query, re.IGNORECASE)
+                if match and param_name not in params:
+                    params[param_name] = match.group(1).strip()
+                    break
     
     return {func_name: params}

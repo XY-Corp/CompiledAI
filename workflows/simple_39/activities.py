@@ -52,51 +52,54 @@ async def extract_function_call(
     # Pattern matches integers and floats (including scientific notation)
     numbers = re.findall(r'[-+]?\d+(?:\.\d+)?(?:[eE][-+]?\d+)?', query)
     
-    # Build params dict based on schema
+    # Build parameters based on schema
     params = {}
     num_idx = 0
     
     for param_name, param_info in params_schema.items():
         param_type = param_info.get("type", "string")
+        param_desc = param_info.get("description", "").lower()
         
-        if param_type in ["integer", "float", "number"]:
-            # Try to find contextual match first
+        if param_type in ["integer", "int", "float", "number"]:
+            # Try to find a contextual match first based on description keywords
             value = None
             
-            # Look for specific patterns based on parameter name
-            if param_name == "charge":
-                # Pattern: "X coulombs" or "charge of X"
-                match = re.search(r'(?:charge\s+of\s+)?(\d+(?:\.\d+)?)\s*(?:coulombs?|C\b)', query, re.IGNORECASE)
-                if match:
-                    value = match.group(1)
-            elif param_name == "distance":
-                # Pattern: "X meters" or "X m away"
-                match = re.search(r'(\d+(?:\.\d+)?)\s*(?:meters?|m\b)', query, re.IGNORECASE)
-                if match:
-                    value = match.group(1)
-            elif param_name == "permitivity":
-                # Pattern: "permitivity of X" or scientific notation
-                match = re.search(r'permitivity\s+(?:of\s+)?(\d+(?:\.\d+)?(?:[eE][-+]?\d+)?)', query, re.IGNORECASE)
-                if match:
-                    value = match.group(1)
+            # Look for specific patterns based on parameter description
+            if "charge" in param_desc or "coulomb" in param_desc:
+                # Look for charge value - pattern: "X coulombs" or "charge of X"
+                charge_match = re.search(r'(?:charge\s+of\s+|a\s+charge\s+of\s+)?(\d+(?:\.\d+)?)\s*(?:coulombs?|C\b)', query, re.IGNORECASE)
+                if charge_match:
+                    value = charge_match.group(1)
             
-            # If no contextual match, use positional number
+            elif "distance" in param_desc or "meter" in param_desc:
+                # Look for distance value - pattern: "X meters" or "distance of X"
+                dist_match = re.search(r'(\d+(?:\.\d+)?)\s*(?:meters?|m\b)', query, re.IGNORECASE)
+                if dist_match:
+                    value = dist_match.group(1)
+            
+            elif "permitivity" in param_desc or "permittivity" in param_desc:
+                # Look for permitivity value - usually scientific notation
+                perm_match = re.search(r'permitivity\s+(?:of\s+)?(\d+(?:\.\d+)?(?:[eE][-+]?\d+)?)', query, re.IGNORECASE)
+                if perm_match:
+                    value = perm_match.group(1)
+            
+            # If no contextual match, use sequential number extraction
             if value is None and num_idx < len(numbers):
                 value = numbers[num_idx]
                 num_idx += 1
             
             # Convert to appropriate type
             if value is not None:
-                if param_type == "integer":
+                if param_type == "integer" or param_type == "int":
                     params[param_name] = int(float(value))
-                else:
+                else:  # float or number
                     params[param_name] = float(value)
         
         elif param_type == "string":
             # Extract string values based on context
-            # Look for quoted strings or named entities
-            match = re.search(rf'{param_name}\s*[=:]\s*["\']?([^"\']+)["\']?', query, re.IGNORECASE)
-            if match:
-                params[param_name] = match.group(1).strip()
+            # This is a fallback - most physics calculations use numbers
+            string_match = re.search(r'(?:for|in|of|with)\s+([A-Za-z\s]+?)(?:\s+(?:and|with|,|at)|$)', query, re.IGNORECASE)
+            if string_match:
+                params[param_name] = string_match.group(1).strip()
     
     return {func_name: params}

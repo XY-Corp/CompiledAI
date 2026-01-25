@@ -58,30 +58,14 @@ async def extract_function_call(
     params = {}
     param_names = list(params_schema.keys())
     
-    # For GCD and similar two-number functions
-    if len(numbers) >= 2 and len(param_names) >= 2:
-        for i, param_name in enumerate(param_names):
-            if i < len(numbers):
-                param_info = params_schema.get(param_name, {})
-                param_type = param_info.get("type", "string")
-                
-                if param_type == "integer":
-                    params[param_name] = int(numbers[i])
-                elif param_type in ["number", "float"]:
-                    params[param_name] = float(numbers[i])
-                else:
-                    params[param_name] = numbers[i]
-    elif len(numbers) == 1 and len(param_names) >= 1:
-        # Single number case (factorial, etc.)
-        param_name = param_names[0]
+    # Assign extracted numbers to parameters in order
+    for i, param_name in enumerate(param_names):
         param_info = params_schema.get(param_name, {})
         param_type = param_info.get("type", "string")
         
-        if param_type == "integer":
-            params[param_name] = int(numbers[0])
-        elif param_type in ["number", "float"]:
-            params[param_name] = float(numbers[0])
-        else:
-            params[param_name] = numbers[0]
+        if param_type == "integer" and i < len(numbers):
+            params[param_name] = int(numbers[i])
+        elif param_type in ["float", "number"] and i < len(numbers):
+            params[param_name] = float(numbers[i])
     
     return {func_name: params}

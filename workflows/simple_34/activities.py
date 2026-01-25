@@ -45,38 +45,36 @@ async def extract_function_call(
     func_name = func.get("name", "")
     params_schema = func.get("parameters", {}).get("properties", {})
     
-    # Extract parameters using regex and string matching
+    # Extract parameters from query using regex
     params = {}
     
-    # Extract destination (city name after "to" or "trip to")
-    dest_match = re.search(r'(?:trip\s+to|to)\s+([A-Za-z\s]+?)(?:\s+(?:with|for|and|,)|$)', query, re.IGNORECASE)
-    if dest_match:
-        params["destination"] = dest_match.group(1).strip()
+    # Extract destination (city name after "to" or "in")
+    if "destination" in params_schema:
+        dest_match = re.search(r'(?:to|in|visit)\s+([A-Za-z\s]+?)(?:\s+(?:with|for|and|,)|$)', query, re.IGNORECASE)
+        if dest_match:
+            params["destination"] = dest_match.group(1).strip()
     
     # Extract days (number followed by "days" or "day")
-    days_match = re.search(r'(\d+)\s*(?:days?|day)', query, re.IGNORECASE)
-    if days_match:
-        params["days"] = int(days_match.group(1))
+    if "days" in params_schema:
+        days_match = re.search(r'(\d+)\s*(?:days?|day)', query, re.IGNORECASE)
+        if days_match:
+            params["days"] = int(days_match.group(1))
     
-    # Extract daily_budget (number after "$" or "budget" patterns)
-    budget_patterns = [
-        r'\$(\d+)',  # $100
-        r'(\d+)\s*(?:dollars?|usd)',  # 100 dollars
-        r'budget[s]?\s*(?:of|not exceeding|under|below|around|about)?\s*\$?(\d+)',  # budget of $100
-        r'not\s+exceeding\s+\$?(\d+)',  # not exceeding $100
-    ]
-    for pattern in budget_patterns:
-        budget_match = re.search(pattern, query, re.IGNORECASE)
+    # Extract daily_budget (number after "$" or "budget")
+    if "daily_budget" in params_schema:
+        budget_match = re.search(r'\$\s*(\d+)', query)
+        if not budget_match:
+            budget_match = re.search(r'budget[s]?\s*(?:of|not exceeding|under|below)?\s*\$?\s*(\d+)', query, re.IGNORECASE)
         if budget_match:
             params["daily_budget"] = int(budget_match.group(1))
-            break
     
     # Extract exploration_type from enum values
-    exploration_types = ["nature", "urban", "history", "culture"]
-    query_lower = query.lower()
-    for exp_type in exploration_types:
-        if exp_type in query_lower:
-            params["exploration_type"] = exp_type
-            break
+    if "exploration_type" in params_schema:
+        enum_values = params_schema["exploration_type"].get("enum", [])
+        query_lower = query.lower()
+        for enum_val in enum_values:
+            if enum_val.lower() in query_lower:
+                params["exploration_type"] = enum_val
+                break
     
     return {func_name: params}

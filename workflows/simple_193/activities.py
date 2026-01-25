@@ -15,28 +15,23 @@ async def extract_function_call(
     
     Returns format: {"function_name": {"param1": val1, "param2": val2}}
     """
-    # Parse prompt - may be JSON string with nested structure
+    # Parse prompt - handle BFCL format (may be JSON with nested structure)
     try:
         if isinstance(prompt, str):
             data = json.loads(prompt)
-        else:
-            data = prompt
-        
-        # Extract user query from BFCL format: {"question": [[{"role": "user", "content": "..."}]]}
-        if isinstance(data, dict) and "question" in data:
-            question_data = data["question"]
-            if isinstance(question_data, list) and len(question_data) > 0:
-                if isinstance(question_data[0], list) and len(question_data[0]) > 0:
-                    query = question_data[0][0].get("content", str(prompt))
+            # BFCL format: {"question": [[{"role": "user", "content": "..."}]], "function": [...]}
+            if "question" in data and isinstance(data["question"], list):
+                if len(data["question"]) > 0 and isinstance(data["question"][0], list):
+                    query = data["question"][0][0].get("content", str(prompt))
                 else:
                     query = str(prompt)
             else:
                 query = str(prompt)
         else:
             query = str(prompt)
-    except (json.JSONDecodeError, TypeError):
+    except (json.JSONDecodeError, TypeError, KeyError):
         query = str(prompt)
-    
+
     # Parse functions - may be JSON string
     try:
         if isinstance(functions, str):
@@ -45,10 +40,10 @@ async def extract_function_call(
             funcs = functions
     except (json.JSONDecodeError, TypeError):
         funcs = []
-    
+
     if not funcs:
         return {"error": "No functions provided"}
-    
+
     func = funcs[0]
     func_name = func.get("name", "")
     params_schema = func.get("parameters", {}).get("properties", {})
@@ -62,12 +57,15 @@ async def extract_function_call(
         param_desc = param_info.get("description", "").lower()
         
         if param_type == "string":
-            # For location parameters - extract city/place names
+            # Location extraction - look for city names
             if "location" in param_name.lower() or "city" in param_desc or "locality" in param_desc:
                 # Common patterns for location extraction
+                # Pattern: "in [City]" or "near [City]" or "around [City]"
                 location_patterns = [
-                    r'(?:in|at|near|around|for)\s+([A-Z][a-zA-Z\s]+?)(?:\s+with|\s+that|\s+and|\.|\?|$)',
-                    r'(?:nurseries|stores|shops)\s+in\s+([A-Z][a-zA-Z\s]+?)(?:\s+with|\s+that|\s+and|\.|\?|$)',
+                    r'\bin\s+([A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+)*)',  # "in Toronto"
+                    r'\bnear\s+([A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+)*)',  # "near Toronto"
+                    r'\baround\s+([A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+)*)',  # "around Toronto"
+                    r'\bat\s+([A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+)*)',  # "at Toronto"
                 ]
                 
                 for pattern in location_patterns:
@@ -75,33 +73,30 @@ async def extract_function_call(
                     if match:
                         params[param_name] = match.group(1).strip()
                         break
-                
-                # Fallback: look for capitalized words that could be city names
-                if param_name not in params:
-                    # Known cities pattern
-                    city_match = re.search(r'\b(Toronto|Vancouver|Montreal|Calgary|Ottawa|New York|Los Angeles|Chicago|Houston|Phoenix)\b', query, re.IGNORECASE)
-                    if city_match:
-                        params[param_name] = city_match.group(1)
-        
+                        
         elif param_type == "array":
-            # For array parameters - check enum values if available
+            # Handle array parameters - check for enum values
             items_info = param_info.get("items", {})
             enum_values = items_info.get("enum", [])
             
             if enum_values:
-                # Match enum values mentioned in query
+                # Check which enum values are mentioned in the query
                 matched_values = []
                 for enum_val in enum_values:
-                    # Check for the enum value or its lowercase/singular form
-                    enum_lower = enum_val.lower()
-                    # Handle plural forms (e.g., "annuals" -> "Annual")
-                    if enum_lower in query_lower or enum_lower + "s" in query_lower or enum_lower.rstrip("s") in query_lower:
-                        matched_values.append(enum_val)
-                    # Also check for "annual plants" pattern
-                    if f"{enum_lower} plant" in query_lower:
+                    # Check for the enum value in query (case-insensitive)
+                    if enum_val.lower() in query_lower:
                         matched_values.append(enum_val)
                 
                 if matched_values:
                     params[param_name] = matched_values
-    
+                    
+        elif param_type in ["integer", "number", "float"]:
+            # Extract numbers
+            numbers = re.findall(r'\d+(?:\.\d+)?', query)
+            if numbers:
+                if param_type == "integer":
+                    params[param_name] = int(numbers[0])
+                else:
+                    params[param_name] = float(numbers[0])
+
     return {func_name: params}

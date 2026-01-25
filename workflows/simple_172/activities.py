@@ -64,18 +64,22 @@ async def extract_function_call(
         
         elif param_type == "string":
             # Extract string values - look for quoted strings or case names
-            # Pattern for case names like 'R vs Adams' or "R vs Adams"
+            # Pattern for case names like 'R vs Adams' or "Smith v Jones"
             quoted_match = re.search(r"['\"]([^'\"]+)['\"]", query)
             if quoted_match:
                 params[param_name] = quoted_match.group(1)
             else:
-                # Try to extract case name pattern (X vs Y, X v Y, X v. Y)
-                case_match = re.search(r"(\w+\s+(?:vs?\.?|versus)\s+\w+)", query, re.IGNORECASE)
-                if case_match:
-                    params[param_name] = case_match.group(1)
+                # Try to find case name patterns (X vs Y, X v Y, X v. Y)
+                case_pattern = re.search(r"(?:the\s+)?['\"]?([A-Z][a-zA-Z]*(?:\s+(?:vs?\.?|versus)\s+[A-Z][a-zA-Z]*)+)['\"]?", query, re.IGNORECASE)
+                if case_pattern:
+                    params[param_name] = case_pattern.group(1)
                 else:
-                    # Fallback: extract any identifier-like string
-                    params[param_name] = "<UNKNOWN>"
+                    # Fallback: extract any capitalized phrase that might be an ID
+                    cap_match = re.search(r"['\"]?([A-Z][a-zA-Z]*(?:\s+[a-zA-Z]+)*)['\"]?", query)
+                    if cap_match:
+                        params[param_name] = cap_match.group(1)
+                    else:
+                        params[param_name] = "<UNKNOWN>"
         
         elif param_type in ["integer", "number", "float"]:
             # Extract numbers
@@ -85,5 +89,7 @@ async def extract_function_call(
                     params[param_name] = int(numbers[0])
                 else:
                     params[param_name] = float(numbers[0])
+            else:
+                params[param_name] = 0
     
     return {func_name: params}

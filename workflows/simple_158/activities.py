@@ -54,7 +54,7 @@ async def extract_function_call(
         r'(Mr\.\s*[A-Z][a-zA-Z]*)',  # "Mr. X"
         r'(Mrs\.\s*[A-Z][a-zA-Z]*)',  # "Mrs. X"
         r'(Ms\.\s*[A-Z][a-zA-Z]*)',  # "Ms. X"
-        r'person\s+named\s+([A-Za-z\s]+?)(?:\s+in|\s+from|$)',  # "person named X"
+        r'person\s+named\s+([A-Z][a-zA-Z\s]+)',  # "person named John"
     ]
     
     for pattern in name_patterns:
@@ -63,10 +63,10 @@ async def extract_function_call(
             params["name"] = match.group(1).strip()
             break
     
-    # Extract location - patterns like "in New York" or "in New York, NY"
+    # Extract location - patterns like "in New York" or "in Los Angeles, CA"
     location_patterns = [
-        r'in\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*(?:,\s*[A-Z]{2})?)',  # "in New York" or "in New York, NY"
-        r'(?:at|from)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*(?:,\s*[A-Z]{2})?)',  # "at/from City"
+        r'in\s+([A-Z][a-zA-Z\s]+?)(?:\s+between|\s+from|\s+during|$)',  # "in New York between"
+        r'in\s+([A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+)?)',  # "in New York" or "in Los Angeles"
     ]
     
     for pattern in location_patterns:
@@ -76,7 +76,7 @@ async def extract_function_call(
             break
     
     # Extract years - look for 4-digit numbers (years)
-    years = re.findall(r'\b(19\d{2}|20\d{2})\b', query)
+    years = re.findall(r'\b((?:19|20)\d{2})\b', query)
     
     if len(years) >= 2:
         # Sort years to get from_year and to_year
@@ -87,11 +87,5 @@ async def extract_function_call(
         # Single year - use as both from and to
         params["from_year"] = int(years[0])
         params["to_year"] = int(years[0])
-    
-    # Also check for "between X and Y" pattern for years
-    between_match = re.search(r'between\s+(\d{4})\s+and\s+(\d{4})', query, re.IGNORECASE)
-    if between_match:
-        params["from_year"] = int(between_match.group(1))
-        params["to_year"] = int(between_match.group(2))
     
     return {func_name: params}

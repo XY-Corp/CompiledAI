@@ -1,0 +1,26 @@
+{
+  "workflow_id": "exec_simple_96",
+  "name": "Function Call Extractor",
+  "description": "Extract function name and parameters from natural language query",
+  "task_id": "exec_simple_96",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"I'm considering showing the movie \\\"Avatar\\\" at my family's movie night this weekend, but I need to make sure it's appropriate for all ages. Can you find out the age rating for \\\"Avatar\\\" for me?\"}]], \"function\": [{\"name\": \"get_movie_rating\", \"description\": \"Fetches the age rating of a movie from the OMDB API.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"movie_name\": {\"type\": \"string\", \"description\": \"The name of the movie.\"}}, \"required\": [\"movie_name\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"get_movie_rating\": {\n    \"movie_name\": \"string - The name of the movie.\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "activities": [
+    "extract_function_call"
+  ],
+  "variables": [
+    {
+      "name": "prompt",
+      "default": null
+    },
+    {
+      "name": "functions",
+      "default": null
+    }
+  ],
+  "execution_pattern": "sequence",
+  "reasoning": "BFCL template: single activity for function call extraction",
+  "metrics": {
+    "total_tokens": 10250,
+    "regeneration_count": 0
+  }
+}

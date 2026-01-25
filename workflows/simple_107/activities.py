@@ -15,14 +15,14 @@ async def extract_function_call(
     
     Returns format: {"function_name": {"param1": val1, "param2": val2}}
     """
-    # Parse prompt - handle BFCL format (may be JSON string)
+    # Parse prompt - handle BFCL format (may be JSON string with nested structure)
     try:
         if isinstance(prompt, str):
             data = json.loads(prompt)
-            # Extract user query from nested BFCL structure
+            # BFCL format: {"question": [[{"role": "user", "content": "..."}]], "function": [...]}
             if "question" in data and isinstance(data["question"], list):
                 if len(data["question"]) > 0 and isinstance(data["question"][0], list):
-                    query = data["question"][0][0].get("content", prompt)
+                    query = data["question"][0][0].get("content", str(prompt))
                 else:
                     query = str(prompt)
             else:
@@ -41,61 +41,58 @@ async def extract_function_call(
     except (json.JSONDecodeError, TypeError):
         funcs = []
 
-    # Get target function details
+    # Get function details
     func = funcs[0] if funcs else {}
     func_name = func.get("name", "")
     params_schema = func.get("parameters", {}).get("properties", {})
     
     # Extract all numbers from the query
-    numbers = re.findall(r'\d+(?:\.\d+)?', query)
+    # Pattern matches integers and decimals
+    numbers = re.findall(r'\b(\d+(?:\.\d+)?)\b', query)
     
-    # Build parameters based on schema
+    # Build parameters dict based on schema
     params = {}
     num_idx = 0
     
     for param_name, param_info in params_schema.items():
         param_type = param_info.get("type", "string")
-        param_desc = param_info.get("description", "").lower()
         
         if param_type in ["integer", "number", "float"]:
-            # Try to match number based on context in description
-            matched = False
-            
-            # Look for specific patterns based on parameter description
-            if "weight" in param_desc:
-                # Look for weight pattern: "weight of X kg" or "X kg"
-                weight_match = re.search(r'weight\s+(?:of\s+)?(\d+(?:\.\d+)?)\s*(?:kg|kilogram)?', query, re.IGNORECASE)
+            # Look for specific patterns first
+            # Pattern: "weight of X kg" or "X kg weight"
+            if param_name == "weight":
+                weight_match = re.search(r'weight\s+of\s+(\d+(?:\.\d+)?)|(\d+(?:\.\d+)?)\s*kg', query, re.IGNORECASE)
                 if weight_match:
-                    val = weight_match.group(1)
+                    val = weight_match.group(1) or weight_match.group(2)
                     params[param_name] = int(float(val)) if param_type == "integer" else float(val)
-                    matched = True
+                    continue
             
-            elif "height" in param_desc:
-                # Look for height pattern: "height of X cm" or "X cm"
-                height_match = re.search(r'height\s+(?:of\s+)?(\d+(?:\.\d+)?)\s*(?:cm|centimeter)?', query, re.IGNORECASE)
+            # Pattern: "height of X cm" or "X cm height"
+            if param_name == "height":
+                height_match = re.search(r'height\s+of\s+(\d+(?:\.\d+)?)|(\d+(?:\.\d+)?)\s*cm', query, re.IGNORECASE)
                 if height_match:
-                    val = height_match.group(1)
+                    val = height_match.group(1) or height_match.group(2)
                     params[param_name] = int(float(val)) if param_type == "integer" else float(val)
-                    matched = True
+                    continue
             
-            # Fallback: use numbers in order if not matched by context
-            if not matched and num_idx < len(numbers):
+            # Fallback: use numbers in order
+            if num_idx < len(numbers):
                 val = numbers[num_idx]
                 params[param_name] = int(float(val)) if param_type == "integer" else float(val)
                 num_idx += 1
-                
+        
         elif param_type == "string":
             # Check for specific string patterns
-            if "system" in param_name.lower() or "unit" in param_desc:
-                # Look for metric/imperial
+            if param_name == "system":
+                # Look for metric/imperial keywords
                 if re.search(r'\bimperial\b', query, re.IGNORECASE):
                     params[param_name] = "imperial"
                 elif re.search(r'\bmetric\b', query, re.IGNORECASE):
                     params[param_name] = "metric"
-                # Don't set if not mentioned (optional param with default)
+                # Don't include optional param if not specified
             else:
-                # Generic string extraction - look for quoted strings or named values
-                string_match = re.search(r'(?:for|in|of|with|named?)\s+["\']?([A-Za-z\s]+?)["\']?(?:\s+(?:and|with|,)|$)', query, re.IGNORECASE)
+                # Generic string extraction: look for "param_name X" or "X param_name"
+                string_match = re.search(rf'{param_name}\s+(?:is\s+)?["\']?([^"\']+)["\']?', query, re.IGNORECASE)
                 if string_match:
                     params[param_name] = string_match.group(1).strip()
 

@@ -11,9 +11,9 @@ async def extract_function_call(
     workflow_definition_id: str | None = None,
     workflow_instance_id: str | None = None,
 ) -> dict[str, Any]:
-    """Extract function name and parameters from user query using regex and string matching."""
+    """Extract function name and parameters from user query using regex and string parsing."""
     
-    # Parse prompt (may be JSON string with nested structure)
+    # Parse prompt - may be JSON string with nested structure
     try:
         if isinstance(prompt, str):
             data = json.loads(prompt)
@@ -31,7 +31,7 @@ async def extract_function_call(
     except (json.JSONDecodeError, TypeError, KeyError):
         query = str(prompt)
     
-    # Parse functions (may be JSON string)
+    # Parse functions - may be JSON string
     try:
         if isinstance(functions, str):
             funcs = json.loads(functions)
@@ -45,50 +45,39 @@ async def extract_function_call(
     func_name = func.get("name", "")
     params_schema = func.get("parameters", {}).get("properties", {})
     
-    # Extract parameters based on schema
+    # Extract parameters from query
     params = {}
     
     for param_name, param_info in params_schema.items():
         param_type = param_info.get("type", "string")
         
-        if param_name == "act_name":
-            # Extract act name - look for patterns like "X Act" or "X Amendment Act"
-            # Pattern: capture text before "of YYYY" or the full act name
+        if param_type == "integer":
+            # Extract year - look for 4-digit numbers (years)
+            year_match = re.search(r'\b(19\d{2}|20\d{2})\b', query)
+            if year_match:
+                params[param_name] = int(year_match.group(1))
+        
+        elif param_type == "string":
+            # For act_name, extract the act name from the query
+            # Pattern: "details of X" or "about X" where X is the act name
+            # Common patterns: "Criminal Law Amendment Act", "Right to Information Act", etc.
+            
+            # Try to extract act name - look for patterns like "X Act" or "X Bill"
+            # Pattern 1: "details of <Act Name> of <year>" or "details of <Act Name>"
             act_patterns = [
-                r'details of (?:the )?(.+?(?:Act|Bill|Law))',  # "details of X Act"
-                r'about (?:the )?(.+?(?:Act|Bill|Law))',  # "about X Act"
-                r'(?:the )?(.+?(?:Act|Bill|Law))',  # fallback: any "X Act"
+                r'details?\s+of\s+(?:the\s+)?(.+?(?:Act|Bill|Code|Law|Amendment)(?:\s+Act)?)\s+of\s+\d{4}',
+                r'details?\s+of\s+(?:the\s+)?(.+?(?:Act|Bill|Code|Law|Amendment)(?:\s+Act)?)',
+                r'about\s+(?:the\s+)?(.+?(?:Act|Bill|Code|Law|Amendment)(?:\s+Act)?)',
+                r'(?:the\s+)?(.+?(?:Act|Bill|Code|Law|Amendment)(?:\s+Act)?)\s+of\s+\d{4}',
             ]
             
             for pattern in act_patterns:
                 match = re.search(pattern, query, re.IGNORECASE)
                 if match:
                     act_name = match.group(1).strip()
-                    # Remove trailing "of YYYY" if present
-                    act_name = re.sub(r'\s+of\s+\d{4}\.?$', '', act_name, flags=re.IGNORECASE)
-                    # Clean up any trailing punctuation
-                    act_name = act_name.rstrip('.')
-                    params["act_name"] = act_name
+                    # Clean up: remove trailing "of" if present
+                    act_name = re.sub(r'\s+of\s*$', '', act_name, flags=re.IGNORECASE)
+                    params[param_name] = act_name
                     break
-        
-        elif param_name == "amendment_year":
-            # Extract year - look for 4-digit numbers (years)
-            year_patterns = [
-                r'of\s+(\d{4})',  # "of 2013"
-                r'in\s+(\d{4})',  # "in 2013"
-                r'(\d{4})\s+amendment',  # "2013 amendment"
-                r'amendment.*?(\d{4})',  # "amendment ... 2013"
-                r'(\d{4})',  # fallback: any 4-digit year
-            ]
-            
-            for pattern in year_patterns:
-                match = re.search(pattern, query, re.IGNORECASE)
-                if match:
-                    year_str = match.group(1)
-                    # Validate it's a reasonable year (1800-2100)
-                    year = int(year_str)
-                    if 1800 <= year <= 2100:
-                        params["amendment_year"] = year
-                        break
     
     return {func_name: params}

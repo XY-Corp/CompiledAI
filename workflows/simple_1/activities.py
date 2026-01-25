@@ -13,7 +13,7 @@ async def extract_function_call(
 ) -> dict[str, Any]:
     """Extract function name and parameters from user query using regex.
     
-    Returns a dict with function name as key and parameters as nested object.
+    Returns format: {"function_name": {"param1": val1, ...}}
     """
     # Parse prompt - may be JSON string with nested structure
     try:
@@ -24,10 +24,11 @@ async def extract_function_call(
         
         # Extract user query from BFCL format: {"question": [[{"role": "user", "content": "..."}]]}
         if isinstance(data, dict) and "question" in data:
-            question = data["question"]
-            if isinstance(question, list) and len(question) > 0:
-                if isinstance(question[0], list) and len(question[0]) > 0:
-                    query = question[0][0].get("content", str(prompt))
+            question_list = data.get("question", [])
+            if isinstance(question_list, list) and len(question_list) > 0:
+                inner_list = question_list[0]
+                if isinstance(inner_list, list) and len(inner_list) > 0:
+                    query = inner_list[0].get("content", str(prompt))
                 else:
                     query = str(prompt)
             else:
@@ -62,18 +63,20 @@ async def extract_function_call(
             numbers = re.findall(r'\b(\d+)\b', query)
             if numbers:
                 params[param_name] = int(numbers[0])
-        
         elif param_type == "number" or param_type == "float":
             # Extract numbers (including decimals)
             numbers = re.findall(r'\b(\d+(?:\.\d+)?)\b', query)
             if numbers:
                 params[param_name] = float(numbers[0])
-        
         elif param_type == "string":
-            # Try common patterns for string extraction
-            # Pattern: "for X" or "in X" or "of X"
-            match = re.search(r'(?:for|in|of|with|named?)\s+([A-Za-z][A-Za-z\s]*?)(?:\s+(?:and|with|using|,)|\.|\?|$)', query, re.IGNORECASE)
-            if match:
-                params[param_name] = match.group(1).strip()
+            # Try to extract string values using common patterns
+            # Pattern: "for X" or "of X" or "named X"
+            string_match = re.search(
+                r'(?:for|of|named|called|with)\s+["\']?([A-Za-z0-9_\s]+)["\']?',
+                query,
+                re.IGNORECASE
+            )
+            if string_match:
+                params[param_name] = string_match.group(1).strip()
     
     return {func_name: params}

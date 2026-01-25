@@ -11,7 +11,7 @@ async def extract_function_call(
     workflow_definition_id: str | None = None,
     workflow_instance_id: str | None = None,
 ) -> dict[str, Any]:
-    """Extract function name and parameters from user query using regex and string matching."""
+    """Extract function name and parameters from user query. Returns {"func_name": {params}}."""
     
     # Parse prompt (may be JSON string with nested structure)
     try:
@@ -47,68 +47,75 @@ async def extract_function_call(
     
     # Extract parameters from query
     params = {}
+    query_lower = query.lower()
     
     # Extract country - look for country names
-    # Common patterns: "in German history", "for Germany", "German", etc.
+    # Pattern: "in X history" or "X history" or "for X"
     country_patterns = [
-        r'\b(German|Germany)\b',
-        r'\b(French|France)\b',
-        r'\b(British|Britain|UK|United Kingdom|England)\b',
-        r'\b(American|America|USA|United States)\b',
-        r'\b(Italian|Italy)\b',
-        r'\b(Spanish|Spain)\b',
-        r'\b(Russian|Russia)\b',
-        r'\b(Chinese|China)\b',
-        r'\b(Japanese|Japan)\b',
+        r'\b(german|germany|french|france|british|britain|uk|american|america|usa|us|chinese|china|japanese|japan|russian|russia|italian|italy|spanish|spain|indian|india)\b',
     ]
     
     country_map = {
-        'German': 'Germany', 'Germany': 'Germany',
-        'French': 'France', 'France': 'France',
-        'British': 'Britain', 'Britain': 'Britain', 'UK': 'UK', 
-        'United Kingdom': 'United Kingdom', 'England': 'England',
-        'American': 'America', 'America': 'America', 'USA': 'USA', 
-        'United States': 'United States',
-        'Italian': 'Italy', 'Italy': 'Italy',
-        'Spanish': 'Spain', 'Spain': 'Spain',
-        'Russian': 'Russia', 'Russia': 'Russia',
-        'Chinese': 'China', 'China': 'China',
-        'Japanese': 'Japan', 'Japan': 'Japan',
+        'german': 'Germany', 'germany': 'Germany',
+        'french': 'France', 'france': 'France',
+        'british': 'Britain', 'britain': 'Britain', 'uk': 'UK',
+        'american': 'America', 'america': 'America', 'usa': 'USA', 'us': 'US',
+        'chinese': 'China', 'china': 'China',
+        'japanese': 'Japan', 'japan': 'Japan',
+        'russian': 'Russia', 'russia': 'Russia',
+        'italian': 'Italy', 'italy': 'Italy',
+        'spanish': 'Spain', 'spain': 'Spain',
+        'indian': 'India', 'india': 'India',
     }
     
     for pattern in country_patterns:
-        match = re.search(pattern, query, re.IGNORECASE)
+        match = re.search(pattern, query_lower)
         if match:
-            found = match.group(1)
-            # Normalize to country name
-            params["country"] = country_map.get(found, found)
+            country_key = match.group(1).lower()
+            params["country"] = country_map.get(country_key, country_key.capitalize())
             break
     
     # Extract years - look for 4-digit numbers (years)
     years = re.findall(r'\b(1\d{3}|2\d{3})\b', query)
+    years = [int(y) for y in years]
+    
     if len(years) >= 2:
         # Sort to get start and end
-        year_ints = sorted([int(y) for y in years])
-        params["start_year"] = year_ints[0]
-        params["end_year"] = year_ints[-1]
+        years.sort()
+        params["start_year"] = years[0]
+        params["end_year"] = years[-1]
     elif len(years) == 1:
-        params["start_year"] = int(years[0])
-        params["end_year"] = int(years[0])
+        # Single year - use as both start and end
+        params["start_year"] = years[0]
+        params["end_year"] = years[0]
     
     # Extract event_type - look for keywords
     event_types = []
-    query_lower = query.lower()
+    event_keywords = {
+        'war': 'War',
+        'wars': 'War',
+        'military': 'War',
+        'battle': 'War',
+        'battles': 'War',
+        'revolution': 'Revolutions',
+        'revolutions': 'Revolutions',
+        'revolt': 'Revolutions',
+        'uprising': 'Revolutions',
+        'diplomacy': 'Diplomacy',
+        'diplomatic': 'Diplomacy',
+        'treaty': 'Diplomacy',
+        'treaties': 'Diplomacy',
+        'economy': 'Economy',
+        'economic': 'Economy',
+        'trade': 'Economy',
+        'financial': 'Economy',
+    }
     
-    if 'war' in query_lower:
-        event_types.append("War")
-    if 'revolution' in query_lower:
-        event_types.append("Revolutions")
-    if 'diplomacy' in query_lower or 'diplomatic' in query_lower:
-        event_types.append("Diplomacy")
-    if 'economy' in query_lower or 'economic' in query_lower:
-        event_types.append("Economy")
+    for keyword, event_type in event_keywords.items():
+        if keyword in query_lower and event_type not in event_types:
+            event_types.append(event_type)
     
-    # Only include event_type if we found specific types
+    # Only add event_type if found (it's optional with default 'all')
     if event_types:
         params["event_type"] = event_types
     

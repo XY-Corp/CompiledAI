@@ -13,7 +13,8 @@ async def extract_function_call(
 ) -> dict[str, Any]:
     """Extract function call parameters from natural language query.
     
-    Returns a dict with function name as key and parameters as nested object.
+    Parses the prompt to extract the function name and parameters,
+    returning them in the format {"function_name": {"param1": val1}}.
     """
     # Parse prompt (may be JSON string with nested structure)
     try:
@@ -30,56 +31,67 @@ async def extract_function_call(
                 query = str(prompt)
         else:
             query = str(prompt)
-    except (json.JSONDecodeError, TypeError, KeyError):
+    except (json.JSONDecodeError, TypeError):
         query = str(prompt)
     
     # Parse functions (may be JSON string)
-    if isinstance(functions, str):
-        try:
+    try:
+        if isinstance(functions, str):
             funcs = json.loads(functions)
-        except json.JSONDecodeError:
-            funcs = []
-    else:
-        funcs = functions if functions else []
+        else:
+            funcs = functions
+    except (json.JSONDecodeError, TypeError):
+        funcs = []
     
-    # Get function schema
+    # Get function details
     func = funcs[0] if funcs else {}
     func_name = func.get("name", "")
     props = func.get("parameters", {}).get("properties", {})
     
+    # Extract parameters using regex and string parsing
     params = {}
     
-    # Extract cash_flows array - look for patterns like [200,300,400,500] or cash_flows=[...]
-    cash_flows_match = re.search(r'cash_flows\s*=\s*\[([^\]]+)\]', query)
-    if not cash_flows_match:
-        # Try to find any array pattern
-        cash_flows_match = re.search(r'\[(\d+(?:\s*,\s*\d+)*)\]', query)
-    
-    if cash_flows_match:
-        cash_flows_str = cash_flows_match.group(1)
-        cash_flows = [int(x.strip()) for x in cash_flows_str.split(',')]
-        params["cash_flows"] = cash_flows
-    
-    # Extract discount_rate - look for patterns like "discount rate of 10%" or "10%"
-    discount_match = re.search(r'discount\s*rate\s*(?:of\s*)?(\d+(?:\.\d+)?)\s*%', query, re.IGNORECASE)
-    if not discount_match:
-        # Try pattern like "rate of X%"
-        discount_match = re.search(r'rate\s*(?:of\s*)?(\d+(?:\.\d+)?)\s*%', query, re.IGNORECASE)
-    
-    if discount_match:
-        # Convert percentage to decimal (10% -> 0.1)
-        discount_rate = float(discount_match.group(1)) / 100.0
-        params["discount_rate"] = discount_rate
-    
-    # Extract initial_investment - look for patterns like "$2000" or "initial investment of $2000"
-    investment_match = re.search(r'initial\s*investment\s*(?:of\s*)?\$?(\d+(?:,\d{3})*(?:\.\d+)?)', query, re.IGNORECASE)
-    if not investment_match:
-        # Try pattern like "$X" near "investment"
-        investment_match = re.search(r'\$(\d+(?:,\d{3})*(?:\.\d+)?)', query)
-    
-    if investment_match:
-        # Remove commas and convert to int
-        investment_str = investment_match.group(1).replace(',', '')
-        params["initial_investment"] = int(float(investment_str))
+    for param_name, param_info in props.items():
+        param_type = param_info.get("type", "string")
+        
+        if param_name == "cash_flows":
+            # Extract array like cash_flows=[200,300,400,500]
+            array_match = re.search(r'cash_flows\s*=\s*\[([^\]]+)\]', query)
+            if array_match:
+                array_str = array_match.group(1)
+                # Parse comma-separated integers
+                values = [int(x.strip()) for x in array_str.split(',') if x.strip().isdigit() or x.strip().lstrip('-').isdigit()]
+                params[param_name] = values
+        
+        elif param_name == "discount_rate":
+            # Extract discount rate - look for percentage or decimal
+            # Pattern: "discount rate of 10%" or "discount_rate=0.1" or "10% discount"
+            rate_match = re.search(r'discount\s*rate\s*(?:of\s*)?(\d+(?:\.\d+)?)\s*%?', query, re.IGNORECASE)
+            if rate_match:
+                rate_value = float(rate_match.group(1))
+                # If it's a percentage (like 10), convert to decimal (0.1)
+                if rate_value > 1:
+                    rate_value = rate_value / 100
+                params[param_name] = rate_value
+            else:
+                # Try pattern like "10%"
+                pct_match = re.search(r'(\d+(?:\.\d+)?)\s*%', query)
+                if pct_match:
+                    rate_value = float(pct_match.group(1)) / 100
+                    params[param_name] = rate_value
+        
+        elif param_name == "initial_investment":
+            # Extract initial investment - look for "$2000" or "initial investment of 2000"
+            inv_match = re.search(r'initial\s*investment\s*(?:of\s*)?\$?(\d+(?:,\d{3})*(?:\.\d+)?)', query, re.IGNORECASE)
+            if inv_match:
+                # Remove commas and convert to int
+                inv_value = int(inv_match.group(1).replace(',', '').split('.')[0])
+                params[param_name] = inv_value
+            else:
+                # Try pattern like "$2000"
+                dollar_match = re.search(r'\$(\d+(?:,\d{3})*)', query)
+                if dollar_match:
+                    inv_value = int(dollar_match.group(1).replace(',', ''))
+                    params[param_name] = inv_value
     
     return {func_name: params}

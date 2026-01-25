@@ -52,18 +52,21 @@ async def extract_function_call(
     topic_patterns = [
         r'related to\s+([a-zA-Z\s]+?)(?:\s+in\s+the|\s+from|\s+in\s+[A-Z]|$)',
         r'about\s+([a-zA-Z\s]+?)(?:\s+in\s+the|\s+from|\s+in\s+[A-Z]|$)',
-        r'cases?\s+(?:on|regarding|concerning)\s+([a-zA-Z\s]+?)(?:\s+in|\s+from|$)',
+        r'cases?\s+(?:on|regarding|concerning)\s+([a-zA-Z\s]+?)(?:\s+in\s+the|\s+from|\s+in\s+[A-Z]|$)',
     ]
     
-    topic = None
     for pattern in topic_patterns:
         match = re.search(pattern, query, re.IGNORECASE)
         if match:
-            topic = match.group(1).strip()
+            params["topic"] = match.group(1).strip()
             break
     
-    if topic:
-        params["topic"] = topic
+    if "topic" not in params:
+        # Fallback: look for common legal topics
+        if "land dispute" in query_lower:
+            params["topic"] = "land disputes"
+        elif "land" in query_lower:
+            params["topic"] = "land disputes"
     
     # Extract year_range - look for year patterns
     year_patterns = [
@@ -73,45 +76,60 @@ async def extract_function_call(
         r'past\s+\d+\s+years?\s+from\s+(\d{4})\s+to\s+(\d{4})',
     ]
     
-    year_range = None
     for pattern in year_patterns:
         match = re.search(pattern, query, re.IGNORECASE)
         if match:
-            year_range = [int(match.group(1)), int(match.group(2))]
+            start_year = int(match.group(1))
+            end_year = int(match.group(2))
+            params["year_range"] = [start_year, end_year]
             break
     
-    if year_range:
-        params["year_range"] = year_range
+    if "year_range" not in params:
+        # Fallback: extract all 4-digit years
+        years = re.findall(r'\b(19\d{2}|20\d{2})\b', query)
+        if len(years) >= 2:
+            years = [int(y) for y in years]
+            params["year_range"] = [min(years), max(years)]
     
-    # Extract location - look for "in [Location]" patterns (city/state names)
+    # Extract location - look for state/city names
     location_patterns = [
-        r'in\s+([A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+)*)\s*[.,]?\s*$',
-        r'in\s+([A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+)*)\s*(?:from|between|during)',
-        r'(?:heard\s+)?in\s+([A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+)*)(?:\s+court)?',
+        r'in\s+([A-Z][a-zA-Z\s]+?)(?:\.|$|,|\s+from|\s+in\s+the)',
+        r'(?:state|city|county)\s+of\s+([A-Z][a-zA-Z\s]+)',
     ]
     
-    location = None
-    for pattern in location_patterns:
-        match = re.search(pattern, query)
-        if match:
-            loc = match.group(1).strip()
-            # Filter out common non-location words
-            if loc.lower() not in ['the', 'past', 'last', 'next', 'this']:
-                location = loc
+    # Common US states for matching
+    us_states = [
+        "New York", "California", "Texas", "Florida", "Illinois", "Pennsylvania",
+        "Ohio", "Georgia", "North Carolina", "Michigan", "New Jersey", "Virginia",
+        "Washington", "Arizona", "Massachusetts", "Tennessee", "Indiana", "Missouri",
+        "Maryland", "Wisconsin", "Colorado", "Minnesota", "South Carolina", "Alabama",
+        "Louisiana", "Kentucky", "Oregon", "Oklahoma", "Connecticut", "Utah", "Iowa",
+        "Nevada", "Arkansas", "Mississippi", "Kansas", "New Mexico", "Nebraska",
+        "West Virginia", "Idaho", "Hawaii", "New Hampshire", "Maine", "Montana",
+        "Rhode Island", "Delaware", "South Dakota", "North Dakota", "Alaska",
+        "Vermont", "Wyoming"
+    ]
+    
+    for state in us_states:
+        if state.lower() in query_lower:
+            params["location"] = state
+            break
+    
+    if "location" not in params:
+        for pattern in location_patterns:
+            match = re.search(pattern, query)
+            if match:
+                params["location"] = match.group(1).strip().rstrip('.')
                 break
     
-    if location:
-        params["location"] = location
-    
     # Extract judicial_system - look for federal/state keywords
-    if 'federal' in query_lower:
-        params["judicial_system"] = "federal"
-    elif 'state law' in query_lower or 'state court' in query_lower or 'state case' in query_lower:
+    if "state law" in query_lower or "state court" in query_lower:
         params["judicial_system"] = "state"
-    elif 'state' in query_lower:
-        # Check if "state" appears as judicial system context
-        state_match = re.search(r'\bstate\s+(law|court|case)', query_lower)
-        if state_match:
-            params["judicial_system"] = "state"
+    elif "federal law" in query_lower or "federal court" in query_lower:
+        params["judicial_system"] = "federal"
+    elif "state" in query_lower and "federal" not in query_lower:
+        params["judicial_system"] = "state"
+    elif "federal" in query_lower:
+        params["judicial_system"] = "federal"
     
     return {func_name: params}

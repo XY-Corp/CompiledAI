@@ -1,0 +1,660 @@
+{
+  "step": 71,
+  "completed": 72,
+  "success_count": 72,
+  "success_rate": 1.0,
+  "elapsed_seconds": 538.5468790531158,
+  "total_tokens": 0,
+  "compilation_tokens": 0,
+  "execution_tokens": 0,
+  "instances": [
+    {
+      "instance_id": "sql_0",
+      "success": true,
+      "latency_ms": 4315.254874527454,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "tokens": 0,
+      "match_type": "content_match"
+    },
+    {
+      "instance_id": "sql_1",
+      "success": true,
+      "latency_ms": 3931.685875169933,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "tokens": 0,
+      "match_type": "content_match"
+    },
+    {
+      "instance_id": "sql_2",
+      "success": true,
+      "latency_ms": 4295.256291516125,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "tokens": 0,
+      "match_type": "total_match"
+    },
+    {
+      "instance_id": "sql_3",
+      "success": true,
+      "latency_ms": 4311.951166950166,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "tokens": 0,
+      "match_type": "total_match"
+    },
+    {
+      "instance_id": "sql_4",
+      "success": true,
+      "latency_ms": 5474.099291488528,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "tokens": 0,
+      "match_type": "content_match"
+    },
+    {
+      "instance_id": "sql_5",
+      "success": true,
+      "latency_ms": 6360.011332668364,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "tokens": 0,
+      "match_type": "content_match"
+    },
+    {
+      "instance_id": "sql_6",
+      "success": true,
+      "latency_ms": 4748.702749609947,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "tokens": 0,
+      "match_type": "content_match"
+    },
+    {
+      "instance_id": "sql_7",
+      "success": true,
+      "latency_ms": 3878.224083222449,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "tokens": 0,
+      "match_type": "content_match"
+    },
+    {
+      "instance_id": "sql_8",
+      "success": true,
+      "latency_ms": 5165.009916760027,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "tokens": 0,
+      "match_type": "content_match"
+    },
+    {
+      "instance_id": "sql_9",
+      "success": true,
+      "latency_ms": 5110.187165439129,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "tokens": 0,
+      "match_type": "content_match"
+    },
+    {
+      "instance_id": "sql_10",
+      "success": true,
+      "latency_ms": 4311.339625157416,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "tokens": 0,
+      "match_type": "content_match"
+    },
+    {
+      "instance_id": "sql_11",
+      "success": true,
+      "latency_ms": 4616.938458755612,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "tokens": 0,
+      "match_type": "content_match"
+    },
+    {
+      "instance_id": "sql_12",
+      "success": true,
+      "latency_ms": 5662.602500058711,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "tokens": 0,
+      "match_type": "content_match"
+    },
+    {
+      "instance_id": "sql_13",
+      "success": true,
+      "latency_ms": 5706.010541878641,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "tokens": 0,
+      "match_type": "total_match"
+    },
+    {
+      "instance_id": "sql_14",
+      "success": true,
+      "latency_ms": 6845.3213749453425,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "tokens": 0,
+      "match_type": "content_match"
+    },
+    {
+      "instance_id": "sql_15",
+      "success": true,
+      "latency_ms": 4984.978540800512,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "tokens": 0,
+      "match_type": "content_match"
+    },
+    {
+      "instance_id": "sql_16",
+      "success": true,
+      "latency_ms": 4705.338542349637,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "tokens": 0,
+      "match_type": "content_match"
+    },
+    {
+      "instance_id": "sql_17",
+      "success": true,
+      "latency_ms": 4801.579124294221,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "tokens": 0,
+      "match_type": "content_match"
+    },
+    {
+      "instance_id": "sql_18",
+      "success": true,
+      "latency_ms": 5078.482584096491,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "tokens": 0,
+      "match_type": "content_match"
+    },
+    {
+      "instance_id": "sql_19",
+      "success": true,
+      "latency_ms": 5546.618791297078,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "tokens": 0,
+      "match_type": "content_match"
+    },
+    {
+      "instance_id": "sql_20",
+      "success": true,
+      "latency_ms": 5111.434833146632,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "tokens": 0,
+      "match_type": "content_match"
+    },
+    {
+      "instance_id": "sql_21",
+      "success": true,
+      "latency_ms": 4895.296958275139,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "tokens": 0,
+      "match_type": "content_match"
+    },
+    {
+      "instance_id": "sql_22",
+      "success": true,
+      "latency_ms": 4592.285166494548,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "tokens": 0,
+      "match_type": "total_match"
+    },
+    {
+      "instance_id": "sql_23",
+      "success": true,
+      "latency_ms": 4283.536166884005,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "tokens": 0,
+      "match_type": "content_match"
+    },
+    {
+      "instance_id": "sql_24",
+      "success": true,
+      "latency_ms": 4898.31249974668,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "tokens": 0,
+      "match_type": "content_match"
+    },
+    {
+      "instance_id": "sql_25",
+      "success": true,
+      "latency_ms": 5779.695665463805,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "tokens": 0,
+      "match_type": "content_match"
+    },
+    {
+      "instance_id": "sql_26",
+      "success": true,
+      "latency_ms": 4553.083125501871,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "tokens": 0,
+      "match_type": "content_match"
+    },
+    {
+      "instance_id": "sql_27",
+      "success": true,
+      "latency_ms": 6228.328792378306,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "tokens": 0,
+      "match_type": "content_match"
+    },
+    {
+      "instance_id": "sql_28",
+      "success": true,
+      "latency_ms": 4692.929084412754,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "tokens": 0,
+      "match_type": "content_match"
+    },
+    {
+      "instance_id": "sql_29",
+      "success": true,
+      "latency_ms": 4670.848708599806,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "tokens": 0,
+      "match_type": "content_match"
+    },
+    {
+      "instance_id": "sql_30",
+      "success": true,
+      "latency_ms": 4176.259875297546,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "tokens": 0,
+      "match_type": "content_match"
+    },
+    {
+      "instance_id": "sql_31",
+      "success": true,
+      "latency_ms": 6446.852708235383,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "tokens": 0,
+      "match_type": "content_match"
+    },
+    {
+      "instance_id": "sql_32",
+      "success": true,
+      "latency_ms": 4680.60770817101,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "tokens": 0,
+      "match_type": "content_match"
+    },
+    {
+      "instance_id": "sql_33",
+      "success": true,
+      "latency_ms": 4248.622790910304,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "tokens": 0,
+      "match_type": "total_match"
+    },
+    {
+      "instance_id": "sql_34",
+      "success": true,
+      "latency_ms": 6886.099708266556,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "tokens": 0,
+      "match_type": "content_match"
+    },
+    {
+      "instance_id": "sql_35",
+      "success": true,
+      "latency_ms": 6514.6889155730605,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "tokens": 0,
+      "match_type": "content_match"
+    },
+    {
+      "instance_id": "sql_36",
+      "success": true,
+      "latency_ms": 4178.72120719403,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "tokens": 0,
+      "match_type": "content_match"
+    },
+    {
+      "instance_id": "sql_37",
+      "success": true,
+      "latency_ms": 4115.473499521613,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "tokens": 0,
+      "match_type": "content_match"
+    },
+    {
+      "instance_id": "sql_38",
+      "success": true,
+      "latency_ms": 4687.048916704953,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "tokens": 0,
+      "match_type": "content_match"
+    },
+    {
+      "instance_id": "sql_39",
+      "success": true,
+      "latency_ms": 4689.568082801998,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "tokens": 0,
+      "match_type": "content_match"
+    },
+    {
+      "instance_id": "sql_40",
+      "success": true,
+      "latency_ms": 3347.4531676620245,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "tokens": 0,
+      "match_type": "content_match"
+    },
+    {
+      "instance_id": "sql_41",
+      "success": true,
+      "latency_ms": 4117.907707579434,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "tokens": 0,
+      "match_type": "content_match"
+    },
+    {
+      "instance_id": "sql_42",
+      "success": true,
+      "latency_ms": 3776.0061668232083,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "tokens": 0,
+      "match_type": "content_match"
+    },
+    {
+      "instance_id": "sql_43",
+      "success": true,
+      "latency_ms": 4521.0904171690345,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "tokens": 0,
+      "match_type": "total_match"
+    },
+    {
+      "instance_id": "sql_44",
+      "success": true,
+      "latency_ms": 4839.112958870828,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "tokens": 0,
+      "match_type": "content_match"
+    },
+    {
+      "instance_id": "sql_45",
+      "success": true,
+      "latency_ms": 5156.486665830016,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "tokens": 0,
+      "match_type": "content_match"
+    },
+    {
+      "instance_id": "sql_46",
+      "success": true,
+      "latency_ms": 5654.468208551407,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "tokens": 0,
+      "match_type": "content_match"
+    },
+    {
+      "instance_id": "sql_47",
+      "success": true,
+      "latency_ms": 4718.945040367544,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "tokens": 0,
+      "match_type": "content_match"
+    },
+    {
+      "instance_id": "sql_48",
+      "success": true,
+      "latency_ms": 4904.174417257309,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "tokens": 0,
+      "match_type": "content_match"
+    },
+    {
+      "instance_id": "sql_49",
+      "success": true,
+      "latency_ms": 5391.091208904982,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "tokens": 0,
+      "match_type": "content_match"
+    },
+    {
+      "instance_id": "sql_50",
+      "success": true,
+      "latency_ms": 4176.74683406949,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "tokens": 0,
+      "match_type": "content_match"
+    },
+    {
+      "instance_id": "sql_51",
+      "success": true,
+      "latency_ms": 5236.070500686765,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "tokens": 0,
+      "match_type": "content_match"
+    },
+    {
+      "instance_id": "sql_52",
+      "success": true,
+      "latency_ms": 3893.477332778275,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "tokens": 0,
+      "match_type": "content_match"
+    },
+    {
+      "instance_id": "sql_53",
+      "success": true,
+      "latency_ms": 4049.387374892831,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "tokens": 0,
+      "match_type": "total_match"
+    },
+    {
+      "instance_id": "sql_54",
+      "success": true,
+      "latency_ms": 4912.796040996909,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "tokens": 0,
+      "match_type": "content_match"
+    },
+    {
+      "instance_id": "sql_55",
+      "success": true,
+      "latency_ms": 4797.747374512255,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "tokens": 0,
+      "match_type": "content_match"
+    },
+    {
+      "instance_id": "sql_56",
+      "success": true,
+      "latency_ms": 3638.5943330824375,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "tokens": 0,
+      "match_type": "content_match"
+    },
+    {
+      "instance_id": "sql_57",
+      "success": true,
+      "latency_ms": 3961.1465418711305,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "tokens": 0,
+      "match_type": "content_match"
+    },
+    {
+      "instance_id": "sql_58",
+      "success": true,
+      "latency_ms": 3706.2165420502424,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "tokens": 0,
+      "match_type": "content_match"
+    },
+    {
+      "instance_id": "sql_59",
+      "success": true,
+      "latency_ms": 4580.186958424747,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "tokens": 0,
+      "match_type": "total_match"
+    },
+    {
+      "instance_id": "sql_60",
+      "success": true,
+      "latency_ms": 4036.307333037257,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "tokens": 0,
+      "match_type": "content_match"
+    },
+    {
+      "instance_id": "sql_61",
+      "success": true,
+      "latency_ms": 4734.832874499261,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "tokens": 0,
+      "match_type": "content_match"
+    },
+    {
+      "instance_id": "sql_62",
+      "success": true,
+      "latency_ms": 4147.949541918933,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "tokens": 0,
+      "match_type": "total_match"
+    },
+    {
+      "instance_id": "sql_63",
+      "success": true,
+      "latency_ms": 5322.683250531554,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "tokens": 0,
+      "match_type": "total_match"
+    },
+    {
+      "instance_id": "sql_64",
+      "success": true,
+      "latency_ms": 4213.230417110026,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "tokens": 0,
+      "match_type": "content_match"
+    },
+    {
+      "instance_id": "sql_65",
+      "success": true,
+      "latency_ms": 4577.356332913041,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "tokens": 0,
+      "match_type": "content_match"
+    },
+    {
+      "instance_id": "sql_66",
+      "success": true,
+      "latency_ms": 4258.638042025268,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "tokens": 0,
+      "match_type": "content_match"
+    },
+    {
+      "instance_id": "sql_67",
+      "success": true,
+      "latency_ms": 3810.939165763557,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "tokens": 0,
+      "match_type": "content_match"
+    },
+    {
+      "instance_id": "sql_68",
+      "success": true,
+      "latency_ms": 3683.7136670947075,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "tokens": 0,
+      "match_type": "content_match"
+    },
+    {
+      "instance_id": "sql_69",
+      "success": true,
+      "latency_ms": 5021.165707148612,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "tokens": 0,
+      "match_type": "content_match"
+    },
+    {
+      "instance_id": "sql_70",
+      "success": true,
+      "latency_ms": 5943.540542386472,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "tokens": 0,
+      "match_type": "content_match"
+    },
+    {
+      "instance_id": "sql_71",
+      "success": true,
+      "latency_ms": 4467.706500552595,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "tokens": 0,
+      "match_type": "content_match"
+    }
+  ]
+}

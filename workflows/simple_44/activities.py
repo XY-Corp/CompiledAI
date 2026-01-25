@@ -11,15 +11,22 @@ async def extract_function_call(
     workflow_definition_id: str | None = None,
     workflow_instance_id: str | None = None,
 ) -> dict[str, Any]:
-    """Extract function name and parameters from user query using regex patterns."""
+    """Extract function call parameters from natural language query.
     
+    Parses the prompt to extract the user query, then uses regex to extract
+    parameter values based on the function schema.
+    """
     # Parse prompt - may be JSON string with nested structure
     try:
         if isinstance(prompt, str):
             data = json.loads(prompt)
-            # Handle BFCL format: {"question": [[{"role": "user", "content": "..."}]], ...}
-            if "question" in data and isinstance(data["question"], list):
-                if len(data["question"]) > 0 and isinstance(data["question"][0], list):
+        else:
+            data = prompt
+        
+        # Extract user query from BFCL format: {"question": [[{"role": "user", "content": "..."}]]}
+        if "question" in data and isinstance(data["question"], list):
+            if len(data["question"]) > 0 and isinstance(data["question"][0], list):
+                if len(data["question"][0]) > 0 and isinstance(data["question"][0][0], dict):
                     query = data["question"][0][0].get("content", str(prompt))
                 else:
                     query = str(prompt)
@@ -27,7 +34,7 @@ async def extract_function_call(
                 query = str(prompt)
         else:
             query = str(prompt)
-    except (json.JSONDecodeError, TypeError, KeyError):
+    except (json.JSONDecodeError, TypeError):
         query = str(prompt)
     
     # Parse functions - may be JSON string
@@ -47,48 +54,60 @@ async def extract_function_call(
     # Extract parameters using regex
     params = {}
     
-    # Extract all numbers (integers and floats) from the query
-    # Pattern matches: 4, 0.01, 4.5, etc.
-    numbers = re.findall(r'\d+\.?\d*', query)
-    float_numbers = [float(n) for n in numbers]
+    # Extract all numbers from the query (integers and floats)
+    numbers = re.findall(r'(\d+\.?\d*)', query)
     
-    # Map extracted values to parameters based on schema
-    number_idx = 0
+    # Process each parameter based on its type
+    num_idx = 0
     for param_name, param_info in params_schema.items():
         param_type = param_info.get("type", "string")
         
-        if param_type in ["float", "number"]:
-            # Look for float values - typically charge values are small decimals
-            # Find the number that looks like a charge (small decimal like 0.01)
-            for num in float_numbers:
-                if num < 1 and num > 0:  # Likely a charge value in Coulombs
-                    params[param_name] = num
-                    break
+        if param_type == "float":
+            # Look for specific patterns first
+            if param_name == "charge":
+                # Pattern: "charge of X Coulombs" or "X Coulombs"
+                charge_match = re.search(r'charge\s+of\s+(\d+\.?\d*)', query, re.IGNORECASE)
+                if not charge_match:
+                    charge_match = re.search(r'(\d+\.?\d*)\s*[Cc]oulombs?', query)
+                if charge_match:
+                    params[param_name] = float(charge_match.group(1))
+                elif num_idx < len(numbers):
+                    params[param_name] = float(numbers[num_idx])
+                    num_idx += 1
             else:
-                # Fallback: use first available number
-                if number_idx < len(float_numbers):
-                    params[param_name] = float_numbers[number_idx]
-                    number_idx += 1
-                    
+                # Generic float extraction
+                if num_idx < len(numbers):
+                    params[param_name] = float(numbers[num_idx])
+                    num_idx += 1
+        
         elif param_type == "integer":
-            # Look for integer values - typically distance values are whole numbers
-            # Pattern: "X meters" or "X m"
-            distance_match = re.search(r'(\d+)\s*(?:meters?|m\b)', query, re.IGNORECASE)
-            if distance_match:
-                params[param_name] = int(distance_match.group(1))
+            # Look for specific patterns first
+            if param_name == "distance":
+                # Pattern: "X meters away" or "distance of X"
+                dist_match = re.search(r'(\d+)\s*meters?\s*(?:away)?', query, re.IGNORECASE)
+                if not dist_match:
+                    dist_match = re.search(r'distance\s+(?:of\s+)?(\d+)', query, re.IGNORECASE)
+                if dist_match:
+                    params[param_name] = int(dist_match.group(1))
+                elif num_idx < len(numbers):
+                    params[param_name] = int(float(numbers[num_idx]))
+                    num_idx += 1
             else:
-                # Find whole numbers that aren't part of decimals
-                for num in float_numbers:
-                    if num == int(num) and num >= 1:  # Whole number, likely distance
-                        params[param_name] = int(num)
-                        break
-                        
+                # Generic integer extraction
+                if num_idx < len(numbers):
+                    params[param_name] = int(float(numbers[num_idx]))
+                    num_idx += 1
+        
         elif param_type == "string":
-            # For medium parameter - check if mentioned in query
-            # Common mediums: vacuum, air, water, glass, etc.
-            medium_match = re.search(r'\b(vacuum|air|water|glass|oil)\b', query, re.IGNORECASE)
-            if medium_match:
-                params[param_name] = medium_match.group(1).lower()
-            # Don't include optional string params if not found in query
+            # For optional string params like "medium", only include if explicitly mentioned
+            if param_name == "medium":
+                # Look for medium specification in query
+                medium_match = re.search(r'(?:in|through)\s+(?:a\s+)?(\w+)', query, re.IGNORECASE)
+                if medium_match:
+                    medium_val = medium_match.group(1).lower()
+                    # Only set if it's a valid medium (not generic words)
+                    if medium_val not in ['the', 'a', 'an', 'which', 'that']:
+                        params[param_name] = medium_val
+                # Don't include default - let the function handle it
     
     return {func_name: params}

@@ -76,13 +76,13 @@ async def extract_function_call(
         
         elif param_type == "string":
             # Extract string values based on context
-            if "substance" in param_name.lower() or "name" in param_name.lower():
+            if "substance" in param_name.lower() or "name" in param_desc:
                 # Look for substance names - common patterns
-                # "boiling point of X", "melting point of X", "X under"
+                # "boiling point of X", "melting point of X", "properties of X"
                 substance_patterns = [
-                    r'(?:boiling|melting)\s+point(?:s)?\s+(?:of|for)\s+(\w+)',
-                    r'(\w+)\s+under\s+the\s+sea',
-                    r'(?:of|for)\s+(\w+)\s+(?:at|under)',
+                    r'(?:boiling|melting|freezing)\s+point(?:s)?\s+(?:of|for)\s+(\w+)',
+                    r'(?:of|for)\s+(\w+)\s+(?:under|at|in)',
+                    r'properties\s+of\s+(\w+)',
                 ]
                 
                 for pattern in substance_patterns:
@@ -91,9 +91,9 @@ async def extract_function_call(
                         params[param_name] = match.group(1).lower()
                         break
                 
-                # If no match, try to find common substance names
+                # If no match, try to find common substances mentioned
                 if param_name not in params:
-                    common_substances = ['water', 'ice', 'salt', 'sugar', 'alcohol', 'ethanol', 'methanol', 'oxygen', 'nitrogen']
+                    common_substances = ['water', 'ice', 'salt', 'sugar', 'alcohol', 'ethanol', 'methanol', 'oxygen', 'nitrogen', 'hydrogen']
                     query_lower = query.lower()
                     for substance in common_substances:
                         if substance in query_lower:

@@ -70,6 +70,11 @@ class BFCLAdapter(DatasetAdapter):
         "javascript": {"difficulty": "medium", "file_patterns": ["BFCL_v3_javascript.json", "javascript*.jsonl"]},
         "rest": {"difficulty": "medium", "file_patterns": ["BFCL_v3_rest.json"]},
         "sql": {"difficulty": "medium", "file_patterns": ["BFCL_v3_sql.json"]},
+        # Executable categories (with actual function execution)
+        "exec_simple": {"difficulty": "simple", "file_patterns": ["BFCL_v3_exec_simple.json"]},
+        "exec_multiple": {"difficulty": "medium", "file_patterns": ["BFCL_v3_exec_multiple.json"]},
+        "exec_parallel": {"difficulty": "medium", "file_patterns": ["BFCL_v3_exec_parallel.json"]},
+        "exec_parallel_multiple": {"difficulty": "complex", "file_patterns": ["BFCL_v3_exec_parallel_multiple.json"]},
     }
 
     def load(self, path: Path, **kwargs: Any) -> Dataset:

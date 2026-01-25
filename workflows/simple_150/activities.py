@@ -68,36 +68,47 @@ async def extract_function_call(
         param_type = param_info.get("type", "string")
         param_desc = param_info.get("description", "").lower()
         
-        if param_name == "deposit" or "deposit" in param_desc:
-            # Look for currency amount
+        # Match deposit/amount parameters
+        if "deposit" in param_name.lower() or "amount" in param_name.lower():
             if currency_matches:
-                # Remove $ and commas, convert to int
-                amount_str = currency_matches[0].replace("$", "").replace(",", "")
-                params[param_name] = int(float(amount_str))
+                # Remove $ and commas, convert to number
+                value_str = currency_matches[0].replace("$", "").replace(",", "")
+                if param_type == "integer":
+                    params[param_name] = int(float(value_str))
+                else:
+                    params[param_name] = float(value_str)
             elif plain_numbers:
-                # Use first large number as deposit
+                # Look for larger numbers that might be deposits
                 for num in plain_numbers:
-                    if float(num) >= 100:  # Likely a deposit amount
-                        params[param_name] = int(float(num))
+                    val = float(num)
+                    if val >= 100:  # Likely a deposit amount
+                        if param_type == "integer":
+                            params[param_name] = int(val)
+                        else:
+                            params[param_name] = val
                         break
         
-        elif param_name == "annual_interest_rate" or "interest" in param_desc or "rate" in param_desc:
-            # Look for percentage
+        # Match interest rate parameters
+        elif "interest" in param_name.lower() or "rate" in param_name.lower():
             if percent_matches:
-                rate = float(percent_matches[0])
-                # Convert to decimal if needed (3% -> 0.03 or keep as 3 based on context)
-                # Based on the schema expecting float, keep as percentage value
-                params[param_name] = rate / 100 if rate > 1 else rate
+                # Convert percentage to decimal (3% -> 0.03) or keep as is based on context
+                rate_value = float(percent_matches[0])
+                # Check if description suggests decimal format
+                if "decimal" in param_desc:
+                    params[param_name] = rate_value / 100
+                else:
+                    # Keep as percentage value (3 for 3%)
+                    params[param_name] = rate_value / 100 if rate_value > 1 else rate_value
+                    # Actually, looking at the schema, it expects the rate as a float
+                    # 3% should be 0.03
+                    params[param_name] = float(percent_matches[0]) / 100
         
-        elif param_name == "years" or "year" in param_desc or "period" in param_desc or "time" in param_desc:
-            # Look for year/time period
+        # Match year/time period parameters
+        elif "year" in param_name.lower() or "period" in param_name.lower() or "time" in param_name.lower():
             if year_matches:
-                params[param_name] = int(year_matches[0])
-            else:
-                # Look for standalone numbers that could be years (small numbers)
-                for num in plain_numbers:
-                    if 1 <= float(num) <= 50:  # Reasonable year range
-                        params[param_name] = int(float(num))
-                        break
+                if param_type == "integer":
+                    params[param_name] = int(year_matches[0])
+                else:
+                    params[param_name] = float(year_matches[0])
     
     return {func_name: params}

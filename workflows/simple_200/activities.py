@@ -11,13 +11,15 @@ async def extract_function_call(
     workflow_definition_id: str | None = None,
     workflow_instance_id: str | None = None,
 ) -> dict[str, Any]:
-    """Extract function call parameters from natural language query using regex patterns."""
+    """Extract function call parameters from natural language query using regex.
     
+    Returns a dict with function name as key and parameters as nested object.
+    """
     # Parse prompt - may be JSON string with nested structure
     try:
         if isinstance(prompt, str):
             data = json.loads(prompt)
-            # Extract user query from BFCL format: {"question": [[{"role": "user", "content": "..."}]]}
+            # Handle BFCL format: {"question": [[{"role": "user", "content": "..."}]]}
             if "question" in data and isinstance(data["question"], list):
                 if len(data["question"]) > 0 and isinstance(data["question"][0], list):
                     query = data["question"][0][0].get("content", str(prompt))
@@ -39,7 +41,7 @@ async def extract_function_call(
     except (json.JSONDecodeError, TypeError):
         funcs = []
     
-    # Get function schema
+    # Get function details
     func = funcs[0] if funcs else {}
     func_name = func.get("name", "")
     params_schema = func.get("parameters", {}).get("properties", {})
@@ -93,8 +95,7 @@ async def extract_function_call(
             params["fuel_efficiency"] = float(match.group(1))
             break
     
-    # Extract efficiency reduction (optional parameter)
-    # Patterns: "efficiency reduction of 5%", "5% decrease"
+    # Extract efficiency reduction (optional) - only if explicitly mentioned
     reduction_patterns = [
         r'efficiency\s*reduction\s*(?:of|:)?\s*(\d+)\s*%?',
         r'(\d+)\s*%?\s*(?:decrease|reduction)\s*(?:in\s*)?(?:fuel\s*)?efficiency',

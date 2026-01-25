@@ -51,7 +51,7 @@ async def extract_function_call(
     # Extract parameters from query using regex and string matching
     params = {}
     
-    # Extract employee_id - look for numeric ID patterns
+    # Extract employee_id - look for numeric ID
     # Patterns: "ID is 345", "employee ID 345", "ID: 345", "whose ID is 345"
     id_patterns = [
         r'(?:employee\s+)?ID\s+(?:is\s+)?(\d+)',
@@ -64,22 +64,18 @@ async def extract_function_call(
             params["employee_id"] = int(match.group(1))
             break
     
-    # Extract company_name - look for quoted company names or "company X"
+    # Extract company_name - look for quoted company name or "company X"
     # Patterns: "'ABC Ltd.'", "company 'ABC Ltd.'", "in company ABC Ltd"
     company_patterns = [
-        r"['\"]([^'\"]+)['\"]",  # Quoted strings
+        r"['\"]([^'\"]+)['\"]",  # Quoted string
         r"company\s+['\"]?([^'\"]+?)['\"]?\s*$",  # "company X" at end
-        r"in\s+company\s+['\"]?([^'\"]+?)['\"]?(?:\s+whose|\s+with|\s*$)",  # "in company X"
+        r"in\s+company\s+['\"]?([^'\"]+?)['\"]?(?:\s+|$)",  # "in company X"
     ]
     for pattern in company_patterns:
         match = re.search(pattern, query, re.IGNORECASE)
         if match:
-            company = match.group(1).strip()
-            # Clean up trailing punctuation
-            company = re.sub(r'[.\s]+$', '', company)
-            if company:
-                params["company_name"] = company
-                break
+            params["company_name"] = match.group(1).strip()
+            break
     
     # Extract data_field - look for field names from enum
     valid_fields = ["Personal Info", "Job History", "Payroll", "Attendance"]
@@ -90,17 +86,7 @@ async def extract_function_call(
         if re.search(re.escape(field), query, re.IGNORECASE):
             found_fields.append(field)
     
-    # Also check for variations like "personal information"
-    if re.search(r'personal\s+info(?:rmation)?', query, re.IGNORECASE) and "Personal Info" not in found_fields:
-        found_fields.append("Personal Info")
-    if re.search(r'job\s+history', query, re.IGNORECASE) and "Job History" not in found_fields:
-        found_fields.append("Job History")
-    if re.search(r'payroll', query, re.IGNORECASE) and "Payroll" not in found_fields:
-        found_fields.append("Payroll")
-    if re.search(r'attendance', query, re.IGNORECASE) and "Attendance" not in found_fields:
-        found_fields.append("Attendance")
-    
-    # Only include data_field if fields were found (it's optional with default)
+    # Only include data_field if fields were explicitly mentioned
     if found_fields:
         params["data_field"] = found_fields
     

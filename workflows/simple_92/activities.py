@@ -45,33 +45,33 @@ async def extract_function_call(
     func_name = func.get("name", "")
     params_schema = func.get("parameters", {}).get("properties", {})
     
-    # Extract parameters from query
+    # Extract parameters from query using regex
     params = {}
     
     for param_name, param_info in params_schema.items():
         param_type = param_info.get("type", "string")
         
         if param_type == "integer":
-            # Extract year or other integers using regex
-            # Look for 4-digit years first
+            # Extract year or other integers
+            # Look for 4-digit year patterns first
             year_match = re.search(r'\b(19\d{2}|20\d{2})\b', query)
             if year_match:
                 params[param_name] = int(year_match.group(1))
             else:
                 # Fallback to any number
-                numbers = re.findall(r'\b\d+\b', query)
+                numbers = re.findall(r'\b(\d+)\b', query)
                 if numbers:
                     params[param_name] = int(numbers[0])
         
         elif param_type == "string":
             if param_name == "actor_name":
                 # Extract actor name - look for patterns like "starring X" or "by X"
-                # Common patterns: "starring [Name]", "by [Name]", "movies of [Name]"
+                # Common patterns: "starring Leonardo DiCaprio", "movies by Tom Hanks"
                 patterns = [
                     r'starring\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)',
                     r'by\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)',
-                    r'movies\s+(?:of|by)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)',
                     r'actor\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)',
+                    r'([A-Z][a-z]+\s+(?:Di|De|La|Le|Van|Von)?[A-Z][a-z]+)',  # Names with prefixes
                 ]
                 
                 for pattern in patterns:
@@ -79,24 +79,15 @@ async def extract_function_call(
                     if match:
                         params[param_name] = match.group(1).strip()
                         break
-                
-                # Fallback: look for capitalized multi-word names
-                if param_name not in params:
-                    name_match = re.search(r'([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)', query)
-                    if name_match:
-                        # Exclude common words that might be capitalized
-                        name = name_match.group(1)
-                        exclude_words = ['Find', 'IMDB', 'Drama', 'Comedy', 'Action', 'Horror']
-                        if name not in exclude_words:
-                            params[param_name] = name
             
             elif param_name == "category":
                 # Extract category - look for genre keywords
-                categories = ['Drama', 'Comedy', 'Action', 'Horror', 'Thriller', 'Romance', 'Sci-Fi', 'Documentary']
-                for cat in categories:
-                    if cat.lower() in query.lower():
-                        params[param_name] = cat
+                genres = ["Drama", "Comedy", "Action", "Thriller", "Horror", "Romance", 
+                         "Sci-Fi", "Documentary", "Animation", "Adventure"]
+                for genre in genres:
+                    if genre.lower() in query.lower():
+                        params[param_name] = genre
                         break
-                # Don't include category if not specified (it has a default)
+                # Don't add category if not found (it's optional with default 'all')
     
     return {func_name: params}

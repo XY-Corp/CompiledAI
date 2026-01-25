@@ -54,12 +54,12 @@ async def extract_function_call(
         param_desc = param_info.get("description", "").lower()
         
         if param_name == "top_number" or param_type == "integer":
-            # Extract numbers - look for "top N" or just numbers
+            # Extract numbers - look for "top N" pattern first
             top_match = re.search(r'top\s+(\d+)', query_lower)
             if top_match:
                 params[param_name] = int(top_match.group(1))
             else:
-                # Fallback: find any number in the query
+                # Fallback: find any number
                 numbers = re.findall(r'\d+', query)
                 if numbers:
                     params[param_name] = int(numbers[0])
@@ -67,33 +67,31 @@ async def extract_function_call(
         elif param_name == "field_of_law":
             # Extract field of law - look for patterns like "in X law" or "X law"
             # Common patterns: "constitutional law", "criminal law", "civil law", etc.
-            field_patterns = [
-                r'in\s+([a-zA-Z]+(?:\s+[a-zA-Z]+)?)\s+law',
-                r'([a-zA-Z]+(?:\s+[a-zA-Z]+)?)\s+law\s+(?:cases|in)',
+            law_patterns = [
+                r'in\s+([a-zA-Z\s]+?)\s+law',
+                r'([a-zA-Z]+)\s+law\s+(?:in|cases)',
                 r'([a-zA-Z]+)\s+law',
             ]
-            for pattern in field_patterns:
+            for pattern in law_patterns:
                 match = re.search(pattern, query_lower)
                 if match:
                     field = match.group(1).strip()
-                    # Append "law" if not already present
-                    if not field.endswith("law"):
-                        field = field + " law"
-                    params[param_name] = field
+                    # Clean up and format
+                    params[param_name] = f"{field} law"
                     break
         
         elif param_name == "country":
             # Extract country - look for "in [Country]" at the end or country names
             country_patterns = [
-                r'in\s+([A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+)*)\s*\.?\s*$',
-                r'in\s+([A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+)*)',
+                r'(?:in|from)\s+([A-Z][a-zA-Z\s]+?)(?:\.|$)',  # "in China." or "in China"
+                r'(?:in|from)\s+the\s+([A-Z][a-zA-Z\s]+?)(?:\.|$)',  # "in the United States"
             ]
             for pattern in country_patterns:
                 match = re.search(pattern, query)
                 if match:
                     country = match.group(1).strip().rstrip('.')
                     # Don't capture "law" as country
-                    if country.lower() != "law" and "law" not in country.lower():
+                    if 'law' not in country.lower():
                         params[param_name] = country
                         break
     

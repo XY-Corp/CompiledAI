@@ -11,13 +11,15 @@ async def extract_function_call(
     workflow_definition_id: str | None = None,
     workflow_instance_id: str | None = None,
 ) -> dict[str, Any]:
-    """Extract function name and parameters from user query. Returns {func_name: {params}}."""
+    """Extract function name and parameters from user query based on function schema.
     
-    # Parse prompt - may be JSON string with nested structure
+    Returns format: {"function_name": {"param1": val1, "param2": val2}}
+    """
+    # Parse prompt - handle BFCL format (may be JSON with nested structure)
     try:
         if isinstance(prompt, str):
             data = json.loads(prompt)
-            # Handle BFCL format: {"question": [[{"role": "user", "content": "..."}]], "function": [...]}
+            # BFCL format: {"question": [[{"role": "user", "content": "..."}]], "function": [...]}
             if "question" in data and isinstance(data["question"], list):
                 if len(data["question"]) > 0 and isinstance(data["question"][0], list):
                     query = data["question"][0][0].get("content", str(prompt))
@@ -52,37 +54,49 @@ async def extract_function_call(
     
     for param_name, param_info in params_schema.items():
         param_type = param_info.get("type", "string")
+        param_desc = param_info.get("description", "").lower()
         
         if param_type == "string":
-            # For location: look for place names
-            if param_name == "location":
+            # Extract location - look for place names
+            if "location" in param_name.lower() or "location" in param_desc:
                 # Common patterns: "in [location]", "of [location]", "at [location]"
                 location_patterns = [
-                    r'in\s+([A-Za-z][A-Za-z\s]+?)(?:\s+in\s+|\s+at\s+|\s+during\s+|\s+for\s+|\.|$)',
-                    r'of\s+turtles\s+in\s+([A-Za-z][A-Za-z\s]+?)(?:\s+in\s+|\s+at\s+|\s+during\s+|\s+for\s+|\.|$)',
-                    r'population.*?in\s+([A-Za-z][A-Za-z\s]+?)(?:\s+in\s+|\s+at\s+|\s+during\s+|\s+for\s+|\.|$)',
+                    r'(?:in|of|at|for)\s+(?:the\s+)?([A-Za-z][A-Za-z\s]+?)(?:\s+in\s+|\s+for\s+|\s+during\s+|\s*$|\s*\.)',
+                    r'(?:population|species|turtles?)\s+(?:in|of|at)\s+(?:the\s+)?([A-Za-z][A-Za-z\s]+?)(?:\s+in\s+|\s+for\s+|\s+during\s+|\s*$|\s*\.)',
                 ]
                 for pattern in location_patterns:
                     match = re.search(pattern, query, re.IGNORECASE)
                     if match:
                         location = match.group(1).strip()
-                        # Clean up - remove trailing words like "in", "at", years
-                        location = re.sub(r'\s+\d{4}.*$', '', location).strip()
-                        if location and len(location) > 1:
+                        # Clean up trailing words that aren't part of location
+                        location = re.sub(r'\s+(in|for|during|of)\s*$', '', location, flags=re.IGNORECASE)
+                        if location and len(location) > 2:
                             params[param_name] = location
                             break
         
         elif param_type == "integer":
-            # For year: look for 4-digit numbers (years)
-            if param_name == "year":
+            # Extract year - look for 4-digit numbers (years)
+            if "year" in param_name.lower() or "year" in param_desc:
                 year_match = re.search(r'\b(19\d{2}|20\d{2})\b', query)
                 if year_match:
                     params[param_name] = int(year_match.group(1))
+            else:
+                # Generic integer extraction
+                numbers = re.findall(r'\b(\d+)\b', query)
+                if numbers:
+                    params[param_name] = int(numbers[0])
         
         elif param_type == "boolean":
-            # For species: check if "species" is mentioned in the query
-            if param_name == "species":
+            # Check if the query mentions the concept related to this boolean
+            if "species" in param_name.lower() or "species" in param_desc:
+                # Check if user asks about species
                 if "species" in query_lower:
                     params[param_name] = True
+            else:
+                # Generic boolean - check for yes/no, true/false, include/exclude
+                if re.search(r'\b(yes|true|include|with)\b', query_lower):
+                    params[param_name] = True
+                elif re.search(r'\b(no|false|exclude|without)\b', query_lower):
+                    params[param_name] = False
     
     return {func_name: params}

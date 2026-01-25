@@ -55,50 +55,49 @@ async def extract_function_call(
         param_type = param_info.get("type", "string")
         param_desc = param_info.get("description", "").lower()
         
-        # Strategy 1: Look for ID patterns (DNA_id, id, etc.)
+        # Strategy 1: Look for ID patterns (e.g., DNA123, ID_456, etc.)
         if "id" in param_name.lower() or "id" in param_desc:
-            # Look for patterns like `DNA123`, 'DNA123', "DNA123", or id DNA123
+            # Match various ID patterns: DNA123, DNA_123, dna-123, etc.
             id_patterns = [
-                r'`([A-Za-z0-9_-]+)`',  # backtick quoted
-                r"'([A-Za-z0-9_-]+)'",  # single quoted
-                r'"([A-Za-z0-9_-]+)"',  # double quoted
-                r'\bid\s+([A-Za-z0-9_-]+)',  # "id DNA123"
-                r'with\s+id\s+([A-Za-z0-9_-]+)',  # "with id DNA123"
+                r'id\s*[`\'"]?([A-Za-z0-9_-]+)[`\'"]?',  # id `DNA123` or id DNA123
+                r'[`\'"]([A-Za-z]+\d+)[`\'"]',  # `DNA123` in backticks/quotes
+                r'\b([A-Z]+\d+)\b',  # DNA123 pattern (letters followed by numbers)
             ]
+            
             for pattern in id_patterns:
                 match = re.search(pattern, query, re.IGNORECASE)
                 if match:
                     params[param_name] = match.group(1)
                     break
         
-        # Strategy 2: Look for format specifications
-        elif "format" in param_name.lower():
-            format_patterns = [
-                r'format[:\s]+["\']?([a-zA-Z0-9_-]+)["\']?',
-                r'in\s+([a-zA-Z0-9_-]+)\s+format',
-                r'as\s+([a-zA-Z0-9_-]+)',
-            ]
-            for pattern in format_patterns:
-                match = re.search(pattern, query, re.IGNORECASE)
-                if match:
-                    params[param_name] = match.group(1)
-                    break
-        
-        # Strategy 3: Look for integer values (upstream, count, etc.)
+        # Strategy 2: Extract integers
         elif param_type == "integer":
-            # Look for number patterns with context
-            int_patterns = [
-                rf'{param_name}[:\s]+(\d+)',  # "upstream: 100"
-                r'(\d+)\s+base\s+pairs?',  # "100 base pairs"
-                r'(\d+)\s+bp',  # "100 bp"
-            ]
-            for pattern in int_patterns:
-                match = re.search(pattern, query, re.IGNORECASE)
-                if match:
-                    params[param_name] = int(match.group(1))
-                    break
+            # Look for numbers in context of the parameter
+            numbers = re.findall(r'\b(\d+)\b', query)
+            if numbers:
+                # Use the first number found (could be smarter based on context)
+                params[param_name] = int(numbers[0])
+        
+        # Strategy 3: Extract format strings
+        elif "format" in param_name.lower():
+            # Look for format specifications
+            format_match = re.search(r'format\s*[=:]\s*[\'"]?(\w+)[\'"]?', query, re.IGNORECASE)
+            if format_match:
+                params[param_name] = format_match.group(1)
+            # Also check for common format names mentioned
+            elif re.search(r'\b(fasta|json|xml|csv|genbank)\b', query, re.IGNORECASE):
+                format_match = re.search(r'\b(fasta|json|xml|csv|genbank)\b', query, re.IGNORECASE)
+                params[param_name] = format_match.group(1).lower()
     
-    # Only include required params if found, skip optional params not mentioned
-    # For this task, DNA_id is required and was extracted above
+    # Only include required params and params we actually found values for
+    # Filter out empty/None values for optional params
+    final_params = {}
+    for param_name in params_schema.keys():
+        if param_name in params and params[param_name] is not None:
+            final_params[param_name] = params[param_name]
+        elif param_name in required_params:
+            # For required params we couldn't extract, include with best guess
+            if param_name in params:
+                final_params[param_name] = params[param_name]
     
-    return {func_name: params}
+    return {func_name: final_params}

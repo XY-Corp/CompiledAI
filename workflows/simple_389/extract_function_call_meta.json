@@ -1,0 +1,34 @@
+{
+  "activity_name": "extract_function_call",
+  "description": "Parse natural language query and extract function call with parameters",
+  "task_id": "simple_389",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"Calculate the current cost in British Pounds if I need to convert 200 US dollars.\"}]], \"function\": [{\"name\": \"currency_converter\", \"description\": \"Calculates the current cost in target currency given the amount in base currency and exchange rate\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"base_currency\": {\"type\": \"string\", \"description\": \"The currency to convert from.\"}, \"target_currency\": {\"type\": \"string\", \"description\": \"The currency to convert to.\"}, \"amount\": {\"type\": \"float\", \"description\": \"The amount in base currency\"}}, \"required\": [\"base_currency\", \"target_currency\", \"amount\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"currency_converter\": {\n    \"base_currency\": \"string - The currency to convert from.\",\n    \"target_currency\": \"string - The currency to convert to.\",\n    \"amount\": \"float - The amount in base currency\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "inputs": [
+    {
+      "name": "prompt",
+      "type": "str",
+      "description": "The natural language query containing the function call request",
+      "required": true
+    },
+    {
+      "name": "functions",
+      "type": "list",
+      "description": "List of available function definitions with their parameter schemas",
+      "required": true
+    }
+  ],
+  "output": {
+    "type": "dict",
+    "description": "Returns a dict with function name as key and parameters as nested dict value",
+    "fields": {
+      "function_name": "dict[str, Any]"
+    }
+  },
+  "reference_activity": null,
+  "workflow_spec": {
+    "workflow_id": "simple_389",
+    "name": "Function Call Extractor",
+    "description": "Extract function name and parameters from natural language query",
+    "execution_pattern": "sequence"
+  }
+}

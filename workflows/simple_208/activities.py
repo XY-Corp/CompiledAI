@@ -21,18 +21,14 @@ async def extract_function_call(
             data = prompt
         
         # Extract user query from BFCL format: {"question": [[{"role": "user", "content": "..."}]]}
-        if isinstance(data, dict) and "question" in data:
-            question = data["question"]
-            if isinstance(question, list) and len(question) > 0:
-                if isinstance(question[0], list) and len(question[0]) > 0:
-                    query = question[0][0].get("content", str(prompt))
-                else:
-                    query = str(prompt)
+        if "question" in data and isinstance(data["question"], list):
+            if len(data["question"]) > 0 and isinstance(data["question"][0], list):
+                query = data["question"][0][0].get("content", str(prompt))
             else:
                 query = str(prompt)
         else:
             query = str(prompt)
-    except (json.JSONDecodeError, TypeError):
+    except (json.JSONDecodeError, TypeError, KeyError):
         query = str(prompt)
     
     # Parse functions (may be JSON string)
@@ -44,10 +40,8 @@ async def extract_function_call(
     except (json.JSONDecodeError, TypeError):
         funcs = []
     
-    if not funcs:
-        return {"error": "No functions provided"}
-    
-    func = funcs[0]
+    # Get function details
+    func = funcs[0] if funcs else {}
     func_name = func.get("name", "")
     params_schema = func.get("parameters", {}).get("properties", {})
     
@@ -60,47 +54,33 @@ async def extract_function_call(
         # Extract start and end locations
         # Pattern: "from X to Y"
         from_to_match = re.search(r'from\s+([A-Za-z\s]+?)\s+to\s+([A-Za-z\s]+?)(?:\s+avoiding|\s+avoid|\s*$|\.)', query, re.IGNORECASE)
-        
         if from_to_match:
             params["start"] = from_to_match.group(1).strip()
             params["end"] = from_to_match.group(2).strip()
-        else:
-            # Fallback: try to find location names
-            locations = re.findall(r'([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)', query)
-            if len(locations) >= 2:
-                params["start"] = locations[0]
-                params["end"] = locations[1]
         
         # Extract avoid preferences
         avoid_list = []
-        
-        # Check for "avoiding" or "avoid" followed by items
-        avoid_match = re.search(r'avoid(?:ing)?\s+(.+?)(?:\.|$)', query, re.IGNORECASE)
-        if avoid_match:
-            avoid_text = avoid_match.group(1).lower()
-            
+        if "avoid" in params_schema:
             # Check for each possible avoid option
-            if "highway" in avoid_text:
-                avoid_list.append("highways")
-            if "toll" in avoid_text:
-                avoid_list.append("tolls")
-            if "ferr" in avoid_text:
-                avoid_list.append("ferries")
-        
-        # Also check the whole query for these keywords
-        if not avoid_list:
-            if "highway" in query_lower:
-                avoid_list.append("highways")
-            if "toll" in query_lower:
-                avoid_list.append("tolls")
-            if "ferr" in query_lower:
-                avoid_list.append("ferries")
-        
-        if avoid_list:
-            params["avoid"] = avoid_list
+            avoid_options = ["tolls", "highways", "ferries"]
+            
+            # Look for "avoiding X and Y" or "avoid X, Y"
+            avoid_match = re.search(r'avoid(?:ing)?\s+(.+?)(?:\.|$)', query, re.IGNORECASE)
+            if avoid_match:
+                avoid_text = avoid_match.group(1).lower()
+                for option in avoid_options:
+                    # Check for the option or its variations
+                    if option in avoid_text:
+                        avoid_list.append(option)
+                    # Handle "toll roads" -> "tolls"
+                    elif option == "tolls" and "toll" in avoid_text:
+                        avoid_list.append("tolls")
+            
+            if avoid_list:
+                params["avoid"] = avoid_list
     
+    # Generic extraction for other function types
     else:
-        # Generic extraction for other functions
         for param_name, param_info in params_schema.items():
             param_type = param_info.get("type", "string") if isinstance(param_info, dict) else "string"
             
@@ -112,15 +92,11 @@ async def extract_function_call(
                         params[param_name] = int(numbers[0])
                     else:
                         params[param_name] = float(numbers[0])
-            elif param_type == "array":
-                # Try to extract list items
-                items = re.findall(r'[\w\s]+', query)
-                if items:
-                    params[param_name] = [item.strip() for item in items if item.strip()]
-            else:
-                # String type - try to extract relevant text
-                match = re.search(rf'{param_name}[:\s]+([^\.,]+)', query, re.IGNORECASE)
-                if match:
-                    params[param_name] = match.group(1).strip()
+            elif param_type == "string":
+                # Try to extract string values based on common patterns
+                # Pattern: "for X" or "in X" or "to X"
+                string_match = re.search(rf'(?:for|in|to|from)\s+([A-Za-z\s]+?)(?:\s+(?:and|with|to|from|,)|$)', query, re.IGNORECASE)
+                if string_match:
+                    params[param_name] = string_match.group(1).strip()
     
     return {func_name: params}

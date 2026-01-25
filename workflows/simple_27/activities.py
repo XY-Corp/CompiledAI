@@ -70,7 +70,7 @@ async def extract_function_call(
     # Extract time - look for "for X seconds" or "duration of X"
     time_patterns = [
         r'(?:for\s+(?:a\s+)?(?:duration\s+of\s+)?|duration\s+of\s+)(\d+(?:\.\d+)?)\s*(?:seconds?|s\b)',
-        r'(\d+(?:\.\d+)?)\s*(?:seconds?|s)\s*(?:duration|time)',
+        r'(\d+(?:\.\d+)?)\s*(?:seconds?|s)\s*(?:duration|time)?',
         r'time[:\s]+(\d+(?:\.\d+)?)',
     ]
     time_val = None
@@ -99,27 +99,48 @@ async def extract_function_call(
         all_numbers = re.findall(r'(\d+(?:\.\d+)?)', query)
         all_numbers = [int(float(n)) for n in all_numbers]
         
-        # Try to identify by context clues in order of appearance
-        # "accelerating at 2 meters/second^2 for a duration of 5 seconds, starting from a speed of 10"
-        # Numbers in order: 2 (accel), 5 (time), 10 (initial)
+        # Try to map based on order in typical physics problem:
+        # "accelerating at 2 m/s^2 for 5 seconds, starting from 10 m/s"
+        # Numbers typically appear as: acceleration, time, initial_velocity
         
         if len(all_numbers) >= 3:
-            # Check context around each number
-            number_contexts = []
-            for match in re.finditer(r'(\d+(?:\.\d+)?)', query_lower):
-                num = int(float(match.group(1)))
-                start = max(0, match.start() - 30)
-                end = min(len(query_lower), match.end() + 30)
-                context = query_lower[start:end]
-                number_contexts.append((num, context))
+            # Check context to determine mapping
+            if acceleration is None:
+                # First number near "accelerat" is acceleration
+                accel_idx = query_lower.find('accelerat')
+                if accel_idx != -1:
+                    for i, num in enumerate(all_numbers):
+                        num_match = re.search(str(num), query[accel_idx:accel_idx+50])
+                        if num_match:
+                            acceleration = num
+                            break
             
-            for num, context in number_contexts:
-                if acceleration is None and ('accel' in context or 'm/s^2' in context or 'm/s2' in context or 'meters/second^2' in context):
-                    acceleration = num
-                elif time_val is None and ('second' in context or 'duration' in context or 'time' in context):
-                    time_val = num
-                elif initial_velocity is None and ('start' in context or 'initial' in context or 'speed of' in context):
-                    initial_velocity = num
+            if time_val is None:
+                # Number near "second" or "duration" is time
+                for num in all_numbers:
+                    if num != acceleration:
+                        time_match = re.search(rf'{num}\s*(?:seconds?|s\b)', query_lower)
+                        if time_match:
+                            time_val = num
+                            break
+            
+            if initial_velocity is None:
+                # Number near "starting" or "initial" is initial velocity
+                for num in all_numbers:
+                    if num != acceleration and num != time_val:
+                        init_match = re.search(rf'(?:start|initial).*?{num}|{num}.*?(?:m/s|meters/second)(?!\^|²|2)', query_lower)
+                        if init_match:
+                            initial_velocity = num
+                            break
+            
+            # Final fallback: assign remaining numbers
+            remaining = [n for n in all_numbers if n not in [acceleration, time_val, initial_velocity]]
+            if initial_velocity is None and remaining:
+                initial_velocity = remaining[0]
+            if acceleration is None and remaining:
+                acceleration = remaining[0] if len(remaining) > 0 else all_numbers[0]
+            if time_val is None and remaining:
+                time_val = remaining[-1] if len(remaining) > 0 else all_numbers[-1]
 
     # Build params dict based on schema
     for param_name in params_schema.keys():

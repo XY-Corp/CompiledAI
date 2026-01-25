@@ -48,68 +48,70 @@ async def extract_function_call(
     # Extract parameters from query
     params = {}
     
-    for param_name, param_info in params_schema.items():
-        param_type = param_info.get("type", "string")
-        param_desc = param_info.get("description", "").lower()
-        
-        if param_name == "location":
-            # Extract location - look for city patterns
-            # Pattern: "in [City]" or "in [City], [State]" or "in [City] [State]"
-            location_patterns = [
-                r'in\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\s*,?\s*([A-Z]{2})?',  # "in New York, NY" or "in New York"
-                r'in\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)',  # "in New York"
-            ]
+    # Extract location - look for city/state patterns
+    # Pattern: "in [City]" or "in [City], [State]" or "in [City] [State]"
+    location_patterns = [
+        r'in\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*),?\s*([A-Z]{2})?',  # "in New York, NY" or "in New York"
+        r'in\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)',  # "in New York"
+    ]
+    
+    location = None
+    for pattern in location_patterns:
+        match = re.search(pattern, query)
+        if match:
+            city = match.group(1).strip()
+            state = match.group(2) if match.lastindex >= 2 and match.group(2) else None
             
-            for pattern in location_patterns:
-                match = re.search(pattern, query)
-                if match:
-                    city = match.group(1).strip()
-                    # Check if state is captured
-                    state = match.group(2) if len(match.groups()) > 1 and match.group(2) else None
-                    
-                    # Format as "City, State" - infer state if not provided
-                    if state:
-                        params["location"] = f"{city}, {state}"
-                    else:
-                        # Common city to state mapping for well-known cities
-                        city_state_map = {
-                            "New York": "NY",
-                            "Los Angeles": "CA",
-                            "Chicago": "IL",
-                            "San Francisco": "CA",
-                            "Boston": "MA",
-                            "Seattle": "WA",
-                            "Miami": "FL",
-                            "Dallas": "TX",
-                            "Houston": "TX",
-                            "Phoenix": "AZ",
-                        }
-                        state = city_state_map.get(city, "")
-                        if state:
-                            params["location"] = f"{city}, {state}"
-                        else:
-                            params["location"] = city
-                    break
-        
-        elif param_name == "operating_hours" or "hour" in param_name.lower() or "time" in param_name.lower():
-            # Extract time/hours - look for patterns like "11 PM", "until 11", "at least 11"
-            time_patterns = [
-                r'(?:until|at least|after|opens?\s+until)\s+(?:at\s+)?(\d{1,2})\s*(?:PM|pm|p\.m\.)?',  # "until 11 PM"
-                r'(\d{1,2})\s*(?:PM|pm|p\.m\.)',  # "11 PM"
-                r'closes?\s+(?:at\s+)?(\d{1,2})',  # "closes at 11"
-            ]
-            
-            for pattern in time_patterns:
-                match = re.search(pattern, query, re.IGNORECASE)
-                if match:
-                    hour = int(match.group(1))
-                    # Convert to 24-hour format if PM is implied (hours < 12 in evening context)
-                    if hour < 12 and ('pm' in query.lower() or 'PM' in query or 'evening' in query.lower() or 'night' in query.lower()):
-                        hour += 12
-                    elif hour < 12 and hour >= 1:
-                        # Assume PM for restaurant closing times
-                        hour += 12
-                    params["operating_hours"] = hour
-                    break
+            # Format as "City, State" - infer state if not provided
+            if state:
+                location = f"{city}, {state}"
+            else:
+                # Common city to state mappings
+                city_state_map = {
+                    "New York": "NY",
+                    "Los Angeles": "CA",
+                    "Chicago": "IL",
+                    "Houston": "TX",
+                    "Phoenix": "AZ",
+                    "San Francisco": "CA",
+                    "Seattle": "WA",
+                    "Boston": "MA",
+                    "Miami": "FL",
+                    "Denver": "CO",
+                }
+                state = city_state_map.get(city, "")
+                if state:
+                    location = f"{city}, {state}"
+                else:
+                    location = city
+            break
+    
+    if location and "location" in params_schema:
+        params["location"] = location
+    
+    # Extract operating hours - look for time patterns
+    # Patterns: "until 11 PM", "opens until at least 11 PM", "closes at 11", etc.
+    time_patterns = [
+        r'(?:until|till|closes?\s+at)\s+(?:at\s+least\s+)?(\d{1,2})\s*(?:PM|pm|p\.m\.)?',
+        r'(?:open|opens)\s+until\s+(?:at\s+least\s+)?(\d{1,2})\s*(?:PM|pm|p\.m\.)?',
+        r'(\d{1,2})\s*(?:PM|pm|p\.m\.)',
+    ]
+    
+    operating_hours = None
+    for pattern in time_patterns:
+        match = re.search(pattern, query, re.IGNORECASE)
+        if match:
+            hour = int(match.group(1))
+            # Convert to 24-hour format if it's PM time (and not already in 24h format)
+            # Hours like 11 PM should become 23
+            if hour < 12 and ('pm' in query.lower() or 'PM' in query):
+                hour += 12
+            elif hour == 12 and ('pm' in query.lower() or 'PM' in query):
+                hour = 24  # Midnight represented as 24
+            operating_hours = hour
+            break
+    
+    if operating_hours is not None and "operating_hours" in params_schema:
+        params["operating_hours"] = operating_hours
     
     return {func_name: params}

@@ -53,52 +53,48 @@ async def extract_function_call(
         param_type = param_info.get("type", "string")
         
         if param_type == "array":
-            # Look for array patterns like [[10, 20], [30, 40]] or [ [10, 20], [30, 40] ]
-            # Match 2D arrays (contingency tables)
-            array_2d_match = re.search(r'\[\s*\[\s*[\d,\s]+\]\s*,\s*\[\s*[\d,\s]+\]\s*\]', query)
-            if array_2d_match:
+            # Look for array/table patterns like [[10, 20], [30, 40]]
+            # Try to find nested array pattern
+            array_match = re.search(r'\[\s*\[\s*[\d,\s]+\]\s*(?:,\s*\[\s*[\d,\s]+\]\s*)*\]', query)
+            if array_match:
                 try:
-                    array_str = array_2d_match.group(0)
-                    params[param_name] = json.loads(array_str)
+                    array_value = json.loads(array_match.group(0))
+                    params[param_name] = array_value
                 except json.JSONDecodeError:
                     pass
-            else:
-                # Try to find any array pattern
-                array_match = re.search(r'\[[\d,\s\[\]]+\]', query)
-                if array_match:
-                    try:
-                        params[param_name] = json.loads(array_match.group(0))
-                    except json.JSONDecodeError:
-                        pass
         
-        elif param_type in ["float", "number"]:
-            # Look for float values, often after keywords like "alpha", "significance", "level"
-            # Check for explicit parameter mentions
-            float_pattern = re.search(rf'{param_name}\s*[=:]\s*([\d.]+)', query, re.IGNORECASE)
-            if float_pattern:
-                params[param_name] = float(float_pattern.group(1))
+        elif param_type == "float":
+            # Look for float values, often after keywords like "alpha", "level", "significance"
+            # Check if there's a specific mention of this parameter
+            param_pattern = rf'{param_name}\s*[=:]\s*([\d.]+)'
+            param_match = re.search(param_pattern, query, re.IGNORECASE)
+            if param_match:
+                try:
+                    params[param_name] = float(param_match.group(1))
+                except ValueError:
+                    pass
             else:
-                # Look for significance level patterns
-                sig_pattern = re.search(r'(?:significance|alpha|level)\s*(?:of|=|:)?\s*(0?\.\d+)', query, re.IGNORECASE)
-                if sig_pattern:
-                    params[param_name] = float(sig_pattern.group(1))
-                # Don't add default - let the function use its own default
+                # Look for significance level mentions
+                sig_pattern = r'(?:significance|alpha|level)\s*(?:of|=|:)?\s*([\d.]+)'
+                sig_match = re.search(sig_pattern, query, re.IGNORECASE)
+                if sig_match:
+                    try:
+                        params[param_name] = float(sig_match.group(1))
+                    except ValueError:
+                        pass
+                # Don't add default - only add if explicitly mentioned or required
         
         elif param_type == "integer":
             # Extract integers
-            int_pattern = re.search(rf'{param_name}\s*[=:]\s*(\d+)', query, re.IGNORECASE)
-            if int_pattern:
-                params[param_name] = int(int_pattern.group(1))
-            elif param_name in required_params:
-                # Try to find any standalone integer
-                numbers = re.findall(r'\b(\d+)\b', query)
-                if numbers:
-                    params[param_name] = int(numbers[0])
+            int_match = re.search(rf'{param_name}\s*[=:]\s*(\d+)', query, re.IGNORECASE)
+            if int_match:
+                params[param_name] = int(int_match.group(1))
         
         elif param_type == "string":
             # Extract string values - look for quoted strings or after parameter name
-            string_pattern = re.search(rf'{param_name}\s*[=:]\s*["\']?([^"\']+)["\']?', query, re.IGNORECASE)
-            if string_pattern:
-                params[param_name] = string_pattern.group(1).strip()
+            str_pattern = rf'{param_name}\s*[=:]\s*["\']?([^"\']+)["\']?'
+            str_match = re.search(str_pattern, query, re.IGNORECASE)
+            if str_match:
+                params[param_name] = str_match.group(1).strip()
     
     return {func_name: params}

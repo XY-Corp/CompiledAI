@@ -66,11 +66,11 @@ async def extract_function_call(
         
         elif param_type == "string":
             if param_name == "country":
-                # Extract country name - look for patterns like "for <country>" or "of <country>"
+                # Extract country name - look for patterns like "for [Country]" or "of [Country]"
+                # Common patterns: "for United States", "of Japan", "in Germany"
                 country_patterns = [
-                    r'(?:for|of|in)\s+([A-Z][a-zA-Z\s]+?)(?:\s+from|\s+between|\s+during|\s*$)',
-                    r'data\s+(?:for|of)\s+([A-Z][a-zA-Z\s]+)',
-                    r'([A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+)*)\s+(?:from|between|during)',
+                    r'(?:for|of|in)\s+([A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+)*)',
+                    r'([A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+)*)\s+(?:from|between|since)',
                 ]
                 
                 for pattern in country_patterns:
@@ -78,10 +78,5 @@ async def extract_function_call(
                     if match:
                         params[param_name] = match.group(1).strip()
                         break
-            else:
-                # Generic string extraction - look for quoted strings or after "for/of/in"
-                match = re.search(r'(?:for|of|in)\s+([A-Za-z\s]+?)(?:\s+from|\s+to|\s*$)', query, re.IGNORECASE)
-                if match:
-                    params[param_name] = match.group(1).strip()
     
     return {func_name: params}

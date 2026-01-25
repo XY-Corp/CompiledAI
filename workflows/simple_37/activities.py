@@ -11,22 +11,18 @@ async def extract_function_call(
     workflow_definition_id: str | None = None,
     workflow_instance_id: str | None = None,
 ) -> dict[str, Any]:
-    """Extract function call parameters from natural language query.
+    """Extract function call parameters from user query and return as {func_name: {params}}."""
     
-    Parses the user query and function schema to extract the appropriate
-    function name and parameters. Returns format: {"function_name": {params}}
-    """
     # Parse prompt (may be JSON string with nested structure)
     try:
         if isinstance(prompt, str):
             data = json.loads(prompt)
-        else:
-            data = prompt
-        
-        # Extract user query from BFCL format: {"question": [[{"role": "user", "content": "..."}]]}
-        if "question" in data and isinstance(data["question"], list):
-            if len(data["question"]) > 0 and isinstance(data["question"][0], list):
-                query = data["question"][0][0].get("content", str(prompt))
+            # Handle BFCL format: {"question": [[{"role": "user", "content": "..."}]], ...}
+            if "question" in data and isinstance(data["question"], list):
+                if len(data["question"]) > 0 and isinstance(data["question"][0], list):
+                    query = data["question"][0][0].get("content", str(prompt))
+                else:
+                    query = str(prompt)
             else:
                 query = str(prompt)
         else:
@@ -48,45 +44,60 @@ async def extract_function_call(
     func_name = func.get("name", "")
     params_schema = func.get("parameters", {}).get("properties", {})
     
-    # Extract parameters from query using regex and string matching
+    # Extract parameters using regex and string matching
     params = {}
     query_lower = query.lower()
     
-    # Extract start_location - look for "from X" pattern
-    start_match = re.search(r'\bfrom\s+([A-Za-z\s]+?)(?:\s+to\b|\s+with\b|$)', query, re.IGNORECASE)
-    if start_match:
-        params["start_location"] = start_match.group(1).strip()
-    
-    # Extract end_location - look for "to X" pattern
-    end_match = re.search(r'\bto\s+([A-Za-z\s]+?)(?:\s+with\b|\s+stops?\b|\s+via\b|$)', query, re.IGNORECASE)
-    if end_match:
-        params["end_location"] = end_match.group(1).strip()
-    
-    # Extract stops - look for "stops at X and Y" or "stops at X, Y" patterns
-    stops = []
-    
-    # Pattern: "stops at X and Y" or "stops at X, Y, and Z"
-    stops_match = re.search(r'stops?\s+at\s+(.+?)(?:\.|$)', query, re.IGNORECASE)
-    if stops_match:
-        stops_text = stops_match.group(1)
-        # Split by "and" and commas
-        # First replace " and " with comma for uniform splitting
-        stops_text = re.sub(r'\s+and\s+', ', ', stops_text, flags=re.IGNORECASE)
-        # Split by comma and clean up
-        stop_items = [s.strip() for s in stops_text.split(',') if s.strip()]
-        stops = stop_items
-    
-    # Alternative pattern: "via X and Y"
-    if not stops:
-        via_match = re.search(r'\bvia\s+(.+?)(?:\.|$)', query, re.IGNORECASE)
-        if via_match:
-            via_text = via_match.group(1)
-            via_text = re.sub(r'\s+and\s+', ', ', via_text, flags=re.IGNORECASE)
-            stop_items = [s.strip() for s in via_text.split(',') if s.strip()]
-            stops = stop_items
-    
-    # Add stops to params if found
-    if stops:
-        params["stops"] = stops
+    # For route.estimate_time: extract start_location, end_location, stops
+    if func_name == "route.estimate_time":
+        # Pattern: "from X to Y" for start and end locations
+        from_to_match = re.search(r'from\s+([A-Za-z\s]+?)\s+to\s+([A-Za-z\s]+?)(?:\s+with|\s*\.|\s*$)', query, re.IGNORECASE)
+        
+        if from_to_match:
+            params["start_location"] = from_to_match.group(1).strip()
+            params["end_location"] = from_to_match.group(2).strip()
+        
+        # Extract stops: "with stops at X and Y" or "with stops at X, Y"
+        stops_match = re.search(r'(?:with\s+)?stops?\s+at\s+(.+?)(?:\.|$)', query, re.IGNORECASE)
+        if stops_match:
+            stops_text = stops_match.group(1).strip()
+            # Split by "and" or ","
+            # Handle "X and Y" or "X, Y" or "X, Y and Z"
+            stops_text = re.sub(r'\s+and\s+', ', ', stops_text, flags=re.IGNORECASE)
+            stops = [s.strip() for s in stops_text.split(',') if s.strip()]
+            if stops:
+                params["stops"] = stops
+    else:
+        # Generic extraction for other functions
+        for param_name, param_info in params_schema.items():
+            param_type = param_info.get("type", "string") if isinstance(param_info, dict) else "string"
+            
+            if param_type in ["integer", "number", "float"]:
+                # Extract numbers
+                numbers = re.findall(r'\d+(?:\.\d+)?', query)
+                if numbers:
+                    if param_type == "integer":
+                        params[param_name] = int(numbers[0])
+                    else:
+                        params[param_name] = float(numbers[0])
+            elif param_type == "array":
+                # Try to extract list items
+                list_match = re.search(r'(?:with|including|:)\s*(.+?)(?:\.|$)', query, re.IGNORECASE)
+                if list_match:
+                    items_text = list_match.group(1)
+                    items_text = re.sub(r'\s+and\s+', ', ', items_text, flags=re.IGNORECASE)
+                    items = [s.strip() for s in items_text.split(',') if s.strip()]
+                    params[param_name] = items
+            elif param_type == "string":
+                # Try common patterns for string extraction
+                patterns = [
+                    rf'{param_name}\s*[=:]\s*["\']?([^"\']+)["\']?',
+                    rf'(?:for|in|from|to|at)\s+([A-Za-z\s]+?)(?:\s+(?:to|from|with|and)|$)',
+                ]
+                for pattern in patterns:
+                    match = re.search(pattern, query, re.IGNORECASE)
+                    if match:
+                        params[param_name] = match.group(1).strip()
+                        break
     
     return {func_name: params}

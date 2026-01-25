@@ -50,75 +50,79 @@ async def extract_function_call(
     
     # Extract parameters from query using regex
     params = {}
+    query_lower = query.lower()
     
-    # Extract substance - look for common substance names
-    substance_patterns = [
-        r'\b(ice|water|steam|air|oxygen|nitrogen|helium|hydrogen|iron|copper|aluminum|gold|silver)\b',
-    ]
-    for pattern in substance_patterns:
-        match = re.search(pattern, query, re.IGNORECASE)
-        if match:
-            params["substance"] = match.group(1).lower()
+    # Extract substance - look for common substances
+    substances = ["ice", "water", "steam", "air", "oxygen", "nitrogen", "helium", "hydrogen", "copper", "iron", "aluminum", "gold", "silver"]
+    for substance in substances:
+        if substance in query_lower:
+            params["substance"] = substance
             break
     
-    # Extract mass - look for patterns like "1kg", "1 kg", "1-kg"
+    # Extract mass - patterns like "1kg", "1 kg", "1-kg", "mass of 1 kg"
     mass_patterns = [
-        r'(\d+(?:\.\d+)?)\s*[-]?\s*kg\b',
+        r'(\d+(?:\.\d+)?)\s*kg',
         r'(\d+(?:\.\d+)?)\s*kilogram',
         r'mass\s+(?:of\s+)?(\d+(?:\.\d+)?)',
     ]
     for pattern in mass_patterns:
-        match = re.search(pattern, query, re.IGNORECASE)
+        match = re.search(pattern, query_lower)
         if match:
             params["mass"] = int(float(match.group(1)))
             break
     
-    # Extract temperatures - look for patterns like "0°C", "100°C", "0 degrees"
+    # Extract temperatures - look for patterns with °C, degrees, Celsius
+    # Pattern: "at X°C" or "X degrees" or "to Y°C"
     temp_patterns = [
-        r'(\d+)\s*°\s*C',
-        r'(\d+)\s*degrees?\s*(?:C|Celsius)',
-        r'at\s+(\d+)\s*°',
-        r'to\s+(\d+)\s*°',
+        r'at\s+(-?\d+)\s*(?:°|degrees?\s*)?c(?:elsius)?',
+        r'from\s+(-?\d+)\s*(?:°|degrees?\s*)?c(?:elsius)?',
+        r'to\s+(-?\d+)\s*(?:°|degrees?\s*)?c(?:elsius)?',
+        r'(-?\d+)\s*(?:°|degrees?\s*)?c(?:elsius)?',
     ]
     
     temperatures = []
-    for match in re.finditer(r'(-?\d+)\s*(?:°\s*C|degrees?\s*(?:C|Celsius)?)', query, re.IGNORECASE):
-        temperatures.append(int(match.group(1)))
+    for pattern in temp_patterns:
+        matches = re.findall(pattern, query_lower)
+        for m in matches:
+            temp = int(m)
+            if temp not in temperatures:
+                temperatures.append(temp)
     
-    # Also try simpler pattern
-    if len(temperatures) < 2:
-        simple_temps = re.findall(r'(-?\d+)\s*°', query)
-        for t in simple_temps:
-            temp_val = int(t)
-            if temp_val not in temperatures:
-                temperatures.append(temp_val)
+    # Also try to find temperatures in order they appear
+    all_temps = re.findall(r'(-?\d+)\s*(?:°|degrees?\s*)?c', query_lower)
+    for t in all_temps:
+        temp = int(t)
+        if temp not in temperatures:
+            temperatures.append(temp)
     
-    # Assign temperatures based on context (initial vs final)
-    if len(temperatures) >= 2:
-        # Check for "from X to Y" or "at X ... to Y" patterns
-        from_to_match = re.search(r'(?:from|at)\s+(-?\d+).*?(?:to|heated to)\s+(-?\d+)', query, re.IGNORECASE)
-        if from_to_match:
-            params["initial_temperature"] = int(from_to_match.group(1))
-            params["final_temperature"] = int(from_to_match.group(2))
-        else:
-            # Assume first is initial, second is final
-            params["initial_temperature"] = temperatures[0]
-            params["final_temperature"] = temperatures[1]
-    elif len(temperatures) == 1:
-        # Only one temperature found, need to determine which
-        if re.search(r'initial|start|at', query, re.IGNORECASE):
-            params["initial_temperature"] = temperatures[0]
-        else:
+    # Assign initial and final temperatures
+    # Look for context clues
+    initial_match = re.search(r'at\s+(-?\d+)\s*(?:°|degrees?\s*)?c', query_lower)
+    final_match = re.search(r'(?:heated|cooled|to)\s+(-?\d+)\s*(?:°|degrees?\s*)?c', query_lower)
+    
+    if initial_match:
+        params["initial_temperature"] = int(initial_match.group(1))
+    if final_match:
+        params["final_temperature"] = int(final_match.group(1))
+    
+    # Fallback: if we found temperatures but couldn't assign them
+    if "initial_temperature" not in params and len(temperatures) >= 1:
+        params["initial_temperature"] = temperatures[0]
+    if "final_temperature" not in params and len(temperatures) >= 2:
+        params["final_temperature"] = temperatures[1]
+    elif "final_temperature" not in params and len(temperatures) == 1 and "initial_temperature" in params:
+        # Only one temp found, check if it's different from initial
+        if temperatures[0] != params["initial_temperature"]:
             params["final_temperature"] = temperatures[0]
     
-    # Extract pressure - look for patterns like "1 atmosphere", "1 atm"
+    # Extract pressure - patterns like "1 atmosphere", "1 atm", "under 1 atmosphere"
     pressure_patterns = [
-        r'(\d+(?:\.\d+)?)\s*(?:atmosphere|atm)\b',
+        r'(\d+(?:\.\d+)?)\s*(?:atmosphere|atm)',
         r'under\s+(\d+(?:\.\d+)?)\s*(?:atmosphere|atm)',
-        r'(\d+(?:\.\d+)?)\s*atm\s+(?:of\s+)?pressure',
+        r'at\s+(\d+(?:\.\d+)?)\s*(?:atmosphere|atm)',
     ]
     for pattern in pressure_patterns:
-        match = re.search(pattern, query, re.IGNORECASE)
+        match = re.search(pattern, query_lower)
         if match:
             params["pressure"] = int(float(match.group(1)))
             break

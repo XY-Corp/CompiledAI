@@ -48,90 +48,67 @@ async def extract_function_call(
     params = {}
     query_lower = query.lower()
     
-    # Extract mass - look for number followed by 'g' or 'grams' or just a number with mass context
+    # Extract mass - look for number followed by 'g' or 'grams'
     mass_patterns = [
-        r'(\d+(?:\.\d+)?)\s*(?:g|grams?)\b',  # "100g" or "100 grams"
-        r'(\d+(?:\.\d+)?)\s*(?:kg|kilograms?)\b',  # "1kg" - convert to grams
-        r'mass\s*(?:of|is|=|:)?\s*(\d+(?:\.\d+)?)',  # "mass of 100"
-        r'(\d+(?:\.\d+)?)\s*(?:of\s+)?(?:water|ice|steam)',  # "100 of water"
+        r'(\d+(?:\.\d+)?)\s*(?:g|grams?)\b',
+        r'(\d+(?:\.\d+)?)\s*(?:gram|grams)',
+        r'mass\s*(?:of|:)?\s*(\d+(?:\.\d+)?)',
+        r'(\d+(?:\.\d+)?)\s*(?:kg|kilograms?)',
     ]
     
-    mass_value = None
     for pattern in mass_patterns:
         match = re.search(pattern, query_lower)
         if match:
-            mass_value = float(match.group(1))
+            mass_val = float(match.group(1))
+            # Convert kg to g if needed
             if 'kg' in pattern:
-                mass_value *= 1000  # Convert kg to grams
+                mass_val *= 1000
+            params["mass"] = int(mass_val)
             break
     
-    # If no specific mass pattern found, look for any number that could be mass
-    if mass_value is None:
+    # If no mass found with units, try to find standalone number near mass-related words
+    if "mass" not in params:
         numbers = re.findall(r'\b(\d+(?:\.\d+)?)\b', query)
         if numbers:
-            mass_value = float(numbers[0])
+            params["mass"] = int(float(numbers[0]))
     
-    if mass_value is not None:
-        params["mass"] = int(mass_value) if mass_value == int(mass_value) else mass_value
-    
-    # Extract phase_transition - map common phrases to valid values
-    phase_mapping = {
-        # Vaporization (liquid to gas)
-        'liquid to steam': 'vaporization',
-        'liquid to gas': 'vaporization',
-        'water to steam': 'vaporization',
-        'boiling': 'vaporization',
-        'evaporation': 'vaporization',
-        'vaporization': 'vaporization',
-        'vaporizing': 'vaporization',
-        'evaporating': 'vaporization',
-        
-        # Condensation (gas to liquid)
-        'steam to liquid': 'condensation',
-        'gas to liquid': 'condensation',
-        'steam to water': 'condensation',
-        'condensation': 'condensation',
-        'condensing': 'condensation',
-        
-        # Melting (solid to liquid)
-        'ice to water': 'melting',
-        'solid to liquid': 'melting',
-        'ice to liquid': 'melting',
-        'melting': 'melting',
-        
-        # Freezing (liquid to solid)
-        'water to ice': 'freezing',
-        'liquid to solid': 'freezing',
-        'liquid to ice': 'freezing',
-        'freezing': 'freezing',
+    # Extract phase transition
+    phase_keywords = {
+        'vaporization': ['vaporization', 'boiling', 'evaporation', 'liquid to steam', 'liquid to gas', 'water to steam', 'boil'],
+        'condensation': ['condensation', 'steam to liquid', 'gas to liquid', 'condense'],
+        'melting': ['melting', 'solid to liquid', 'ice to water', 'melt'],
+        'freezing': ['freezing', 'liquid to solid', 'water to ice', 'freeze']
     }
     
-    phase_transition = None
-    for phrase, transition in phase_mapping.items():
-        if phrase in query_lower:
-            phase_transition = transition
+    for phase, keywords in phase_keywords.items():
+        for keyword in keywords:
+            if keyword in query_lower:
+                params["phase_transition"] = phase
+                break
+        if "phase_transition" in params:
             break
     
-    if phase_transition:
-        params["phase_transition"] = phase_transition
+    # Extract substance - default is water, but check for other substances
+    substance_patterns = [
+        r'of\s+(\w+)\s+from',
+        r'(\w+)\s+from\s+(?:liquid|solid|gas)',
+        r'phase\s+change\s+of\s+(?:\d+\s*(?:g|grams?)?\s+(?:of\s+)?)?(\w+)',
+    ]
     
-    # Extract substance - look for common substances
-    substances = ['water', 'ice', 'steam', 'ethanol', 'alcohol', 'mercury', 'nitrogen', 'oxygen']
-    substance_found = None
-    for substance in substances:
-        if substance in query_lower:
-            # Map ice/steam to water as they're phases of water
-            if substance in ['ice', 'steam']:
-                substance_found = 'water'
-            else:
-                substance_found = substance
-            break
+    substance = None
+    for pattern in substance_patterns:
+        match = re.search(pattern, query_lower)
+        if match:
+            potential_substance = match.group(1).strip()
+            # Filter out common non-substance words
+            if potential_substance not in ['the', 'a', 'an', 'its', 'during']:
+                substance = potential_substance
+                break
     
-    # Only include substance if explicitly mentioned and different from default
-    if substance_found and substance_found != 'water':
-        params["substance"] = substance_found
-    elif substance_found == 'water':
-        # Include water explicitly since it's mentioned
+    # Only include substance if it's not the default 'water' or if explicitly mentioned
+    if substance and substance != 'water':
+        params["substance"] = substance
+    elif 'water' in query_lower:
         params["substance"] = "water"
     
     return {func_name: params}

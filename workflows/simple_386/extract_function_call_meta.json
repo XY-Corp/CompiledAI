@@ -1,0 +1,34 @@
+{
+  "activity_name": "extract_function_call",
+  "description": "Parse natural language query and extract function call with parameters",
+  "task_id": "simple_386",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"Book a luxury room in Hotel Paradise, Las Vegas, with a city view for 3 days starting from May 12, 2022.\"}]], \"function\": [{\"name\": \"book_hotel\", \"description\": \"Book a room in a specific hotel with particular preferences\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"hotel_name\": {\"type\": \"string\", \"description\": \"The name of the hotel.\"}, \"location\": {\"type\": \"string\", \"description\": \"The location of the hotel.\"}, \"room_type\": {\"type\": \"string\", \"description\": \"The type of room preferred.\"}, \"start_date\": {\"type\": \"string\", \"description\": \"The starting date of the stay in format MM-DD-YYYY.\"}, \"stay_duration\": {\"type\": \"integer\", \"description\": \"The duration of the stay in days.\"}, \"view\": {\"type\": \"string\", \"description\": \"The preferred view from the room, can be ignored if no preference. If none provided, assumes no preference.\", \"default\": \"No preference\"}}, \"required\": [\"hotel_name\", \"location\", \"room_type\", \"start_date\", \"stay_duration\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"book_hotel\": {\n    \"hotel_name\": \"string - The name of the hotel.\",\n    \"location\": \"string - The location of the hotel.\",\n    \"room_type\": \"string - The type of room preferred.\",\n    \"start_date\": \"string - The starting date of the stay in format MM-DD-YYYY.\",\n    \"stay_duration\": \"integer - The duration of the stay in days.\",\n    \"view\": \"string - The preferred view from the room, can be ignored if no preference. If none provided, assumes no preference.\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "inputs": [
+    {
+      "name": "prompt",
+      "type": "str",
+      "description": "The natural language query containing the function call request",
+      "required": true
+    },
+    {
+      "name": "functions",
+      "type": "list",
+      "description": "List of available function definitions with their parameter schemas",
+      "required": true
+    }
+  ],
+  "output": {
+    "type": "dict",
+    "description": "Returns a dict with function name as key and parameters as nested dict value",
+    "fields": {
+      "function_name": "dict[str, Any]"
+    }
+  },
+  "reference_activity": null,
+  "workflow_spec": {
+    "workflow_id": "simple_386",
+    "name": "Function Call Extractor",
+    "description": "Extract function name and parameters from natural language query",
+    "execution_pattern": "sequence"
+  }
+}

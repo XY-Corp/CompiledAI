@@ -60,15 +60,16 @@ async def extract_function_call(
                 params[param_name] = int(numbers[0])
         
         elif param_type == "string":
-            # Handle different string parameter types based on description/name
-            if "topic" in param_name.lower() or "subject" in param_desc:
+            # Handle different string parameter types based on description
+            if "topic" in param_desc or "subject" in param_desc:
                 # Extract topic - look for keywords like "on", "about", "for"
                 # Pattern: "news on X", "about X", "for X"
                 topic_patterns = [
-                    r'(?:news\s+(?:on|about|for)\s+)([A-Za-z0-9\s]+?)(?:\s+in\s+|\s*$)',
-                    r'(?:on|about|for)\s+([A-Za-z0-9\s]+?)(?:\s+in\s+|\s*$)',
-                    r'latest\s+([A-Za-z0-9\s]+?)\s+news',
+                    r'(?:news\s+(?:on|about|for)\s+)([A-Za-z0-9\s]+?)(?:\s+in\s+|\s+from\s+|\s*$)',
+                    r'(?:on|about|for)\s+([A-Za-z0-9\s]+?)(?:\s+in\s+|\s+from\s+|\s*$)',
+                    r'latest\s+([A-Za-z0-9]+)\s+news',
                 ]
+                
                 for pattern in topic_patterns:
                     match = re.search(pattern, query, re.IGNORECASE)
                     if match:
@@ -78,30 +79,19 @@ async def extract_function_call(
                         if topic:
                             params[param_name] = topic
                             break
-                
-                # Fallback: look for capitalized words that might be topics
-                if param_name not in params:
-                    caps = re.findall(r'\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\b', query)
-                    if caps:
-                        params[param_name] = caps[0]
             
-            elif "region" in param_name.lower() or "country" in param_desc or "geographical" in param_desc:
-                # Extract region - look for "in X" pattern or country codes
+            elif "region" in param_desc or "geographical" in param_desc or "country" in param_desc:
+                # Extract region - look for "in X" pattern
                 region_patterns = [
-                    r'\bin\s+([A-Z]{2})\b',  # Country codes like US, UK
-                    r'\bin\s+([A-Za-z\s]+?)(?:\s*$|\s+(?:on|about|for))',  # "in United States"
+                    r'\bin\s+([A-Z]{2})\b',  # Two-letter country code
+                    r'\bin\s+(US|USA|UK|EU|Asia|Europe|America)\b',
+                    r'\bfrom\s+([A-Z]{2})\b',
                 ]
+                
                 for pattern in region_patterns:
                     match = re.search(pattern, query, re.IGNORECASE)
                     if match:
-                        region = match.group(1).strip().upper() if len(match.group(1)) == 2 else match.group(1).strip()
-                        params[param_name] = region
+                        params[param_name] = match.group(1).upper()
                         break
-                
-                # Check for default value in description
-                if param_name not in params:
-                    default_match = re.search(r"default\s+(?:is\s+)?['\"]?([A-Z]{2})['\"]?", param_desc, re.IGNORECASE)
-                    if default_match:
-                        params[param_name] = default_match.group(1).upper()
     
     return {func_name: params}

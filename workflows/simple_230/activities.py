@@ -42,7 +42,7 @@ async def extract_function_call(
     except (json.JSONDecodeError, TypeError):
         funcs = []
     
-    # Get function schema
+    # Get function details
     func = funcs[0] if funcs else {}
     func_name = func.get("name", "")
     params_schema = func.get("parameters", {}).get("properties", {})
@@ -55,43 +55,41 @@ async def extract_function_call(
         param_desc = param_info.get("description", "").lower()
         
         if param_type == "integer" or param_type == "number":
-            # Extract numbers (years, counts, etc.)
-            numbers = re.findall(r'\b(\d{4}|\d+)\b', query)
+            # Extract numbers - look for years (4-digit) or other numbers
+            numbers = re.findall(r'\b(\d{4})\b', query)  # Try 4-digit years first
             if numbers:
-                # For date/year parameters, prefer 4-digit numbers
-                if "year" in param_desc or "date" in param_desc:
-                    four_digit = [n for n in numbers if len(n) == 4]
-                    if four_digit:
-                        params[param_name] = int(four_digit[0])
-                    elif numbers:
-                        params[param_name] = int(numbers[0])
-                else:
+                params[param_name] = int(numbers[0])
+            else:
+                # Try any number
+                numbers = re.findall(r'\b(\d+)\b', query)
+                if numbers:
                     params[param_name] = int(numbers[0])
         
         elif param_type == "string":
-            # Extract based on parameter description hints
-            if "country" in param_desc or "region" in param_desc or "location" in param_desc:
-                # Extract location - look for "of X" or "in X" patterns
+            # Extract string values based on context
+            if "location" in param_name.lower() or "country" in param_desc or "region" in param_desc:
+                # Look for country/location patterns
+                # Pattern: "of [Location]" or "in [Location]"
                 location_patterns = [
-                    r'(?:King|Queen|Leader|Ruler|President|Emperor)\s+of\s+([A-Za-z]+)',
-                    r'(?:in|of)\s+([A-Za-z]+)\s+(?:in|during|around)\s+\d',
-                    r'(?:in|of)\s+([A-Za-z]+)',
+                    r'(?:King|Queen|Leader|Ruler|President|Emperor)\s+of\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)',
+                    r'in\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\s+in\s+\d',
+                    r'of\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\s+in\s+\d',
                 ]
                 for pattern in location_patterns:
-                    match = re.search(pattern, query, re.IGNORECASE)
+                    match = re.search(pattern, query)
                     if match:
                         params[param_name] = match.group(1)
                         break
             
-            elif "title" in param_desc or "position" in param_desc:
+            elif "title" in param_name.lower():
                 # Extract title - look for common titles
                 title_patterns = [
-                    r'\b(King|Queen|Emperor|Empress|President|Prime Minister|Leader|Ruler|Chancellor)\b',
+                    r'\b(King|Queen|Emperor|Empress|President|Prime Minister|Leader|Ruler|Duke|Duchess)\b'
                 ]
                 for pattern in title_patterns:
                     match = re.search(pattern, query, re.IGNORECASE)
                     if match:
-                        params[param_name] = match.group(1)
+                        params[param_name] = match.group(1).title()
                         break
     
     return {func_name: params}

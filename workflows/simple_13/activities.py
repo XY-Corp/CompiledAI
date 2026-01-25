@@ -48,7 +48,7 @@ async def extract_function_call(
     params = {}
     
     # For calculate_area_under_curve, extract:
-    # 1. function: mathematical expression like "x^2", "x**2", etc.
+    # 1. function: mathematical expression like "x^2", "x**2", "sin(x)", etc.
     # 2. interval: [start, end] numbers
     # 3. method: optional numerical method
     
@@ -56,8 +56,8 @@ async def extract_function_call(
     func_patterns = [
         r'y\s*=\s*([^\s,]+(?:\s*[\+\-\*\/\^]\s*[^\s,]+)*)',  # y = x^2
         r'f\s*\(\s*x\s*\)\s*=\s*([^\s,]+(?:\s*[\+\-\*\/\^]\s*[^\s,]+)*)',  # f(x) = x^2
-        r'curve\s+([^\s]+(?:\s*[\+\-\*\/\^]\s*[^\s]+)*)\s+from',  # curve x^2 from
-        r'function\s+([^\s]+(?:\s*[\+\-\*\/\^]\s*[^\s]+)*)',  # function x^2
+        r'function\s+([^\s,]+(?:\s*[\+\-\*\/\^]\s*[^\s,]+)*)',  # function x^2
+        r'curve\s+([^\s,]+(?:\s*[\+\-\*\/\^]\s*[^\s,]+)*)',  # curve x^2
     ]
     
     math_function = None
@@ -67,16 +67,14 @@ async def extract_function_call(
             math_function = match.group(1).strip()
             break
     
-    if math_function:
-        params["function"] = math_function
-    
-    # Extract interval - look for "from x=1 to x=3" or "from 1 to 3" or "[1, 3]"
+    # Extract interval - look for "from x=1 to x=3", "from 1 to 3", "[1, 3]", etc.
     interval_patterns = [
         r'from\s+x\s*=\s*(-?\d+(?:\.\d+)?)\s+to\s+x\s*=\s*(-?\d+(?:\.\d+)?)',  # from x=1 to x=3
         r'from\s+(-?\d+(?:\.\d+)?)\s+to\s+(-?\d+(?:\.\d+)?)',  # from 1 to 3
-        r'interval\s*\[\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*\]',  # interval [1, 3]
         r'between\s+x\s*=\s*(-?\d+(?:\.\d+)?)\s+and\s+x\s*=\s*(-?\d+(?:\.\d+)?)',  # between x=1 and x=3
         r'between\s+(-?\d+(?:\.\d+)?)\s+and\s+(-?\d+(?:\.\d+)?)',  # between 1 and 3
+        r'\[\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*\]',  # [1, 3]
+        r'interval\s+(-?\d+(?:\.\d+)?)\s+to\s+(-?\d+(?:\.\d+)?)',  # interval 1 to 3
     ]
     
     interval = None
@@ -85,23 +83,32 @@ async def extract_function_call(
         if match:
             start = float(match.group(1))
             end = float(match.group(2))
+            # Convert to int if they are whole numbers
+            start = int(start) if start == int(start) else start
+            end = int(end) if end == int(end) else end
             interval = [start, end]
             break
     
-    if interval:
-        params["interval"] = interval
-    
-    # Extract method if specified (optional parameter)
+    # Extract method if specified
     method_patterns = [
-        r'using\s+(\w+)\s+method',  # using trapezoidal method
-        r'method\s*[=:]\s*["\']?(\w+)["\']?',  # method = trapezoidal
-        r'(\w+)\s+approximation',  # trapezoidal approximation
+        r'using\s+(trapezoidal|simpson|midpoint|rectangular)\s+(?:method|rule)',
+        r'(trapezoidal|simpson|midpoint|rectangular)\s+(?:method|rule)',
+        r'method\s*[=:]\s*(trapezoidal|simpson|midpoint|rectangular)',
     ]
     
+    method = None
     for pattern in method_patterns:
         match = re.search(pattern, query, re.IGNORECASE)
         if match:
-            params["method"] = match.group(1).lower()
+            method = match.group(1).lower()
             break
+    
+    # Build params dict with only required and found optional params
+    if math_function:
+        params["function"] = math_function
+    if interval:
+        params["interval"] = interval
+    if method:
+        params["method"] = method
     
     return {func_name: params}

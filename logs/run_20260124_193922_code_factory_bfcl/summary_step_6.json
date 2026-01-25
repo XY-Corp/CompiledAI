@@ -1,0 +1,75 @@
+{
+  "step": 6,
+  "completed": 7,
+  "success_count": 4,
+  "success_rate": 0.5714285714285714,
+  "elapsed_seconds": 170.8151559829712,
+  "total_tokens": 47002,
+  "compilation_tokens": 47002,
+  "execution_tokens": 0,
+  "instances": [
+    {
+      "instance_id": "sql_0",
+      "success": true,
+      "latency_ms": 46676.81079078466,
+      "generation_time_ms": 46669.123750180006,
+      "execution_time_ms": 4.27341740578413,
+      "tokens": 12103,
+      "match_type": "content_match"
+    },
+    {
+      "instance_id": "sql_1",
+      "success": true,
+      "latency_ms": 10.421917773783207,
+      "generation_time_ms": null,
+      "execution_time_ms": 9.632792323827744,
+      "tokens": 0,
+      "match_type": "content_match"
+    },
+    {
+      "instance_id": "sql_2",
+      "success": false,
+      "latency_ms": 11.28983311355114,
+      "generation_time_ms": null,
+      "execution_time_ms": 9.827583096921444,
+      "tokens": 0,
+      "match_type": "format_match"
+    },
+    {
+      "instance_id": "sql_3",
+      "success": false,
+      "latency_ms": 10.426333174109459,
+      "generation_time_ms": null,
+      "execution_time_ms": 9.219790808856487,
+      "tokens": 0,
+      "match_type": "format_match"
+    },
+    {
+      "instance_id": "sql_4",
+      "success": false,
+      "latency_ms": 31178.59129142016,
+      "generation_time_ms": 31169.276375323534,
+      "execution_time_ms": 4.241541028022766,
+      "tokens": 11082,
+      "match_type": "format_match"
+    },
+    {
+      "instance_id": "sql_5",
+      "success": true,
+      "latency_ms": 39003.09429131448,
+      "generation_time_ms": 38990.46149943024,
+      "execution_time_ms": 5.637291818857193,
+      "tokens": 12045,
+      "match_type": "content_match"
+    },
+    {
+      "instance_id": "sql_6",
+      "success": true,
+      "latency_ms": 37247.782999649644,
+      "generation_time_ms": 37236.70562449843,
+      "execution_time_ms": 5.906333215534687,
+      "tokens": 11772,
+      "match_type": "content_match"
+    }
+  ]
+}

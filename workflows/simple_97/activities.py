@@ -71,13 +71,13 @@ async def extract_function_call(
                 num_idx += 1
         elif param_type == "string":
             # Try to extract string values using common patterns
-            # Pattern: "for X" or "in X" or "of X" or "with X"
-            string_match = re.search(
-                r'(?:for|in|of|with|named?)\s+([A-Za-z][A-Za-z\s]*?)(?:\s+(?:and|with|,|$))',
-                query,
-                re.IGNORECASE
-            )
-            if string_match:
+            # Pattern: "for X" or "in X" or "of X" or quoted strings
+            string_match = re.search(r'(?:for|in|of|with)\s+([A-Za-z\s]+?)(?:\s+(?:and|with|,)|$)', query, re.IGNORECASE)
+            quoted_match = re.search(r'"([^"]+)"', query)
+            
+            if quoted_match:
+                params[param_name] = quoted_match.group(1)
+            elif string_match:
                 params[param_name] = string_match.group(1).strip()
     
     return {func_name: params}

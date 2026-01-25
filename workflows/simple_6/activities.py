@@ -13,30 +13,25 @@ async def extract_function_call(
 ) -> dict[str, Any]:
     """Extract function name and parameters from user query. Returns {"func_name": {params}}."""
     
-    # Parse prompt - may be JSON string with nested structure
+    # Parse prompt - may be JSON string or dict
     try:
         if isinstance(prompt, str):
             data = json.loads(prompt)
         else:
             data = prompt
         
-        # Extract user query from BFCL format: {"question": [[{"role": "user", "content": "..."}]]}
-        if isinstance(data, dict) and "question" in data:
-            question_list = data.get("question", [])
-            if isinstance(question_list, list) and len(question_list) > 0:
-                inner_list = question_list[0]
-                if isinstance(inner_list, list) and len(inner_list) > 0:
-                    query = inner_list[0].get("content", str(prompt))
-                else:
-                    query = str(prompt)
+        # Extract user query from nested structure
+        if "question" in data and isinstance(data["question"], list):
+            if len(data["question"]) > 0 and isinstance(data["question"][0], list):
+                query = data["question"][0][0].get("content", str(prompt))
             else:
                 query = str(prompt)
         else:
             query = str(prompt)
-    except (json.JSONDecodeError, TypeError):
+    except (json.JSONDecodeError, TypeError, KeyError):
         query = str(prompt)
     
-    # Parse functions - may be JSON string
+    # Parse functions - may be JSON string or list
     try:
         if isinstance(functions, str):
             funcs = json.loads(functions)
@@ -77,21 +72,19 @@ async def extract_function_call(
         all_numbers = re.findall(r'-?\d+(?:\.\d+)?', query)
         
         # Map remaining params to numbers in order
-        param_names = list(params_schema.keys())
         num_idx = 0
-        
-        for param_name in param_names:
+        for param_name, param_info in params_schema.items():
             if param_name not in params and num_idx < len(all_numbers):
-                param_info = params_schema[param_name]
                 param_type = param_info.get("type", "string")
-                
                 value = all_numbers[num_idx]
+                
                 if param_type == "integer":
                     params[param_name] = int(float(value))
                 elif param_type in ["number", "float"]:
                     params[param_name] = float(value)
                 else:
                     params[param_name] = value
+                
                 num_idx += 1
     
     return {func_name: params}

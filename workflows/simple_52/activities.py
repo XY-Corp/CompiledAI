@@ -61,22 +61,24 @@ async def extract_function_call(
             
             # Look for specific patterns based on parameter description
             if "temperature" in param_desc or "temp" in param_name.lower():
-                # Look for temperature pattern: "298K" or "298 K" or "temperature is 298"
-                temp_match = re.search(r'temperature\s+(?:is\s+)?(\d+)\s*K?|(\d+)\s*K', query, re.IGNORECASE)
+                # Look for temperature pattern: "temperature is 298K" or "298K" or "298 K"
+                temp_match = re.search(r'temperature\s+(?:is\s+)?(\d+)\s*K?', query, re.IGNORECASE)
+                if not temp_match:
+                    temp_match = re.search(r'(\d+)\s*K', query, re.IGNORECASE)
                 if temp_match:
-                    val = temp_match.group(1) or temp_match.group(2)
-                    params[param_name] = int(val)
+                    params[param_name] = int(temp_match.group(1))
                     matched = True
             
             elif "volume" in param_desc or "volume" in param_name.lower():
-                # Look for volume pattern: "10 m^3" or "volume is 10"
-                vol_match = re.search(r'volume\s+(?:is\s+)?(\d+)|(\d+)\s*m\^?3', query, re.IGNORECASE)
+                # Look for volume pattern: "volume is 10 m^3" or "10 m^3"
+                vol_match = re.search(r'volume\s+(?:is\s+)?(\d+)\s*m', query, re.IGNORECASE)
+                if not vol_match:
+                    vol_match = re.search(r'(\d+)\s*m\^?3', query, re.IGNORECASE)
                 if vol_match:
-                    val = vol_match.group(1) or vol_match.group(2)
-                    params[param_name] = int(val)
+                    params[param_name] = int(vol_match.group(1))
                     matched = True
             
-            # Fallback: use numbers in order
+            # Fallback: use next available number
             if not matched and number_idx < len(numbers):
                 params[param_name] = int(float(numbers[number_idx]))
                 number_idx += 1
@@ -88,16 +90,18 @@ async def extract_function_call(
         
         elif param_type == "string":
             # Check for default value in description
-            default_match = re.search(r"'(\w+)'\s+as\s+default|default\s+(?:is\s+)?'?(\w+)'?", param_desc, re.IGNORECASE)
+            default_match = re.search(r"'(\w+)'\s+as\s+default", param_desc)
             if default_match:
-                default_val = default_match.group(1) or default_match.group(2)
-                # Check if the default value is mentioned in the query
-                if default_val.lower() in query.lower():
-                    params[param_name] = default_val
+                # Use default value
+                params[param_name] = default_match.group(1)
             else:
                 # Try to extract string value from query based on param name
-                string_match = re.search(rf'{param_name}\s+(?:is\s+)?["\']?(\w+)["\']?', query, re.IGNORECASE)
-                if string_match:
-                    params[param_name] = string_match.group(1)
+                # Look for patterns like "for air" or "type of gas"
+                if "gas" in param_name.lower() or "gas" in param_desc:
+                    gas_match = re.search(r'\b(air|oxygen|nitrogen|helium|hydrogen|co2)\b', query, re.IGNORECASE)
+                    if gas_match:
+                        params[param_name] = gas_match.group(1).lower()
+                    elif "air" in query.lower():
+                        params[param_name] = "air"
     
     return {func_name: params}

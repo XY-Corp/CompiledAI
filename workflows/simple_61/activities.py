@@ -51,34 +51,49 @@ async def extract_function_call(
     # Extract parameters from query
     params = {}
     
-    # Extract weight (look for number followed by "lbs" or "pounds")
-    weight_match = re.search(r'(\d+)\s*(?:lbs?|pounds?)', query, re.IGNORECASE)
-    if weight_match and "weight" in params_schema:
-        params["weight"] = int(weight_match.group(1))
+    # Extract weight (look for pattern like "weight 150lbs" or "150 lbs")
+    weight_patterns = [
+        r'weight\s*(?:of\s*)?(\d+)\s*(?:lbs?|pounds?)?',
+        r'(\d+)\s*(?:lbs?|pounds?)\s*(?:weight)?',
+        r'weighs?\s*(\d+)',
+    ]
+    for pattern in weight_patterns:
+        match = re.search(pattern, query, re.IGNORECASE)
+        if match:
+            params["weight"] = int(match.group(1))
+            break
     
     # Extract height - handle feet and inches format
-    # Pattern: "5ft 10in" or "5 feet 10 inches" or "5'10"" etc.
-    height_match = re.search(r'(\d+)\s*(?:ft|feet|\')\s*(\d+)\s*(?:in|inches|")?', query, re.IGNORECASE)
-    if height_match and "height" in params_schema:
-        feet = int(height_match.group(1))
-        inches = int(height_match.group(2))
-        total_inches = feet * 12 + inches
-        params["height"] = total_inches
-    else:
-        # Try just inches
-        inches_match = re.search(r'(\d+)\s*(?:in|inches)', query, re.IGNORECASE)
-        if inches_match and "height" in params_schema:
-            params["height"] = int(inches_match.group(1))
+    # Pattern: "5ft 10in", "5 feet 10 inches", "5'10"", etc.
+    height_patterns = [
+        r"(\d+)\s*(?:ft|feet|')\s*(\d+)\s*(?:in|inches|\")?",
+        r"(\d+)\s*(?:foot|feet)\s*(\d+)\s*(?:inch|inches)?",
+        r"height\s*(?:of\s*)?(\d+)\s*(?:in|inches)",
+    ]
+    
+    height_found = False
+    for pattern in height_patterns[:2]:  # First two patterns are feet+inches
+        match = re.search(pattern, query, re.IGNORECASE)
+        if match:
+            feet = int(match.group(1))
+            inches = int(match.group(2))
+            params["height"] = feet * 12 + inches  # Convert to total inches
+            height_found = True
+            break
+    
+    # If not found, try just inches pattern
+    if not height_found:
+        match = re.search(height_patterns[2], query, re.IGNORECASE)
+        if match:
+            params["height"] = int(match.group(1))
     
     # Extract activity level - match against enum values
-    if "activity_level" in params_schema:
-        activity_enum = params_schema["activity_level"].get("enum", [])
-        query_lower = query.lower()
-        
-        # Check for each enum value in the query
-        for level in activity_enum:
-            if level.lower() in query_lower:
-                params["activity_level"] = level
-                break
+    activity_levels = ["sedentary", "lightly active", "moderately active", "very active", "extra active"]
+    query_lower = query.lower()
+    
+    for level in activity_levels:
+        if level in query_lower:
+            params["activity_level"] = level
+            break
     
     return {func_name: params}

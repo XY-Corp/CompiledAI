@@ -51,21 +51,21 @@ async def extract_function_call(
     
     # For probability calculation: extract total_outcomes and event_outcomes
     if "probabilities" in func_name or "probability" in query_lower:
-        # Standard deck of cards = 52 total outcomes
+        # Standard deck has 52 cards
         if "deck" in query_lower and "52" in query:
             params["total_outcomes"] = 52
-        elif "deck" in query_lower or "cards" in query_lower:
-            # Standard deck assumption
+        elif "deck" in query_lower:
+            # Standard deck default
             params["total_outcomes"] = 52
         else:
-            # Try to extract any number for total outcomes
-            numbers = re.findall(r'\d+', query)
-            if numbers:
-                params["total_outcomes"] = int(numbers[0])
+            # Try to extract total from query
+            total_match = re.search(r'(\d+)\s*(?:cards|outcomes|total|items)', query_lower)
+            if total_match:
+                params["total_outcomes"] = int(total_match.group(1))
         
-        # Extract event outcomes based on what's being drawn
+        # Extract event outcomes based on what we're drawing
+        # Kings in a standard deck: 4 (one per suit)
         if "king" in query_lower:
-            # 4 kings in a standard deck
             params["event_outcomes"] = 4
         elif "queen" in query_lower:
             params["event_outcomes"] = 4
@@ -74,38 +74,41 @@ async def extract_function_call(
         elif "ace" in query_lower:
             params["event_outcomes"] = 4
         elif "heart" in query_lower or "diamond" in query_lower or "club" in query_lower or "spade" in query_lower:
-            # 13 cards per suit
+            # One suit has 13 cards
             params["event_outcomes"] = 13
+        elif "red" in query_lower or "black" in query_lower:
+            # Red or black cards: 26 each
+            params["event_outcomes"] = 26
         elif "face card" in query_lower:
-            # 12 face cards (J, Q, K of each suit)
+            # Face cards (J, Q, K): 12 total
             params["event_outcomes"] = 12
-        elif "red" in query_lower:
-            # 26 red cards (hearts + diamonds)
-            params["event_outcomes"] = 26
-        elif "black" in query_lower:
-            # 26 black cards (clubs + spades)
-            params["event_outcomes"] = 26
         else:
-            # Try to find event outcomes from numbers in query
+            # Try to extract event outcomes from numbers in query
             numbers = re.findall(r'\d+', query)
             if len(numbers) >= 2:
+                # If we have multiple numbers, second might be event outcomes
                 params["event_outcomes"] = int(numbers[1])
             elif len(numbers) == 1 and "total_outcomes" not in params:
                 params["event_outcomes"] = int(numbers[0])
-    else:
-        # Generic number extraction for other function types
+    
+    # Check for optional 'round' parameter
+    round_match = re.search(r'round(?:ed)?\s*(?:to)?\s*(\d+)', query_lower)
+    if round_match:
+        params["round"] = int(round_match.group(1))
+    
+    # Fallback: extract all numbers if we still need params
+    if not params:
         numbers = re.findall(r'\d+', query)
         param_names = list(params_schema.keys())
-        
         for i, param_name in enumerate(param_names):
-            param_info = params_schema.get(param_name, {})
-            param_type = param_info.get("type", "string")
-            
-            if param_type in ["integer", "number", "float"]:
-                if i < len(numbers):
-                    if param_type == "integer":
-                        params[param_name] = int(numbers[i])
-                    else:
-                        params[param_name] = float(numbers[i])
+            if i < len(numbers):
+                param_info = params_schema.get(param_name, {})
+                param_type = param_info.get("type", "string")
+                if param_type == "integer":
+                    params[param_name] = int(numbers[i])
+                elif param_type in ["number", "float"]:
+                    params[param_name] = float(numbers[i])
+                else:
+                    params[param_name] = numbers[i]
     
     return {func_name: params}

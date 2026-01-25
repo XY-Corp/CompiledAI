@@ -63,29 +63,42 @@ async def extract_function_call(
                 params[param_name] = int(years[0])
         
         elif param_type == "string":
-            # Handle company_name - look for "company X" or "against X"
+            # Handle company_name - look for patterns like "company X" or "against X"
             if "company" in param_name.lower() or "company" in param_desc:
-                # Pattern: "against X" or "company X"
-                company_match = re.search(r'(?:against|company)\s+(?:the\s+)?(?:company\s+)?([A-Z][a-zA-Z0-9]+)', query)
-                if company_match:
-                    params[param_name] = company_match.group(1)
+                # Pattern: "against the company X" or "against X" or "company X"
+                company_patterns = [
+                    r'against\s+(?:the\s+)?company\s+([A-Z][a-zA-Z]+)',
+                    r'against\s+(?:the\s+)?([A-Z][a-zA-Z]+)',
+                    r'company\s+([A-Z][a-zA-Z]+)',
+                ]
+                for pattern in company_patterns:
+                    match = re.search(pattern, query)
+                    if match:
+                        params[param_name] = match.group(1)
+                        break
             
-            # Handle location - look for "in X" patterns for states/cities
+            # Handle location - look for "in X" patterns
             elif "location" in param_name.lower() or "location" in param_desc:
                 # Pattern: "in California" or "in New York"
-                location_match = re.search(r'\bin\s+([A-Z][a-zA-Z\s]+?)(?:\s+in\s+the\s+year|\s+in\s+\d{4}|$)', query)
-                if location_match:
-                    params[param_name] = location_match.group(1).strip()
+                location_patterns = [
+                    r'\bin\s+([A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+)?)\b(?:\s+in\s+the\s+year|\s+in\s+\d{4})?',
+                ]
+                for pattern in location_patterns:
+                    match = re.search(pattern, query)
+                    if match:
+                        location = match.group(1)
+                        # Filter out common non-location words
+                        if location.lower() not in ['the', 'a', 'an', 'year']:
+                            params[param_name] = location
+                            break
             
-            # Handle case_type - check for keywords
+            # Handle case_type - check if mentioned, otherwise skip (optional with default)
             elif "case_type" in param_name.lower() or "type" in param_desc:
-                # Check for case type keywords
-                if "civil" in query_lower:
-                    params[param_name] = "civil"
-                elif "criminal" in query_lower:
-                    params[param_name] = "criminal"
-                elif "small_claims" in query_lower or "small claims" in query_lower:
-                    params[param_name] = "small_claims"
-                # Don't set if not found - it's optional with default 'all'
+                case_types = ['civil', 'criminal', 'small_claims']
+                for case_type in case_types:
+                    if case_type in query_lower:
+                        params[param_name] = case_type
+                        break
+                # Don't add if not found - it has a default value
     
     return {func_name: params}

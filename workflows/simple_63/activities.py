@@ -54,69 +54,60 @@ async def extract_function_call(
     
     # For genetics.calculate_similarity - extract species names
     if "genetics" in func_name or "similarity" in func_name:
-        # Common patterns for comparing two things
-        # Pattern: "X and Y" or "X and a Y" or "a X and a Y"
-        species_patterns = [
-            r'(?:between\s+)?(?:a\s+)?(\w+)\s+and\s+(?:a\s+)?(\w+)',
-            r'(\w+)\s+(?:and|vs\.?|versus)\s+(\w+)',
-            r'how\s+(?:genetically\s+)?similar\s+(?:is\s+)?(?:a\s+)?(\w+)\s+and\s+(?:a\s+)?(\w+)',
-        ]
+        # Common patterns for species comparison
+        # "how similar a X and a Y are" or "between X and Y" or "X and Y"
         
-        species1 = None
-        species2 = None
-        
-        for pattern in species_patterns:
-            match = re.search(pattern, query_lower)
+        # Pattern 1: "a X and a Y"
+        match = re.search(r'a\s+(\w+)\s+and\s+a\s+(\w+)', query_lower)
+        if match:
+            params["species1"] = match.group(1)
+            params["species2"] = match.group(2)
+        else:
+            # Pattern 2: "between X and Y"
+            match = re.search(r'between\s+(?:a\s+)?(\w+)\s+and\s+(?:a\s+)?(\w+)', query_lower)
             if match:
-                candidate1 = match.group(1).strip()
-                candidate2 = match.group(2).strip()
+                params["species1"] = match.group(1)
+                params["species2"] = match.group(2)
+            else:
+                # Pattern 3: Generic "X and Y" with common species names
+                species_list = ["human", "chimp", "chimpanzee", "gorilla", "monkey", "mouse", "rat", "dog", "cat", "fish", "bird"]
+                found_species = []
+                for species in species_list:
+                    if species in query_lower:
+                        found_species.append(species)
                 
-                # Filter out common non-species words
-                skip_words = {'how', 'are', 'is', 'the', 'a', 'an', 'in', 'out', 'find', 'get', 'what', 'similar', 'genetically'}
-                
-                if candidate1 not in skip_words and candidate2 not in skip_words:
-                    species1 = candidate1
-                    species2 = candidate2
-                    break
-        
-        # Assign to params if found
-        if species1 and "species1" in params_schema:
-            params["species1"] = species1
-        if species2 and "species2" in params_schema:
-            params["species2"] = species2
+                if len(found_species) >= 2:
+                    params["species1"] = found_species[0]
+                    params["species2"] = found_species[1]
         
         # Check for format specification
-        if "format" in params_schema:
-            if "percentage" in query_lower or "percent" in query_lower:
-                params["format"] = "percentage"
-            elif "fraction" in query_lower:
-                params["format"] = "fraction"
-            # Default to percentage if mentioned in query context
-            elif "%" in query:
-                params["format"] = "percentage"
+        if "percentage" in query_lower or "percent" in query_lower:
+            params["format"] = "percentage"
+        elif "fraction" in query_lower:
+            params["format"] = "fraction"
     
+    # Generic extraction for other function types
     else:
-        # Generic extraction for other function types
-        # Extract numbers
+        # Extract numbers for numeric parameters
         numbers = re.findall(r'\d+(?:\.\d+)?', query)
-        
-        # Extract quoted strings
-        quoted = re.findall(r'"([^"]+)"', query)
-        
         num_idx = 0
-        str_idx = 0
+        
+        # Extract string values using common patterns
+        string_match = re.search(r'(?:for|in|of|with|to)\s+([A-Za-z\s]+?)(?:\s+(?:and|with|,|\.)|$)', query, re.IGNORECASE)
         
         for param_name, param_info in params_schema.items():
-            param_type = param_info.get("type", "string") if isinstance(param_info, dict) else "string"
+            if isinstance(param_info, dict):
+                param_type = param_info.get("type", "string")
+            else:
+                param_type = "string"
             
-            if param_type in ["integer", "number", "float"]:
-                if num_idx < len(numbers):
-                    val = numbers[num_idx]
-                    params[param_name] = int(val) if param_type == "integer" else float(val)
-                    num_idx += 1
-            elif param_type == "string":
-                if str_idx < len(quoted):
-                    params[param_name] = quoted[str_idx]
-                    str_idx += 1
+            if param_type in ["integer", "number", "float"] and num_idx < len(numbers):
+                if param_type == "integer":
+                    params[param_name] = int(numbers[num_idx])
+                else:
+                    params[param_name] = float(numbers[num_idx])
+                num_idx += 1
+            elif param_type == "string" and string_match and param_name not in params:
+                params[param_name] = string_match.group(1).strip()
     
     return {func_name: params}

@@ -13,7 +13,7 @@ async def extract_function_call(
 ) -> dict[str, Any]:
     """Extract function name and parameters from user query using regex and string matching."""
     
-    # Parse prompt (may be JSON string with nested structure)
+    # Parse prompt - may be JSON string with nested structure
     try:
         if isinstance(prompt, str):
             data = json.loads(prompt)
@@ -31,7 +31,7 @@ async def extract_function_call(
     except (json.JSONDecodeError, TypeError, KeyError):
         query = str(prompt)
     
-    # Parse functions (may be JSON string)
+    # Parse functions - may be JSON string
     try:
         if isinstance(functions, str):
             funcs = json.loads(functions)
@@ -50,30 +50,46 @@ async def extract_function_call(
     query_lower = query.lower()
     
     # Extract vehicle_type - look for gas, diesel, EV keywords
-    vehicle_type = None
-    if "gas-powered" in query_lower or "gas powered" in query_lower or "gasoline" in query_lower:
-        vehicle_type = "gas"
-    elif "diesel" in query_lower:
-        vehicle_type = "diesel"
-    elif "electric" in query_lower or " ev " in query_lower or query_lower.endswith(" ev"):
-        vehicle_type = "EV"
-    # Also check for just "gas" but not as part of another word
-    elif re.search(r'\bgas\b', query_lower):
-        vehicle_type = "gas"
+    vehicle_type_patterns = [
+        (r'\bgas[-\s]?powered\b', 'gas'),
+        (r'\bgasoline\b', 'gas'),
+        (r'\bgas\b', 'gas'),
+        (r'\bdiesel\b', 'diesel'),
+        (r'\belectric\s*vehicle\b', 'EV'),
+        (r'\bev\b', 'EV'),
+        (r'\belectric\b', 'EV'),
+    ]
     
-    if vehicle_type and "vehicle_type" in params_schema:
-        params["vehicle_type"] = vehicle_type
+    for pattern, vtype in vehicle_type_patterns:
+        if re.search(pattern, query_lower):
+            params["vehicle_type"] = vtype
+            break
     
     # Extract miles_driven - look for number followed by "miles"
-    miles_match = re.search(r'(\d+(?:,\d{3})*)\s*miles', query_lower)
-    if miles_match and "miles_driven" in params_schema:
-        # Remove commas and convert to int
-        miles_str = miles_match.group(1).replace(",", "")
-        params["miles_driven"] = int(miles_str)
+    miles_patterns = [
+        r'(\d+(?:,\d{3})*)\s*miles',  # "1500 miles" or "1,500 miles"
+        r'driving\s+(\d+(?:,\d{3})*)',  # "driving 1500"
+        r'(\d+(?:,\d{3})*)\s*mi\b',  # "1500 mi"
+    ]
     
-    # Extract emission_factor if explicitly mentioned (optional parameter)
-    emission_match = re.search(r'emission\s*factor\s*(?:of|is|:)?\s*(\d+(?:\.\d+)?)', query_lower)
-    if emission_match and "emission_factor" in params_schema:
-        params["emission_factor"] = float(emission_match.group(1))
+    for pattern in miles_patterns:
+        match = re.search(pattern, query_lower)
+        if match:
+            miles_str = match.group(1).replace(',', '')
+            params["miles_driven"] = int(miles_str)
+            break
+    
+    # Extract emission_factor if specified (optional parameter)
+    emission_patterns = [
+        r'emission\s*factor\s*(?:of|is|=|:)?\s*(\d+(?:\.\d+)?)',
+        r'(\d+(?:\.\d+)?)\s*g/mile',
+        r'factor\s*(?:of|is|=|:)?\s*(\d+(?:\.\d+)?)',
+    ]
+    
+    for pattern in emission_patterns:
+        match = re.search(pattern, query_lower)
+        if match:
+            params["emission_factor"] = float(match.group(1))
+            break
     
     return {func_name: params}

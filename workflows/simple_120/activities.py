@@ -47,41 +47,62 @@ async def extract_function_call(
     # Extract parameters based on schema
     params = {}
     
-    # Extract arrays from the query - look for patterns like [1, 2, 3]
-    array_pattern = r'\[([^\]]+)\]'
-    arrays_found = re.findall(array_pattern, query)
-    
-    # Parse arrays into lists of integers
-    parsed_arrays = []
-    for arr_str in arrays_found:
-        try:
-            # Parse comma-separated values
-            values = [int(x.strip()) for x in arr_str.split(',') if x.strip()]
-            if values:
-                parsed_arrays.append(values)
-        except ValueError:
-            continue
-    
-    # Check for equal_variance mention
-    equal_variance = True  # default
-    query_lower = query.lower()
-    if "unequal variance" in query_lower or "not equal variance" in query_lower or "assuming unequal" in query_lower:
-        equal_variance = False
-    elif "equal variance" in query_lower or "assuming equal" in query_lower:
-        equal_variance = True
-    
-    # Map extracted values to parameter names
     for param_name, param_info in props.items():
         param_type = param_info.get("type", "string")
         
         if param_type == "array":
-            # Assign arrays in order: group1 gets first, group2 gets second
-            if param_name == "group1" and len(parsed_arrays) >= 1:
-                params[param_name] = parsed_arrays[0]
-            elif param_name == "group2" and len(parsed_arrays) >= 2:
-                params[param_name] = parsed_arrays[1]
+            # Extract arrays from query - look for patterns like [1, 2, 3] or Group A [1, 2, 3]
+            # Pattern to match arrays with optional group labels
+            array_pattern = r'\[([^\]]+)\]'
+            arrays_found = re.findall(array_pattern, query)
+            
+            # Map arrays to parameters based on order (group1 first, group2 second)
+            if param_name == "group1" and len(arrays_found) >= 1:
+                # Parse the first array
+                items = [int(x.strip()) for x in arrays_found[0].split(',') if x.strip().lstrip('-').isdigit()]
+                params[param_name] = items
+            elif param_name == "group2" and len(arrays_found) >= 2:
+                # Parse the second array
+                items = [int(x.strip()) for x in arrays_found[1].split(',') if x.strip().lstrip('-').isdigit()]
+                params[param_name] = items
+        
         elif param_type == "boolean":
+            # Look for boolean indicators in the query
+            query_lower = query.lower()
+            
             if param_name == "equal_variance":
-                params[param_name] = equal_variance
+                # Check for explicit mentions of equal/unequal variance
+                if "equal variance" in query_lower or "assuming equal" in query_lower:
+                    params[param_name] = True
+                elif "unequal variance" in query_lower or "not equal variance" in query_lower:
+                    params[param_name] = False
+                # Use default if specified in schema
+                elif "default" in param_info:
+                    params[param_name] = param_info["default"]
+            else:
+                # Generic boolean extraction
+                if "true" in query_lower or "yes" in query_lower:
+                    params[param_name] = True
+                elif "false" in query_lower or "no" in query_lower:
+                    params[param_name] = False
+                elif "default" in param_info:
+                    params[param_name] = param_info["default"]
+        
+        elif param_type == "integer":
+            # Extract integers
+            numbers = re.findall(r'\b(\d+)\b', query)
+            if numbers:
+                params[param_name] = int(numbers[0])
+        
+        elif param_type == "number":
+            # Extract numbers (including floats)
+            numbers = re.findall(r'\b(\d+(?:\.\d+)?)\b', query)
+            if numbers:
+                params[param_name] = float(numbers[0])
+        
+        elif param_type == "string":
+            # For string params, try to extract relevant text
+            # This is a fallback - specific patterns should be added as needed
+            pass
     
     return {func_name: params}

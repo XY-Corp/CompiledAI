@@ -80,22 +80,22 @@ async def extract_function_call(
     if country_match and "country" in params_schema:
         country = country_match.group(1).strip()
         # Clean up common country names
-        if country.upper() in ["USA", "US", "U.S.A.", "U.S."]:
+        if country.upper() in ["USA", "US"]:
             country = "USA"
         params["country"] = country
     elif "country" in params_schema:
-        # Use default if specified in schema
-        default_country = params_schema["country"].get("default")
+        # Check for default value
+        default_country = params_schema.get("country", {}).get("default")
         if default_country:
             params["country"] = default_country
     
     # Fallback: try to extract any capitalized words as company names
     if "company1" not in params or "company2" not in params:
         # Find capitalized words that could be company names
-        capitalized = re.findall(r'\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\b', query)
+        capitalized_words = re.findall(r'\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\b', query)
         # Filter out common words
         common_words = {"Find", "The", "USA", "UK", "Court", "Case", "Latest"}
-        companies = [w for w in capitalized if w not in common_words]
+        companies = [w for w in capitalized_words if w not in common_words]
         
         if len(companies) >= 2:
             if "company1" not in params:

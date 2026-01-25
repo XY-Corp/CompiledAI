@@ -20,7 +20,7 @@
   "execution_pattern": "sequence",
   "reasoning": "BFCL template: single activity for function call extraction",
   "metrics": {
-    "total_tokens": 20182,
+    "total_tokens": 20642,
     "regeneration_count": 1
   }
 }

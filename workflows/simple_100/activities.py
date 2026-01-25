@@ -77,11 +77,10 @@ async def extract_function_call(
                     num_idx += 1
             elif param_name == "speed_of_light":
                 # Look for explicit speed mention, otherwise skip (has default)
-                speed_match = re.search(r'speed\s*(?:of\s*light)?\s*(?:is|=|:)?\s*(\d+)', query, re.IGNORECASE)
+                speed_match = re.search(r'speed.*?(\d+)', query, re.IGNORECASE)
                 if speed_match:
-                    value = speed_match.group(1)
-                    params[param_name] = int(float(value)) if param_type == "integer" else float(value)
-                # Don't add if not explicitly mentioned - it has a default
+                    params[param_name] = int(speed_match.group(1))
+                # Don't include if not explicitly mentioned (has default value)
             else:
                 # Generic number extraction for other numeric params
                 if num_idx < len(numbers):
@@ -91,15 +90,9 @@ async def extract_function_call(
         
         elif param_type == "string":
             # For string parameters, try pattern matching
-            # Look for "for X" or "in X" or "of X" patterns
-            string_match = re.search(
-                rf'{param_name}[:\s]+(["\']?)([^"\']+)\1|(?:for|in|of|with)\s+([A-Za-z\s]+?)(?:\s+(?:and|with|,|$))',
-                query,
-                re.IGNORECASE
-            )
+            # Look for patterns like "for X" or "in X" or "from X"
+            string_match = re.search(r'(?:for|in|from|to)\s+([A-Za-z\s]+?)(?:\s+(?:and|with|,|to|from)|$)', query, re.IGNORECASE)
             if string_match:
-                value = string_match.group(2) or string_match.group(3)
-                if value:
-                    params[param_name] = value.strip()
+                params[param_name] = string_match.group(1).strip()
     
     return {func_name: params}

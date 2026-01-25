@@ -25,15 +25,12 @@ async def extract_function_call(
         # Extract user query from BFCL format: {"question": [[{"role": "user", "content": "..."}]]}
         if "question" in data and isinstance(data["question"], list):
             if len(data["question"]) > 0 and isinstance(data["question"][0], list):
-                if len(data["question"][0]) > 0 and isinstance(data["question"][0][0], dict):
-                    query = data["question"][0][0].get("content", str(prompt))
-                else:
-                    query = str(prompt)
+                query = data["question"][0][0].get("content", str(prompt))
             else:
                 query = str(prompt)
         else:
             query = str(prompt)
-    except (json.JSONDecodeError, TypeError):
+    except (json.JSONDecodeError, TypeError, KeyError):
         query = str(prompt)
     
     # Parse functions - may be JSON string
@@ -63,7 +60,7 @@ async def extract_function_call(
             # Look for patterns like "radius of 4" or "4 inches" or just numbers
             numbers = re.findall(r'\b(\d+(?:\.\d+)?)\b', query)
             if numbers:
-                # For radius/diameter/size type params, take the first number
+                # For radius/circumference context, take the first number
                 if param_type == "integer":
                     params[param_name] = int(float(numbers[0]))
                 else:
@@ -79,19 +76,17 @@ async def extract_function_call(
                     (r'\b(meters|meter|m)\b', 'm'),
                     (r'\b(feet|foot|ft)\b', 'feet'),
                     (r'\b(millimeters|millimeter|mm)\b', 'mm'),
-                    (r'\b(kilometers|kilometer|km)\b', 'km'),
-                    (r'\b(miles|mile|mi)\b', 'miles'),
-                    (r'\b(yards|yard|yd)\b', 'yards'),
                 ]
                 
+                found_unit = None
                 for pattern, unit_value in unit_patterns:
                     if re.search(pattern, query, re.IGNORECASE):
-                        params[param_name] = unit_value
+                        found_unit = unit_value
                         break
                 
-                # If no unit found and not required, skip (use default)
-                if param_name not in params and param_name not in required_params:
-                    continue
+                # Only add unit if found (it's optional with default 'cm')
+                if found_unit:
+                    params[param_name] = found_unit
             else:
                 # Generic string extraction - look for quoted strings or key phrases
                 quoted = re.findall(r'"([^"]+)"', query)

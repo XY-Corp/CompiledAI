@@ -13,29 +13,25 @@ async def extract_function_call(
 ) -> dict[str, Any]:
     """Extract function call parameters from user query and return as {func_name: {params}}."""
     
-    # Parse prompt (may be JSON string with nested structure)
+    # Parse prompt - may be JSON string or dict
     try:
         if isinstance(prompt, str):
             data = json.loads(prompt)
         else:
             data = prompt
         
-        # Extract user query from BFCL format: {"question": [[{"role": "user", "content": "..."}]]}
-        if isinstance(data, dict) and "question" in data:
-            question_data = data["question"]
-            if isinstance(question_data, list) and len(question_data) > 0:
-                if isinstance(question_data[0], list) and len(question_data[0]) > 0:
-                    query = question_data[0][0].get("content", str(prompt))
-                else:
-                    query = str(prompt)
+        # Extract user query from nested structure
+        if "question" in data and isinstance(data["question"], list):
+            if len(data["question"]) > 0 and isinstance(data["question"][0], list):
+                query = data["question"][0][0].get("content", str(prompt))
             else:
                 query = str(prompt)
         else:
             query = str(prompt)
-    except (json.JSONDecodeError, TypeError):
+    except (json.JSONDecodeError, TypeError, KeyError):
         query = str(prompt)
     
-    # Parse functions (may be JSON string)
+    # Parse functions - may be JSON string or list
     try:
         if isinstance(functions, str):
             funcs = json.loads(functions)
@@ -59,33 +55,35 @@ async def extract_function_call(
         
         if param_type == "boolean":
             # For boolean params, check if query asks for specific/detailed info
-            if param_name == "specific_function":
-                # "function of X" typically wants specific function info
-                if "function of" in query_lower or "what is the function" in query_lower:
+            # "What is the function" implies wanting specific function info
+            if "specific" in param_name.lower() or "function" in param_desc:
+                # If asking "what is the function of X" - they want specific function
+                if "function" in query_lower or "what" in query_lower:
                     params[param_name] = True
                 else:
                     params[param_name] = False
             else:
-                # Default boolean handling
                 params[param_name] = True
         
         elif param_type == "string":
             # Extract string values based on parameter name/description
-            if param_name == "molecule" or "molecule" in param_desc:
+            if "molecule" in param_name.lower() or "molecule" in param_desc:
                 # Look for molecule names - common patterns
-                # "function of X in Y" or "What is the function of X"
+                # "function of X in Y" or "X in Y"
                 molecule_patterns = [
                     r'function of\s+([A-Za-z0-9\s]+?)\s+in',
                     r'role of\s+([A-Za-z0-9\s]+?)\s+in',
-                    r'what does\s+([A-Za-z0-9\s]+?)\s+do',
+                    r'what (?:is|does)\s+([A-Za-z0-9\s]+?)\s+(?:do\s+)?in',
+                    r'([A-Za-z0-9\s]+?)\s+(?:function|role)\s+in',
                 ]
+                
                 for pattern in molecule_patterns:
                     match = re.search(pattern, query, re.IGNORECASE)
                     if match:
                         params[param_name] = match.group(1).strip()
                         break
                 
-                # If no match, try to find known molecule names
+                # Fallback: look for known molecule names
                 if param_name not in params:
                     known_molecules = ["ATP synthase", "ATP", "NADH", "cytochrome", "glucose", "pyruvate"]
                     for mol in known_molecules:
@@ -93,34 +91,43 @@ async def extract_function_call(
                             params[param_name] = mol
                             break
             
-            elif param_name == "organelle" or "organelle" in param_desc:
+            elif "organelle" in param_name.lower() or "organelle" in param_desc:
                 # Look for organelle names
                 organelle_patterns = [
                     r'in\s+(?:the\s+)?([A-Za-z]+)(?:\?|$|\s)',
                     r'within\s+(?:the\s+)?([A-Za-z]+)',
                 ]
-                for pattern in organelle_patterns:
-                    match = re.search(pattern, query, re.IGNORECASE)
-                    if match:
-                        candidate = match.group(1).strip().rstrip('?')
-                        # Validate it's an organelle
-                        known_organelles = ["mitochondria", "mitochondrion", "chloroplast", "nucleus", 
-                                          "ribosome", "endoplasmic reticulum", "golgi", "lysosome",
-                                          "vacuole", "cytoplasm", "cell membrane"]
-                        for org in known_organelles:
-                            if candidate.lower() in org or org in candidate.lower():
-                                params[param_name] = candidate
-                                break
-                        if param_name in params:
-                            break
                 
-                # Direct search for known organelles
+                known_organelles = ["mitochondria", "chloroplast", "nucleus", "ribosome", 
+                                   "endoplasmic reticulum", "golgi", "lysosome", "vacuole",
+                                   "cell membrane", "cytoplasm"]
+                
+                # First check for known organelles in query
+                for org in known_organelles:
+                    if org.lower() in query_lower:
+                        params[param_name] = org
+                        break
+                
+                # Fallback to pattern matching
                 if param_name not in params:
-                    known_organelles = ["mitochondria", "chloroplast", "nucleus", "ribosome", 
-                                      "endoplasmic reticulum", "golgi", "lysosome"]
-                    for org in known_organelles:
-                        if org in query_lower:
-                            params[param_name] = org
+                    for pattern in organelle_patterns:
+                        match = re.search(pattern, query, re.IGNORECASE)
+                        if match:
+                            extracted = match.group(1).strip().rstrip('?')
+                            # Verify it's a known organelle
+                            for org in known_organelles:
+                                if extracted.lower() in org.lower() or org.lower() in extracted.lower():
+                                    params[param_name] = org
+                                    break
                             break
+        
+        elif param_type in ["integer", "number", "float"]:
+            # Extract numbers
+            numbers = re.findall(r'\d+(?:\.\d+)?', query)
+            if numbers:
+                if param_type == "integer":
+                    params[param_name] = int(numbers[0])
+                else:
+                    params[param_name] = float(numbers[0])
     
     return {func_name: params}

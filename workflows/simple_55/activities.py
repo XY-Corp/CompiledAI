@@ -11,7 +11,7 @@ async def extract_function_call(
     workflow_definition_id: str | None = None,
     workflow_instance_id: str | None = None,
 ) -> dict[str, Any]:
-    """Extract function name and parameters from user query. Returns {func_name: {params}}."""
+    """Extract function call parameters from user query and return as {func_name: {params}}."""
     
     # Parse prompt - may be JSON string with nested structure
     try:
@@ -21,14 +21,18 @@ async def extract_function_call(
             data = prompt
         
         # Extract user query from BFCL format: {"question": [[{"role": "user", "content": "..."}]]}
-        if "question" in data and isinstance(data["question"], list):
-            if len(data["question"]) > 0 and isinstance(data["question"][0], list):
-                query = data["question"][0][0].get("content", str(prompt))
+        if isinstance(data, dict) and "question" in data:
+            question = data["question"]
+            if isinstance(question, list) and len(question) > 0:
+                if isinstance(question[0], list) and len(question[0]) > 0:
+                    query = question[0][0].get("content", str(prompt))
+                else:
+                    query = str(question[0])
             else:
                 query = str(prompt)
         else:
             query = str(prompt)
-    except (json.JSONDecodeError, TypeError, KeyError):
+    except (json.JSONDecodeError, TypeError):
         query = str(prompt)
     
     # Parse functions - may be JSON string
@@ -40,10 +44,11 @@ async def extract_function_call(
     except (json.JSONDecodeError, TypeError):
         funcs = []
     
-    # Get function details
+    # Get target function details
     func = funcs[0] if funcs else {}
     func_name = func.get("name", "")
     params_schema = func.get("parameters", {}).get("properties", {})
+    required_params = func.get("parameters", {}).get("required", [])
     
     # Extract parameters based on schema
     params = {}
@@ -57,16 +62,16 @@ async def extract_function_call(
             # Check for boolean indicators in query
             # Look for "detailed" keyword or similar
             if "detailed" in param_name.lower() or "detail" in param_desc:
-                # Check if user wants detailed info
-                if "detailed" in query_lower or "detail" in query_lower:
+                # Check if user explicitly asks for detailed info
+                if any(word in query_lower for word in ["detailed", "detail", "in detail", "comprehensive", "thorough", "full"]):
                     params[param_name] = True
                 else:
-                    # Use default if available, otherwise False
-                    default = param_info.get("default", "false")
-                    params[param_name] = default.lower() == "true" if isinstance(default, str) else bool(default)
+                    # Use default if specified, otherwise False
+                    default_val = param_info.get("default", "false")
+                    params[param_name] = default_val.lower() == "true" if isinstance(default_val, str) else bool(default_val)
         
         elif param_type == "integer" or param_type == "number":
-            # Extract numbers with regex
+            # Extract numbers from query
             numbers = re.findall(r'\d+(?:\.\d+)?', query)
             if numbers:
                 if param_type == "integer":
@@ -75,26 +80,29 @@ async def extract_function_call(
                     params[param_name] = float(numbers[0])
         
         elif param_type == "string":
-            # Extract string values based on context
+            # Extract string value based on context
+            # For cell_type, look for patterns like "human cell", "X cell", "type of cell"
             if "cell" in param_name.lower() or "cell" in param_desc:
-                # Extract cell type - look for patterns like "human cell", "X cell"
-                cell_patterns = [
-                    r'(?:about|of)\s+(?:the\s+)?(?:structure\s+of\s+)?(\w+(?:\s+\w+)?)\s+cell',
-                    r'(\w+(?:\s+\w+)?)\s+cell\s+(?:structure|info|information)',
-                    r'information\s+about\s+(?:the\s+)?(\w+(?:\s+\w+)?)\s+cell',
-                    r'(\w+)\s+cell',
+                # Pattern: "X cell" or "cell of X" or "about X cell"
+                patterns = [
+                    r'(?:about|of|the)\s+(?:the\s+)?(?:structure\s+of\s+)?(\w+)\s+cell',
+                    r'(\w+)\s+cell(?:s)?(?:\s+structure)?',
+                    r'cell\s+(?:type|of)\s+(\w+)',
+                    r'information\s+about\s+(?:the\s+)?(\w+)',
                 ]
                 
-                for pattern in cell_patterns:
+                for pattern in patterns:
                     match = re.search(pattern, query_lower)
                     if match:
-                        cell_type = match.group(1).strip()
-                        params[param_name] = cell_type
-                        break
+                        extracted = match.group(1).strip()
+                        # Filter out common non-cell-type words
+                        if extracted not in ["the", "a", "an", "this", "that", "detailed", "structure"]:
+                            params[param_name] = extracted
+                            break
                 
-                # If no match found, try to extract any noun before "cell"
-                if param_name not in params:
-                    # Fallback: look for "human cell" specifically
+                # If no match found but it's required, try to extract key noun
+                if param_name not in params and param_name in required_params:
+                    # Default extraction: look for key subject
                     if "human" in query_lower:
                         params[param_name] = "human"
             else:
@@ -102,5 +110,14 @@ async def extract_function_call(
                 quoted = re.findall(r'"([^"]+)"', query)
                 if quoted:
                     params[param_name] = quoted[0]
+                elif param_name in required_params:
+                    # Try to extract meaningful content
+                    words = re.findall(r'\b[a-zA-Z]+\b', query)
+                    if words:
+                        # Filter common words
+                        stop_words = {"find", "me", "get", "the", "a", "an", "about", "information", "detailed", "for", "of", "and", "or", "with"}
+                        meaningful = [w for w in words if w.lower() not in stop_words]
+                        if meaningful:
+                            params[param_name] = meaningful[0]
     
     return {func_name: params}

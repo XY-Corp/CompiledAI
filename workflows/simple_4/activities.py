@@ -83,28 +83,37 @@ async def extract_function_call(
         # Convert to appropriate type
         if value is not None:
             if param_type == "integer":
-                params[param_name] = int(float(value))
+                try:
+                    params[param_name] = int(value)
+                except ValueError:
+                    params[param_name] = int(float(value))
             elif param_type in ["number", "float"]:
                 params[param_name] = float(value)
             else:
                 params[param_name] = value
     
-    # If we didn't find all params with named patterns, try extracting all numbers in order
+    # If we didn't find all params, try extracting all numbers in order
     if len(params) < len(params_schema):
         # Extract all numbers from query
         all_numbers = re.findall(r'-?\d+(?:\.\d+)?', query)
         
-        # Map numbers to parameters in order (for params we haven't found yet)
+        # Map numbers to missing params in order
         num_idx = 0
         for param_name, param_info in params_schema.items():
             if param_name not in params and num_idx < len(all_numbers):
                 param_type = param_info.get("type", "string")
+                value = all_numbers[num_idx]
+                
                 if param_type == "integer":
-                    params[param_name] = int(float(all_numbers[num_idx]))
+                    try:
+                        params[param_name] = int(value)
+                    except ValueError:
+                        params[param_name] = int(float(value))
                 elif param_type in ["number", "float"]:
-                    params[param_name] = float(all_numbers[num_idx])
+                    params[param_name] = float(value)
                 else:
-                    params[param_name] = all_numbers[num_idx]
+                    params[param_name] = value
+                
                 num_idx += 1
     
     return {func_name: params}

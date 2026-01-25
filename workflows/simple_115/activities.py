@@ -50,56 +50,38 @@ async def extract_function_call(
     params = {}
     
     # For binomial probability: "exactly X heads in Y tosses"
-    # Pattern 1: "exactly N successes in M trials"
-    exact_pattern = re.search(r'exactly\s+(\d+)\s+\w+\s+in\s+(\d+)', query, re.IGNORECASE)
+    # Pattern: "exactly {successes} heads in {trials} tosses"
+    binomial_pattern = r'exactly\s+(\d+)\s+\w+\s+in\s+(\d+)\s+(?:tosses|trials|flips)'
+    binomial_match = re.search(binomial_pattern, query, re.IGNORECASE)
     
-    # Pattern 2: "N heads in M tosses" or "N successes in M trials"
-    heads_pattern = re.search(r'(\d+)\s+(?:heads|successes|wins)\s+in\s+(\d+)', query, re.IGNORECASE)
-    
-    # Pattern 3: "getting X out of Y"
-    out_of_pattern = re.search(r'getting\s+(\d+)\s+out\s+of\s+(\d+)', query, re.IGNORECASE)
-    
-    # Extract number of successes and trials
-    number_of_successes = None
-    number_of_trials = None
-    
-    if exact_pattern:
-        number_of_successes = int(exact_pattern.group(1))
-        number_of_trials = int(exact_pattern.group(2))
-    elif heads_pattern:
-        number_of_successes = int(heads_pattern.group(1))
-        number_of_trials = int(heads_pattern.group(2))
-    elif out_of_pattern:
-        number_of_successes = int(out_of_pattern.group(1))
-        number_of_trials = int(out_of_pattern.group(2))
-    else:
-        # Fallback: extract all numbers in order
-        numbers = re.findall(r'\d+', query)
-        if len(numbers) >= 2:
-            # Typically "X in Y" means X successes, Y trials
-            number_of_successes = int(numbers[0])
-            number_of_trials = int(numbers[1])
-    
-    # Build params based on schema
-    for param_name, param_info in params_schema.items():
-        param_type = param_info.get("type", "string") if isinstance(param_info, dict) else "string"
+    if binomial_match and func_name == "calculate_binomial_probability":
+        successes = int(binomial_match.group(1))
+        trials = int(binomial_match.group(2))
+        params["number_of_successes"] = successes
+        params["number_of_trials"] = trials
         
-        if param_name == "number_of_trials" and number_of_trials is not None:
-            params[param_name] = number_of_trials
-        elif param_name == "number_of_successes" and number_of_successes is not None:
-            params[param_name] = number_of_successes
-        elif param_name == "probability_of_success":
-            # Check for "fair coin" (0.5) or explicit probability
-            if "fair" in query.lower():
-                params[param_name] = 0.5
-            else:
-                # Look for explicit probability like "0.3" or "30%"
-                prob_match = re.search(r'probability\s+(?:of\s+)?(\d*\.?\d+)', query, re.IGNORECASE)
-                percent_match = re.search(r'(\d+)%', query)
-                if prob_match:
-                    params[param_name] = float(prob_match.group(1))
-                elif percent_match:
-                    params[param_name] = float(percent_match.group(1)) / 100.0
-                # Use default if not specified (0.5 for fair coin is common default)
+        # Check for probability in query (e.g., "biased coin with 0.6 probability")
+        prob_match = re.search(r'probability\s+(?:of\s+)?(\d+\.?\d*)', query, re.IGNORECASE)
+        if prob_match:
+            params["probability_of_success"] = float(prob_match.group(1))
+        else:
+            # Check if "fair coin" is mentioned - use default 0.5
+            if re.search(r'fair\s+coin', query, re.IGNORECASE):
+                params["probability_of_success"] = 0.5
+    else:
+        # Generic extraction: find all numbers and map to parameters
+        numbers = re.findall(r'\d+(?:\.\d+)?', query)
+        
+        # Map numbers to parameters based on schema order
+        num_idx = 0
+        for param_name, param_info in params_schema.items():
+            param_type = param_info.get("type", "string")
+            
+            if param_type in ["integer", "number", "float"] and num_idx < len(numbers):
+                if param_type == "integer":
+                    params[param_name] = int(numbers[num_idx])
+                else:
+                    params[param_name] = float(numbers[num_idx])
+                num_idx += 1
     
     return {func_name: params}

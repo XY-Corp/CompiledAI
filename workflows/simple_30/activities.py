@@ -54,31 +54,43 @@ async def extract_function_call(
     # For kinematics problem, look for specific patterns
     # "accelerated at X m/s^2" -> acceleration
     accel_match = re.search(r'accelerat\w*\s+(?:at\s+)?(\d+(?:\.\d+)?)\s*m/s', query, re.IGNORECASE)
-    if accel_match and "acceleration" in params_schema:
-        params["acceleration"] = int(float(accel_match.group(1)))
+    if accel_match:
+        accel_val = accel_match.group(1)
+        if "acceleration" in params_schema:
+            param_type = params_schema["acceleration"].get("type", "integer")
+            if param_type == "integer":
+                params["acceleration"] = int(float(accel_val))
+            else:
+                params["acceleration"] = float(accel_val)
     
     # "distance of X meters" or "X meters" -> distance
-    dist_match = re.search(r'(?:distance\s+(?:of\s+)?)?(\d+(?:\.\d+)?)\s*(?:meters|m(?:\b|[^/]))', query, re.IGNORECASE)
-    if dist_match and "distance" in params_schema:
-        params["distance"] = int(float(dist_match.group(1)))
+    dist_match = re.search(r'(?:distance\s+(?:of\s+)?)?(\d+(?:\.\d+)?)\s*(?:meters|m(?:eter)?(?:\b|$))', query, re.IGNORECASE)
+    if dist_match:
+        dist_val = dist_match.group(1)
+        if "distance" in params_schema:
+            param_type = params_schema["distance"].get("type", "integer")
+            if param_type == "integer":
+                params["distance"] = int(float(dist_val))
+            else:
+                params["distance"] = float(dist_val)
     
-    # "started from rest" means initial_velocity = 0
-    if re.search(r'from\s+rest|initial(?:ly)?\s+(?:at\s+)?(?:rest|0)', query, re.IGNORECASE):
+    # Check for "started from rest" -> initial_velocity = 0
+    if re.search(r'from\s+rest|initial(?:ly)?\s+(?:at\s+)?rest|start(?:ed|ing)?\s+(?:from\s+)?rest', query, re.IGNORECASE):
         if "initial_velocity" in params_schema:
             params["initial_velocity"] = 0.0
     
-    # If we didn't find specific patterns, try to map numbers to params by order
+    # If we didn't find specific patterns, fall back to positional extraction
     if not params and numbers:
-        param_names = list(params_schema.keys())
-        for i, num in enumerate(numbers):
-            if i < len(param_names):
-                param_name = param_names[i]
-                param_type = params_schema[param_name].get("type", "string")
-                if param_type == "integer":
-                    params[param_name] = int(float(num))
-                elif param_type in ["float", "number"]:
-                    params[param_name] = float(num)
-                else:
-                    params[param_name] = num
+        num_idx = 0
+        for param_name, param_info in params_schema.items():
+            if num_idx >= len(numbers):
+                break
+            param_type = param_info.get("type", "string")
+            if param_type in ["integer", "int"]:
+                params[param_name] = int(float(numbers[num_idx]))
+                num_idx += 1
+            elif param_type in ["float", "number"]:
+                params[param_name] = float(numbers[num_idx])
+                num_idx += 1
     
     return {func_name: params}

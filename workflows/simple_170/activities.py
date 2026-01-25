@@ -43,12 +43,12 @@ async def extract_function_call(
     # Get function details
     func = funcs[0] if funcs else {}
     func_name = func.get("name", "")
-    props = func.get("parameters", {}).get("properties", {})
+    params_schema = func.get("parameters", {}).get("properties", {})
     
     # Extract parameters based on schema
     params = {}
     
-    for param_name, param_info in props.items():
+    for param_name, param_info in params_schema.items():
         param_type = param_info.get("type", "string")
         param_desc = param_info.get("description", "").lower()
         
@@ -66,38 +66,33 @@ async def extract_function_call(
                     params[param_name] = int(max(years, key=int))
             else:
                 # Generic integer extraction
-                numbers = re.findall(r'\d+', query)
+                numbers = re.findall(r'\b(\d+)\b', query)
                 if numbers:
                     params[param_name] = int(numbers[0])
         
         elif param_type == "string":
             # Extract subject/topic - look for keywords based on description
             if "subject" in param_name or "topic" in param_name or "matter" in param_desc:
-                # Common patterns: "about X", "regarding X", "case about X"
-                patterns = [
-                    r'about\s+(\w+)',
-                    r'regarding\s+(\w+)',
-                    r'case\s+(?:about\s+)?(\w+)',
-                    r'historical\s+(?:law\s+)?case\s+(?:about\s+)?(\w+)',
-                ]
+                # Common legal subjects to look for
+                subjects = ["fraud", "theft", "murder", "assault", "robbery", "embezzlement", 
+                           "negligence", "breach", "contract", "patent", "copyright", "trademark",
+                           "bankruptcy", "discrimination", "harassment", "defamation"]
                 
-                for pattern in patterns:
-                    match = re.search(pattern, query, re.IGNORECASE)
-                    if match:
-                        subject = match.group(1).lower()
-                        # Filter out common non-subject words
-                        if subject not in ['from', 'to', 'the', 'a', 'an', 'in', 'on']:
-                            params[param_name] = subject
-                            break
+                query_lower = query.lower()
+                for subject in subjects:
+                    if subject in query_lower:
+                        params[param_name] = subject
+                        break
                 
-                # Fallback: look for common legal subjects
+                # If no known subject found, try to extract word after "about"
                 if param_name not in params:
-                    legal_subjects = ['fraud', 'theft', 'murder', 'assault', 'robbery', 
-                                     'contract', 'negligence', 'bankruptcy', 'patent', 
-                                     'copyright', 'trademark', 'discrimination']
-                    for subject in legal_subjects:
-                        if subject in query.lower():
-                            params[param_name] = subject
-                            break
+                    about_match = re.search(r'about\s+(\w+)', query_lower)
+                    if about_match:
+                        params[param_name] = about_match.group(1)
+            else:
+                # Generic string extraction - try to find quoted text or key phrases
+                quoted = re.findall(r'"([^"]+)"', query)
+                if quoted:
+                    params[param_name] = quoted[0]
     
     return {func_name: params}

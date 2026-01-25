@@ -51,30 +51,72 @@ async def extract_function_call(
     func_name = func.get("name", "")
     params_schema = func.get("parameters", {}).get("properties", {})
     
+    # Extract parameters using regex
+    params = {}
+    
     # Extract all numbers from the query
     numbers = re.findall(r'\d+(?:\.\d+)?', query)
     
-    # Build parameters based on schema
-    params = {}
-    num_idx = 0
+    # Look for unit specification (e.g., "in km/h", "to km/h")
+    unit_match = re.search(r'(?:in|to)\s+([a-zA-Z/]+(?:/[a-zA-Z]+)?)', query, re.IGNORECASE)
     
+    # Map extracted values to parameters based on schema
+    num_idx = 0
     for param_name, param_info in params_schema.items():
         param_type = param_info.get("type", "string")
+        param_desc = param_info.get("description", "").lower()
         
         if param_type == "integer":
-            if num_idx < len(numbers):
+            # Try to match based on description context
+            if "distance" in param_desc and num_idx < len(numbers):
+                # Look for distance-related number (usually larger or mentioned with meters)
+                distance_match = re.search(r'(\d+(?:\.\d+)?)\s*(?:meters?|m\b|km)', query, re.IGNORECASE)
+                if distance_match:
+                    params[param_name] = int(float(distance_match.group(1)))
+                elif num_idx < len(numbers):
+                    params[param_name] = int(float(numbers[num_idx]))
+                    num_idx += 1
+            elif "time" in param_desc and num_idx < len(numbers):
+                # Look for time-related number (usually mentioned with seconds)
+                time_match = re.search(r'(\d+(?:\.\d+)?)\s*(?:seconds?|s\b|minutes?|hours?)', query, re.IGNORECASE)
+                if time_match:
+                    params[param_name] = int(float(time_match.group(1)))
+                elif num_idx < len(numbers):
+                    params[param_name] = int(float(numbers[num_idx]))
+                    num_idx += 1
+            elif num_idx < len(numbers):
                 params[param_name] = int(float(numbers[num_idx]))
                 num_idx += 1
+                
         elif param_type == "number" or param_type == "float":
             if num_idx < len(numbers):
                 params[param_name] = float(numbers[num_idx])
                 num_idx += 1
+                
         elif param_type == "string":
-            # For string params, look for specific patterns
-            # Check for unit specification (km/h, m/s, mph, etc.)
-            if "unit" in param_name.lower():
-                unit_match = re.search(r'\b(km/h|m/s|mph|km/s|ft/s|knots?)\b', query, re.IGNORECASE)
+            # Check if this is a unit parameter
+            if "unit" in param_name.lower() or "unit" in param_desc:
                 if unit_match:
-                    params[param_name] = unit_match.group(1).lower()
+                    params[param_name] = unit_match.group(1)
+    
+    # For calculate_speed specifically, ensure we get distance and time correctly
+    if func_name == "calculate_speed":
+        # Re-extract with more specific patterns
+        distance_match = re.search(r'(\d+(?:\.\d+)?)\s*(?:meters?|m\b)', query, re.IGNORECASE)
+        time_match = re.search(r'(\d+(?:\.\d+)?)\s*(?:seconds?|s\b)', query, re.IGNORECASE)
+        
+        if distance_match:
+            params["distance"] = int(float(distance_match.group(1)))
+        elif "distance" in params_schema and len(numbers) >= 1:
+            params["distance"] = int(float(numbers[0]))
+            
+        if time_match:
+            params["time"] = int(float(time_match.group(1)))
+        elif "time" in params_schema and len(numbers) >= 2:
+            params["time"] = int(float(numbers[1]))
+        
+        # Check for unit conversion request
+        if unit_match:
+            params["to_unit"] = unit_match.group(1)
     
     return {func_name: params}

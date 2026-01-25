@@ -45,43 +45,23 @@ async def extract_function_call(
     func_name = func.get("name", "")
     params_schema = func.get("parameters", {}).get("properties", {})
     
-    # Extract parameters from query
+    # Extract parameters from query using regex and string matching
     params = {}
     
     # Extract docket_number - look for numeric patterns
     # Pattern: "docket number 123456" or "case 123456" or just a standalone number
-    docket_patterns = [
-        r'docket\s*(?:number|#|no\.?)?\s*(\d+)',
-        r'case\s*(?:number|#|no\.?)?\s*(\d+)',
-        r'identified\s+by\s+(?:docket\s+number\s+)?(\d+)',
-    ]
-    
-    docket_number = None
-    for pattern in docket_patterns:
-        match = re.search(pattern, query, re.IGNORECASE)
-        if match:
-            docket_number = match.group(1)
-            break
-    
-    # Fallback: find any standalone number that looks like a docket number
-    if not docket_number:
+    docket_match = re.search(r'(?:docket\s*(?:number)?|case\s*(?:number)?|identified\s*by)\s*[#]?(\d+)', query, re.IGNORECASE)
+    if docket_match:
+        params["docket_number"] = docket_match.group(1)
+    else:
+        # Fallback: find any standalone number that could be a docket number
         numbers = re.findall(r'\b(\d{4,})\b', query)
         if numbers:
-            docket_number = numbers[0]
-    
-    if docket_number and "docket_number" in params_schema:
-        params["docket_number"] = docket_number
+            params["docket_number"] = numbers[0]
     
     # Extract location - look for state names
-    # Common patterns: "in Texas", "in California", "located in New York"
-    location_patterns = [
-        r'\bin\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\b',
-        r'located\s+in\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)',
-        r'registered\s+in\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)',
-    ]
-    
-    # List of US states for validation
-    us_states = [
+    # Common US states pattern
+    states = [
         "Alabama", "Alaska", "Arizona", "Arkansas", "California", "Colorado",
         "Connecticut", "Delaware", "Florida", "Georgia", "Hawaii", "Idaho",
         "Illinois", "Indiana", "Iowa", "Kansas", "Kentucky", "Louisiana",
@@ -94,57 +74,23 @@ async def extract_function_call(
         "West Virginia", "Wisconsin", "Wyoming"
     ]
     
-    location = None
-    for pattern in location_patterns:
-        match = re.search(pattern, query)
-        if match:
-            potential_location = match.group(1)
-            # Validate it's a state
-            if potential_location in us_states:
-                location = potential_location
+    # Build regex pattern for states (case insensitive)
+    states_pattern = r'\b(' + '|'.join(states) + r')\b'
+    location_match = re.search(states_pattern, query, re.IGNORECASE)
+    if location_match:
+        # Capitalize properly
+        matched_state = location_match.group(1)
+        for state in states:
+            if state.lower() == matched_state.lower():
+                params["location"] = state
                 break
-    
-    # Fallback: search for any state name in the query
-    if not location:
-        for state in us_states:
-            if state.lower() in query.lower():
-                location = state
-                break
-    
-    if location and "location" in params_schema:
-        params["location"] = location
     
     # Extract full_text boolean - look for explicit mentions
-    if "full_text" in params_schema:
-        # Check for negative indicators (don't return full text)
-        negative_patterns = [
-            r"don'?t\s+(?:return|include|show|get)\s+full\s*text",
-            r"no\s+full\s*text",
-            r"without\s+full\s*text",
-            r"exclude\s+full\s*text",
-        ]
-        
-        # Check for positive indicators
-        positive_patterns = [
-            r"(?:return|include|show|get|with)\s+full\s*text",
-            r"full\s*text\s*=\s*true",
-        ]
-        
-        full_text = None
-        
-        for pattern in negative_patterns:
-            if re.search(pattern, query, re.IGNORECASE):
-                full_text = False
-                break
-        
-        if full_text is None:
-            for pattern in positive_patterns:
-                if re.search(pattern, query, re.IGNORECASE):
-                    full_text = True
-                    break
-        
-        # Only include if explicitly mentioned
-        if full_text is not None:
-            params["full_text"] = full_text
+    # Check for "full text" mentions and whether they're negated
+    if re.search(r"don'?t\s+(?:return\s+)?full\s*text|no\s+full\s*text|without\s+full\s*text", query, re.IGNORECASE):
+        params["full_text"] = False
+    elif re.search(r"(?:return|include|with)\s+full\s*text|full\s*text\s*=\s*true", query, re.IGNORECASE):
+        params["full_text"] = True
+    # If not mentioned, don't include it (let default apply)
     
     return {func_name: params}

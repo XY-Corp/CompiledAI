@@ -65,7 +65,7 @@ async def extract_function_call(
             # Try specific patterns first based on param name
             specific_patterns = [
                 rf'{param_name}\s*(?:of|is|=|:)?\s*(\d+(?:\.\d+)?)',
-                rf'(?:with|having)\s+{param_name}\s+(\d+(?:\.\d+)?)',
+                rf'(?:with|has)\s+{param_name}\s+(\d+(?:\.\d+)?)',
                 rf'(\d+(?:\.\d+)?)\s*{param_name}',
             ]
             
@@ -89,21 +89,25 @@ async def extract_function_call(
                     params[param_name] = float(value)
         
         elif param_type == "string":
-            # For string params, check if there's a default mentioned in description
-            # Only extract if explicitly provided in query
+            # For string params, look for explicit mentions or use defaults
+            # Check if there's a default mentioned in description
+            default_match = re.search(r"default\s+(?:is\s+)?['\"]?(\w+)['\"]?", param_desc, re.IGNORECASE)
             
-            # Look for patterns like "units cm", "in cm", "units: cm"
+            # Look for explicit value in query
             string_patterns = [
                 rf'{param_name}\s*(?:of|is|=|:)?\s*["\']?(\w+)["\']?',
-                rf'in\s+(\w+)\s*$',  # "in cm" at end
+                rf'in\s+(\w+)\s*{param_name}',
             ]
             
+            value = None
             for pattern in string_patterns:
                 match = re.search(pattern, query, re.IGNORECASE)
                 if match:
-                    params[param_name] = match.group(1)
+                    value = match.group(1)
                     break
             
-            # Don't add optional string params if not found - let defaults apply
+            # Only include if explicitly mentioned in query (don't add defaults for optional params)
+            if value is not None:
+                params[param_name] = value
     
     return {func_name: params}

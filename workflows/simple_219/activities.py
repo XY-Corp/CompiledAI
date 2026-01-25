@@ -11,8 +11,10 @@ async def extract_function_call(
     workflow_definition_id: str | None = None,
     workflow_instance_id: str | None = None,
 ) -> dict[str, Any]:
-    """Extract function call parameters from user query and return as {func_name: {params}}."""
+    """Extract function name and parameters from user query and function schema.
     
+    Returns a dict with function name as key and parameters as nested object.
+    """
     # Parse prompt - may be JSON string with nested structure
     try:
         if isinstance(prompt, str):
@@ -21,11 +23,10 @@ async def extract_function_call(
             data = prompt
         
         # Extract user query from BFCL format: {"question": [[{"role": "user", "content": "..."}]]}
-        if isinstance(data, dict) and "question" in data:
-            question_data = data["question"]
-            if isinstance(question_data, list) and len(question_data) > 0:
-                if isinstance(question_data[0], list) and len(question_data[0]) > 0:
-                    query = question_data[0][0].get("content", str(prompt))
+        if "question" in data and isinstance(data["question"], list):
+            if len(data["question"]) > 0 and isinstance(data["question"][0], list):
+                if len(data["question"][0]) > 0 and isinstance(data["question"][0][0], dict):
+                    query = data["question"][0][0].get("content", str(prompt))
                 else:
                     query = str(prompt)
             else:
@@ -58,48 +59,46 @@ async def extract_function_call(
         param_desc = param_info.get("description", "").lower()
         default_val = param_info.get("default")
         
-        if param_name == "neuron_type":
-            # Look for neurotransmitter types: GABA, Glutamate, Dopamine, etc.
+        extracted_value = None
+        
+        # For neuron_type parameter - look for neurotransmitter types
+        if "neuron" in param_name.lower() or "neurotransmitter" in param_desc:
+            # Common neurotransmitter types
             neurotransmitters = ["gaba", "glutamate", "dopamine", "serotonin", "acetylcholine", "norepinephrine"]
             for nt in neurotransmitters:
                 if nt in query_lower:
-                    params[param_name] = nt.upper() if nt == "gaba" else nt.capitalize()
+                    extracted_value = nt.upper() if nt == "gaba" else nt.capitalize()
                     break
-            
-            # Also try regex for "produces X neurotransmitters" or "X neuron"
-            if param_name not in params:
-                match = re.search(r'produces?\s+(\w+)\s+neurotransmitter', query_lower)
-                if match:
-                    params[param_name] = match.group(1).upper() if match.group(1).lower() == "gaba" else match.group(1).capitalize()
-                else:
-                    match = re.search(r'(\w+)\s+neuron', query_lower)
-                    if match:
-                        params[param_name] = match.group(1).upper() if match.group(1).lower() == "gaba" else match.group(1).capitalize()
         
-        elif param_name == "brain_region":
-            # Look for brain region patterns
-            # Check for "all part" or "all regions" or "entire brain"
-            if "all part" in query_lower or "all region" in query_lower or "entire brain" in query_lower or "whole brain" in query_lower:
-                params[param_name] = "All"
-            else:
-                # Try to extract specific brain regions
-                brain_regions = ["hippocampus", "cortex", "cerebellum", "amygdala", "thalamus", 
-                                "hypothalamus", "striatum", "brainstem", "prefrontal cortex"]
-                for region in brain_regions:
-                    if region in query_lower:
-                        params[param_name] = region.capitalize()
-                        break
-                
-                # Check for pattern like "in the X region" or "of the X"
-                if param_name not in params:
-                    match = re.search(r"(?:in|of)\s+(?:the\s+)?(?:rat'?s?\s+)?(\w+(?:\s+\w+)?)\s+(?:region|part|area)", query_lower)
-                    if match:
-                        region_text = match.group(1).strip()
-                        if region_text not in ["brain", "rat", "rat's"]:
-                            params[param_name] = region_text.capitalize()
-                
-                # Use default if available and not found
-                if param_name not in params and default_val is not None:
-                    params[param_name] = default_val
+        # For brain_region parameter - look for brain region mentions
+        elif "region" in param_name.lower() or "brain" in param_desc:
+            # Check for "all" or "all part" or "entire"
+            if "all part" in query_lower or "all region" in query_lower or "entire brain" in query_lower:
+                extracted_value = "All"
+            # Check for specific regions
+            brain_regions = ["hippocampus", "cortex", "cerebellum", "thalamus", "hypothalamus", 
+                           "amygdala", "striatum", "brainstem", "prefrontal cortex"]
+            for region in brain_regions:
+                if region in query_lower:
+                    extracted_value = region.capitalize()
+                    break
+            # If "all" is mentioned in context of brain
+            if extracted_value is None and ("all" in query_lower and "brain" in query_lower):
+                extracted_value = "All"
+        
+        # Generic string extraction - look for quoted values
+        if extracted_value is None and param_type == "string":
+            # Try to find quoted strings
+            quoted_match = re.search(r'"([^"]+)"', query)
+            if quoted_match:
+                extracted_value = quoted_match.group(1)
+        
+        # Use default if available and no value extracted
+        if extracted_value is None and default_val is not None:
+            extracted_value = default_val
+        
+        # Only add parameter if we have a value
+        if extracted_value is not None:
+            params[param_name] = extracted_value
     
     return {func_name: params}

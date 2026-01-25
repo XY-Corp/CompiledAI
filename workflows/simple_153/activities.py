@@ -22,12 +22,12 @@ async def extract_function_call(
                 if len(data["question"]) > 0 and isinstance(data["question"][0], list):
                     query = data["question"][0][0].get("content", prompt)
                 else:
-                    query = str(prompt)
+                    query = str(data["question"])
             else:
                 query = str(prompt)
         else:
             query = str(prompt)
-    except (json.JSONDecodeError, TypeError, KeyError):
+    except (json.JSONDecodeError, TypeError):
         query = str(prompt)
     
     # Parse functions (may be JSON string)
@@ -47,27 +47,18 @@ async def extract_function_call(
     # Extract parameters using regex
     params = {}
     
-    # Extract all numbers (integers and floats) from the query
-    # Pattern for currency amounts like $5000
+    # Extract all numbers from the query
+    # Pattern for currency amounts (e.g., $5000)
     currency_match = re.search(r'\$(\d+(?:,\d{3})*(?:\.\d+)?)', query)
-    principal_value = None
-    if currency_match:
-        principal_value = int(currency_match.group(1).replace(',', ''))
     
-    # Pattern for percentage like 3%
-    rate_match = re.search(r'(\d+(?:\.\d+)?)\s*%', query)
-    rate_value = None
-    if rate_match:
-        rate_value = float(rate_match.group(1)) / 100  # Convert percentage to decimal
+    # Pattern for percentages (e.g., 3%)
+    percent_match = re.search(r'(\d+(?:\.\d+)?)\s*%', query)
     
-    # Pattern for time period like "5 years" or "for 5 years"
+    # Pattern for years/time periods (e.g., "5 years", "for 5 years")
     time_match = re.search(r'(?:for\s+)?(\d+)\s+years?', query, re.IGNORECASE)
-    time_value = None
-    if time_match:
-        time_value = int(time_match.group(1))
     
     # Pattern for compounding frequency
-    # "compounded quarterly" = 4, "compounded monthly" = 12, "compounded annually" = 1, etc.
+    # Map common terms to their numeric values
     compounding_map = {
         'annually': 1,
         'yearly': 1,
@@ -79,34 +70,34 @@ async def extract_function_call(
         'daily': 365
     }
     
-    n_value = None
-    for freq_word, freq_num in compounding_map.items():
-        if freq_word in query.lower():
-            n_value = freq_num
+    compounding_freq = None
+    for term, value in compounding_map.items():
+        if term in query.lower():
+            compounding_freq = value
             break
     
-    # Also check for explicit "n times" pattern
-    if n_value is None:
-        n_match = re.search(r'(\d+)\s+times?\s+(?:per|a)\s+year', query, re.IGNORECASE)
-        if n_match:
-            n_value = int(n_match.group(1))
-    
-    # Map extracted values to parameter names from schema
+    # Map extracted values to parameter names based on schema
     for param_name, param_info in params_schema.items():
         param_type = param_info.get("type", "string")
         param_desc = param_info.get("description", "").lower()
         
         if param_name == "principal" or "initial" in param_desc or "deposit" in param_desc:
-            if principal_value is not None:
-                params[param_name] = principal_value
+            if currency_match:
+                # Remove commas and convert to int
+                value = currency_match.group(1).replace(",", "")
+                params[param_name] = int(float(value))
+        
         elif param_name == "rate" or "interest rate" in param_desc:
-            if rate_value is not None:
-                params[param_name] = rate_value
+            if percent_match:
+                # Convert percentage to decimal (3% -> 0.03)
+                params[param_name] = float(percent_match.group(1)) / 100
+        
         elif param_name == "time" or "time period" in param_desc or "years" in param_desc:
-            if time_value is not None:
-                params[param_name] = time_value
+            if time_match:
+                params[param_name] = int(time_match.group(1))
+        
         elif param_name == "n" or "compounded" in param_desc or "number of times" in param_desc:
-            if n_value is not None:
-                params[param_name] = n_value
+            if compounding_freq is not None:
+                params[param_name] = compounding_freq
     
     return {func_name: params}

@@ -1,0 +1,26 @@
+{
+  "workflow_id": "exec_simple_82",
+  "name": "Function Call Extractor",
+  "description": "Extract function name and parameters from natural language query",
+  "task_id": "exec_simple_82",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"I've been plotting some data and it looks like there's a linear trend. I've got these x-coordinates [1, 2, 3] and corresponding y-values [4, 5, 6]. I need to predict the y-value for when x is 10. Can you apply a linear regression to this and give me that predicted value?\"}]], \"function\": [{\"name\": \"linear_regression\", \"description\": \"Finds the linear regression of a set of points and evaluates it at a given point.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"x\": {\"type\": \"array\", \"items\": {\"type\": \"integer\"}, \"description\": \"The x coordinates of the points.\"}, \"y\": {\"type\": \"array\", \"items\": {\"type\": \"integer\"}, \"description\": \"The y coordinates of the points.\"}, \"point\": {\"type\": \"integer\", \"description\": \"The point to calculate the linear regression at.\"}}, \"required\": [\"x\", \"y\", \"point\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"linear_regression\": {\n    \"x\": \"array - The x coordinates of the points.\",\n    \"y\": \"array - The y coordinates of the points.\",\n    \"point\": \"integer - The point to calculate the linear regression at.\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "activities": [
+    "extract_function_call"
+  ],
+  "variables": [
+    {
+      "name": "prompt",
+      "default": null
+    },
+    {
+      "name": "functions",
+      "default": null
+    }
+  ],
+  "execution_pattern": "sequence",
+  "reasoning": "BFCL template: single activity for function call extraction",
+  "metrics": {
+    "total_tokens": 10350,
+    "regeneration_count": 0
+  }
+}

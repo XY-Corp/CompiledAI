@@ -68,7 +68,7 @@ async def extract_function_call(
         
         elif param_name == "habitat":
             # Extract habitat - common habitats
-            habitats = ["forest", "ocean", "desert", "mountain", "grassland", "wetland", "urban", "jungle", "savanna", "tundra", "lake", "river", "beach", "garden", "park"]
+            habitats = ["forest", "ocean", "desert", "mountain", "grassland", "wetland", "urban", "jungle", "savanna", "tundra", "lake", "river", "beach", "swamp", "meadow"]
             for habitat in habitats:
                 if habitat in query_lower:
                     params[param_name] = habitat
@@ -97,8 +97,8 @@ async def extract_function_call(
                 else:
                     params[param_name] = float(numbers[0])
         
-        elif enum_values:
-            # Check for enum values in query
+        elif param_type == "string" and enum_values:
+            # Check enum values
             for val in enum_values:
                 if val.lower() in query_lower:
                     params[param_name] = val

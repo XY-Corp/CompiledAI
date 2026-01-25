@@ -11,13 +11,15 @@ async def extract_function_call(
     workflow_definition_id: str | None = None,
     workflow_instance_id: str | None = None,
 ) -> dict[str, Any]:
-    """Extract function name and parameters from user query using regex patterns."""
+    """Extract function call parameters from user query using regex patterns.
     
-    # Parse prompt - may be JSON string with nested structure
+    Returns a dict with function name as key and parameters as nested object.
+    """
+    # Parse prompt - handle JSON string or raw string
     try:
         if isinstance(prompt, str):
             data = json.loads(prompt)
-            # Handle BFCL format: {"question": [[{"role": "user", "content": "..."}]], ...}
+            # Extract user query from BFCL format
             if "question" in data and isinstance(data["question"], list):
                 if len(data["question"]) > 0 and isinstance(data["question"][0], list):
                     query = data["question"][0][0].get("content", str(prompt))
@@ -27,10 +29,10 @@ async def extract_function_call(
                 query = str(prompt)
         else:
             query = str(prompt)
-    except (json.JSONDecodeError, TypeError, KeyError):
+    except (json.JSONDecodeError, TypeError):
         query = str(prompt)
     
-    # Parse functions - may be JSON string
+    # Parse functions - handle JSON string or list
     try:
         if isinstance(functions, str):
             funcs = json.loads(functions)
@@ -39,7 +41,7 @@ async def extract_function_call(
     except (json.JSONDecodeError, TypeError):
         funcs = []
     
-    # Get function details
+    # Get target function details
     func = funcs[0] if funcs else {}
     func_name = func.get("name", "")
     params_schema = func.get("parameters", {}).get("properties", {})
@@ -68,8 +70,8 @@ async def extract_function_call(
             
             # Look for explicit unit mentions in query
             unit_patterns = [
-                r'(?:in|using|with)\s+(?:units?\s+(?:of\s+)?)?([a-zA-Z³/]+)',
-                r'([a-zA-Z]+/[a-zA-Z³]+)',
+                r'in\s+(\w+(?:/\w+)?)',  # "in kg/m³"
+                r'unit[s]?\s+(?:is|are|:)?\s*(\w+(?:/\w+)?)',  # "unit is kg/m³"
             ]
             
             unit_found = None
@@ -79,21 +81,9 @@ async def extract_function_call(
                     unit_found = match.group(1)
                     break
             
-            # Only include if explicitly mentioned or required
-            # For optional params like 'unit', don't include unless specified
-            if param_name not in func.get("parameters", {}).get("required", []):
-                # Optional param - only include if explicitly mentioned in query
-                if unit_found:
-                    params[param_name] = unit_found
-                # Otherwise skip optional params
-            else:
-                # Required string param
-                if unit_found:
-                    params[param_name] = unit_found
-                else:
-                    # Try to extract from query context
-                    string_match = re.search(r'(?:for|in|of|with)\s+([A-Za-z\s]+?)(?:\s+(?:and|with|,)|$)', query, re.IGNORECASE)
-                    if string_match:
-                        params[param_name] = string_match.group(1).strip()
+            # Only include if explicitly mentioned in query, otherwise skip optional params
+            if unit_found:
+                params[param_name] = unit_found
+            # Don't include default values for optional parameters
     
     return {func_name: params}

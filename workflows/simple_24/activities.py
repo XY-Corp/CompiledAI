@@ -34,7 +34,7 @@ async def extract_function_call(
                 query = str(prompt)
         else:
             query = str(prompt)
-    except (json.JSONDecodeError, TypeError):
+    except (json.JSONDecodeError, TypeError, KeyError):
         query = str(prompt)
     
     # Parse functions - may be JSON string

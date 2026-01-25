@@ -14,7 +14,7 @@ async def extract_function_call(
     """Extract function call parameters from user query and return as {func_name: {params}}.
     
     Uses regex and string matching to extract location names and other parameters
-    from the user's natural language query.
+    from natural language queries about driving distances.
     """
     # Parse prompt - may be JSON string with nested structure
     try:
@@ -51,55 +51,50 @@ async def extract_function_call(
     func_name = func.get("name", "")
     params_schema = func.get("parameters", {}).get("properties", {})
     
-    # Extract parameters using regex patterns
+    # Extract parameters using regex patterns for location-based queries
     params = {}
     
-    # For driving distance queries, extract origin and destination
-    # Common patterns: "between X and Y", "from X to Y"
+    # Pattern for "between X and Y" - common for distance queries
+    between_pattern = r'between\s+([A-Za-z\s\.]+?)\s+and\s+([A-Za-z\s\.]+?)(?:\s*[,\.]|$|\s+in\s+|\s+using\s+)'
+    between_match = re.search(between_pattern, query, re.IGNORECASE)
     
-    # Pattern 1: "between X and Y"
-    between_pattern = r'between\s+([A-Za-z\s\.]+?)\s+and\s+([A-Za-z\s\.]+?)(?:\s*[,\.]|$)'
-    match = re.search(between_pattern, query, re.IGNORECASE)
+    # Pattern for "from X to Y"
+    from_to_pattern = r'from\s+([A-Za-z\s\.]+?)\s+to\s+([A-Za-z\s\.]+?)(?:\s*[,\.]|$|\s+in\s+|\s+using\s+)'
+    from_to_match = re.search(from_to_pattern, query, re.IGNORECASE)
     
-    if match:
-        origin = match.group(1).strip().rstrip('.')
-        destination = match.group(2).strip().rstrip('.')
-    else:
-        # Pattern 2: "from X to Y"
-        from_to_pattern = r'from\s+([A-Za-z\s\.]+?)\s+to\s+([A-Za-z\s\.]+?)(?:\s*[,\.]|$)'
-        match = re.search(from_to_pattern, query, re.IGNORECASE)
-        
-        if match:
-            origin = match.group(1).strip().rstrip('.')
-            destination = match.group(2).strip().rstrip('.')
-        else:
-            # Fallback: try to find city names (capitalized words)
-            # Look for patterns like "City Name" or "City Name, State"
-            city_pattern = r'([A-Z][a-z]+(?:\s+[A-Z][a-z\.]+)*(?:\s+[A-Z]\.?[A-Z]\.?)?)'
-            cities = re.findall(city_pattern, query)
-            
-            if len(cities) >= 2:
-                origin = cities[0].strip()
-                destination = cities[1].strip()
-            else:
-                origin = ""
-                destination = ""
+    origin = None
+    destination = None
     
-    # Build params based on schema
+    if between_match:
+        origin = between_match.group(1).strip()
+        destination = between_match.group(2).strip()
+    elif from_to_match:
+        origin = from_to_match.group(1).strip()
+        destination = from_to_match.group(2).strip()
+    
+    # Clean up location names - remove trailing punctuation
+    if origin:
+        origin = re.sub(r'[,\.\?!]+$', '', origin).strip()
+    if destination:
+        destination = re.sub(r'[,\.\?!]+$', '', destination).strip()
+    
+    # Map extracted values to parameter names from schema
     if "origin" in params_schema and origin:
         params["origin"] = origin
-    
     if "destination" in params_schema and destination:
         params["destination"] = destination
     
-    # Check for unit specification (optional)
+    # Check for optional unit parameter
     if "unit" in params_schema:
-        unit_match = re.search(r'\b(km|kilometers?|mi|miles?)\b', query, re.IGNORECASE)
-        if unit_match:
-            unit_str = unit_match.group(1).lower()
-            if unit_str.startswith('mi'):
-                params["unit"] = "miles"
-            else:
-                params["unit"] = "km"
+        # Look for unit mentions in query
+        unit_patterns = [
+            (r'\b(miles?|mi)\b', 'miles'),
+            (r'\b(kilometers?|km)\b', 'km'),
+            (r'\b(meters?|m)\b', 'm'),
+        ]
+        for pattern, unit_value in unit_patterns:
+            if re.search(pattern, query, re.IGNORECASE):
+                params["unit"] = unit_value
+                break
     
     return {func_name: params}

@@ -91,9 +91,9 @@ async def extract_function_call(
     if "voxel_size" in props:
         # Match patterns like "voxel size of 2mm", "2mm isotropic voxel"
         voxel_patterns = [
-            r'(?:isotropic\s+)?voxel\s+size\s+(?:of\s+)?(\d+)\s*mm',
+            r'voxel\s+size\s+(?:of\s+)?(\d+)\s*mm',
             r'(\d+)\s*mm\s+(?:isotropic\s+)?voxel',
-            r'isotropic\s+(?:voxel\s+)?(?:size\s+)?(?:of\s+)?(\d+)\s*mm',
+            r'isotropic\s+voxel\s+size\s+(?:of\s+)?(\d+)',
         ]
         for pattern in voxel_patterns:
             match = re.search(pattern, query, re.IGNORECASE)

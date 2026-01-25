@@ -51,7 +51,7 @@ async def extract_function_call(
     # Extract coupon_payment - look for dollar amounts or "coupon payment of X"
     coupon_patterns = [
         r'coupon\s+payment\s+of\s+\$?(\d+)',
-        r'\$(\d+)\s+(?:annually|annual|per year)',
+        r'\$(\d+)\s+(?:annually|annual|per\s+year)',
         r'payment\s+of\s+\$?(\d+)',
         r'\$(\d+)\s+coupon',
     ]
@@ -64,7 +64,7 @@ async def extract_function_call(
     # Extract period - look for "X years" or "next X years"
     period_patterns = [
         r'(?:for\s+)?(?:next\s+)?(\d+)\s+years?',
-        r'(\d+)\s+year\s+(?:period|time)',
+        r'(\d+)\s+year\s+(?:period|time\s+frame)',
         r'time\s+frame\s+(?:of\s+)?(\d+)',
     ]
     for pattern in period_patterns:

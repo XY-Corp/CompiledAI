@@ -66,32 +66,34 @@ async def extract_function_call(
         else:
             integers.append(int(num_str))
     
-    # Try to identify years - look for number near "year" keyword
+    # Try to identify years by context (look for "X years")
     years_match = re.search(r'(\d+)\s*years?', query, re.IGNORECASE)
     years_value = int(years_match.group(1)) if years_match else None
     
-    # Try to identify population - look for "population" context or large number
-    pop_match = re.search(r'(?:population\s*(?:size\s*)?(?:of\s*)?(?:elephants\s*)?(?:of\s*)?|of\s+elephants\s+of\s+)(\d+)', query, re.IGNORECASE)
-    pop_value = int(pop_match.group(1)) if pop_match else None
+    # Try to identify population by context (look for "population of X" or large number)
+    pop_match = re.search(r'population\s+(?:size\s+)?(?:of\s+)?(?:elephants\s+)?(?:of\s+)?(\d+)', query, re.IGNORECASE)
+    if not pop_match:
+        pop_match = re.search(r'(\d+)\s+(?:elephants?|population)', query, re.IGNORECASE)
+    population_value = int(pop_match.group(1)) if pop_match else None
     
-    # Try to identify growth rate - look for "rate" context or small decimal
-    rate_match = re.search(r'(?:growth\s*)?rate\s*(?:of\s*)?(\d+\.?\d*)', query, re.IGNORECASE)
-    rate_value = float(rate_match.group(1)) if rate_match else None
+    # Try to identify growth rate by context (look for "growth rate of X" or small decimal)
+    rate_match = re.search(r'(?:growth\s+)?rate\s+(?:of\s+)?(\d+\.?\d*)', query, re.IGNORECASE)
+    growth_rate_value = float(rate_match.group(1)) if rate_match else None
     
     # Assign values to parameters based on schema
     for param_name, param_info in params_schema.items():
         param_type = param_info.get("type", "string")
         
         if param_name == "current_population":
-            if pop_value is not None:
-                params[param_name] = pop_value
+            if population_value is not None:
+                params[param_name] = population_value
             elif integers:
                 # Use the largest integer as population
                 params[param_name] = max(integers)
         
         elif param_name == "growth_rate":
-            if rate_value is not None:
-                params[param_name] = rate_value
+            if growth_rate_value is not None:
+                params[param_name] = growth_rate_value
             elif floats:
                 # Use the float value (likely the growth rate)
                 params[param_name] = floats[0]
@@ -101,8 +103,8 @@ async def extract_function_call(
                 params[param_name] = years_value
             elif integers:
                 # Use the smallest integer as years (excluding population)
-                remaining = [i for i in integers if i != params.get("current_population")]
-                if remaining:
-                    params[param_name] = min(remaining)
+                remaining_ints = [i for i in integers if i != params.get("current_population")]
+                if remaining_ints:
+                    params[param_name] = min(remaining_ints)
     
     return {func_name: params}

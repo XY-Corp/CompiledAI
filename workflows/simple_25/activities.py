@@ -42,71 +42,82 @@ async def extract_function_call(
     except (json.JSONDecodeError, TypeError):
         funcs = []
 
-    # Get function details
+    # Get target function details
     func = funcs[0] if funcs else {}
     func_name = func.get("name", "")
     params_schema = func.get("parameters", {}).get("properties", {})
     required_params = func.get("parameters", {}).get("required", [])
 
-    # Extract parameters using regex
+    # Extract parameter values using regex
     params = {}
     query_lower = query.lower()
-
-    # Extract all numbers from the query
-    numbers = re.findall(r'(\d+(?:\.\d+)?)', query)
-    
-    # For calculate_final_velocity, we need to identify:
-    # - height: look for patterns like "150 meter", "from a X meter"
-    # - initial_velocity: look for "initial velocity is X" or "zero"
-    # - gravity: usually default, but check for explicit values
 
     for param_name, param_info in params_schema.items():
         param_type = param_info.get("type", "string")
         param_desc = param_info.get("description", "").lower()
-        
+
+        # Extract based on parameter name and description
         if param_name == "height":
-            # Look for height patterns: "X meter building", "from X meter", "height of X"
-            height_patterns = [
-                r'(\d+(?:\.\d+)?)\s*(?:meter|m)\s*(?:building|tall|high|height)',
-                r'(?:from|height|dropped from)\s*(?:a\s*)?(\d+(?:\.\d+)?)\s*(?:meter|m)',
+            # Look for height patterns: "150 meter", "150m", "height of 150"
+            patterns = [
+                r'(\d+(?:\.\d+)?)\s*(?:meter|m)\s*(?:building|tower|height)?',
+                r'height\s*(?:of|is|=)?\s*(\d+(?:\.\d+)?)',
                 r'(\d+(?:\.\d+)?)\s*(?:meter|m)',
+                r'from\s*(?:a\s*)?(\d+(?:\.\d+)?)',
             ]
-            for pattern in height_patterns:
+            for pattern in patterns:
                 match = re.search(pattern, query_lower)
                 if match:
                     value = float(match.group(1))
                     params[param_name] = int(value) if param_type == "integer" else value
                     break
-                    
+
         elif param_name == "initial_velocity":
             # Look for initial velocity patterns
-            if "initial velocity is zero" in query_lower or "initial velocity of zero" in query_lower:
-                params[param_name] = 0
-            else:
-                vel_patterns = [
-                    r'initial\s*velocity\s*(?:is|of|=)?\s*(\d+(?:\.\d+)?)',
-                    r'starting\s*(?:at|with)\s*(\d+(?:\.\d+)?)\s*(?:m/s|meters)',
-                ]
-                for pattern in vel_patterns:
-                    match = re.search(pattern, query_lower)
-                    if match:
-                        value = float(match.group(1))
-                        params[param_name] = int(value) if param_type == "integer" else value
-                        break
-                        
-        elif param_name == "gravity":
-            # Look for explicit gravity values
-            gravity_patterns = [
-                r'gravity\s*(?:is|of|=)?\s*(\d+(?:\.\d+)?)',
-                r'acceleration\s*(?:is|of|=)?\s*(\d+(?:\.\d+)?)',
-                r'g\s*=\s*(\d+(?:\.\d+)?)',
+            patterns = [
+                r'initial\s*velocity\s*(?:of|is|=)?\s*(\d+(?:\.\d+)?)',
+                r'starting\s*(?:at|with)?\s*(\d+(?:\.\d+)?)\s*m/s',
+                r'initial\s*(?:speed|velocity)\s*(?:is\s*)?zero',
             ]
-            for pattern in gravity_patterns:
+            for pattern in patterns:
                 match = re.search(pattern, query_lower)
                 if match:
-                    value = float(match.group(1))
-                    params[param_name] = value
+                    if 'zero' in pattern:
+                        params[param_name] = 0
+                    else:
+                        value = float(match.group(1))
+                        params[param_name] = int(value) if param_type == "integer" else value
+                    break
+            # Check for "initial velocity is zero" or similar
+            if param_name not in params and 'initial velocity is zero' in query_lower:
+                params[param_name] = 0
+
+        elif param_name == "gravity":
+            # Look for gravity patterns
+            patterns = [
+                r'gravity\s*(?:of|is|=)?\s*(\d+(?:\.\d+)?)',
+                r'g\s*=\s*(\d+(?:\.\d+)?)',
+                r'acceleration\s*(?:of|is|=)?\s*(\d+(?:\.\d+)?)',
+            ]
+            for pattern in patterns:
+                match = re.search(pattern, query_lower)
+                if match:
+                    params[param_name] = float(match.group(1))
                     break
 
-    # Return in the required format: {"function_name": {params}}
+    # Ensure required parameters are present
+    for req_param in required_params:
+        if req_param not in params:
+            # Try to extract any number if we haven't found the required param
+            if req_param == "height":
+                numbers = re.findall(r'(\d+(?:\.\d+)?)', query)
+                if numbers:
+                    # Take the first significant number (likely the height)
+                    for num in numbers:
+                        val = float(num)
+                        if val > 1:  # Filter out small numbers that might be other values
+                            param_type = params_schema.get(req_param, {}).get("type", "integer")
+                            params[req_param] = int(val) if param_type == "integer" else val
+                            break
+
     return {func_name: params}

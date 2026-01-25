@@ -67,16 +67,6 @@ async def extract_function_call(
                 minutes = 0  # Default to 0 minutes if not specified
             break
     
-    # If no time pattern found, try to extract any numbers
-    if hours is None:
-        numbers = re.findall(r'\d+', query)
-        if len(numbers) >= 2:
-            hours = int(numbers[0])
-            minutes = int(numbers[1])
-        elif len(numbers) == 1:
-            hours = int(numbers[0])
-            minutes = 0
-    
     # Build params dict with only required/found parameters
     params = {}
     
@@ -85,7 +75,7 @@ async def extract_function_call(
     if minutes is not None:
         params["minutes"] = minutes
     
-    # Check for round_to parameter in query (optional)
+    # Check for optional round_to parameter in query
     round_match = re.search(r'round(?:ed)?\s*(?:to)?\s*(\d+)\s*(?:decimal|place)', query, re.IGNORECASE)
     if round_match:
         params["round_to"] = int(round_match.group(1))

@@ -23,15 +23,12 @@ async def extract_function_call(
         # Extract user query from BFCL format: {"question": [[{"role": "user", "content": "..."}]]}
         if "question" in data and isinstance(data["question"], list):
             if len(data["question"]) > 0 and isinstance(data["question"][0], list):
-                if len(data["question"][0]) > 0 and isinstance(data["question"][0][0], dict):
-                    query = data["question"][0][0].get("content", str(prompt))
-                else:
-                    query = str(prompt)
+                query = data["question"][0][0].get("content", str(prompt))
             else:
                 query = str(prompt)
         else:
             query = str(prompt)
-    except (json.JSONDecodeError, TypeError):
+    except (json.JSONDecodeError, TypeError, KeyError):
         query = str(prompt)
     
     # Parse functions (may be JSON string)
@@ -43,35 +40,28 @@ async def extract_function_call(
     except (json.JSONDecodeError, TypeError):
         funcs = []
     
-    if not funcs:
-        return {"error": "No functions provided"}
-    
-    func = funcs[0]
+    # Get function schema
+    func = funcs[0] if funcs else {}
     func_name = func.get("name", "")
-    props = func.get("parameters", {}).get("properties", {})
+    params_schema = func.get("parameters", {}).get("properties", {})
     
+    # Extract parameters from query using regex and string matching
     params = {}
-    query_lower = query.lower()
     
-    # Extract location - look for patterns like "my location, X" or "nearby X" or "in X"
-    # Pattern: "my location, Manhattan" or "location, Manhattan" or "nearby Manhattan"
+    # Extract location - look for patterns like "my location, X" or "in X" or "nearby X"
     location_patterns = [
-        r'my location,?\s*([A-Za-z\s]+?)(?:,|\.|offering|with|$)',
-        r'nearby\s+(?:my\s+)?(?:location,?\s*)?([A-Za-z\s]+?)(?:,|\.|offering|with|$)',
-        r'in\s+([A-Za-z\s]+?)(?:,|\.|offering|with|$)',
-        r'at\s+([A-Za-z\s]+?)(?:,|\.|offering|with|$)',
+        r'my location,?\s*([A-Za-z\s]+?)(?:,|\.|offering|$)',
+        r'(?:in|at|near|nearby)\s+([A-Za-z\s]+?)(?:,|\.|offering|$)',
+        r'location[:\s]+([A-Za-z\s,]+?)(?:\.|offering|$)',
     ]
-    
     location = None
     for pattern in location_patterns:
         match = re.search(pattern, query, re.IGNORECASE)
         if match:
-            location = match.group(1).strip()
-            # Clean up trailing words that aren't part of location
-            location = re.sub(r'\s+(offering|with|and|for).*$', '', location, flags=re.IGNORECASE).strip()
+            location = match.group(1).strip().rstrip(',')
             break
     
-    if location and "location" in props:
+    if location:
         params["location"] = location
     
     # Extract food_type - look for cuisine types
@@ -79,40 +69,39 @@ async def extract_function_call(
         r'offering\s+([A-Za-z]+)\s+food',
         r'([A-Za-z]+)\s+food',
         r'([A-Za-z]+)\s+cuisine',
-        r'([A-Za-z]+)\s+restaurant',
+        r'([A-Za-z]+)\s+restaurants?',
     ]
-    
     food_type = None
     for pattern in food_patterns:
         match = re.search(pattern, query, re.IGNORECASE)
         if match:
-            food_type = match.group(1).strip()
-            # Skip generic words
-            if food_type.lower() not in ['the', 'a', 'an', 'some', 'any', 'good', 'best', 'nearby']:
+            candidate = match.group(1).strip()
+            # Filter out common non-food words
+            if candidate.lower() not in ['find', 'nearby', 'the', 'a', 'my', 'some', 'good']:
+                food_type = candidate
                 break
-            food_type = None
     
-    if food_type and "food_type" in props:
+    if food_type:
         params["food_type"] = food_type
     
     # Extract number - find integers in the query
-    numbers = re.findall(r'\b(\d+)\b', query)
-    if numbers and "number" in props:
-        params["number"] = int(numbers[0])
+    number_match = re.search(r'\b(\d+)\s*(?:restaurants?|places?|results?)?', query, re.IGNORECASE)
+    if number_match:
+        params["number"] = int(number_match.group(1))
     
     # Extract dietary_requirements - look for dietary keywords
     dietary_keywords = ['vegan', 'vegetarian', 'gluten-free', 'gluten free', 'halal', 'kosher', 
                         'dairy-free', 'dairy free', 'nut-free', 'nut free', 'organic', 'keto',
                         'low-carb', 'low carb', 'paleo']
-    
     dietary_requirements = []
+    query_lower = query.lower()
     for keyword in dietary_keywords:
-        if keyword.lower() in query_lower:
+        if keyword in query_lower:
             # Normalize to hyphenated form
             normalized = keyword.replace(' ', '-')
             dietary_requirements.append(normalized)
     
-    if dietary_requirements and "dietary_requirements" in props:
+    if dietary_requirements:
         params["dietary_requirements"] = dietary_requirements
     
     return {func_name: params}

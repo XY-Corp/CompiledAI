@@ -76,18 +76,18 @@ async def extract_function_call(
             # Check for boolean indicators in query
             query_lower = query.lower()
             
-            # Check if query explicitly asks for full name
+            # Check for explicit mentions related to the parameter
             if "full_name" in param_name.lower() or "full name" in param_desc:
-                if "full name" in query_lower or "full_name" in query_lower:
+                # Look for "full name" in query
+                if "full name" in query_lower:
                     params[param_name] = True
                 elif default_value is not None:
-                    # Use default if specified and query implies it
                     params[param_name] = default_value
             else:
-                # Generic boolean handling
-                if "true" in query_lower or "yes" in query_lower:
+                # Generic boolean detection
+                if any(word in query_lower for word in ["yes", "true", "with", "include"]):
                     params[param_name] = True
-                elif "false" in query_lower or "no" in query_lower:
+                elif any(word in query_lower for word in ["no", "false", "without", "exclude"]):
                     params[param_name] = False
                 elif default_value is not None:
                     params[param_name] = default_value
@@ -95,7 +95,7 @@ async def extract_function_call(
         elif param_type == "string":
             # Extract string values based on context
             # This would need more specific patterns based on the parameter
-            string_match = re.search(r'(?:for|in|of|with|named?)\s+([A-Za-z\s]+?)(?:\s+(?:and|with|,|in|\?)|$)', query, re.IGNORECASE)
+            string_match = re.search(r'(?:for|in|of|about)\s+([A-Za-z\s]+?)(?:\s+(?:and|with|,|\.|\?)|$)', query, re.IGNORECASE)
             if string_match:
                 params[param_name] = string_match.group(1).strip()
     
@@ -103,17 +103,9 @@ async def extract_function_call(
     for req_param in required_params:
         if req_param not in params:
             # Try harder to extract required params
-            param_info = params_schema.get(req_param, {})
-            param_type = param_info.get("type", "string")
-            
-            if param_type == "integer":
-                numbers = re.findall(r'\b(\d+)\b', query)
-                if numbers:
-                    # For year, prefer 4-digit numbers
-                    four_digit = [n for n in numbers if len(n) == 4]
-                    if four_digit:
-                        params[req_param] = int(four_digit[0])
-                    else:
-                        params[req_param] = int(numbers[0])
+            if "year" in req_param.lower():
+                year_match = re.search(r'\b(1[0-9]{3}|2[0-9]{3})\b', query)
+                if year_match:
+                    params[req_param] = int(year_match.group(1))
     
     return {func_name: params}

@@ -11,13 +11,15 @@ async def extract_function_call(
     workflow_definition_id: str | None = None,
     workflow_instance_id: str | None = None,
 ) -> dict[str, Any]:
-    """Extract function name and parameters from user query. Returns {func_name: {params}}."""
+    """Extract function name and parameters from user query using regex patterns.
     
+    Returns format: {"function_name": {"param1": val1, "param2": val2}}
+    """
     # Parse prompt - may be JSON string with nested structure
     try:
         if isinstance(prompt, str):
             data = json.loads(prompt)
-            # Handle BFCL format: {"question": [[{"role": "user", "content": "..."}]], ...}
+            # Handle BFCL format: {"question": [[{"role": "user", "content": "..."}]]}
             if "question" in data and isinstance(data["question"], list):
                 if len(data["question"]) > 0 and isinstance(data["question"][0], list):
                     query = data["question"][0][0].get("content", str(prompt))
@@ -29,7 +31,7 @@ async def extract_function_call(
             query = str(prompt)
     except (json.JSONDecodeError, TypeError, KeyError):
         query = str(prompt)
-    
+
     # Parse functions - may be JSON string
     try:
         if isinstance(functions, str):
@@ -38,7 +40,7 @@ async def extract_function_call(
             funcs = functions
     except (json.JSONDecodeError, TypeError):
         funcs = []
-    
+
     # Get function details
     func = funcs[0] if funcs else {}
     func_name = func.get("name", "")
@@ -73,7 +75,7 @@ async def extract_function_call(
         for param_name, param_info in params_schema.items():
             if param_name in params:
                 continue  # Already found via named pattern
-            
+                
             param_type = param_info.get("type", "string")
             
             if param_type in ["integer", "number", "float"] and num_idx < len(all_numbers):
@@ -84,9 +86,9 @@ async def extract_function_call(
                     params[param_name] = float(value_str)
                 num_idx += 1
             elif param_type == "string":
-                # Try to extract string value
+                # Try to extract string values
                 string_match = re.search(r'(?:for|in|of|with)\s+([A-Za-z\s]+?)(?:\s+(?:and|with|,)|$)', query, re.IGNORECASE)
                 if string_match:
                     params[param_name] = string_match.group(1).strip()
-    
+
     return {func_name: params}

@@ -47,6 +47,7 @@ async def extract_function_call(
     func = funcs[0] if funcs else {}
     func_name = func.get("name", "")
     params_schema = func.get("parameters", {}).get("properties", {})
+    required_params = func.get("parameters", {}).get("required", [])
     
     # Extract parameters from query using regex and string matching
     params = {}
@@ -108,7 +109,7 @@ async def extract_function_call(
                 params[param_name] = "detailed"
             elif "basic" in query_lower or "simple" in query_lower:
                 params[param_name] = "basic"
-            # Check enum values if available
+            # Check enum values if present
             elif "enum" in param_info:
                 enum_values = param_info.get("enum", [])
                 for val in enum_values:

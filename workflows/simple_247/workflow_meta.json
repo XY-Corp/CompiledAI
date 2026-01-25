@@ -1,0 +1,26 @@
+{
+  "workflow_id": "simple_247",
+  "name": "Function Call Extractor",
+  "description": "Extract function name and parameters from natural language query",
+  "task_id": "simple_247",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"What was Albert Einstein's contribution to science on March 17, 1915?\"}]], \"function\": [{\"name\": \"historical_contrib.get_contrib\", \"description\": \"Retrieve historical contribution made by a scientist on a specific date.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"scientist\": {\"type\": \"string\", \"description\": \"The scientist whose contributions need to be searched.\"}, \"date\": {\"type\": \"string\", \"description\": \"The date when the contribution was made in yyyy-mm-dd format.\"}, \"category\": {\"type\": \"string\", \"description\": \"The field of the contribution, such as 'Physics' or 'Chemistry'. Default is 'all'.\"}}, \"required\": [\"scientist\", \"date\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"historical_contrib.get_contrib\": {\n    \"scientist\": \"string - The scientist whose contributions need to be searched.\",\n    \"date\": \"string - The date when the contribution was made in yyyy-mm-dd format.\",\n    \"category\": \"string - The field of the contribution, such as 'Physics' or 'Chemistry'. Default is 'all'.\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "activities": [
+    "extract_function_call"
+  ],
+  "variables": [
+    {
+      "name": "prompt",
+      "default": null
+    },
+    {
+      "name": "functions",
+      "default": null
+    }
+  ],
+  "execution_pattern": "sequence",
+  "reasoning": "BFCL template: single activity for function call extraction",
+  "metrics": {
+    "total_tokens": 9844,
+    "regeneration_count": 0
+  }
+}

@@ -11,12 +11,11 @@ async def extract_function_call(
     workflow_definition_id: str | None = None,
     workflow_instance_id: str | None = None,
 ) -> dict[str, Any]:
-    """Extract function call parameters from natural language query.
+    """Extract function name and parameters from user query using regex patterns.
     
-    Parses the user query to extract parameter values and returns them
-    in the format {"function_name": {"param1": val1, ...}}.
+    Returns a dict with function name as key and parameters as nested object.
     """
-    # Parse prompt (may be JSON string with nested structure)
+    # Parse prompt - may be JSON string with nested structure
     try:
         if isinstance(prompt, str):
             data = json.loads(prompt)
@@ -26,15 +25,18 @@ async def extract_function_call(
         # Extract user query from BFCL format: {"question": [[{"role": "user", "content": "..."}]]}
         if "question" in data and isinstance(data["question"], list):
             if len(data["question"]) > 0 and isinstance(data["question"][0], list):
-                query = data["question"][0][0].get("content", str(prompt))
+                if len(data["question"][0]) > 0 and isinstance(data["question"][0][0], dict):
+                    query = data["question"][0][0].get("content", str(prompt))
+                else:
+                    query = str(prompt)
             else:
                 query = str(prompt)
         else:
             query = str(prompt)
-    except (json.JSONDecodeError, TypeError, KeyError):
+    except (json.JSONDecodeError, TypeError):
         query = str(prompt)
     
-    # Parse functions (may be JSON string)
+    # Parse functions - may be JSON string
     try:
         if isinstance(functions, str):
             funcs = json.loads(functions)
@@ -48,58 +50,62 @@ async def extract_function_call(
     func_name = func.get("name", "")
     params_schema = func.get("parameters", {}).get("properties", {})
     
-    # Extract numbers from query using regex
-    # Pattern matches integers and floats
-    numbers = re.findall(r'\b(\d+(?:\.\d+)?)\b', query)
-    
-    # Build parameters based on schema
+    # Extract parameters using regex
     params = {}
-    num_idx = 0
     
-    # For binomial distribution: look for specific patterns
-    # "exactly X heads in Y tosses" or "X successes in Y trials"
+    # Extract all numbers from the query
+    numbers = re.findall(r'\d+(?:\.\d+)?', query)
     
-    # Pattern: "exactly N heads/successes"
-    success_match = re.search(r'exactly\s+(\d+)\s+(?:heads|successes|success)', query, re.IGNORECASE)
+    # For binomial distribution: look for patterns like "X heads in Y tosses" or "exactly X ... in Y"
+    # Pattern: "exactly N successes in M trials"
+    exact_pattern = re.search(r'exactly\s+(\d+)\s+\w+\s+in\s+(\d+)', query, re.IGNORECASE)
+    # Pattern: "N heads in M tosses/flips"
+    heads_pattern = re.search(r'(\d+)\s+(?:heads?|successes?|wins?)\s+in\s+(\d+)', query, re.IGNORECASE)
+    # Pattern: "in N ... tosses/trials"
+    trials_pattern = re.search(r'in\s+(\d+)\s+(?:\w+\s+)?(?:tosses?|trials?|flips?|experiments?)', query, re.IGNORECASE)
     
-    # Pattern: "in N tosses/trials/flips"
-    trials_match = re.search(r'in\s+(\d+)\s+(?:tosses|trials|flips|experiments)', query, re.IGNORECASE)
+    successes = None
+    trials = None
     
-    # Pattern: "probability of X" (for p parameter)
-    prob_match = re.search(r'probability\s+(?:of\s+)?(?:success\s+)?(?:is\s+)?(\d+(?:\.\d+)?)', query, re.IGNORECASE)
+    if exact_pattern:
+        successes = int(exact_pattern.group(1))
+        trials = int(exact_pattern.group(2))
+    elif heads_pattern:
+        successes = int(heads_pattern.group(1))
+        trials = int(heads_pattern.group(2))
+    elif trials_pattern and len(numbers) >= 2:
+        # Try to extract from general number patterns
+        trials = int(trials_pattern.group(1))
+        # Find the other number for successes
+        for num in numbers:
+            if int(num) != trials:
+                successes = int(num)
+                break
+    elif len(numbers) >= 2:
+        # Fallback: assume first number is successes, second is trials
+        # Common pattern: "5 heads in 10 tosses" -> 5 successes, 10 trials
+        successes = int(numbers[0])
+        trials = int(numbers[1])
     
-    # Check for "fair" coin which implies p=0.5
-    is_fair = 'fair' in query.lower()
+    # Assign to parameter names from schema
+    if "trials" in params_schema and trials is not None:
+        params["trials"] = trials
+    if "successes" in params_schema and successes is not None:
+        params["successes"] = successes
     
-    for param_name, param_info in params_schema.items():
-        param_type = param_info.get("type", "string")
+    # Check for probability parameter - for fair coin, p=0.5
+    if "p" in params_schema:
+        # Look for explicit probability mention
+        prob_pattern = re.search(r'probability\s+(?:of\s+)?(\d+(?:\.\d+)?)', query, re.IGNORECASE)
+        p_pattern = re.search(r'p\s*=\s*(\d+(?:\.\d+)?)', query, re.IGNORECASE)
         
-        if param_name == "trials":
-            if trials_match:
-                params["trials"] = int(trials_match.group(1))
-            elif len(numbers) >= 2:
-                # Second number is typically trials (e.g., "5 heads in 10 tosses")
-                params["trials"] = int(numbers[1])
-        
-        elif param_name == "successes":
-            if success_match:
-                params["successes"] = int(success_match.group(1))
-            elif len(numbers) >= 1:
-                # First number is typically successes
-                params["successes"] = int(numbers[0])
-        
-        elif param_name == "p":
-            # p is optional with default 0.5
-            if prob_match:
-                params["p"] = float(prob_match.group(1))
-            elif is_fair:
-                # Fair coin means p=0.5, but since it's the default, we can omit it
-                # Only include if explicitly mentioned
-                pass
-            elif len(numbers) >= 3:
-                # If there's a third number, it might be probability
-                val = float(numbers[2])
-                if 0 <= val <= 1:
-                    params["p"] = val
+        if prob_pattern:
+            params["p"] = float(prob_pattern.group(1))
+        elif p_pattern:
+            params["p"] = float(p_pattern.group(1))
+        elif "fair" in query.lower():
+            # Fair coin implies p=0.5, but it's the default so we can omit it
+            # Only include if explicitly needed
+            pass
     
     return {func_name: params}

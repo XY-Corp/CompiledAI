@@ -81,7 +81,7 @@ async def extract_function_call(
                         params[param_name] = match.group(1).lower()
                         break
             
-            # Extract location/city
+            # Extract location (city name)
             elif "location" in param_name.lower() or "city" in param_desc or "location" in param_desc:
                 # Pattern: "in [City], [State]" or "in [City]"
                 location_patterns = [

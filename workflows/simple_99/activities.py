@@ -49,44 +49,76 @@ async def extract_function_call(
     params = {}
     query_lower = query.lower()
     
-    # Extract start_range - look for "from X" or "0" at start
-    # Common patterns: "from 0", "from 0 to", "starting at 0"
-    start_match = re.search(r'from\s+(\d+(?:\.\d+)?)', query_lower)
-    if start_match:
-        params["start_range"] = round(float(start_match.group(1)), 4)
-    elif "from 0" in query_lower or query_lower.startswith("0"):
+    # Extract frequency - look for "frequency of X Hz" or "X Hz"
+    freq_patterns = [
+        r'frequency\s+of\s+(\d+)\s*(?:hz)?',
+        r'(\d+)\s*hz',
+        r'frequency\s*[=:]\s*(\d+)',
+    ]
+    for pattern in freq_patterns:
+        match = re.search(pattern, query_lower)
+        if match:
+            params["frequency"] = int(match.group(1))
+            break
+    
+    # Extract start_range - look for "from X" or "start X"
+    # Handle special values like "0" and "2 pi"
+    start_patterns = [
+        r'from\s+(\d+(?:\.\d+)?)\s*(?:to|pi)',
+        r'from\s+(\d+(?:\.\d+)?)',
+        r'start\s+(?:range\s+)?(?:of\s+)?(\d+(?:\.\d+)?)',
+    ]
+    
+    # Check for "from 0" specifically
+    if re.search(r'from\s+0\s', query_lower):
         params["start_range"] = 0.0
+    else:
+        for pattern in start_patterns:
+            match = re.search(pattern, query_lower)
+            if match:
+                params["start_range"] = round(float(match.group(1)), 4)
+                break
     
     # Extract end_range - look for "to X pi" or "to X"
-    # Handle "2 pi", "2pi", "2*pi" patterns
-    end_match = re.search(r'to\s+(\d+(?:\.\d+)?)\s*\*?\s*pi', query_lower)
-    if end_match:
-        multiplier = float(end_match.group(1))
+    # Handle "2 pi" as 2 * pi
+    end_patterns = [
+        r'to\s+(\d+(?:\.\d+)?)\s*pi',
+        r'to\s+(\d+(?:\.\d+)?)',
+        r'end\s+(?:range\s+)?(?:of\s+)?(\d+(?:\.\d+)?)',
+    ]
+    
+    # Check for "to 2 pi" or "to 2pi"
+    pi_match = re.search(r'to\s+(\d+(?:\.\d+)?)\s*pi', query_lower)
+    if pi_match:
+        multiplier = float(pi_match.group(1))
         params["end_range"] = round(multiplier * math.pi, 4)
     else:
-        # Try just "to X" without pi
-        end_match = re.search(r'to\s+(\d+(?:\.\d+)?)', query_lower)
-        if end_match:
-            params["end_range"] = round(float(end_match.group(1)), 4)
+        for pattern in end_patterns:
+            match = re.search(pattern, query_lower)
+            if match:
+                params["end_range"] = round(float(match.group(1)), 4)
+                break
     
-    # Extract frequency - look for "frequency of X Hz" or "X Hz"
-    freq_match = re.search(r'frequency\s+(?:of\s+)?(\d+(?:\.\d+)?)\s*(?:hz)?', query_lower)
-    if freq_match:
-        params["frequency"] = int(float(freq_match.group(1)))
-    else:
-        # Try just "X Hz" pattern
-        freq_match = re.search(r'(\d+(?:\.\d+)?)\s*hz', query_lower)
-        if freq_match:
-            params["frequency"] = int(float(freq_match.group(1)))
+    # Extract amplitude if mentioned
+    amp_patterns = [
+        r'amplitude\s+(?:of\s+)?(\d+(?:\.\d+)?)',
+        r'amplitude\s*[=:]\s*(\d+(?:\.\d+)?)',
+    ]
+    for pattern in amp_patterns:
+        match = re.search(pattern, query_lower)
+        if match:
+            params["amplitude"] = int(float(match.group(1)))
+            break
     
-    # Extract amplitude if mentioned - "amplitude of X" or "amplitude X"
-    amp_match = re.search(r'amplitude\s+(?:of\s+)?(\d+(?:\.\d+)?)', query_lower)
-    if amp_match:
-        params["amplitude"] = int(float(amp_match.group(1)))
-    
-    # Extract phase shift if mentioned - "phase shift of X" or "phase X"
-    phase_match = re.search(r'phase\s*(?:shift)?\s+(?:of\s+)?(\d+(?:\.\d+)?)', query_lower)
-    if phase_match:
-        params["phase_shift"] = int(float(phase_match.group(1)))
+    # Extract phase_shift if mentioned
+    phase_patterns = [
+        r'phase\s+(?:shift\s+)?(?:of\s+)?(\d+(?:\.\d+)?)',
+        r'phase\s*[=:]\s*(\d+(?:\.\d+)?)',
+    ]
+    for pattern in phase_patterns:
+        match = re.search(pattern, query_lower)
+        if match:
+            params["phase_shift"] = int(float(match.group(1)))
+            break
     
     return {func_name: params}

@@ -23,7 +23,7 @@ async def extract_function_call(
         else:
             data = prompt
         
-        # Extract user query from BFCL format
+        # Extract user query from BFCL format: {"question": [[{"role": "user", "content": "..."}]]}
         if "question" in data and isinstance(data["question"], list):
             if len(data["question"]) > 0 and isinstance(data["question"][0], list):
                 query = data["question"][0][0].get("content", str(prompt))
@@ -48,22 +48,22 @@ async def extract_function_call(
     func_name = func.get("name", "")
     params_schema = func.get("parameters", {}).get("properties", {})
     
-    # Extract parameters using regex
+    # Extract parameters from query using regex
     params = {}
     
-    # For quadratic equation: look for a, b, c coefficients
-    # Pattern: "a = 3" or "a=3" or "a is 3" or "coefficient a = 3"
-    for param_name in params_schema.keys():
-        param_info = params_schema[param_name]
+    # For quadratic equation: look for coefficients a, b, c
+    # Patterns: "a = 3", "a=3", "coefficient a = 3", "coefficients a = 3, b = -11, c = -4"
+    
+    for param_name, param_info in params_schema.items():
         param_type = param_info.get("type", "string")
         
         if param_type == "integer" or param_type == "number":
             # Try multiple patterns for named coefficients
             patterns = [
-                rf'\b{param_name}\s*=\s*(-?\d+)',  # a = 3 or a=-3
-                rf'\b{param_name}\s+is\s+(-?\d+)',  # a is 3
-                rf'coefficient\s+{param_name}\s*=\s*(-?\d+)',  # coefficient a = 3
+                rf'{param_name}\s*=\s*(-?\d+)',  # a = 3 or a=-3
                 rf'{param_name}\s*:\s*(-?\d+)',  # a: 3
+                rf'{param_name}\s+is\s+(-?\d+)',  # a is 3
+                rf'coefficient\s+{param_name}\s*=\s*(-?\d+)',  # coefficient a = 3
             ]
             
             for pattern in patterns:
@@ -74,15 +74,18 @@ async def extract_function_call(
                     break
         
         elif param_type == "string":
-            # For root_type, check if user mentions specific type
+            # For optional string params like root_type, check if mentioned
+            # Look for keywords like "real roots", "all roots", "complex roots"
             if param_name == "root_type":
-                # Check if user wants all roots (including complex)
-                if re.search(r'\ball\b.*roots?|roots?.*\ball\b|complex|all\s+the\s+roots', query, re.IGNORECASE):
-                    params[param_name] = "all"
-                elif re.search(r'\breal\b.*roots?|roots?.*\breal\b', query, re.IGNORECASE):
+                if re.search(r'\breal\s+roots?\b', query, re.IGNORECASE):
                     params[param_name] = "real"
-                # "Find all the roots" suggests wanting all roots
-                elif re.search(r'find\s+all\s+the\s+roots', query, re.IGNORECASE):
+                elif re.search(r'\ball\s+roots?\b', query, re.IGNORECASE):
                     params[param_name] = "all"
+                elif re.search(r'\bcomplex\s+roots?\b', query, re.IGNORECASE):
+                    params[param_name] = "all"
+                # If "all the roots" is mentioned, it implies all roots
+                elif re.search(r'\ball\s+the\s+roots?\b', query, re.IGNORECASE):
+                    params[param_name] = "all"
+                # Don't include optional param if not specified
     
     return {func_name: params}

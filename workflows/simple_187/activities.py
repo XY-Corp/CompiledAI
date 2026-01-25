@@ -11,7 +11,7 @@ async def extract_function_call(
     workflow_definition_id: str | None = None,
     workflow_instance_id: str | None = None,
 ) -> dict[str, Any]:
-    """Extract function call parameters from user query and return as {func_name: {params}}."""
+    """Extract function name and parameters from user query. Returns {"func_name": {params}}."""
     
     # Parse prompt - may be JSON string with nested structure
     try:
@@ -39,11 +39,12 @@ async def extract_function_call(
     except (json.JSONDecodeError, TypeError):
         funcs = []
     
-    # Get target function details
-    func = funcs[0] if funcs else {}
+    if not funcs:
+        return {"error": "No functions provided"}
+    
+    func = funcs[0]
     func_name = func.get("name", "")
     params_schema = func.get("parameters", {}).get("properties", {})
-    required_params = func.get("parameters", {}).get("required", [])
     
     # Extract parameters based on schema
     params = {}
@@ -54,62 +55,46 @@ async def extract_function_call(
         param_desc = param_info.get("description", "").lower()
         
         if param_type == "string":
-            # For location/city parameters - extract city name
-            if "location" in param_name.lower() or "city" in param_desc:
-                # Pattern: "in [City, State]" or "in [City]" or "for [City]"
-                location_patterns = [
-                    r'(?:in|for|at)\s+([A-Za-z\s]+,\s*[A-Za-z\s]+)',  # City, State
-                    r'(?:in|for|at)\s+([A-Za-z\s]+?)(?:\?|$|\.)',  # City only
-                    r'weather\s+(?:in|for|at)\s+([A-Za-z\s,]+)',  # weather in/for City
+            # For location/city extraction
+            if "city" in param_desc or "location" in param_desc:
+                # Try patterns: "in <city>", "for <city>", "<city>, <state>"
+                patterns = [
+                    r'(?:in|for|at)\s+([A-Za-z\s]+(?:,\s*[A-Za-z\s]+)?)\??',
+                    r'([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*(?:,\s*[A-Z][a-z]+)?)',
                 ]
                 
-                for pattern in location_patterns:
-                    match = re.search(pattern, query, re.IGNORECASE)
+                for pattern in patterns:
+                    match = re.search(pattern, query)
                     if match:
-                        location = match.group(1).strip().rstrip('?.,!')
-                        # Clean up the location
+                        location = match.group(1).strip().rstrip('?')
+                        # Clean up common trailing words
+                        location = re.sub(r'\s+(right now|today|currently|please).*$', '', location, flags=re.IGNORECASE)
                         if location:
                             params[param_name] = location
                             break
+            else:
+                # Generic string extraction
+                numbers = re.findall(r'\d+', query)
+                if numbers:
+                    params[param_name] = numbers[0]
         
         elif param_type == "boolean":
-            # Check if the query explicitly mentions this parameter's subject
-            # For weather: temperature, humidity, etc.
-            subject_keywords = []
-            
-            if "temperature" in param_name.lower() or "temperature" in param_desc:
-                subject_keywords = ["temperature", "temp"]
-            elif "humidity" in param_name.lower() or "humidity" in param_desc:
-                subject_keywords = ["humidity", "humid"]
-            
-            # If the query mentions the subject, set to true
-            # If not mentioned but has default, use default
-            mentioned = any(kw in query_lower for kw in subject_keywords)
-            
-            if mentioned:
-                params[param_name] = True
-            # If not mentioned and not required, skip (use default)
+            # Check if the query mentions what this boolean controls
+            if "temperature" in param_desc.lower():
+                # Check if temperature is mentioned in query
+                if "temperature" in query_lower or "temp" in query_lower:
+                    params[param_name] = True
+            elif "humidity" in param_desc.lower():
+                # Check if humidity is mentioned in query
+                if "humidity" in query_lower:
+                    params[param_name] = True
         
         elif param_type in ["integer", "number", "float"]:
-            # Extract numbers from query
             numbers = re.findall(r'\d+(?:\.\d+)?', query)
             if numbers:
                 if param_type == "integer":
                     params[param_name] = int(numbers[0])
                 else:
                     params[param_name] = float(numbers[0])
-    
-    # Ensure required params are present
-    for req_param in required_params:
-        if req_param not in params:
-            # Try harder to extract required params
-            if req_param == "location":
-                # Fallback: extract any capitalized words that look like a place
-                words = re.findall(r'[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*', query)
-                # Filter out common non-location words
-                non_locations = {"What", "The", "Current", "Default"}
-                locations = [w for w in words if w not in non_locations]
-                if locations:
-                    params[req_param] = ", ".join(locations[-2:]) if len(locations) >= 2 else locations[-1]
     
     return {func_name: params}

@@ -11,9 +11,11 @@ async def extract_function_call(
     workflow_definition_id: str | None = None,
     workflow_instance_id: str | None = None,
 ) -> dict[str, Any]:
-    """Extract function name and parameters from user query using regex and string matching."""
+    """Extract function name and parameters from user query and function schema.
     
-    # Parse prompt (may be JSON string with nested structure)
+    Returns a dict with function name as key and parameters as nested object.
+    """
+    # Parse prompt - may be JSON string with nested structure
     try:
         if isinstance(prompt, str):
             data = json.loads(prompt)
@@ -21,17 +23,24 @@ async def extract_function_call(
             data = prompt
         
         # Extract user query from BFCL format: {"question": [[{"role": "user", "content": "..."}]]}
-        if "question" in data and isinstance(data["question"], list):
-            if len(data["question"]) > 0 and isinstance(data["question"][0], list):
-                query = data["question"][0][0].get("content", str(prompt))
+        if isinstance(data, dict) and "question" in data:
+            question_data = data.get("question", [])
+            if isinstance(question_data, list) and len(question_data) > 0:
+                first_item = question_data[0]
+                if isinstance(first_item, list) and len(first_item) > 0:
+                    query = first_item[0].get("content", str(prompt))
+                elif isinstance(first_item, dict):
+                    query = first_item.get("content", str(prompt))
+                else:
+                    query = str(prompt)
             else:
                 query = str(prompt)
         else:
             query = str(prompt)
-    except (json.JSONDecodeError, TypeError, KeyError):
+    except (json.JSONDecodeError, TypeError):
         query = str(prompt)
     
-    # Parse functions (may be JSON string)
+    # Parse functions - may be JSON string
     try:
         if isinstance(functions, str):
             funcs = json.loads(functions)
@@ -40,75 +49,84 @@ async def extract_function_call(
     except (json.JSONDecodeError, TypeError):
         funcs = []
     
+    if not funcs:
+        return {"error": "No functions provided"}
+    
     # Get function details
-    func = funcs[0] if funcs else {}
+    func = funcs[0] if isinstance(funcs, list) else funcs
     func_name = func.get("name", "")
-    params_schema = func.get("parameters", {}).get("properties", {})
+    params_schema = func.get("parameters", {})
     
-    # Extract parameters based on the query and schema
-    params = {}
-    
-    # For calculate_distance: extract celestial bodies and unit
-    if func_name == "calculate_distance":
-        # Common patterns for celestial body extraction
-        # Pattern: "from X to Y" or "between X and Y"
-        from_to_match = re.search(r'from\s+(?:the\s+)?(\w+)\s+to\s+(?:the\s+)?(\w+)', query, re.IGNORECASE)
-        between_match = re.search(r'between\s+(?:the\s+)?(\w+)\s+and\s+(?:the\s+)?(\w+)', query, re.IGNORECASE)
-        
-        if from_to_match:
-            params["body1"] = from_to_match.group(1).capitalize()
-            params["body2"] = from_to_match.group(2).capitalize()
-        elif between_match:
-            params["body1"] = between_match.group(1).capitalize()
-            params["body2"] = between_match.group(2).capitalize()
-        
-        # Extract unit if specified
-        unit_patterns = [
-            r'in\s+(miles?|km|kilometers?|meters?|feet|light[\s-]?years?)',
-            r'(miles?|km|kilometers?|meters?|feet|light[\s-]?years?)\s*(?:from|between)',
-            r'distance\s+in\s+(miles?|km|kilometers?|meters?|feet|light[\s-]?years?)',
-        ]
-        
-        for pattern in unit_patterns:
-            unit_match = re.search(pattern, query, re.IGNORECASE)
-            if unit_match:
-                unit_value = unit_match.group(1).lower()
-                # Normalize unit names
-                if unit_value.startswith('mile'):
-                    params["unit"] = "miles"
-                elif unit_value in ('km', 'kilometer', 'kilometers'):
-                    params["unit"] = "km"
-                elif unit_value in ('meter', 'meters'):
-                    params["unit"] = "meters"
-                elif unit_value in ('feet', 'foot'):
-                    params["unit"] = "feet"
-                elif 'light' in unit_value:
-                    params["unit"] = "light-years"
-                else:
-                    params["unit"] = unit_value
-                break
+    # Handle both "properties" nested and direct properties
+    if "properties" in params_schema:
+        props = params_schema.get("properties", {})
     else:
-        # Generic extraction for other functions
-        for param_name, param_info in params_schema.items():
-            param_type = param_info.get("type", "string") if isinstance(param_info, dict) else "string"
+        props = params_schema
+    
+    required_params = params_schema.get("required", [])
+    
+    # Extract parameters based on schema
+    params = {}
+    query_lower = query.lower()
+    
+    for param_name, param_info in props.items():
+        param_type = param_info.get("type", "string") if isinstance(param_info, dict) else "string"
+        param_desc = param_info.get("description", "") if isinstance(param_info, dict) else ""
+        
+        # For celestial body extraction
+        if "celestial" in param_desc.lower() or "body" in param_name.lower():
+            # Common celestial bodies
+            celestial_bodies = [
+                "earth", "moon", "sun", "mars", "venus", "mercury", "jupiter", 
+                "saturn", "uranus", "neptune", "pluto", "asteroid", "comet"
+            ]
             
-            if param_type in ("integer", "number", "float"):
-                # Extract numbers
-                numbers = re.findall(r'\d+(?:\.\d+)?', query)
-                if numbers:
-                    if param_type == "integer":
-                        params[param_name] = int(numbers[0])
-                    else:
-                        params[param_name] = float(numbers[0])
-            elif param_type == "string":
-                # Try to extract string values based on common patterns
-                # Pattern: "for X" or "of X" or quoted strings
-                string_match = re.search(r'(?:for|of|to|from)\s+([A-Za-z\s]+?)(?:\s+(?:and|to|from|in)|[?.,]|$)', query, re.IGNORECASE)
-                quoted_match = re.search(r'["\']([^"\']+)["\']', query)
-                
-                if quoted_match:
-                    params[param_name] = quoted_match.group(1)
-                elif string_match:
-                    params[param_name] = string_match.group(1).strip()
+            # Find all celestial bodies mentioned in query
+            found_bodies = []
+            for body in celestial_bodies:
+                if body in query_lower:
+                    # Get proper capitalization
+                    match = re.search(rf'\b{body}\b', query, re.IGNORECASE)
+                    if match:
+                        found_bodies.append(match.group(0).capitalize())
+            
+            # Assign to body1 and body2 based on order found
+            if param_name == "body1" and len(found_bodies) >= 1:
+                params[param_name] = found_bodies[0]
+            elif param_name == "body2" and len(found_bodies) >= 2:
+                params[param_name] = found_bodies[1]
+        
+        # For unit extraction
+        elif "unit" in param_name.lower():
+            # Check for unit mentions
+            unit_patterns = [
+                (r'\b(miles?|mi)\b', 'miles'),
+                (r'\b(kilometers?|km)\b', 'km'),
+                (r'\b(meters?|m)\b', 'm'),
+                (r'\b(feet|ft)\b', 'feet'),
+                (r'\b(light[\s-]?years?|ly)\b', 'light-years'),
+                (r'\b(astronomical[\s-]?units?|au)\b', 'AU'),
+            ]
+            
+            for pattern, unit_value in unit_patterns:
+                if re.search(pattern, query, re.IGNORECASE):
+                    params[param_name] = unit_value
+                    break
+        
+        # For numeric parameters
+        elif param_type in ["integer", "number", "float"]:
+            numbers = re.findall(r'\d+(?:\.\d+)?', query)
+            if numbers:
+                if param_type == "integer":
+                    params[param_name] = int(float(numbers[0]))
+                else:
+                    params[param_name] = float(numbers[0])
+        
+        # For string parameters - try to extract based on context
+        elif param_type == "string":
+            # Generic string extraction - look for quoted strings or key phrases
+            quoted = re.findall(r'"([^"]+)"', query)
+            if quoted:
+                params[param_name] = quoted[0]
     
     return {func_name: params}

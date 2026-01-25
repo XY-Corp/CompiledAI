@@ -50,44 +50,46 @@ async def extract_function_call(
     # Extract all numbers from the query
     numbers = re.findall(r'\d+(?:\.\d+)?', query)
     
-    # For BMI calculation, we expect weight and height
-    # Common patterns: "weight of X kilograms", "height of Y cm"
-    
-    # Try to extract weight (look for patterns like "weight of 85" or "85 kilograms/kg")
-    weight_match = re.search(r'weight\s+(?:of\s+)?(\d+(?:\.\d+)?)', query, re.IGNORECASE)
-    if not weight_match:
-        weight_match = re.search(r'(\d+(?:\.\d+)?)\s*(?:kg|kilograms?)', query, re.IGNORECASE)
-    
-    # Try to extract height (look for patterns like "height of 180" or "180 cm")
-    height_match = re.search(r'height\s+(?:of\s+)?(\d+(?:\.\d+)?)', query, re.IGNORECASE)
-    if not height_match:
-        height_match = re.search(r'(\d+(?:\.\d+)?)\s*(?:cm|centimeters?)', query, re.IGNORECASE)
-    
-    # Assign extracted values to parameters based on schema
+    # Map numbers to parameters based on context
+    num_idx = 0
     for param_name, param_info in params_schema.items():
         param_type = param_info.get("type", "string")
         
-        if param_name == "weight" and weight_match:
-            value = weight_match.group(1)
-            params[param_name] = int(float(value)) if param_type == "integer" else float(value)
-        elif param_name == "height" and height_match:
-            value = height_match.group(1)
-            params[param_name] = int(float(value)) if param_type == "integer" else float(value)
-        elif param_name == "unit":
-            # Check if unit is mentioned in query
-            if re.search(r'\bimperial\b', query, re.IGNORECASE):
-                params[param_name] = "imperial"
-            elif re.search(r'\bmetric\b', query, re.IGNORECASE):
-                params[param_name] = "metric"
-            # Don't include optional param if not specified
-    
-    # Fallback: if specific patterns didn't match, use positional numbers
-    if "weight" in params_schema and "weight" not in params and len(numbers) >= 1:
-        # First number is typically weight
-        params["weight"] = int(float(numbers[0]))
-    
-    if "height" in params_schema and "height" not in params and len(numbers) >= 2:
-        # Second number is typically height
-        params["height"] = int(float(numbers[1]))
+        if param_type in ["integer", "number", "float"]:
+            # Try to find contextual match first
+            # Look for patterns like "weight of 85" or "85 kilograms"
+            if param_name == "weight":
+                weight_match = re.search(r'weight\s+(?:of\s+)?(\d+)|(\d+)\s*(?:kg|kilogram)', query, re.IGNORECASE)
+                if weight_match:
+                    val = weight_match.group(1) or weight_match.group(2)
+                    params[param_name] = int(val) if param_type == "integer" else float(val)
+                    continue
+            
+            if param_name == "height":
+                height_match = re.search(r'height\s+(?:of\s+)?(\d+)|(\d+)\s*(?:cm|centimeter|meter)', query, re.IGNORECASE)
+                if height_match:
+                    val = height_match.group(1) or height_match.group(2)
+                    params[param_name] = int(val) if param_type == "integer" else float(val)
+                    continue
+            
+            # Fallback: assign numbers in order
+            if num_idx < len(numbers):
+                val = numbers[num_idx]
+                params[param_name] = int(val) if param_type == "integer" else float(val)
+                num_idx += 1
+        
+        elif param_type == "string":
+            # Check for specific string patterns
+            if param_name == "unit":
+                if re.search(r'\bimperial\b', query, re.IGNORECASE):
+                    params[param_name] = "imperial"
+                elif re.search(r'\bmetric\b', query, re.IGNORECASE):
+                    params[param_name] = "metric"
+                # Don't include optional param if not specified
+            else:
+                # Generic string extraction - look for quoted values or after "for/in/of"
+                string_match = re.search(r'(?:for|in|of|with)\s+([A-Za-z\s]+?)(?:\s+(?:and|with|,)|$)', query, re.IGNORECASE)
+                if string_match:
+                    params[param_name] = string_match.group(1).strip()
     
     return {func_name: params}

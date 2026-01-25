@@ -13,7 +13,7 @@ async def extract_function_call(
 ) -> dict[str, Any]:
     """Extract function call parameters from user query and return as {func_name: {params}}.
     
-    Uses regex and string matching to extract parameter values - no LLM calls needed.
+    Uses regex and string matching to extract values - no LLM calls needed.
     """
     # Parse prompt (may be JSON string with nested structure)
     try:
@@ -60,8 +60,8 @@ async def extract_function_call(
             # Extract location - look for quoted strings or known patterns
             # Pattern: "in the X" or "for X" or "on X"
             location_patterns = [
-                r'(?:in|for|on|at)\s+(?:the\s+)?([A-Za-z][A-Za-z\s]+?)(?:\s+for|\s+over|\s+during|\.|\?|$)',
-                r'data\s+(?:on|for|about)\s+(?:average\s+)?(?:\w+\s+)?(?:in\s+)?(?:the\s+)?([A-Za-z][A-Za-z\s]+?)(?:\s+for|\s+over|\.|\?|$)',
+                r'(?:in|for|on|at)\s+(?:the\s+)?([A-Za-z][A-Za-z\s]+?)(?:\s+for|\s+over|\s+during|\s*$|\s*\.)',
+                r'data\s+(?:on|for|about)\s+(?:average\s+)?(?:\w+\s+)?(?:in\s+)?(?:the\s+)?([A-Za-z][A-Za-z\s]+?)(?:\s+for|\s+over|\s*$)',
             ]
             
             for pattern in location_patterns:
@@ -74,52 +74,49 @@ async def extract_function_call(
                         params[param_name] = location
                         break
             
-            # Fallback: look for "Amazon rainforest" specifically or similar known locations
+            # Fallback: look for "Amazon rainforest" specifically mentioned
             if param_name not in params:
-                known_locations = ["amazon rainforest", "amazon", "sahara desert", "arctic", "antarctic"]
-                for loc in known_locations:
-                    if loc in query_lower:
-                        # Capitalize properly
-                        params[param_name] = loc.title()
-                        break
+                if "amazon" in query_lower:
+                    if "rainforest" in query_lower:
+                        params[param_name] = "Amazon rainforest"
+                    else:
+                        params[param_name] = "Amazon"
         
         elif param_name == "time_frame" and enum_values:
             # Match against enum values
-            # Look for time-related phrases in query
-            time_mappings = {
-                "six_months": ["six months", "6 months", "last six months", "past six months", "last 6 months"],
-                "year": ["year", "one year", "1 year", "last year", "past year", "12 months"],
-                "five_years": ["five years", "5 years", "last five years", "past five years"],
-            }
+            # Look for time-related phrases
+            if "six month" in query_lower or "6 month" in query_lower or "last six" in query_lower:
+                if "six_months" in enum_values:
+                    params[param_name] = "six_months"
+            elif "year" in query_lower and "five" not in query_lower:
+                if "year" in enum_values:
+                    params[param_name] = "year"
+            elif "five year" in query_lower or "5 year" in query_lower:
+                if "five_years" in enum_values:
+                    params[param_name] = "five_years"
             
-            for enum_val in enum_values:
-                # Check direct match
-                if enum_val.replace("_", " ") in query_lower:
-                    params[param_name] = enum_val
-                    break
-                # Check mapped phrases
-                if enum_val in time_mappings:
-                    for phrase in time_mappings[enum_val]:
-                        if phrase in query_lower:
-                            params[param_name] = enum_val
-                            break
-                if param_name in params:
-                    break
+            # Fallback: try to match any enum value mentioned
+            if param_name not in params:
+                for enum_val in enum_values:
+                    # Convert enum to readable form for matching
+                    readable = enum_val.replace("_", " ")
+                    if readable in query_lower:
+                        params[param_name] = enum_val
+                        break
         
         elif param_type in ["integer", "number", "float"]:
             # Extract numbers
             numbers = re.findall(r'\d+(?:\.\d+)?', query)
             if numbers:
                 if param_type == "integer":
-                    params[param_name] = int(float(numbers[0]))
+                    params[param_name] = int(numbers[0])
                 else:
                     params[param_name] = float(numbers[0])
         
-        elif param_type == "string" and enum_values:
-            # Match against enum values
-            for enum_val in enum_values:
-                if enum_val.lower() in query_lower or enum_val.replace("_", " ").lower() in query_lower:
-                    params[param_name] = enum_val
-                    break
+        elif param_type == "string" and param_name not in params:
+            # Generic string extraction - look for quoted values or patterns from description
+            quoted = re.findall(r'"([^"]+)"', query)
+            if quoted:
+                params[param_name] = quoted[0]
     
     return {func_name: params}

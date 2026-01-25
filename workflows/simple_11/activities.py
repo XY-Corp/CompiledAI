@@ -54,7 +54,7 @@ async def extract_function_call(
     # Extract all numbers from the query
     numbers = re.findall(r'\d+(?:\.\d+)?', query)
     
-    # Build parameters dict by matching numbers to parameter schema
+    # Build parameters dict by matching numbers to parameter names
     params = {}
     num_idx = 0
     
@@ -63,60 +63,28 @@ async def extract_function_call(
         
         if param_type in ["integer", "number", "float"]:
             if num_idx < len(numbers):
-                # Try to match parameter name in context for better accuracy
-                # Look for patterns like "base of 10" or "height of 5"
+                # Try to match number contextually based on param name
+                value = None
+                
+                # Look for contextual patterns like "base of 10" or "height of 5"
                 pattern = rf'{param_name}\s*(?:of|is|=|:)?\s*(\d+(?:\.\d+)?)'
                 match = re.search(pattern, query, re.IGNORECASE)
-                
                 if match:
                     value = match.group(1)
-                else:
-                    # Fall back to sequential number assignment
+                
+                # If no contextual match, use numbers in order
+                if value is None:
                     value = numbers[num_idx]
                     num_idx += 1
+                else:
+                    # Remove used number from list to avoid reuse
+                    if value in numbers:
+                        numbers.remove(value)
                 
                 # Convert to appropriate type
                 if param_type == "integer":
                     params[param_name] = int(float(value))
                 else:
                     params[param_name] = float(value)
-    
-    # If sequential assignment didn't work well, try smarter matching
-    # For triangle area: "base of X" and "height of Y"
-    if not params or len(params) < len([p for p, i in params_schema.items() if i.get("type") in ["integer", "number", "float"]]):
-        params = {}
-        num_idx = 0
-        
-        for param_name, param_info in params_schema.items():
-            param_type = param_info.get("type", "string")
-            
-            if param_type in ["integer", "number", "float"]:
-                # Try specific patterns for this parameter
-                patterns = [
-                    rf'{param_name}\s*(?:of|is|=|:)?\s*(\d+(?:\.\d+)?)',
-                    rf'(\d+(?:\.\d+)?)\s*(?:units?)?\s*{param_name}',
-                    rf'{param_name}[^0-9]*(\d+(?:\.\d+)?)',
-                ]
-                
-                found = False
-                for pattern in patterns:
-                    match = re.search(pattern, query, re.IGNORECASE)
-                    if match:
-                        value = match.group(1)
-                        if param_type == "integer":
-                            params[param_name] = int(float(value))
-                        else:
-                            params[param_name] = float(value)
-                        found = True
-                        break
-                
-                # Fall back to sequential if no pattern matched
-                if not found and num_idx < len(numbers):
-                    value = numbers[num_idx]
-                    num_idx += 1
-                    if param_type == "integer":
-                        params[param_name] = int(float(value))
-                    else:
-                        params[param_name] = float(value)
     
     return {func_name: params}

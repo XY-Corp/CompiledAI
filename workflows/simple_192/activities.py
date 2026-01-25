@@ -17,12 +17,13 @@ async def extract_function_call(
     try:
         if isinstance(prompt, str):
             data = json.loads(prompt)
-            # Extract user query from BFCL format
-            if "question" in data and isinstance(data["question"], list):
-                if len(data["question"]) > 0 and isinstance(data["question"][0], list):
-                    query = data["question"][0][0].get("content", prompt)
-                else:
-                    query = str(prompt)
+        else:
+            data = prompt
+        
+        # Extract user query from BFCL format
+        if "question" in data and isinstance(data["question"], list):
+            if len(data["question"]) > 0 and isinstance(data["question"][0], list):
+                query = data["question"][0][0].get("content", str(prompt))
             else:
                 query = str(prompt)
         else:
@@ -42,35 +43,32 @@ async def extract_function_call(
     # Get function details
     func = funcs[0] if funcs else {}
     func_name = func.get("name", "")
-    params_schema = func.get("parameters", {}).get("properties", {})
+    props = func.get("parameters", {}).get("properties", {})
     
     # Extract coordinate pairs using regex
-    # Pattern for coordinates like (40.7128, -74.0060) or [40.7128, -74.0060]
-    coord_pattern = r'[\(\[]?\s*(-?\d+\.?\d*)\s*,\s*(-?\d+\.?\d*)\s*[\)\]]?'
-    
-    # Find all coordinate pairs in the query
+    # Pattern for coordinates like (40.7128, -74.0060)
+    coord_pattern = r'\((-?\d+\.?\d*),\s*(-?\d+\.?\d*)\)'
     coord_matches = re.findall(coord_pattern, query)
     
+    # Extract unit from query
+    unit = "degree"  # default
+    if "percent" in query.lower():
+        unit = "percent"
+    elif "ratio" in query.lower():
+        unit = "ratio"
+    elif "degree" in query.lower():
+        unit = "degree"
+    
+    # Build parameters
     params = {}
     
-    # Extract point1 and point2 from coordinate matches
     if len(coord_matches) >= 2:
-        # First coordinate pair is point1
+        # First coordinate pair -> point1
         params["point1"] = [float(coord_matches[0][0]), float(coord_matches[0][1])]
-        # Second coordinate pair is point2
+        # Second coordinate pair -> point2
         params["point2"] = [float(coord_matches[1][0]), float(coord_matches[1][1])]
     
-    # Extract unit parameter
-    # Check for unit keywords in the query
-    query_lower = query.lower()
-    if "degree" in query_lower:
-        params["unit"] = "degree"
-    elif "percent" in query_lower:
-        params["unit"] = "percent"
-    elif "ratio" in query_lower:
-        params["unit"] = "ratio"
-    # If no unit specified, use default "degree" as per schema
-    else:
-        params["unit"] = "degree"
+    # Add unit parameter
+    params["unit"] = unit
     
     return {func_name: params}

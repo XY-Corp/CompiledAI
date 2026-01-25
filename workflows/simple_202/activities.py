@@ -74,48 +74,42 @@ async def extract_function_call(
         elif param_type == "string":
             # Handle energy_type parameter
             if "energy" in param_name or "energy" in param_desc:
-                # Look for renewable energy type mentions
+                # Look for renewable energy types
                 energy_types = ["renewable", "solar", "wind", "hydro", "geothermal", "biomass"]
                 for energy in energy_types:
                     if energy in query_lower:
                         params[param_name] = energy
                         break
-                # Default to "renewable" if mentioned generically
-                if param_name not in params and "renewable energy" in query_lower:
-                    params[param_name] = "renewable"
+                # Check for "renewable energy sources" pattern
+                if param_name not in params:
+                    match = re.search(r'(renewable\s+energy(?:\s+sources?)?|solar|wind|hydro)', query_lower)
+                    if match:
+                        params[param_name] = match.group(1).strip()
             
             # Handle region parameter
             elif "region" in param_name or "region" in param_desc:
-                # Look for US states or regions
-                states = [
-                    "California", "Texas", "New York", "Florida", "Illinois",
-                    "Pennsylvania", "Ohio", "Georgia", "North Carolina", "Michigan",
-                    "Washington", "Arizona", "Massachusetts", "Colorado", "Oregon"
+                # Common US states/regions
+                regions = [
+                    "california", "texas", "new york", "florida", "illinois",
+                    "pennsylvania", "ohio", "georgia", "north carolina", "michigan",
+                    "washington", "arizona", "massachusetts", "tennessee", "indiana",
+                    "missouri", "maryland", "wisconsin", "colorado", "minnesota",
+                    "south carolina", "alabama", "louisiana", "kentucky", "oregon",
+                    "oklahoma", "connecticut", "utah", "iowa", "nevada", "arkansas",
+                    "mississippi", "kansas", "new mexico", "nebraska", "west virginia",
+                    "idaho", "hawaii", "new hampshire", "maine", "montana", "rhode island",
+                    "delaware", "south dakota", "north dakota", "alaska", "vermont", "wyoming"
                 ]
-                for state in states:
-                    if state.lower() in query_lower:
-                        params[param_name] = state
+                for region in regions:
+                    if region in query_lower:
+                        # Capitalize properly
+                        params[param_name] = region.title()
                         break
-                # Also check for "in X" pattern
+                
+                # Also check for "in [Region]" pattern
                 if param_name not in params:
-                    match = re.search(r'\bin\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)', query)
+                    match = re.search(r'in\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)', query)
                     if match:
                         params[param_name] = match.group(1)
-    
-    # Apply defaults for optional parameters not found
-    for param_name, param_info in params_schema.items():
-        if param_name not in params and param_name not in required_params:
-            # Check if there's a default in the description
-            desc = param_info.get("description", "")
-            default_match = re.search(r"[Dd]efault\s+(?:is\s+)?['\"]?([^'\"\.]+)['\"]?", desc)
-            if default_match:
-                default_val = default_match.group(1).strip().rstrip(".")
-                if param_info.get("type") == "integer":
-                    try:
-                        params[param_name] = int(default_val)
-                    except ValueError:
-                        pass
-                else:
-                    params[param_name] = default_val
     
     return {func_name: params}

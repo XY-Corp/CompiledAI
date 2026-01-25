@@ -11,10 +11,8 @@ async def extract_function_call(
     workflow_definition_id: str | None = None,
     workflow_instance_id: str | None = None,
 ) -> dict[str, Any]:
-    """Extract function name and parameters from user query using regex patterns.
+    """Extract function name and parameters from user query using regex patterns."""
     
-    Returns format: {"function_name": {"param1": val1, "param2": val2}}
-    """
     # Parse prompt - may be JSON string with nested structure
     try:
         if isinstance(prompt, str):
@@ -31,7 +29,7 @@ async def extract_function_call(
             query = str(prompt)
     except (json.JSONDecodeError, TypeError, KeyError):
         query = str(prompt)
-
+    
     # Parse functions - may be JSON string
     try:
         if isinstance(functions, str):
@@ -40,67 +38,38 @@ async def extract_function_call(
             funcs = functions
     except (json.JSONDecodeError, TypeError):
         funcs = []
-
+    
     # Get function details
     func = funcs[0] if funcs else {}
     func_name = func.get("name", "")
     params_schema = func.get("parameters", {}).get("properties", {})
-    required_params = func.get("parameters", {}).get("required", [])
-
+    
     # Extract parameters using regex
     params = {}
     
-    # Extract all numbers with optional units from the query
-    # Pattern matches: "6cm", "10cm", "6 cm", "10 cm", "6", "10"
-    number_patterns = re.findall(r'(\d+(?:\.\d+)?)\s*(cm|m|mm|in|ft|inch|inches|feet|meters|centimeters)?', query, re.IGNORECASE)
+    # Extract all numbers from the query
+    numbers = re.findall(r'\d+(?:\.\d+)?', query)
     
-    # Also try to extract numbers with context (e.g., "base ... 6cm", "height ... 10cm")
-    base_match = re.search(r'base[^\d]*(\d+(?:\.\d+)?)', query, re.IGNORECASE)
-    height_match = re.search(r'height[^\d]*(\d+(?:\.\d+)?)', query, re.IGNORECASE)
+    # Extract unit if present (e.g., "cm", "m", "inches")
+    unit_match = re.search(r'\d+\s*(cm|m|mm|inches|inch|in|ft|feet|meters|centimeters)', query, re.IGNORECASE)
+    unit = unit_match.group(1).lower() if unit_match else None
     
-    # Extract unit if present
-    unit_match = re.search(r'(\d+)\s*(cm|m|mm|in|ft|inch|inches|feet|meters|centimeters)', query, re.IGNORECASE)
-    unit = unit_match.group(2).lower() if unit_match else None
-    
-    # Map extracted values to parameters based on schema
+    # Map extracted values to parameter names based on schema
+    num_idx = 0
     for param_name, param_info in params_schema.items():
         param_type = param_info.get("type", "string")
         
-        if param_name == "base":
-            if base_match:
-                value = base_match.group(1)
-            elif number_patterns and len(number_patterns) >= 1:
-                # First number is typically base
-                value = number_patterns[0][0]
-            else:
-                continue
-            
-            if param_type == "integer":
-                params[param_name] = int(float(value))
-            elif param_type in ["number", "float"]:
-                params[param_name] = float(value)
-            else:
-                params[param_name] = value
-                
-        elif param_name == "height":
-            if height_match:
-                value = height_match.group(1)
-            elif number_patterns and len(number_patterns) >= 2:
-                # Second number is typically height
-                value = number_patterns[1][0]
-            else:
-                continue
-            
-            if param_type == "integer":
-                params[param_name] = int(float(value))
-            elif param_type in ["number", "float"]:
-                params[param_name] = float(value)
-            else:
-                params[param_name] = value
-                
-        elif param_name == "unit":
-            # Only include unit if explicitly found in query
-            if unit:
+        if param_type in ["integer", "number", "float"]:
+            if num_idx < len(numbers):
+                value = numbers[num_idx]
+                if param_type == "integer":
+                    params[param_name] = int(float(value))
+                else:
+                    params[param_name] = float(value)
+                num_idx += 1
+        elif param_type == "string":
+            # Check if this is a unit parameter
+            if "unit" in param_name.lower() and unit:
                 params[param_name] = unit
-
+    
     return {func_name: params}

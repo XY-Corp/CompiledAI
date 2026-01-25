@@ -19,7 +19,7 @@ async def extract_function_call(
     try:
         if isinstance(prompt, str):
             data = json.loads(prompt)
-            # Handle BFCL format: {"question": [[{"role": "user", "content": "..."}]]}
+            # Handle BFCL format: {"question": [[{"role": "user", "content": "..."}]], ...}
             if "question" in data and isinstance(data["question"], list):
                 if len(data["question"]) > 0 and isinstance(data["question"][0], list):
                     query = data["question"][0][0].get("content", str(prompt))
@@ -36,16 +36,18 @@ async def extract_function_call(
     query = query.strip().strip("'\"")
     
     # Parse functions - may be JSON string
-    if isinstance(functions, str):
-        try:
-            functions = json.loads(functions)
-        except json.JSONDecodeError:
-            functions = []
+    try:
+        if isinstance(functions, str):
+            funcs = json.loads(functions)
+        else:
+            funcs = functions
+    except (json.JSONDecodeError, TypeError):
+        funcs = []
     
-    if not functions:
+    if not funcs:
         return {"error": "No functions provided"}
     
-    func = functions[0]
+    func = funcs[0]
     func_name = func.get("name", "")
     params_schema = func.get("parameters", {}).get("properties", {})
     
@@ -59,7 +61,7 @@ async def extract_function_call(
         if param_name == "company":
             # Extract company/ticker - look for known patterns
             # "stock price of Apple" -> AAPL
-            # Common company to ticker mappings
+            # Common company name to ticker mappings
             company_tickers = {
                 "apple": "AAPL",
                 "google": "GOOGL",
@@ -84,17 +86,17 @@ async def extract_function_call(
                 if match:
                     params[param_name] = match.group(1).upper()
         
-        elif param_name == "days":
+        elif param_name == "days" and param_type == "integer":
             # Extract number of days
             # "last 5 days" -> 5
-            match = re.search(r'(?:last|past|previous)?\s*(\d+)\s*days?', query, re.IGNORECASE)
-            if match:
-                params[param_name] = int(match.group(1))
+            numbers = re.findall(r'(\d+)\s*(?:day|days)', query, re.IGNORECASE)
+            if numbers:
+                params[param_name] = int(numbers[0])
             else:
                 # Try to find any number
-                numbers = re.findall(r'\d+', query)
-                if numbers:
-                    params[param_name] = int(numbers[0])
+                all_numbers = re.findall(r'\d+', query)
+                if all_numbers:
+                    params[param_name] = int(all_numbers[0])
         
         elif param_name == "exchange":
             # Extract stock exchange
@@ -105,17 +107,5 @@ async def extract_function_call(
                 if exchange in query_upper:
                     params[param_name] = exchange
                     break
-        
-        elif param_type == "integer":
-            # Generic integer extraction
-            numbers = re.findall(r'\d+', query)
-            if numbers:
-                params[param_name] = int(numbers[0])
-        
-        elif param_type == "string":
-            # Generic string extraction - try to find quoted strings or after "for/of"
-            quoted = re.search(r'["\']([^"\']+)["\']', query)
-            if quoted:
-                params[param_name] = quoted.group(1)
     
     return {func_name: params}

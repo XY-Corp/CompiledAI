@@ -60,40 +60,36 @@ async def extract_function_call(
             # Try to find contextual match first
             # Look for patterns like "distance of X" or "X kilometers"
             if param_name == "distance":
-                distance_match = re.search(r'distance\s+of\s+(\d+(?:\.\d+)?)', query, re.IGNORECASE)
-                if not distance_match:
-                    distance_match = re.search(r'(\d+(?:\.\d+)?)\s*(?:kilometers?|km|miles?|meters?|m)\b', query, re.IGNORECASE)
+                distance_match = re.search(r'distance\s+of\s+(\d+)|(\d+)\s*(?:km|kilometers?|miles?|meters?)', query, re.IGNORECASE)
                 if distance_match:
-                    val = distance_match.group(1)
-                    params[param_name] = int(float(val)) if param_type == "integer" else float(val)
+                    val = distance_match.group(1) or distance_match.group(2)
+                    params[param_name] = int(val) if param_type == "integer" else float(val)
                     continue
             
             if param_name == "duration":
-                duration_match = re.search(r'duration\s+of\s+(\d+(?:\.\d+)?)', query, re.IGNORECASE)
-                if not duration_match:
-                    duration_match = re.search(r'(?:for\s+)?(\d+(?:\.\d+)?)\s*(?:hours?|hrs?|minutes?|mins?|seconds?|secs?)\b', query, re.IGNORECASE)
+                duration_match = re.search(r'duration\s+of\s+(\d+)|(\d+)\s*(?:hours?|hrs?|minutes?|mins?|seconds?|secs?)', query, re.IGNORECASE)
                 if duration_match:
-                    val = duration_match.group(1)
-                    params[param_name] = int(float(val)) if param_type == "integer" else float(val)
+                    val = duration_match.group(1) or duration_match.group(2)
+                    params[param_name] = int(val) if param_type == "integer" else float(val)
                     continue
             
             # Fallback: use numbers in order
             if num_idx < len(numbers):
                 val = numbers[num_idx]
-                params[param_name] = int(float(val)) if param_type == "integer" else float(val)
+                params[param_name] = int(val) if param_type == "integer" else float(val)
                 num_idx += 1
         
         elif param_type == "string":
             # For optional string params like "unit", check if mentioned
             if param_name == "unit":
                 # Look for unit specification
-                unit_match = re.search(r'(?:in|unit[:\s]+)\s*(km/h|mph|m/s|meters?\s*per\s*second)', query, re.IGNORECASE)
+                unit_match = re.search(r'(?:in|unit[s]?\s*(?:of|:)?)\s*(km/h|mph|m/s|meters?\s*per\s*second)', query, re.IGNORECASE)
                 if unit_match:
                     params[param_name] = unit_match.group(1).lower()
                 # Don't add optional params if not specified
             else:
                 # For other string params, try to extract
-                string_match = re.search(rf'{param_name}[:\s]+([A-Za-z0-9\s]+?)(?:\s+(?:and|with|,|for)|$)', query, re.IGNORECASE)
+                string_match = re.search(rf'{param_name}\s*(?:is|of|:)?\s*["\']?([^"\']+)["\']?', query, re.IGNORECASE)
                 if string_match and required:
                     params[param_name] = string_match.group(1).strip()
     

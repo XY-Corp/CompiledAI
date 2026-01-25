@@ -1,0 +1,26 @@
+{
+  "workflow_id": "simple_380",
+  "name": "Function Call Extractor",
+  "description": "Extract function name and parameters from natural language query",
+  "task_id": "simple_380",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"Book a single room at a pet friendly hotel near Manhattan, New York for 3 nights starting from March 10th, 2023.\"}]], \"function\": [{\"name\": \"hotel_booking\", \"description\": \"Books a hotel room given the location, room type, stay duration and any additional preferences.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"location\": {\"type\": \"string\", \"description\": \"The city where you want to book the hotel.\"}, \"room_type\": {\"type\": \"string\", \"description\": \"Type of the room required. Options: 'single', 'double', 'deluxe', etc.\"}, \"duration\": {\"type\": \"integer\", \"description\": \"The number of nights you want to book the hotel for.\"}, \"start_date\": {\"type\": \"string\", \"description\": \"The date when your stay begins.\"}, \"preferences\": {\"type\": \"array\", \"items\": {\"type\": \"string\", \"enum\": [\"pet_friendly\", \"gym\", \"swimming_pool\", \"free_breakfast\", \"parking\"]}, \"description\": \"Optional preferences of stay at the hotel. Default to use all if not specified.\"}}, \"required\": [\"location\", \"room_type\", \"duration\", \"start_date\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"hotel_booking\": {\n    \"location\": \"string - The city where you want to book the hotel.\",\n    \"room_type\": \"string - Type of the room required. Options: 'single', 'double', 'deluxe', etc.\",\n    \"duration\": \"integer - The number of nights you want to book the hotel for.\",\n    \"start_date\": \"string - The date when your stay begins.\",\n    \"preferences\": \"array - Optional preferences of stay at the hotel. Default to use all if not specified.\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "activities": [
+    "extract_function_call"
+  ],
+  "variables": [
+    {
+      "name": "prompt",
+      "default": null
+    },
+    {
+      "name": "functions",
+      "default": null
+    }
+  ],
+  "execution_pattern": "sequence",
+  "reasoning": "BFCL template: single activity for function call extraction",
+  "metrics": {
+    "total_tokens": 11166,
+    "regeneration_count": 0
+  }
+}

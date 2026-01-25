@@ -65,26 +65,22 @@ async def extract_function_call(
                 # Common patterns: "X and Y", "X, Y, and Z", etc.
                 
                 # Look for company names (capitalized words or known patterns)
-                # Pattern 1: Extract words after "of" that are capitalized
-                company_pattern = r'\b(?:of|for)\s+([A-Z][a-zA-Z]+(?:\s+and\s+[A-Z][a-zA-Z]+)*)'
-                match = re.search(company_pattern, query)
-                
-                if match:
-                    # Split by "and" or ","
-                    companies_str = match.group(1)
-                    companies = re.split(r'\s+and\s+|\s*,\s*', companies_str)
-                    params[param_name] = [c.strip() for c in companies if c.strip()]
+                # Pattern 1: Extract words after "of" until end or punctuation
+                of_match = re.search(r'\bof\s+(.+?)(?:\?|$)', query, re.IGNORECASE)
+                if of_match:
+                    entities_text = of_match.group(1).strip()
+                    # Split by "and" or commas
+                    entities = re.split(r'\s+and\s+|,\s*', entities_text, flags=re.IGNORECASE)
+                    entities = [e.strip() for e in entities if e.strip()]
+                    params[param_name] = entities
                 else:
-                    # Fallback: Look for capitalized words that could be company names
-                    # Exclude common words like "What's", "The", etc.
-                    exclude_words = {'what', 'whats', "what's", 'the', 'a', 'an', 'is', 'are', 'of', 'for', 'and', 'or', 'current', 'stock', 'price'}
-                    
-                    # Find all capitalized words
-                    capitalized = re.findall(r'\b([A-Z][a-zA-Z]+)\b', query)
-                    companies = [w for w in capitalized if w.lower() not in exclude_words]
-                    
-                    if companies:
-                        params[param_name] = companies
+                    # Fallback: extract capitalized words that look like company names
+                    # Exclude common words
+                    exclude_words = {'what', 'the', 'current', 'stock', 'price', 'get', 'find', 'show', 'me', 'please', 'i', 'want', 'to', 'know'}
+                    words = re.findall(r'\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\b', query)
+                    entities = [w for w in words if w.lower() not in exclude_words]
+                    if entities:
+                        params[param_name] = entities
                     else:
                         params[param_name] = []
             
@@ -107,15 +103,10 @@ async def extract_function_call(
                 params[param_name] = float(numbers[0])
         
         elif param_type == "string":
-            # For string params, try to extract relevant text
-            # Look for quoted strings first
-            quoted = re.findall(r'"([^"]+)"|\'([^\']+)\'', query)
-            if quoted:
-                params[param_name] = quoted[0][0] or quoted[0][1]
-            else:
-                # Try to extract based on common patterns
-                match = re.search(r'(?:for|of|about|named?)\s+([A-Za-z\s]+?)(?:\s+(?:and|with|,)|[?.]|$)', query, re.IGNORECASE)
-                if match:
-                    params[param_name] = match.group(1).strip()
+            # Try to extract relevant string value based on param name hints
+            # This is a simple heuristic - extract text after common prepositions
+            match = re.search(r'(?:for|of|about|named?|called?)\s+["\']?([^"\'?,]+)["\']?', query, re.IGNORECASE)
+            if match:
+                params[param_name] = match.group(1).strip()
     
     return {func_name: params}

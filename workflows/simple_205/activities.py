@@ -39,43 +39,48 @@ async def extract_function_call(
     except (json.JSONDecodeError, TypeError):
         funcs = []
     
-    if not funcs:
-        return {"error": "No functions provided"}
-    
-    func = funcs[0]
+    # Get function details
+    func = funcs[0] if funcs else {}
     func_name = func.get("name", "")
-    props = func.get("parameters", {}).get("properties", {})
+    params_schema = func.get("parameters", {}).get("properties", {})
     
-    # Extract parameters based on the query content
+    # Extract parameters using regex and string matching
     params = {}
     query_lower = query.lower()
     
     # For traffic info: extract start_location, end_location, mode
     if func_name == "get_traffic_info":
         # Pattern: "from X to Y" or "from X driving to Y"
-        # Try pattern: "from {start} driving/walking/etc to {end}"
-        from_to_pattern = r'from\s+([A-Za-z\s]+?)\s+(?:driving|walking|bicycling|transit)?\s*to\s+([A-Za-z\s]+?)(?:\.|$)'
+        # Try pattern: from <location> (driving/walking/etc) to <location>
+        from_to_pattern = r'from\s+([A-Za-z\s]+?)(?:\s+(?:driving|walking|bicycling|transit))?\s+to\s+([A-Za-z\s]+?)(?:\.|$|\s*$)'
         match = re.search(from_to_pattern, query, re.IGNORECASE)
-        
-        if not match:
-            # Simpler pattern: "from {start} to {end}"
-            from_to_pattern = r'from\s+([A-Za-z\s]+?)\s+to\s+([A-Za-z\s]+?)(?:\.|$)'
-            match = re.search(from_to_pattern, query, re.IGNORECASE)
         
         if match:
             params["start_location"] = match.group(1).strip()
             params["end_location"] = match.group(2).strip()
+        else:
+            # Fallback: try simpler "from X to Y"
+            simple_pattern = r'from\s+([A-Za-z\s]+?)\s+to\s+([A-Za-z\s]+?)(?:\.|$|\s*$)'
+            match = re.search(simple_pattern, query, re.IGNORECASE)
+            if match:
+                params["start_location"] = match.group(1).strip()
+                params["end_location"] = match.group(2).strip()
         
-        # Extract mode if mentioned
-        mode_pattern = r'\b(driving|walking|bicycling|transit)\b'
-        mode_match = re.search(mode_pattern, query_lower)
-        if mode_match:
-            params["mode"] = mode_match.group(1)
+        # Extract mode if specified
+        mode_patterns = ["driving", "walking", "bicycling", "transit"]
+        for mode in mode_patterns:
+            if mode in query_lower:
+                params["mode"] = mode
+                break
+        
+        # Default mode to driving if not specified but mentioned in context
+        if "mode" not in params and "driving" in query_lower:
+            params["mode"] = "driving"
     
     else:
         # Generic extraction for other functions
-        for param_name, param_info in props.items():
-            param_type = param_info.get("type", "string")
+        for param_name, param_info in params_schema.items():
+            param_type = param_info.get("type", "string") if isinstance(param_info, dict) else "string"
             
             if param_type in ["integer", "number", "float"]:
                 # Extract numbers
@@ -85,17 +90,17 @@ async def extract_function_call(
                         params[param_name] = int(numbers[0])
                     else:
                         params[param_name] = float(numbers[0])
-                    numbers.pop(0)  # Remove used number
-            
             elif param_type == "string":
-                # Try to extract based on common patterns
+                # Try to extract string values based on common patterns
                 # Pattern: "for X" or "in X" or "from X" or "to X"
                 patterns = [
-                    rf'(?:for|in|from|to|of)\s+([A-Za-z\s]+?)(?:\s+(?:to|from|and|,)|$)',
+                    rf'(?:for|in|at)\s+([A-Za-z\s]+?)(?:\s+(?:to|from|and|,)|$)',
+                    rf'(?:from)\s+([A-Za-z\s]+?)(?:\s+(?:to|and|,)|$)',
+                    rf'(?:to)\s+([A-Za-z\s]+?)(?:\s+(?:from|and|,)|$)',
                 ]
                 for pattern in patterns:
                     match = re.search(pattern, query, re.IGNORECASE)
-                    if match and param_name not in params:
+                    if match:
                         params[param_name] = match.group(1).strip()
                         break
     

@@ -56,44 +56,51 @@ async def extract_function_call(
     
     for param_name, param_info in params_schema.items():
         param_type = param_info.get("type", "string")
-        param_desc = param_info.get("description", "").lower()
         
-        if param_type == "integer" or param_type == "number":
-            # Extract numbers from query
+        if param_type == "integer":
+            # Extract integers from query
             numbers = re.findall(r'\b(\d+)\b', query)
             if numbers:
-                # Use the first number found for numeric parameters
-                params[param_name] = int(numbers[0]) if param_type == "integer" else float(numbers[0])
+                # Use the first number found for integer params
+                params[param_name] = int(numbers[0])
         
         elif param_type == "boolean":
-            # Check for explicit boolean mentions in query
+            # Check for explicit boolean indicators in query
             query_lower = query.lower()
             
-            # Check for explicit true/false mentions
-            if "formatted" in param_name.lower() or "format" in param_desc:
-                # Default to true for formatted parameter unless explicitly false
-                if "not formatted" in query_lower or "unformatted" in query_lower or "array" in query_lower:
+            # Look for explicit formatting preferences
+            if "formatted" in param_name.lower():
+                # Default to true unless explicitly asking for array/list/raw
+                if any(word in query_lower for word in ["array", "list", "raw", "unformatted"]):
                     params[param_name] = False
                 else:
+                    # Default to true as per description
                     params[param_name] = True
-            elif "true" in query_lower:
-                params[param_name] = True
-            elif "false" in query_lower:
-                params[param_name] = False
             else:
-                # Use default from description if available
-                if "default is true" in param_desc or "default true" in param_desc:
+                # Generic boolean - check for true/false keywords
+                if any(word in query_lower for word in ["true", "yes", "enable"]):
                     params[param_name] = True
-                elif "default is false" in param_desc or "default false" in param_desc:
+                elif any(word in query_lower for word in ["false", "no", "disable"]):
                     params[param_name] = False
                 else:
-                    params[param_name] = True  # Default to true
+                    # Default based on description if available
+                    desc = param_info.get("description", "").lower()
+                    if "default is true" in desc:
+                        params[param_name] = True
+                    elif "default is false" in desc:
+                        params[param_name] = False
+                    else:
+                        params[param_name] = True  # Safe default
         
         elif param_type == "string":
-            # Extract string values based on context
-            # Try common patterns like "for X" or "of X"
-            string_match = re.search(r'(?:for|of|in|with)\s+([A-Za-z\s]+?)(?:\s+(?:and|with|,)|$)', query, re.IGNORECASE)
-            if string_match:
-                params[param_name] = string_match.group(1).strip()
+            # Extract string values - look for quoted strings or named entities
+            quoted = re.findall(r'"([^"]+)"', query)
+            if quoted:
+                params[param_name] = quoted[0]
+            else:
+                # Try to extract based on common patterns
+                match = re.search(r'(?:for|of|with|named?)\s+([A-Za-z\s]+?)(?:\s*$|[,.])', query, re.IGNORECASE)
+                if match:
+                    params[param_name] = match.group(1).strip()
     
     return {func_name: params}

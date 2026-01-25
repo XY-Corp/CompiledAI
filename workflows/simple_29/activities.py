@@ -62,7 +62,7 @@ async def extract_function_call(
         param_type = param_info.get("type", "string")
         param_desc = param_info.get("description", "").lower()
         
-        # Handle "time" parameter - look for time-related patterns
+        # Handle 'time' parameter - look for time-related patterns
         if param_name == "time":
             # Pattern: "for X seconds" or "after X seconds" or "X seconds"
             time_match = re.search(r'(?:for|after|falling\s+for)?\s*(\d+(?:\.\d+)?)\s*seconds?', query_lower)
@@ -71,9 +71,9 @@ async def extract_function_call(
                 params[param_name] = int(val) if param_type == "integer" else float(val)
                 continue
         
-        # Handle "initial_speed" parameter
+        # Handle 'initial_speed' parameter
         if param_name == "initial_speed":
-            # Check for "from rest" or "at rest" which means initial_speed = 0
+            # Check for "from rest" or "at rest" - means initial speed is 0
             if "from rest" in query_lower or "at rest" in query_lower or "dropped" in query_lower:
                 params[param_name] = 0
                 continue
@@ -84,15 +84,14 @@ async def extract_function_call(
                 params[param_name] = int(val) if param_type == "integer" else float(val)
                 continue
         
-        # Handle "gravity" parameter
+        # Handle 'gravity' parameter - usually uses default, but check for explicit value
         if param_name == "gravity":
-            # Look for explicit gravity value
             gravity_match = re.search(r'gravity\s*(?:of|is|=)?\s*(-?\d+(?:\.\d+)?)', query_lower)
             if gravity_match:
                 val = gravity_match.group(1)
                 params[param_name] = float(val)
                 continue
-            # Don't set gravity if not explicitly mentioned - let default apply
+            # Don't include if not explicitly mentioned (use default)
     
     # Ensure required parameters are present
     for req_param in required_params:

@@ -1,0 +1,26 @@
+{
+  "workflow_id": "exec_simple_86",
+  "name": "Function Call Extractor",
+  "description": "Extract function name and parameters from natural language query",
+  "task_id": "exec_simple_86",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"I want to assess the growth of my investment portfolio. I started with $10,000 and I've been adding $1,000 to it every year. It's been five years now, and my portfolio has been growing at an annual interest rate of 5%. However, I know inflation can impact the real value of my money, and the rates have been 1%, 2%, 3%, 4%, and 4% respectively for each of the past five years. Can you calculate the current value of my investment, taking inflation into account?\"}]], \"function\": [{\"name\": \"calculate_investment_value\", \"description\": \"Calculates the value of an investment over time.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"initial_investment\": {\"type\": \"integer\", \"description\": \"The initial investment amount.\"}, \"annual_contribution\": {\"type\": \"integer\", \"description\": \"The annual contribution amount.\"}, \"years\": {\"type\": \"integer\", \"description\": \"The number of years to calculate the investment value for.\"}, \"annual_return\": {\"type\": \"float\", \"description\": \"The annual return rate, ranging from 0 to 1.\"}, \"inflation_rate\": {\"type\": \"array\", \"items\": {\"type\": \"float\"}, \"description\": \"The inflation rate for each year in percentage, ranging from 0 to 1.\"}, \"adjust_for_inflation\": {\"type\": \"boolean\", \"default\": true, \"description\": \"Whether to adjust the investment value for inflation.\"}}, \"required\": [\"initial_investment\", \"annual_contribution\", \"years\", \"annual_return\", \"inflation_rate\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"calculate_investment_value\": {\n    \"initial_investment\": \"integer - The initial investment amount.\",\n    \"annual_contribution\": \"integer - The annual contribution amount.\",\n    \"years\": \"integer - The number of years to calculate the investment value for.\",\n    \"annual_return\": \"float - The annual return rate, ranging from 0 to 1.\",\n    \"inflation_rate\": \"array - The inflation rate for each year in percentage, ranging from 0 to 1.\",\n    \"adjust_for_inflation\": \"boolean - Whether to adjust the investment value for inflation.\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "activities": [
+    "extract_function_call"
+  ],
+  "variables": [
+    {
+      "name": "prompt",
+      "default": null
+    },
+    {
+      "name": "functions",
+      "default": null
+    }
+  ],
+  "execution_pattern": "sequence",
+  "reasoning": "BFCL template: single activity for function call extraction",
+  "metrics": {
+    "total_tokens": 11920,
+    "regeneration_count": 0
+  }
+}
