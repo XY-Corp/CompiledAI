@@ -58,46 +58,56 @@ async def extract_function_call(
         
         # Extract based on parameter name and description
         if param_name == "docket" or "docket" in param_desc:
-            # Look for docket number patterns like "2022/AL2562" or similar
-            docket_patterns = [
-                r'docket(?:ed)?\s+(?:number(?:ed)?)?\s*[:#]?\s*([A-Za-z0-9/\-]+)',
-                r'(?:case\s+)?(?:number(?:ed)?)?\s*([0-9]{4}/[A-Za-z0-9]+)',
-                r'numbered\s+([A-Za-z0-9/\-]+)',
-            ]
-            for pattern in docket_patterns:
-                match = re.search(pattern, query, re.IGNORECASE)
-                if match:
-                    value = match.group(1).strip()
-                    break
+            # Look for docket number patterns like "2022/AL2562" or "2022-AL2562"
+            docket_match = re.search(r'\b(\d{4}[/-][A-Z]{2}\d+)\b', query, re.IGNORECASE)
+            if docket_match:
+                value = docket_match.group(1)
+            else:
+                # Try more general pattern
+                docket_match = re.search(r'docket(?:ed)?\s*(?:number(?:ed)?)?[:\s]+([^\s,]+)', query, re.IGNORECASE)
+                if docket_match:
+                    value = docket_match.group(1)
         
         elif param_name == "court" or "court" in param_desc:
-            # Look for court/state/location names
+            # Look for state/court names
+            # Common patterns: "in California", "California court", etc.
             court_patterns = [
-                r'in\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\s*\??$',  # "in California?"
-                r'in\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\s+court',
+                r'\bin\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\s*(?:\?|$|court)',
                 r'([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\s+court',
-                r'court\s+(?:in|of)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)',
+                r'\bin\s+([A-Z][a-z]+)\b(?!\s+the\s+case)',
             ]
             for pattern in court_patterns:
-                match = re.search(pattern, query, re.IGNORECASE)
-                if match:
-                    value = match.group(1).strip().rstrip('?')
+                court_match = re.search(pattern, query)
+                if court_match:
+                    value = court_match.group(1)
                     break
+            
+            # If no match, look for US state names
+            if not value:
+                states = ["California", "Texas", "New York", "Florida", "Illinois", "Pennsylvania", 
+                         "Ohio", "Georgia", "Michigan", "Arizona", "Nevada", "Colorado", "Oregon",
+                         "Washington", "Virginia", "Massachusetts", "Maryland", "Minnesota"]
+                for state in states:
+                    if state.lower() in query.lower():
+                        value = state
+                        break
         
         elif param_name == "info_type" or "information type" in param_desc or "info" in param_desc:
-            # Look for what type of info is being requested
-            info_keywords = ["victim", "accused", "verdict", "defendant", "plaintiff", "judge", "date", "outcome", "charges"]
+            # Look for info type keywords: victim, accused, verdict, etc.
+            info_types = ["victim", "accused", "verdict", "defendant", "plaintiff", "judge", 
+                         "sentence", "charges", "evidence", "witness", "attorney", "lawyer"]
             query_lower = query.lower()
-            
-            for keyword in info_keywords:
-                if keyword in query_lower:
-                    value = keyword
+            for info_type in info_types:
+                if info_type in query_lower:
+                    value = info_type
                     break
-            
-            # Also check for "who was the X" pattern
-            who_match = re.search(r'who\s+was\s+the\s+(\w+)', query, re.IGNORECASE)
-            if who_match:
-                value = who_match.group(1).lower()
+        
+        # Fallback: try to extract any quoted strings or specific patterns
+        if value is None and param_type == "string":
+            # Look for quoted values
+            quoted_match = re.search(r'"([^"]+)"', query)
+            if quoted_match:
+                value = quoted_match.group(1)
         
         if value is not None:
             params[param_name] = value

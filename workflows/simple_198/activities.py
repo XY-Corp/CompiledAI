@@ -19,13 +19,9 @@ async def extract_function_call(
     try:
         if isinstance(prompt, str):
             data = json.loads(prompt)
-        else:
-            data = prompt
-        
-        # Extract user query from BFCL format: {"question": [[{"role": "user", "content": "..."}]]}
-        if "question" in data and isinstance(data["question"], list):
-            if len(data["question"]) > 0 and isinstance(data["question"][0], list):
-                if len(data["question"][0]) > 0 and isinstance(data["question"][0][0], dict):
+            # Handle BFCL format: {"question": [[{"role": "user", "content": "..."}]]}
+            if "question" in data and isinstance(data["question"], list):
+                if len(data["question"]) > 0 and isinstance(data["question"][0], list):
                     query = data["question"][0][0].get("content", str(prompt))
                 else:
                     query = str(prompt)
@@ -33,7 +29,7 @@ async def extract_function_call(
                 query = str(prompt)
         else:
             query = str(prompt)
-    except (json.JSONDecodeError, TypeError):
+    except (json.JSONDecodeError, TypeError, KeyError):
         query = str(prompt)
     
     # Parse functions (may be JSON string)
@@ -62,12 +58,11 @@ async def extract_function_call(
             # Extract numbers from query
             # Look for patterns like "weight 70 kg", "70 kg", "70 kilograms"
             if "weight" in param_name.lower() or "weight" in param_desc:
-                # Pattern for weight: "weight X kg" or "X kg" or "weighing X"
+                # Pattern for weight: number followed by kg/kilograms or preceded by "weight"
                 weight_patterns = [
-                    r'weight\s+(\d+(?:\.\d+)?)\s*(?:kg|kilograms?)?',
+                    r'weight\s+(?:of\s+)?(\d+(?:\.\d+)?)\s*(?:kg|kilograms?)?',
                     r'(\d+(?:\.\d+)?)\s*(?:kg|kilograms?)',
-                    r'weighing\s+(\d+(?:\.\d+)?)',
-                    r'(\d+(?:\.\d+)?)\s*(?:kg|kilograms?)\s*(?:weight)?',
+                    r'weighs?\s+(\d+(?:\.\d+)?)',
                 ]
                 for pattern in weight_patterns:
                     match = re.search(pattern, query, re.IGNORECASE)
@@ -83,31 +78,31 @@ async def extract_function_call(
                     params[param_name] = int(float(value)) if param_type == "integer" else float(value)
         
         elif param_type == "string":
-            # For optional string params, only extract if explicitly mentioned
+            # Only extract if explicitly mentioned in query, otherwise skip optional params
             if param_name not in required_params:
-                # Check if the parameter is mentioned in the query
-                if "activity" in param_name.lower() or "activity" in param_desc:
+                # Check if the parameter value is explicitly mentioned
+                # For activity_level: look for "sedentary", "light", "moderate", "active", "very active"
+                if "activity" in param_name.lower():
                     activity_patterns = [
                         r'activity\s+(?:level\s+)?(?:is\s+)?["\']?(\w+)["\']?',
-                        r'(\w+)\s+activity',
-                        r'activity[:\s]+(\w+)',
+                        r'(sedentary|light|moderate|active|very\s+active)',
                     ]
                     for pattern in activity_patterns:
                         match = re.search(pattern, query, re.IGNORECASE)
                         if match:
-                            params[param_name] = match.group(1).lower()
+                            params[param_name] = match.group(1).strip().lower()
                             break
                 
-                elif "climate" in param_name.lower() or "climate" in param_desc:
+                # For climate: look for climate-related words
+                elif "climate" in param_name.lower():
                     climate_patterns = [
                         r'climate\s+(?:is\s+)?["\']?(\w+)["\']?',
-                        r'(\w+)\s+climate',
-                        r'lives?\s+in\s+(?:a\s+)?(\w+)\s+(?:climate|area|region)',
+                        r'(tropical|temperate|arid|cold|hot|humid)',
                     ]
                     for pattern in climate_patterns:
                         match = re.search(pattern, query, re.IGNORECASE)
                         if match:
-                            params[param_name] = match.group(1).lower()
+                            params[param_name] = match.group(1).strip().lower()
                             break
     
     return {func_name: params}

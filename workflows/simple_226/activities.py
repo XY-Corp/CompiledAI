@@ -11,13 +11,13 @@ async def extract_function_call(
     workflow_definition_id: str | None = None,
     workflow_instance_id: str | None = None,
 ) -> dict[str, Any]:
-    """Extract function name and parameters from user query using regex/parsing."""
+    """Extract function call parameters from user query and return as {func_name: {params}}."""
     
-    # Parse prompt (may be JSON string with nested structure)
+    # Parse prompt - may be JSON string with nested structure
     try:
         if isinstance(prompt, str):
             data = json.loads(prompt)
-            # Extract user query from BFCL format: {"question": [[{"role": "user", "content": "..."}]]}
+            # Handle BFCL format: {"question": [[{"role": "user", "content": "..."}]], ...}
             if "question" in data and isinstance(data["question"], list):
                 if len(data["question"]) > 0 and isinstance(data["question"][0], list):
                     query = data["question"][0][0].get("content", str(prompt))
@@ -30,7 +30,7 @@ async def extract_function_call(
     except (json.JSONDecodeError, TypeError, KeyError):
         query = str(prompt)
     
-    # Parse functions (may be JSON string)
+    # Parse functions - may be JSON string
     try:
         if isinstance(functions, str):
             funcs = json.loads(functions)
@@ -44,7 +44,7 @@ async def extract_function_call(
     func_name = func.get("name", "")
     params_schema = func.get("parameters", {}).get("properties", {})
     
-    # Extract parameters based on the query
+    # Extract parameters using regex and string matching
     params = {}
     query_lower = query.lower()
     
@@ -60,20 +60,22 @@ async def extract_function_call(
         if sign in query_lower:
             found_signs.append(sign.capitalize())
     
-    # Assign to sign1 and sign2 parameters
-    if "sign1" in params_schema and len(found_signs) >= 1:
-        params["sign1"] = found_signs[0]
-    if "sign2" in params_schema and len(found_signs) >= 2:
-        params["sign2"] = found_signs[1]
+    # Extract scale if mentioned
+    scale = None
+    if "percentage" in query_lower:
+        scale = "percentage"
+    elif "0-10" in query_lower or "0 to 10" in query_lower:
+        scale = "0-10 scale"
     
-    # Extract scale parameter if mentioned
-    if "scale" in params_schema:
-        if "percentage" in query_lower or "percent" in query_lower:
-            params["scale"] = "percentage"
-        elif "0-10" in query_lower or "scale" in query_lower:
-            params["scale"] = "0-10 scale"
-        # Default to percentage if not specified but compatibility is mentioned
-        elif "compatibility" in query_lower:
-            params["scale"] = "percentage"
+    # Map extracted values to parameter names from schema
+    for param_name, param_info in params_schema.items():
+        param_type = param_info.get("type", "string")
+        
+        if param_name == "sign1" and len(found_signs) >= 1:
+            params[param_name] = found_signs[0]
+        elif param_name == "sign2" and len(found_signs) >= 2:
+            params[param_name] = found_signs[1]
+        elif param_name == "scale" and scale:
+            params[param_name] = scale
     
     return {func_name: params}

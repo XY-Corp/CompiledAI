@@ -13,7 +13,7 @@ async def extract_function_call(
 ) -> dict[str, Any]:
     """Extract function name and parameters from user query using regex and string matching."""
     
-    # Parse prompt (may be JSON string with nested structure)
+    # Parse prompt - may be JSON string with nested structure
     try:
         if isinstance(prompt, str):
             data = json.loads(prompt)
@@ -31,7 +31,7 @@ async def extract_function_call(
     except (json.JSONDecodeError, TypeError, KeyError):
         query = str(prompt)
     
-    # Parse functions (may be JSON string)
+    # Parse functions - may be JSON string
     try:
         if isinstance(functions, str):
             funcs = json.loads(functions)
@@ -51,44 +51,41 @@ async def extract_function_call(
     for param_name, param_info in params_schema.items():
         param_type = param_info.get("type", "string")
         
-        if param_name == "parties":
-            # Extract names - look for "between X and Y" pattern
-            parties_match = re.search(r'between\s+([A-Za-z]+)\s+and\s+([A-Za-z]+)', query, re.IGNORECASE)
-            if parties_match:
-                params["parties"] = [parties_match.group(1), parties_match.group(2)]
-            else:
-                # Fallback: extract capitalized names
-                names = re.findall(r'\b([A-Z][a-z]+)\b', query)
-                # Filter out common words that might be capitalized
-                common_words = {"Generate", "Type", "Location", "Contract", "Law"}
-                names = [n for n in names if n not in common_words]
-                if names:
-                    params["parties"] = names[:2] if len(names) >= 2 else names
+        if param_type == "array":
+            # For parties - extract names (typically "between X and Y" or "X and Y")
+            if param_name == "parties":
+                # Pattern: "between John and Alice" or "John and Alice"
+                names_match = re.search(r'between\s+([A-Z][a-z]+)\s+and\s+([A-Z][a-z]+)', query, re.IGNORECASE)
+                if names_match:
+                    params[param_name] = [names_match.group(1), names_match.group(2)]
+                else:
+                    # Try simpler pattern: "X and Y for"
+                    names_match = re.search(r'([A-Z][a-z]+)\s+and\s+([A-Z][a-z]+)', query, re.IGNORECASE)
+                    if names_match:
+                        params[param_name] = [names_match.group(1), names_match.group(2)]
         
-        elif param_name == "contract_type":
-            # Extract contract type - look for "for X agreement/contract" pattern
-            type_match = re.search(r'for\s+([a-zA-Z]+)\s+(?:agreement|contract)', query, re.IGNORECASE)
-            if type_match:
-                params["contract_type"] = type_match.group(1).lower() + " agreement"
-            else:
-                # Fallback: look for common contract types
-                contract_types = ["rental", "lease", "employment", "service", "sales", "nda"]
-                for ct in contract_types:
-                    if ct in query.lower():
-                        params["contract_type"] = ct + " agreement"
-                        break
-        
-        elif param_name == "location":
-            # Extract location - look for "in X" pattern at end or state names
-            location_match = re.search(r'in\s+([A-Za-z\s]+?)(?:\.|$)', query, re.IGNORECASE)
-            if location_match:
-                params["location"] = location_match.group(1).strip()
-            else:
-                # Fallback: look for US state names
-                states = ["California", "Texas", "New York", "Florida", "Illinois"]
-                for state in states:
-                    if state.lower() in query.lower():
-                        params["location"] = state
-                        break
+        elif param_type == "string":
+            if param_name == "contract_type":
+                # Extract contract type - look for "X agreement" or "X contract"
+                type_match = re.search(r'for\s+(\w+)\s+agreement', query, re.IGNORECASE)
+                if type_match:
+                    params[param_name] = type_match.group(1).lower() + " agreement"
+                else:
+                    type_match = re.search(r'(\w+)\s+contract', query, re.IGNORECASE)
+                    if type_match:
+                        params[param_name] = type_match.group(1).lower() + " contract"
+            
+            elif param_name == "location":
+                # Extract location - typically "in X" at the end
+                loc_match = re.search(r'in\s+([A-Z][a-zA-Z\s]+?)(?:\.|$)', query)
+                if loc_match:
+                    params[param_name] = loc_match.group(1).strip()
+                else:
+                    # Try to find state/country names
+                    states = ["California", "New York", "Texas", "Florida", "Illinois"]
+                    for state in states:
+                        if state.lower() in query.lower():
+                            params[param_name] = state
+                            break
     
     return {func_name: params}

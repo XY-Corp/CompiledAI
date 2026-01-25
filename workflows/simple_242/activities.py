@@ -58,41 +58,59 @@ async def extract_function_call(
         param_type = param_info.get("type", "string")
         param_desc = param_info.get("description", "").lower()
         
-        if param_type == "string":
-            # For "discovery" parameter - extract the theory/discovery being asked about
-            if "discovery" in param_name.lower() or "theory" in param_desc or "discovery" in param_desc:
-                # Look for patterns like "theory of X", "proposed X", "discovered X"
-                patterns = [
-                    r'theory of (\w+(?:\s+\w+)?)',  # "theory of evolution"
-                    r'proposed (?:the )?(?:theory of )?(\w+(?:\s+\w+)?)',  # "proposed the theory of evolution"
-                    r'discovered (\w+(?:\s+\w+)?)',  # "discovered X"
-                    r'credited for (\w+(?:\s+\w+)?)',  # "credited for X"
-                ]
-                
-                for pattern in patterns:
-                    match = re.search(pattern, query, re.IGNORECASE)
-                    if match:
-                        # For "theory of X", we want "theory of X" as the discovery
-                        if "theory of" in pattern:
-                            params[param_name] = f"theory of {match.group(1)}"
-                        else:
-                            params[param_name] = match.group(1)
-                        break
-                
-                # If no pattern matched, try to extract the main subject
-                if param_name not in params:
-                    # Look for what's being asked about
-                    subject_match = re.search(r'(?:who|what|which).*?(?:the\s+)?(\w+(?:\s+\w+)*?)(?:\?|$)', query, re.IGNORECASE)
-                    if subject_match:
-                        params[param_name] = subject_match.group(1).strip()
-        
-        elif param_type in ["integer", "number", "float"]:
-            # Extract numbers
+        if param_type in ["integer", "number", "float"]:
+            # Extract numbers using regex
             numbers = re.findall(r'\d+(?:\.\d+)?', query)
             if numbers:
                 if param_type == "integer":
                     params[param_name] = int(numbers[0])
                 else:
                     params[param_name] = float(numbers[0])
+        elif param_type == "string":
+            # For discovery/theory parameters, extract the relevant concept
+            if "discovery" in param_name.lower() or "theory" in param_desc:
+                # Look for patterns like "theory of X", "discovery of X"
+                patterns = [
+                    r'theory of (\w+(?:\s+\w+)?)',
+                    r'discovery of (\w+(?:\s+\w+)?)',
+                    r'proposed the (\w+(?:\s+\w+)?)',
+                    r'credited for (\w+(?:\s+\w+)?)',
+                    r'first proposed (?:the )?(?:theory of )?(\w+)',
+                ]
+                
+                for pattern in patterns:
+                    match = re.search(pattern, query, re.IGNORECASE)
+                    if match:
+                        params[param_name] = match.group(1).strip()
+                        break
+                
+                # If no pattern matched, try to extract key scientific terms
+                if param_name not in params:
+                    # Common scientific theories/discoveries
+                    scientific_terms = [
+                        "evolution", "relativity", "gravity", "quantum mechanics",
+                        "natural selection", "big bang", "heliocentrism", "genetics"
+                    ]
+                    query_lower = query.lower()
+                    for term in scientific_terms:
+                        if term in query_lower:
+                            params[param_name] = term
+                            break
+                
+                # Fallback: extract phrase after "theory of" or similar
+                if param_name not in params:
+                    match = re.search(r'theory of (\w+)', query, re.IGNORECASE)
+                    if match:
+                        params[param_name] = match.group(1)
+            else:
+                # Generic string extraction - look for quoted strings or key phrases
+                quoted = re.findall(r'"([^"]+)"', query)
+                if quoted:
+                    params[param_name] = quoted[0]
+                else:
+                    # Extract after common prepositions
+                    match = re.search(r'(?:for|about|of|with)\s+([A-Za-z\s]+?)(?:\?|$|\.)', query, re.IGNORECASE)
+                    if match:
+                        params[param_name] = match.group(1).strip()
     
     return {func_name: params}

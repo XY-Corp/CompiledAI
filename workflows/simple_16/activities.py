@@ -56,14 +56,14 @@ async def extract_function_call(
     # Pattern: "derivative of [function] at x = [value]"
     
     # Extract the function expression (e.g., "2x^2", "x^3 + 2x", etc.)
-    function_patterns = [
+    func_patterns = [
         r'derivative of (?:the function\s+)?([^\s].*?)\s+at',  # "derivative of 2x^2 at"
         r'derivative of\s+([^\s].*?)\s+at',  # simpler pattern
         r'function\s+([^\s]+)\s+at',  # "function 2x^2 at"
     ]
     
     function_expr = None
-    for pattern in function_patterns:
+    for pattern in func_patterns:
         match = re.search(pattern, query, re.IGNORECASE)
         if match:
             function_expr = match.group(1).strip()
@@ -89,29 +89,28 @@ async def extract_function_call(
                 value = int(val_str)
             break
     
-    # Extract function variable (default is 'x')
-    # Look for patterns like "with respect to y" or variable in function
-    variable_patterns = [
-        r'with respect to\s+([a-zA-Z])',  # "with respect to y"
-        r'variable\s+([a-zA-Z])',  # "variable y"
+    # Extract variable (default is 'x')
+    var_patterns = [
+        r'variable\s+([a-zA-Z])',  # "variable x"
+        r'with respect to\s+([a-zA-Z])',  # "with respect to x"
     ]
     
     function_variable = None
-    for pattern in variable_patterns:
+    for pattern in var_patterns:
         match = re.search(pattern, query, re.IGNORECASE)
         if match:
             function_variable = match.group(1)
             break
     
     # Build params based on schema
-    if "function" in params_schema and function_expr:
+    if "function" in params_schema and function_expr is not None:
         params["function"] = function_expr
     
     if "value" in params_schema and value is not None:
         params["value"] = value
     
-    # Only include function_variable if explicitly specified (it has a default)
-    if "function_variable" in params_schema and function_variable:
+    # Only include function_variable if explicitly mentioned (it has a default)
+    if "function_variable" in params_schema and function_variable is not None:
         params["function_variable"] = function_variable
     
     return {func_name: params}

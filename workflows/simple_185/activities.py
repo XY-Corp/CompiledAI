@@ -17,7 +17,7 @@ async def extract_function_call(
     try:
         if isinstance(prompt, str):
             data = json.loads(prompt)
-            # Extract user query from BFCL format: {"question": [[{"role": "user", "content": "..."}]]}
+            # Handle BFCL format: {"question": [[{"role": "user", "content": "..."}]], ...}
             if "question" in data and isinstance(data["question"], list):
                 if len(data["question"]) > 0 and isinstance(data["question"][0], list):
                     query = data["question"][0][0].get("content", str(prompt))
@@ -49,55 +49,67 @@ async def extract_function_call(
     params = {}
     query_lower = query.lower()
     
-    # Extract location (city name) - look for patterns like "in [City]" or "for [City]"
-    if "location" in props:
-        # Pattern: "in New York", "for New York", "weather New York"
-        location_patterns = [
-            r'(?:in|for|weather\s+(?:in|for)?)\s+([A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+)*)',
-            r'([A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+)*)\s+(?:weather|forecast)',
-        ]
+    for param_name, param_info in props.items():
+        param_type = param_info.get("type", "string")
         
-        for pattern in location_patterns:
-            match = re.search(pattern, query)
-            if match:
-                params["location"] = match.group(1).strip()
-                break
+        if param_type == "string":
+            # Extract location/city - look for patterns like "in X" or "for X"
+            if param_name == "location" or "city" in param_name.lower() or "location" in param_name.lower():
+                # Pattern: "in [City Name]" or "for [City Name]"
+                city_patterns = [
+                    r'(?:in|for|at)\s+([A-Z][a-zA-Z\s]+?)(?:\s+(?:in|for|over|during|including|next|the|\d))',
+                    r'(?:in|for|at)\s+([A-Z][a-zA-Z\s]+?)(?:\?|$)',
+                    r'weather\s+(?:in|for|at)\s+([A-Z][a-zA-Z\s]+)',
+                ]
+                for pattern in city_patterns:
+                    match = re.search(pattern, query)
+                    if match:
+                        params[param_name] = match.group(1).strip()
+                        break
+                
+                # Fallback: look for capitalized words that could be city names
+                if param_name not in params:
+                    # Common city pattern - capitalized words
+                    city_match = re.search(r'\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\b', query)
+                    if city_match:
+                        params[param_name] = city_match.group(1).strip()
         
-        # Fallback: look for capitalized words that could be city names
-        if "location" not in params:
-            # Find capitalized words (potential city names)
-            caps = re.findall(r'\b([A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+)*)\b', query)
-            # Filter out common words
-            common_words = {"What", "The", "How", "When", "Where", "Will", "Can", "Is", "Are", "Default"}
-            for cap in caps:
-                if cap not in common_words:
-                    params["location"] = cap
-                    break
-    
-    # Extract duration (number of hours)
-    if "duration" in props:
-        # Pattern: "72 hours", "next 72 hours", "24 hour"
-        duration_patterns = [
-            r'(\d+)\s*hours?',
-            r'next\s+(\d+)\s*hours?',
-        ]
+        elif param_type == "integer":
+            # Extract numbers - look for duration patterns
+            if "duration" in param_name.lower() or "hour" in param_info.get("description", "").lower():
+                # Pattern: "X hours" or "next X hours"
+                duration_patterns = [
+                    r'(?:next|for|over)\s+(\d+)\s*(?:hours?|hrs?)',
+                    r'(\d+)\s*(?:hours?|hrs?)',
+                ]
+                for pattern in duration_patterns:
+                    match = re.search(pattern, query_lower)
+                    if match:
+                        params[param_name] = int(match.group(1))
+                        break
+            else:
+                # Generic number extraction
+                numbers = re.findall(r'\b(\d+)\b', query)
+                if numbers:
+                    params[param_name] = int(numbers[0])
         
-        for pattern in duration_patterns:
-            match = re.search(pattern, query_lower)
-            if match:
-                params["duration"] = int(match.group(1))
-                break
-    
-    # Extract include_precipitation (boolean)
-    if "include_precipitation" in props:
-        # Check if precipitation is mentioned
-        precipitation_keywords = ["precipitation", "rain", "snow", "rainfall", "snowfall"]
-        include_precip = any(kw in query_lower for kw in precipitation_keywords)
-        
-        # Also check for explicit "including" patterns
-        if re.search(r'includ(?:e|ing)\s+(?:the\s+)?precipitation', query_lower):
-            include_precip = True
-        
-        params["include_precipitation"] = include_precip
+        elif param_type == "boolean":
+            # Check for boolean indicators in query
+            description = param_info.get("description", "").lower()
+            
+            if "precipitation" in param_name.lower() or "precipitation" in description:
+                # Check if precipitation is mentioned in query
+                if "precipitation" in query_lower or "rain" in query_lower:
+                    params[param_name] = True
+                elif "include" in query_lower and "precipitation" in query_lower:
+                    params[param_name] = True
+                elif "including" in query_lower and "precipitation" in query_lower:
+                    params[param_name] = True
+            else:
+                # Generic boolean - check for "include X" or "with X"
+                param_keyword = param_name.replace("_", " ").replace("include", "").strip()
+                if param_keyword and param_keyword in query_lower:
+                    if "include" in query_lower or "with" in query_lower or "including" in query_lower:
+                        params[param_name] = True
     
     return {func_name: params}

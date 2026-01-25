@@ -68,13 +68,12 @@ async def extract_function_call(
                     params[param_name] = int(non_year_numbers[0])
         
         elif param_type == "string":
-            # Extract country - common patterns
+            # Extract country
             if "country" in param_name.lower() or "country" in param_desc:
-                # Look for country patterns: "in the X", "in X", "from X"
+                # Common patterns for country extraction
                 country_patterns = [
-                    r'in\s+the\s+([A-Z][A-Za-z\.\s]+?)(?:\s+for|\s+in|\s+during|\s*$|\s*\.)',
-                    r'in\s+([A-Z][A-Za-z\.\s]+?)(?:\s+for|\s+in|\s+during|\s*$|\s*\.)',
-                    r'from\s+([A-Z][A-Za-z\.\s]+?)(?:\s+for|\s+in|\s+during|\s*$|\s*\.)',
+                    r'in\s+(?:the\s+)?([A-Z][A-Za-z\.\s]+?)(?:\s+for|\s+in|\s+during|\s*$|\s*\.)',
+                    r'(?:from|of)\s+(?:the\s+)?([A-Z][A-Za-z\.\s]+?)(?:\s+for|\s+in|\s+during|\s*$|\s*\.)',
                 ]
                 
                 for pattern in country_patterns:
@@ -86,11 +85,32 @@ async def extract_function_call(
                             country = "U.S."
                         params[param_name] = country
                         break
+                
+                # Fallback: look for known country names/abbreviations
+                if param_name not in params:
+                    known_countries = {
+                        r'\bU\.?S\.?A?\.?\b': 'U.S.',
+                        r'\bUnited States\b': 'U.S.',
+                        r'\bUK\b': 'UK',
+                        r'\bUnited Kingdom\b': 'UK',
+                        r'\bCanada\b': 'Canada',
+                        r'\bChina\b': 'China',
+                        r'\bJapan\b': 'Japan',
+                        r'\bGermany\b': 'Germany',
+                    }
+                    for pattern, value in known_countries.items():
+                        if re.search(pattern, query, re.IGNORECASE):
+                            params[param_name] = value
+                            break
     
     # Only include required params and params we found values for
+    # Don't include optional params with defaults unless explicitly mentioned
     final_params = {}
     for param_name in params_schema.keys():
         if param_name in params:
             final_params[param_name] = params[param_name]
+        elif param_name in required_params:
+            # Required param not found - this shouldn't happen with good extraction
+            pass
     
     return {func_name: final_params}

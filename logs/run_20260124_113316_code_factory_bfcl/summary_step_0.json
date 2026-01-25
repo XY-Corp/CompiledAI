@@ -1,0 +1,21 @@
+{
+  "step": 0,
+  "completed": 1,
+  "success_count": 1,
+  "success_rate": 1.0,
+  "elapsed_seconds": 27.91882085800171,
+  "total_tokens": 10309,
+  "compilation_tokens": 10309,
+  "execution_tokens": 0,
+  "instances": [
+    {
+      "instance_id": "simple_0",
+      "success": true,
+      "latency_ms": 26170.806791633368,
+      "generation_time_ms": 26167.01199952513,
+      "execution_time_ms": 3.1975004822015762,
+      "tokens": 10309,
+      "match_type": "total_match"
+    }
+  ]
+}

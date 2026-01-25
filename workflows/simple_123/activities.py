@@ -57,11 +57,11 @@ async def extract_function_call(
         group1 = [float(group1_match.group(i)) for i in range(1, 5)]
     else:
         # Alternative: look for pattern like "e.g., 12.4, 15.6, 11.2, 18.9"
-        # Find all number sequences after "group1"
+        # Find first set of numbers after "group1"
         group1_section = re.search(r'group1[^)]*\(([^)]+)\)', query, re.IGNORECASE)
         if group1_section:
-            numbers = re.findall(r'(\d+\.?\d*)', group1_section.group(1))
-            group1 = [float(n) for n in numbers if n]
+            numbers = re.findall(r'\d+\.?\d*', group1_section.group(1))
+            group1 = [float(n) for n in numbers[:4]] if numbers else []
         else:
             group1 = []
     
@@ -75,19 +75,18 @@ async def extract_function_call(
         # Alternative: look for pattern like "e.g., 10.5, 9.8, 15.2, 13.8"
         group2_section = re.search(r'group2[^)]*\(([^)]+)\)', query, re.IGNORECASE)
         if group2_section:
-            numbers = re.findall(r'(\d+\.?\d*)', group2_section.group(1))
-            group2 = [float(n) for n in numbers if n]
+            numbers = re.findall(r'\d+\.?\d*', group2_section.group(1))
+            group2 = [float(n) for n in numbers[:4]] if numbers else []
         else:
             group2 = []
     
     # Extract alpha/significance level - look for patterns like "significance level 0.05" or "alpha 0.05"
-    # Be careful to extract just the number, not trailing punctuation
-    alpha_pattern = r'(?:significance\s+level|alpha)[^\d]*(\d+\.?\d*)'
+    alpha_pattern = r'(?:significance\s+level|alpha)\s*(?:of\s+)?(\d+\.?\d*)'
     alpha_match = re.search(alpha_pattern, query, re.IGNORECASE)
     
     if alpha_match:
         alpha_str = alpha_match.group(1)
-        # Clean up any trailing dots or punctuation
+        # Clean up any trailing punctuation
         alpha_str = alpha_str.rstrip('.')
         alpha = float(alpha_str)
     else:

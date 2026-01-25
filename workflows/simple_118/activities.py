@@ -17,12 +17,13 @@ async def extract_function_call(
     try:
         if isinstance(prompt, str):
             data = json.loads(prompt)
-            # Extract user query from BFCL format
-            if "question" in data and isinstance(data["question"], list):
-                if len(data["question"]) > 0 and isinstance(data["question"][0], list):
-                    query = data["question"][0][0].get("content", prompt)
-                else:
-                    query = str(prompt)
+        else:
+            data = prompt
+        
+        # Extract user query from BFCL format
+        if "question" in data and isinstance(data["question"], list):
+            if len(data["question"]) > 0 and isinstance(data["question"][0], list):
+                query = data["question"][0][0].get("content", str(prompt))
             else:
                 query = str(prompt)
         else:
@@ -44,50 +45,56 @@ async def extract_function_call(
     func_name = func.get("name", "")
     props = func.get("parameters", {}).get("properties", {})
     
-    # Extract arrays from the query using regex
-    # Pattern to match arrays like [10, 15, 12, 14, 11]
-    array_pattern = r'\[[\d,\s]+\]'
+    params = {}
+    
+    # Extract arrays from the query
+    # Pattern: look for array-like structures [num, num, ...]
+    array_pattern = r'\[([0-9,\s]+)\]'
     arrays_found = re.findall(array_pattern, query)
     
-    # Parse the arrays
+    # Parse arrays into lists of integers
     parsed_arrays = []
     for arr_str in arrays_found:
         try:
-            arr = json.loads(arr_str)
+            # Split by comma and convert to integers
+            arr = [int(x.strip()) for x in arr_str.split(',') if x.strip()]
             parsed_arrays.append(arr)
-        except json.JSONDecodeError:
+        except ValueError:
             continue
     
-    # Extract alpha value using regex
-    # Patterns: "alpha equals to 0.05", "alpha = 0.05", "alpha of 0.05", "alpha 0.05"
+    # Extract alpha value (float after "alpha" keyword)
     alpha_patterns = [
-        r'alpha\s*(?:equals?\s*(?:to)?|=|of|:)?\s*([\d.]+)',
-        r'significance\s*(?:level)?\s*(?:of|=|:)?\s*([\d.]+)',
+        r'alpha\s*(?:equals?\s*(?:to)?|=|:)\s*([0-9]*\.?[0-9]+)',
+        r'significance\s*(?:level)?\s*(?:of|=|:)?\s*([0-9]*\.?[0-9]+)',
+        r'([0-9]*\.[0-9]+)\s*(?:significance|alpha)',
     ]
     
     alpha_value = None
     for pattern in alpha_patterns:
         match = re.search(pattern, query, re.IGNORECASE)
         if match:
-            try:
-                alpha_value = float(match.group(1))
-                break
-            except ValueError:
-                continue
+            alpha_value = float(match.group(1))
+            break
     
-    # Build parameters based on schema
-    params = {}
+    # Map extracted values to parameter names based on schema
+    array_params = []
+    float_params = []
     
-    # Assign arrays to array_1 and array_2
-    if len(parsed_arrays) >= 2:
-        params["array_1"] = parsed_arrays[0]
-        params["array_2"] = parsed_arrays[1]
-    elif len(parsed_arrays) == 1:
-        params["array_1"] = parsed_arrays[0]
-        params["array_2"] = []
+    for param_name, param_info in props.items():
+        param_type = param_info.get("type", "")
+        if param_type == "array":
+            array_params.append(param_name)
+        elif param_type in ["float", "number"]:
+            float_params.append(param_name)
     
-    # Assign alpha
+    # Assign arrays to array parameters in order
+    for i, param_name in enumerate(array_params):
+        if i < len(parsed_arrays):
+            params[param_name] = parsed_arrays[i]
+    
+    # Assign alpha to float parameters
     if alpha_value is not None:
-        params["alpha"] = alpha_value
+        for param_name in float_params:
+            params[param_name] = alpha_value
     
     return {func_name: params}

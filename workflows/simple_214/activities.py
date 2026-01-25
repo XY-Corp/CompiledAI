@@ -64,54 +64,59 @@ async def extract_function_call(
             # Extract location - look for city patterns
             # Pattern: "in [City]" or "in [City], [State]"
             location_patterns = [
-                r'in\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*(?:,\s*[A-Z]{2})?)',  # "in New York" or "in New York, NY"
-                r'in\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)',  # "in New York"
+                r'in\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*(?:,\s*[A-Z]{2})?)',
+                r'in\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)',
             ]
             for pattern in location_patterns:
                 match = re.search(pattern, query)
                 if match:
                     location = match.group(1).strip()
                     # Add state abbreviation if not present and it's a known city
-                    if "," not in location and location.lower() == "new york":
-                        location = "New York, NY"
+                    if "," not in location:
+                        if location.lower() == "new york":
+                            location = "New York, NY"
+                        elif location.lower() == "los angeles":
+                            location = "Los Angeles, CA"
+                        elif location.lower() == "chicago":
+                            location = "Chicago, IL"
                     params[param_name] = location
                     break
         
         elif param_name == "genre":
-            # Extract genre - look for genre keywords before "concerts", "events", "shows"
-            genre_patterns = [
-                r'(\w+)\s+concerts?',  # "rock concerts"
-                r'(\w+)\s+events?',    # "rock events"
-                r'(\w+)\s+shows?',     # "rock shows"
-                r'genre[:\s]+(\w+)',   # "genre: rock"
-            ]
-            for pattern in genre_patterns:
-                match = re.search(pattern, query_lower)
-                if match:
-                    params[param_name] = match.group(1)
+            # Extract genre - look for common music/event genres
+            genres = ["rock", "pop", "jazz", "classical", "hip hop", "hip-hop", "country", 
+                      "electronic", "r&b", "metal", "indie", "folk", "blues", "reggae",
+                      "comedy", "theater", "theatre", "sports", "concert", "festival"]
+            for genre in genres:
+                if genre in query_lower:
+                    params[param_name] = genre
                     break
         
         elif param_name == "days_ahead":
-            # Extract days ahead - look for number patterns
-            days_patterns = [
-                r'(\d+)\s*days?\s*ahead',           # "30 days ahead"
-                r'next\s+(\d+)\s*days?',            # "next 30 days"
-                r'within\s+(\d+)\s*days?',          # "within 30 days"
-                r'upcoming\s+(\d+)\s*days?',        # "upcoming 30 days"
-                r'(\d+)\s*days?\s*from\s+now',      # "30 days from now"
-            ]
-            
-            # Check for "upcoming month" pattern
-            if "upcoming month" in query_lower or "next month" in query_lower:
+            # Extract days ahead - look for time patterns
+            # "upcoming month" = ~30 days, "upcoming week" = 7 days
+            if "month" in query_lower:
                 params[param_name] = 30
+            elif "week" in query_lower:
+                params[param_name] = 7
             else:
-                for pattern in days_patterns:
-                    match = re.search(pattern, query_lower)
-                    if match:
-                        params[param_name] = int(match.group(1))
-                        break
-            
-            # If still not found and it's optional with default, skip (let default apply)
-            # But if we found "upcoming month", we already set it to 30
+                # Look for explicit number of days
+                days_match = re.search(r'(\d+)\s*days?', query_lower)
+                if days_match:
+                    params[param_name] = int(days_match.group(1))
+                # Otherwise use default from schema if available
+                elif "default" in param_info:
+                    params[param_name] = param_info["default"]
+        
+        elif param_type == "integer":
+            # Generic integer extraction
+            numbers = re.findall(r'\d+', query)
+            if numbers:
+                params[param_name] = int(numbers[0])
+        
+        elif param_type == "string":
+            # For other string params, try to extract based on description keywords
+            # This is a fallback - specific params should be handled above
+            pass
     
     return {func_name: params}

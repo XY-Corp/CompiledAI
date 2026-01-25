@@ -17,7 +17,7 @@ async def extract_function_call(
     try:
         if isinstance(prompt, str):
             data = json.loads(prompt)
-            # Handle BFCL format: {"question": [[{"role": "user", "content": "..."}]], ...}
+            # Handle BFCL format: {"question": [[{"role": "user", "content": "..."}]]}
             if "question" in data and isinstance(data["question"], list):
                 if len(data["question"]) > 0 and isinstance(data["question"][0], list):
                     query = data["question"][0][0].get("content", str(prompt))
@@ -51,39 +51,60 @@ async def extract_function_call(
     money_patterns = [
         r'\$\s*([\d,]+(?:\.\d+)?)',  # $5000 or $5,000
         r'([\d,]+(?:\.\d+)?)\s*(?:dollars?|USD)',  # 5000 dollars
+        r'investment\s+(?:of\s+)?\$?([\d,]+(?:\.\d+)?)',  # investment of 5000
     ]
-    money_value = None
+    
+    present_value = None
     for pattern in money_patterns:
         match = re.search(pattern, query, re.IGNORECASE)
         if match:
-            money_value = int(match.group(1).replace(',', '').split('.')[0])
+            present_value = int(match.group(1).replace(',', '').split('.')[0])
             break
     
-    # Extract interest rate: 5%, 5 percent, interest rate of 5%
+    if present_value is not None and "present_value" in props:
+        params["present_value"] = present_value
+    
+    # Extract interest rate: 5%, 5 percent, 0.05 interest rate
     rate_patterns = [
-        r'(?:interest\s+rate\s+(?:of\s+)?)?(\d+(?:\.\d+)?)\s*%',  # 5% or interest rate of 5%
+        r'(\d+(?:\.\d+)?)\s*%',  # 5% or 5.5%
         r'(\d+(?:\.\d+)?)\s*percent',  # 5 percent
+        r'interest\s+rate\s+(?:of\s+)?(\d+(?:\.\d+)?)',  # interest rate of 5
+        r'rate\s+(?:of\s+)?(\d+(?:\.\d+)?)\s*%?',  # rate of 5%
     ]
-    rate_value = None
+    
+    annual_interest_rate = None
     for pattern in rate_patterns:
         match = re.search(pattern, query, re.IGNORECASE)
         if match:
-            rate_value = float(match.group(1)) / 100.0  # Convert percentage to decimal
+            rate_val = float(match.group(1))
+            # Convert percentage to decimal if > 1 (e.g., 5% -> 0.05)
+            if rate_val > 1:
+                annual_interest_rate = rate_val / 100.0
+            else:
+                annual_interest_rate = rate_val
             break
     
-    # Extract time in years: 3 years, in 3 years
+    if annual_interest_rate is not None and "annual_interest_rate" in props:
+        params["annual_interest_rate"] = annual_interest_rate
+    
+    # Extract time in years: 3 years, 3-year, in 3 years
     time_patterns = [
-        r'(?:in\s+)?(\d+)\s*years?',  # 3 years or in 3 years
-        r'(\d+)\s*(?:year|yr)s?\s+(?:time\s+)?horizon',  # 3 year horizon
+        r'(\d+)\s*(?:-?\s*)?years?',  # 3 years, 3-year
+        r'in\s+(\d+)\s+years?',  # in 3 years
+        r'(\d+)\s*yr',  # 3yr
     ]
-    time_value = None
+    
+    time_years = None
     for pattern in time_patterns:
         match = re.search(pattern, query, re.IGNORECASE)
         if match:
-            time_value = int(match.group(1))
+            time_years = int(match.group(1))
             break
     
-    # Extract compounding periods: monthly=12, quarterly=4, annually=1, daily=365
+    if time_years is not None and "time_years" in props:
+        params["time_years"] = time_years
+    
+    # Extract compounding periods: monthly=12, quarterly=4, daily=365, annually=1
     compounding_map = {
         'daily': 365,
         'weekly': 52,
@@ -94,23 +115,20 @@ async def extract_function_call(
         'annually': 1,
         'yearly': 1,
     }
-    compounding_value = None
+    
+    compounding_periods = None
     for term, periods in compounding_map.items():
         if term in query.lower():
-            compounding_value = periods
+            compounding_periods = periods
             break
     
-    # Map extracted values to parameter names from schema
-    for param_name, param_info in props.items():
-        param_type = param_info.get("type", "string")
-        
-        if param_name == "present_value" and money_value is not None:
-            params[param_name] = money_value
-        elif param_name == "annual_interest_rate" and rate_value is not None:
-            params[param_name] = rate_value
-        elif param_name == "time_years" and time_value is not None:
-            params[param_name] = time_value
-        elif param_name == "compounding_periods_per_year" and compounding_value is not None:
-            params[param_name] = compounding_value
+    # Also check for explicit number of compounding periods
+    if compounding_periods is None:
+        comp_match = re.search(r'(\d+)\s*(?:times?\s+(?:per|a)\s+year|compounding\s+periods?)', query, re.IGNORECASE)
+        if comp_match:
+            compounding_periods = int(comp_match.group(1))
+    
+    if compounding_periods is not None and "compounding_periods_per_year" in props:
+        params["compounding_periods_per_year"] = compounding_periods
     
     return {func_name: params}

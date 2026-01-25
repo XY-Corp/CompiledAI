@@ -61,10 +61,9 @@ async def extract_function_call(
         if param_name == "current" or "current" in param_desc:
             # Look for current value: "current of X Ampere" or "X Ampere current"
             patterns = [
-                r'current\s+of\s+(\d+(?:\.\d+)?)\s*(?:ampere|amp|a)',
-                r'(\d+(?:\.\d+)?)\s*(?:ampere|amp|a)\s+current',
+                r'current\s+of\s+(\d+(?:\.\d+)?)',
+                r'(\d+(?:\.\d+)?)\s*(?:ampere|amp|a)\b',
                 r'carrying\s+current\s+of\s+(\d+(?:\.\d+)?)',
-                r'carrying\s+(\d+(?:\.\d+)?)\s*(?:ampere|amp|a)',
             ]
             for pattern in patterns:
                 match = re.search(pattern, query, re.IGNORECASE)
@@ -75,8 +74,8 @@ async def extract_function_call(
         elif param_name == "radius" or "radius" in param_desc:
             # Look for radius value: "radius of X meters" or "X meter radius"
             patterns = [
-                r'radius\s+of\s+(\d+(?:\.\d+)?)\s*(?:meter|m)',
-                r'(\d+(?:\.\d+)?)\s*(?:meter|m)\s+radius',
+                r'radius\s+of\s+(\d+(?:\.\d+)?)',
+                r'(\d+(?:\.\d+)?)\s*(?:meter|m)\s*(?:radius)?',
                 r'with\s+a\s+radius\s+of\s+(\d+(?:\.\d+)?)',
             ]
             for pattern in patterns:
@@ -86,7 +85,7 @@ async def extract_function_call(
                     break
         
         elif param_name == "permeability" or "permeability" in param_desc:
-            # Look for permeability value if explicitly mentioned
+            # Look for permeability value - usually not specified, use default
             patterns = [
                 r'permeability\s+(?:of\s+)?(\d+(?:\.\d+)?(?:e[+-]?\d+)?)',
             ]
@@ -105,5 +104,19 @@ async def extract_function_call(
             else:
                 params[param_name] = value
     
-    # Return in the required format: {"function_name": {params}}
+    # Fallback: if we didn't find specific params, extract all numbers in order
+    if not params:
+        numbers = re.findall(r'(\d+(?:\.\d+)?)', query)
+        param_names = list(params_schema.keys())
+        
+        for i, param_name in enumerate(param_names):
+            if i < len(numbers):
+                param_type = params_schema[param_name].get("type", "string")
+                if param_type == "integer":
+                    params[param_name] = int(float(numbers[i]))
+                elif param_type == "float":
+                    params[param_name] = float(numbers[i])
+                else:
+                    params[param_name] = numbers[i]
+    
     return {func_name: params}

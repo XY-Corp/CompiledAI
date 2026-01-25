@@ -52,8 +52,9 @@ async def extract_function_call(
     # Extract principal amount - look for dollar amounts or "principal" mentions
     principal_patterns = [
         r'principal\s+(?:amount\s+)?(?:of\s+)?\$?([\d,]+)',
-        r'\$?([\d,]+)\s*(?:dollars?)?\s*(?:,|\.|with|at)',
-        r'amount\s+of\s+\$?([\d,]+)',
+        r'\$?([\d,]+)\s*(?:dollars?)?\s*(?:as\s+)?(?:the\s+)?(?:initial\s+)?principal',
+        r'initial\s+principal\s+(?:amount\s+)?(?:of\s+)?\$?([\d,]+)',
+        r'\$?([\d,]+)\s*(?:dollars?)?\s*,?\s*with',
     ]
     for pattern in principal_patterns:
         match = re.search(pattern, query, re.IGNORECASE)
@@ -63,9 +64,9 @@ async def extract_function_call(
     
     # Extract annual interest rate - look for percentage
     rate_patterns = [
-        r'(?:annual\s+)?interest\s+rate\s+(?:of\s+)?([\d.]+)\s*%',
-        r'([\d.]+)\s*%\s*(?:annual\s+)?(?:interest)?',
-        r'rate\s+(?:of\s+)?([\d.]+)\s*%',
+        r'(?:annual\s+)?interest\s+rate\s+(?:of\s+)?(\d+(?:\.\d+)?)\s*%',
+        r'(\d+(?:\.\d+)?)\s*%\s*(?:annual\s+)?(?:interest\s+)?rate',
+        r'rate\s+(?:of\s+)?(\d+(?:\.\d+)?)\s*%',
     ]
     for pattern in rate_patterns:
         match = re.search(pattern, query, re.IGNORECASE)
@@ -74,28 +75,29 @@ async def extract_function_call(
             params["rate"] = float(match.group(1)) / 100
             break
     
-    # Extract n (compounding frequency) - look for "n times" or "compounded X times"
-    n_patterns = [
-        r'(?:number\s+of\s+times\s+)?(?:interest\s+)?(?:applied|compounded)\s+(?:per\s+)?(?:time\s+period\s+)?(?:is\s+)?(\d+)',
-        r'compounded\s+(\d+)\s+times',
-        r'(\d+)\s+times\s+(?:per\s+)?(?:year|period)',
-    ]
-    for pattern in n_patterns:
-        match = re.search(pattern, query, re.IGNORECASE)
-        if match:
-            params["n"] = int(match.group(1))
-            break
-    
-    # Extract time in years - look for "X years" or "time is X"
+    # Extract time in years
     time_patterns = [
-        r'(?:invested\s+)?(?:for\s+)?(\d+)\s+years?',
-        r'time\s+(?:the\s+money\s+is\s+invested\s+)?(?:for\s+)?(?:is\s+)?(\d+)',
-        r'(\d+)\s+year\s+(?:period|term)',
+        r'(?:for\s+)?(\d+)\s*years?',
+        r'time\s+(?:the\s+money\s+is\s+)?(?:invested\s+)?(?:for\s+)?(\d+)',
+        r'(\d+)\s*(?:year|yr)s?\s+(?:period|time)',
     ]
     for pattern in time_patterns:
         match = re.search(pattern, query, re.IGNORECASE)
         if match:
             params["time"] = int(match.group(1))
+            break
+    
+    # Extract n (compounding frequency)
+    n_patterns = [
+        r'(?:number\s+of\s+)?times\s+(?:interest\s+)?(?:applied|compounded)\s+(?:per\s+)?(?:time\s+)?(?:period\s+)?(?:is\s+)?(\d+)',
+        r'compounded\s+(\d+)\s+times',
+        r'(\d+)\s+times\s+(?:per\s+)?(?:year|period)',
+        r'interest\s+(?:is\s+)?(?:applied|compounded)\s+(\d+)',
+    ]
+    for pattern in n_patterns:
+        match = re.search(pattern, query, re.IGNORECASE)
+        if match:
+            params["n"] = int(match.group(1))
             break
     
     return {func_name: params}

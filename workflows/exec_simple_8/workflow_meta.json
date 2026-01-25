@@ -1,0 +1,26 @@
+{
+  "workflow_id": "exec_simple_8",
+  "name": "Function Call Extractor",
+  "description": "Extract function name and parameters from natural language query",
+  "task_id": "exec_simple_8",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"During our physics lab session, we're experimenting with electric fields and their effects on charged particles. We've placed a particle that carries a charge of 5 coulombs within a field where there's a voltage of 10 volts. I need to calculate the electrostatic potential energy for this scenario. Could you work that out for me?\"}]], \"function\": [{\"name\": \"calculate_electrostatic_potential_energy\", \"description\": \"Calculates the electrostatic potential energy.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"charge\": {\"type\": \"float\", \"description\": \"The charge of the object, in coulombs.\"}, \"voltage\": {\"type\": \"float\", \"description\": \"The voltage of the object, in volts.\"}}, \"required\": [\"charge\", \"voltage\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"calculate_electrostatic_potential_energy\": {\n    \"charge\": \"float - The charge of the object, in coulombs.\",\n    \"voltage\": \"float - The voltage of the object, in volts.\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "activities": [
+    "extract_function_call"
+  ],
+  "variables": [
+    {
+      "name": "prompt",
+      "default": null
+    },
+    {
+      "name": "functions",
+      "default": null
+    }
+  ],
+  "execution_pattern": "sequence",
+  "reasoning": "BFCL template: single activity for function call extraction",
+  "metrics": {
+    "total_tokens": 10681,
+    "regeneration_count": 0
+  }
+}

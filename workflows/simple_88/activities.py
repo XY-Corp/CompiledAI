@@ -11,7 +11,7 @@ async def extract_function_call(
     workflow_definition_id: str | None = None,
     workflow_instance_id: str | None = None,
 ) -> dict[str, Any]:
-    """Extract function name and parameters from user query using regex patterns.
+    """Extract function name and parameters from user query using regex.
     
     Returns a dict with function name as key and parameters as nested object.
     """
@@ -22,7 +22,7 @@ async def extract_function_call(
             # Extract user query from BFCL format: {"question": [[{"role": "user", "content": "..."}]]}
             if "question" in data and isinstance(data["question"], list):
                 if len(data["question"]) > 0 and isinstance(data["question"][0], list):
-                    query = data["question"][0][0].get("content", str(prompt))
+                    query = data["question"][0][0].get("content", prompt)
                 else:
                     query = str(prompt)
             else:
@@ -31,7 +31,7 @@ async def extract_function_call(
             query = str(prompt)
     except (json.JSONDecodeError, TypeError, KeyError):
         query = str(prompt)
-    
+
     # Parse functions - may be JSON string
     try:
         if isinstance(functions, str):
@@ -40,50 +40,78 @@ async def extract_function_call(
             funcs = functions
     except (json.JSONDecodeError, TypeError):
         funcs = []
-    
+
     # Get function details
     func = funcs[0] if funcs else {}
     func_name = func.get("name", "")
     params_schema = func.get("parameters", {}).get("properties", {})
+
+    # Extract all numbers from the query using regex
+    # Pattern matches integers and floats (e.g., 70, 1.75, 70kg, 1.75m)
+    numbers = re.findall(r'(\d+\.?\d*)', query)
     
-    # Extract parameters using regex
+    # Convert to appropriate types
+    parsed_numbers = []
+    for num in numbers:
+        if '.' in num:
+            parsed_numbers.append(float(num))
+        else:
+            parsed_numbers.append(int(num))
+
+    # Map extracted values to parameters based on schema
     params = {}
+    num_idx = 0
     
-    # Extract all numbers from the query (integers and floats)
-    # Pattern matches numbers like 70, 1.75, 70kg, 1.75m
-    number_patterns = re.findall(r'(\d+\.?\d*)\s*(?:kg|m|cm|lb|ft|in)?', query, re.IGNORECASE)
-    numbers = [float(n) for n in number_patterns if n]
-    
-    # Map extracted numbers to parameters based on schema
     for param_name, param_info in params_schema.items():
         param_type = param_info.get("type", "string")
         param_desc = param_info.get("description", "").lower()
         
-        if param_type in ["integer", "float", "number"]:
-            # Try to match based on context clues in the query
-            if "weight" in param_name.lower() or "weight" in param_desc:
-                # Look for weight value - typically larger number or followed by kg/lb
-                weight_match = re.search(r'(\d+\.?\d*)\s*(?:kg|kilograms?|lb|pounds?)?', query, re.IGNORECASE)
-                if weight_match:
-                    val = float(weight_match.group(1))
-                    params[param_name] = int(val) if param_type == "integer" else val
-            elif "height" in param_name.lower() or "height" in param_desc:
-                # Look for height value - typically smaller number or followed by m/cm/ft
-                height_match = re.search(r'(\d+\.?\d*)\s*(?:m|meters?|cm|centimeters?|ft|feet)?(?:\s+tall)?', query, re.IGNORECASE)
-                if height_match:
-                    val = float(height_match.group(1))
-                    params[param_name] = int(val) if param_type == "integer" else val
-    
-    # If we couldn't match by context, fall back to positional assignment
-    if len(params) < len([p for p, info in params_schema.items() if info.get("type") in ["integer", "float", "number"]]):
+        if param_type == "integer":
+            # Look for integer values - for weight, typically larger whole number
+            for i, num in enumerate(parsed_numbers):
+                if isinstance(num, int) or (isinstance(num, float) and num == int(num)):
+                    # Check if description hints at what we're looking for
+                    if "weight" in param_desc or "kg" in param_desc:
+                        # Weight is typically the larger integer (70 vs 1.75)
+                        if num >= 10:  # Weight in kg is usually > 10
+                            params[param_name] = int(num)
+                            break
+                    elif num_idx < len(parsed_numbers):
+                        params[param_name] = int(parsed_numbers[num_idx])
+                        num_idx += 1
+                        break
+                        
+        elif param_type == "float" or param_type == "number":
+            # Look for float values - for height in meters, typically < 3
+            for i, num in enumerate(parsed_numbers):
+                if "height" in param_desc or "meter" in param_desc or "_m" in param_name:
+                    # Height in meters is typically between 0.5 and 2.5
+                    if isinstance(num, float) and num < 3:
+                        params[param_name] = float(num)
+                        break
+                    elif isinstance(num, int) and num < 3:
+                        params[param_name] = float(num)
+                        break
+                elif num_idx < len(parsed_numbers):
+                    params[param_name] = float(parsed_numbers[num_idx])
+                    num_idx += 1
+                    break
+
+    # Fallback: if we didn't match by description, assign by order
+    # For BMI: first number is usually weight (70), second is height (1.75)
+    if not params or len(params) < len(params_schema):
         num_idx = 0
         for param_name, param_info in params_schema.items():
             if param_name in params:
                 continue
             param_type = param_info.get("type", "string")
-            if param_type in ["integer", "float", "number"] and num_idx < len(numbers):
-                val = numbers[num_idx]
-                params[param_name] = int(val) if param_type == "integer" else val
+            if num_idx < len(parsed_numbers):
+                if param_type == "integer":
+                    params[param_name] = int(parsed_numbers[num_idx])
+                elif param_type in ["float", "number"]:
+                    params[param_name] = float(parsed_numbers[num_idx])
+                else:
+                    params[param_name] = parsed_numbers[num_idx]
                 num_idx += 1
-    
+
     return {func_name: params}

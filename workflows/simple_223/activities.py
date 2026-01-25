@@ -62,7 +62,7 @@ async def extract_function_call(
     # Pattern for introverts: "introverted members being X", "X introverts", "introverted X"
     introvert_match = re.search(r'(?:introvert(?:ed|s)?\s+(?:members\s+)?(?:being\s+)?(\d+)|(\d+)\s+introvert)', query, re.IGNORECASE)
     
-    # Extract total
+    # Extract values from matches
     if "total" in params_schema:
         if total_match:
             params["total"] = int(total_match.group(1))
@@ -70,19 +70,17 @@ async def extract_function_call(
             # First number is often the total
             params["total"] = int(numbers[0])
     
-    # Extract extroverts
     if "extroverts" in params_schema:
         if extrovert_match:
-            # Get whichever group matched
+            # Get whichever group matched (group 1 or group 2)
             val = extrovert_match.group(1) or extrovert_match.group(2)
             params["extroverts"] = int(val)
         elif len(numbers) >= 2:
             params["extroverts"] = int(numbers[1])
     
-    # Extract introverts
     if "introverts" in params_schema:
         if introvert_match:
-            # Get whichever group matched
+            # Get whichever group matched (group 1 or group 2)
             val = introvert_match.group(1) or introvert_match.group(2)
             params["introverts"] = int(val)
         elif len(numbers) >= 3:

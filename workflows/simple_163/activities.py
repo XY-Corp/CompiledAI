@@ -39,18 +39,16 @@ async def extract_function_call(
     except (json.JSONDecodeError, TypeError):
         funcs = []
     
-    if not funcs:
-        return {"error": "No functions provided"}
-    
-    func = funcs[0]
+    # Get function details
+    func = funcs[0] if funcs else {}
     func_name = func.get("name", "")
-    props = func.get("parameters", {}).get("properties", {})
+    params_schema = func.get("parameters", {}).get("properties", {})
     
-    # Extract parameters using regex patterns
+    # Extract parameters from query using regex and string matching
     params = {}
     query_lower = query.lower()
     
-    for param_name, param_info in props.items():
+    for param_name, param_info in params_schema.items():
         param_type = param_info.get("type", "string")
         
         if param_name == "address":
@@ -73,13 +71,12 @@ async def extract_function_call(
                 params["county"] = county_match.group(1).strip()
         
         elif param_name == "include_owner":
-            # Check if user wants owner information
-            if any(phrase in query_lower for phrase in ["include owner", "owner's information", "owners information", "owner info"]):
+            # Check if owner information is requested
+            if "owner" in query_lower or "owners" in query_lower:
                 params["include_owner"] = True
             else:
                 # Use default value if specified
-                default_val = param_info.get("default")
-                if default_val is not None:
-                    params["include_owner"] = default_val
+                default_val = param_info.get("default", False)
+                params["include_owner"] = default_val
     
     return {func_name: params}

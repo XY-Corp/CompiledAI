@@ -47,38 +47,57 @@ async def extract_function_call(
     props = func.get("parameters", {}).get("properties", {})
     
     params = {}
-    query_lower = query.lower()
     
-    # Extract indexes (array of strings)
+    # Extract indexes (array of strings) - look for known index names
     if "indexes" in props:
-        indexes = []
-        # Known index patterns to look for
         known_indexes = ["S&P 500", "Dow Jones", "NASDAQ", "FTSE 100", "DAX"]
+        found_indexes = []
+        query_lower = query.lower()
+        
         for idx in known_indexes:
-            if idx.lower() in query_lower:
-                indexes.append(idx)
-        if indexes:
-            params["indexes"] = indexes
+            # Check for exact match or common variations
+            idx_lower = idx.lower()
+            if idx_lower in query_lower:
+                found_indexes.append(idx)
+            # Handle "S&P" without "500"
+            elif idx == "S&P 500" and ("s&p" in query_lower or "s & p" in query_lower):
+                found_indexes.append(idx)
+            # Handle "Dow" without "Jones"
+            elif idx == "Dow Jones" and "dow" in query_lower:
+                found_indexes.append(idx)
+        
+        if found_indexes:
+            params["indexes"] = found_indexes
     
-    # Extract days (integer)
+    # Extract days (integer) - look for number followed by "day(s)"
     if "days" in props:
-        # Look for patterns like "past 5 days", "5 days", "last 5 days"
+        # Pattern: "X days" or "past X days" or "last X days"
         days_patterns = [
-            r'(?:past|last)\s+(\d+)\s+days?',
+            r'(?:past|last|over the past|over the last)\s+(\d+)\s+days?',
             r'(\d+)\s+days?\s+(?:ago|back|period)',
-            r'over\s+(?:the\s+)?(?:past|last)\s+(\d+)\s+days?',
-            r'(\d+)\s+days?'
+            r'(\d+)\s+days?',
         ]
+        
         for pattern in days_patterns:
-            match = re.search(pattern, query_lower)
+            match = re.search(pattern, query, re.IGNORECASE)
             if match:
                 params["days"] = int(match.group(1))
                 break
     
     # Extract detailed (boolean) - only if explicitly mentioned
     if "detailed" in props:
-        if any(word in query_lower for word in ["detailed", "detail", "high", "low", "opening", "closing"]):
-            params["detailed"] = True
-        # Don't include if not mentioned (optional param with default)
+        # Check if user explicitly asks for detailed data
+        detailed_patterns = [
+            r'\bdetailed\b',
+            r'\bhigh\s+(?:and\s+)?low\b',
+            r'\bopening\s+(?:and\s+)?closing\b',
+            r'\bfull\s+data\b',
+        ]
+        
+        for pattern in detailed_patterns:
+            if re.search(pattern, query, re.IGNORECASE):
+                params["detailed"] = True
+                break
+        # Don't include if not explicitly requested (optional param with default)
     
     return {func_name: params}

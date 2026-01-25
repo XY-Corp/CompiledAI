@@ -39,7 +39,7 @@ async def extract_function_call(
     except (json.JSONDecodeError, TypeError):
         funcs = []
     
-    # Get target function details
+    # Get function schema
     func = funcs[0] if funcs else {}
     func_name = func.get("name", "")
     props = func.get("parameters", {}).get("properties", {})
@@ -47,28 +47,40 @@ async def extract_function_call(
     params = {}
     query_lower = query.lower()
     
-    # Extract function string (e.g., "y = x^3" or "function y = x^3")
-    # Pattern: look for "function y = ..." or just "y = ..."
-    func_match = re.search(r'(?:function\s+)?y\s*=\s*([x\^\d\+\-\*\/\s\(\)]+)', query, re.IGNORECASE)
-    if func_match:
-        params["function"] = func_match.group(1).strip()
-    else:
-        # Try to find expression like "x^3" directly
-        expr_match = re.search(r'(x\s*\^\s*\d+)', query, re.IGNORECASE)
-        if expr_match:
-            params["function"] = expr_match.group(1).replace(" ", "")
+    # Extract function string (e.g., "y = x^3" or "x^3")
+    # Pattern: look for function expressions like "x^3", "x**2", etc.
+    func_patterns = [
+        r'function\s+y\s*=\s*([^\s]+)',  # "function y = x^3"
+        r'y\s*=\s*([^\s]+)',              # "y = x^3"
+        r'for\s+(?:the\s+)?function\s+([^\s]+)',  # "for the function x^3"
+        r'integrate\s+([x\^\d\+\-\*\/\(\)]+)',    # "integrate x^3"
+    ]
     
-    # Extract start_x and end_x from patterns like "from x = -2 to x = 3" or "from -2 to 3"
-    range_match = re.search(r'from\s+(?:x\s*=\s*)?([-]?\d+)\s+to\s+(?:x\s*=\s*)?([-]?\d+)', query, re.IGNORECASE)
-    if range_match:
-        params["start_x"] = int(range_match.group(1))
-        params["end_x"] = int(range_match.group(2))
-    else:
-        # Try alternative patterns like "between -2 and 3"
-        between_match = re.search(r'between\s+([-]?\d+)\s+and\s+([-]?\d+)', query, re.IGNORECASE)
-        if between_match:
-            params["start_x"] = int(between_match.group(1))
-            params["end_x"] = int(between_match.group(2))
+    function_str = None
+    for pattern in func_patterns:
+        match = re.search(pattern, query, re.IGNORECASE)
+        if match:
+            function_str = match.group(1).strip()
+            break
+    
+    if function_str:
+        params["function"] = function_str
+    
+    # Extract start_x and end_x - look for "from x = -2 to x = 3" or similar patterns
+    range_patterns = [
+        r'from\s+x\s*=\s*(-?\d+)\s+to\s+x\s*=\s*(-?\d+)',  # "from x = -2 to x = 3"
+        r'from\s+(-?\d+)\s+to\s+(-?\d+)',                   # "from -2 to 3"
+        r'between\s+x\s*=\s*(-?\d+)\s+and\s+x\s*=\s*(-?\d+)',  # "between x = -2 and x = 3"
+        r'between\s+(-?\d+)\s+and\s+(-?\d+)',               # "between -2 and 3"
+        r'x\s*=\s*(-?\d+)\s+(?:to|and)\s+x\s*=\s*(-?\d+)',  # "x = -2 to x = 3"
+    ]
+    
+    for pattern in range_patterns:
+        match = re.search(pattern, query, re.IGNORECASE)
+        if match:
+            params["start_x"] = int(match.group(1))
+            params["end_x"] = int(match.group(2))
+            break
     
     # Extract method - look for "simpson" or "trapezoid"
     if "simpson" in query_lower:

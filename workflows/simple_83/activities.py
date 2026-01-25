@@ -43,51 +43,49 @@ async def extract_function_call(
     func_name = func.get("name", "")
     
     # Extract GPS coordinates from the query
-    # Pattern for coordinates like "(33.4484 N, 112.0740 W)" or similar
-    # GPS coordinates can be in format: (lat N/S, lon E/W)
+    # Pattern for coordinates like "33.4484 N, 112.0740 W" or "(33.4484, -112.0740)"
+    # GPS format: latitude N/S, longitude E/W
     
-    # Extract all coordinate pairs - pattern: (number N/S, number E/W)
-    coord_pattern = r'\((\d+\.?\d*)\s*([NS]),?\s*(\d+\.?\d*)\s*([EW])\)'
-    coord_matches = re.findall(coord_pattern, query, re.IGNORECASE)
+    # Pattern to match coordinates like "33.4484 N, 112.0740 W"
+    coord_pattern = r'(\d+\.?\d*)\s*([NS])[,\s]+(\d+\.?\d*)\s*([EW])'
+    matches = re.findall(coord_pattern, query, re.IGNORECASE)
     
-    coords = []
-    for match in coord_matches:
-        lat = float(match[0])
-        lat_dir = match[1].upper()
-        lon = float(match[2])
-        lon_dir = match[3].upper()
+    coord1 = None
+    coord2 = None
+    
+    if len(matches) >= 2:
+        # First coordinate
+        lat1 = float(matches[0][0])
+        if matches[0][1].upper() == 'S':
+            lat1 = -lat1
+        lon1 = float(matches[0][2])
+        if matches[0][3].upper() == 'W':
+            lon1 = -lon1
+        coord1 = (lat1, lon1)
         
-        # Convert to signed coordinates (S and W are negative)
-        if lat_dir == 'S':
-            lat = -lat
-        if lon_dir == 'W':
-            lon = -lon
-        
-        coords.append((lat, lon))
+        # Second coordinate
+        lat2 = float(matches[1][0])
+        if matches[1][1].upper() == 'S':
+            lat2 = -lat2
+        lon2 = float(matches[1][2])
+        if matches[1][3].upper() == 'W':
+            lon2 = -lon2
+        coord2 = (lat2, lon2)
     
-    # Extract unit (miles or kilometers)
-    unit = "miles"  # default
-    if re.search(r'\bkilometers?\b', query, re.IGNORECASE):
-        unit = "kilometers"
-    elif re.search(r'\bmiles?\b', query, re.IGNORECASE):
+    # Extract unit - look for 'miles' or 'kilometers'
+    unit = None
+    if re.search(r'\bmiles?\b', query, re.IGNORECASE):
         unit = "miles"
+    elif re.search(r'\bkilometers?\b|\bkm\b', query, re.IGNORECASE):
+        unit = "kilometers"
     
     # Build result with extracted parameters
     params = {}
-    
-    if len(coords) >= 2:
-        params["coord1"] = coords[0]
-        params["coord2"] = coords[1]
-    elif len(coords) == 1:
-        params["coord1"] = coords[0]
-        params["coord2"] = (0.0, 0.0)  # fallback
-    else:
-        # Fallback: try to extract any floating point numbers
-        numbers = re.findall(r'-?\d+\.?\d*', query)
-        if len(numbers) >= 4:
-            params["coord1"] = (float(numbers[0]), float(numbers[1]))
-            params["coord2"] = (float(numbers[2]), float(numbers[3]))
-    
-    params["unit"] = unit
+    if coord1 is not None:
+        params["coord1"] = coord1
+    if coord2 is not None:
+        params["coord2"] = coord2
+    if unit is not None:
+        params["unit"] = unit
     
     return {func_name: params}

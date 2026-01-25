@@ -51,43 +51,40 @@ async def extract_function_call(
     numbers = re.findall(r'\b(\d+(?:\.\d+)?)\b', query)
     
     # Extract unit if mentioned (e.g., "units", "meters", "cm", etc.)
-    unit_match = re.search(r'\b(\d+)\s+(units?|meters?|cm|inches?|feet|ft|m)\b', query, re.IGNORECASE)
+    unit_match = re.search(r'\b(\d+)\s+(unit|units|meters?|cm|inches?|feet|ft|m)\b', query, re.IGNORECASE)
     unit_value = None
     if unit_match:
         unit_value = unit_match.group(2).lower()
-        # Normalize unit
-        if unit_value.endswith('s') and unit_value != 'inches':
-            unit_value = unit_value  # Keep as-is for "units"
+        # Normalize "unit" to "units"
+        if unit_value == "unit":
+            unit_value = "units"
     
-    # Map extracted values to parameter names based on schema
+    # Map extracted values to parameters based on schema
     num_idx = 0
     for param_name, param_info in params_schema.items():
         param_type = param_info.get("type", "string")
         
         if param_type in ["integer", "number", "float"]:
             # Look for specific patterns first
-            if param_name == "base":
-                base_match = re.search(r'base\s+(?:of\s+)?(\d+(?:\.\d+)?)', query, re.IGNORECASE)
-                if base_match:
-                    val = base_match.group(1)
-                    params[param_name] = int(val) if param_type == "integer" else float(val)
-                    continue
-            elif param_name == "height":
-                height_match = re.search(r'height\s+(?:of\s+)?(\d+(?:\.\d+)?)', query, re.IGNORECASE)
-                if height_match:
-                    val = height_match.group(1)
-                    params[param_name] = int(val) if param_type == "integer" else float(val)
-                    continue
-            
-            # Fallback: use numbers in order
-            if num_idx < len(numbers):
-                val = numbers[num_idx]
-                params[param_name] = int(val) if param_type == "integer" else float(val)
+            # Pattern: "base of X" or "height of X"
+            specific_match = re.search(rf'{param_name}\s+(?:of\s+)?(\d+(?:\.\d+)?)', query, re.IGNORECASE)
+            if specific_match:
+                value = specific_match.group(1)
+                if param_type == "integer":
+                    params[param_name] = int(float(value))
+                else:
+                    params[param_name] = float(value)
+            elif num_idx < len(numbers):
+                # Fall back to sequential number assignment
+                value = numbers[num_idx]
+                if param_type == "integer":
+                    params[param_name] = int(float(value))
+                else:
+                    params[param_name] = float(value)
                 num_idx += 1
-                
-        elif param_type == "string":
-            if param_name == "unit" and unit_value:
+        elif param_type == "string" and param_name == "unit":
+            # Only include unit if explicitly mentioned
+            if unit_value:
                 params[param_name] = unit_value
-            # Only add optional string params if we found a value
     
     return {func_name: params}

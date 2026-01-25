@@ -36,7 +36,7 @@ async def extract_function_call(
         try:
             functions = json.loads(functions)
         except json.JSONDecodeError:
-            return {"error": "Invalid functions JSON"}
+            functions = []
     
     if not functions:
         return {"error": "No functions provided"}
@@ -49,46 +49,37 @@ async def extract_function_call(
     
     # Extract location parameter
     if "location" in props:
-        # Pattern: "in <City>, <State>" or "<City>, <State>"
-        # Look for city, state patterns
+        # Pattern: "in City, State" or "City, State"
+        # Look for city/state patterns
         location_patterns = [
-            r'in\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*),?\s*([A-Z][a-z]+|[A-Z]{2})',
-            r'([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*),\s*([A-Z][a-z]+|[A-Z]{2})',
+            r'in\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*),?\s*([A-Z][a-z]+|[A-Z]{2})',  # "in Boston, Massachusetts"
+            r'([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*),\s*([A-Z][a-z]+|[A-Z]{2})',  # "Boston, Massachusetts"
         ]
         
         for pattern in location_patterns:
             match = re.search(pattern, query)
             if match:
-                city = match.group(1)
-                state = match.group(2)
-                # Normalize state abbreviations
+                city = match.group(1).strip()
+                state = match.group(2).strip()
+                # Convert full state name to abbreviation if needed
                 state_abbrevs = {
                     "Massachusetts": "MA", "California": "CA", "New York": "NY",
                     "Texas": "TX", "Florida": "FL", "Illinois": "IL"
                 }
-                if state in state_abbrevs:
-                    state = state_abbrevs[state]
-                params["location"] = f"{city}, {state}"
+                state_abbr = state_abbrevs.get(state, state)
+                params["location"] = f"{city}, {state_abbr}"
                 break
     
-    # Extract facilities parameter (array of strings)
+    # Extract facilities parameter (array)
     if "facilities" in props:
         facilities = []
-        prop_info = props["facilities"]
-        
-        # Get allowed enum values if specified
-        allowed_values = []
-        if "items" in prop_info and "enum" in prop_info["items"]:
-            allowed_values = prop_info["items"]["enum"]
-        
         query_lower = query.lower()
         
-        # Map common phrases to facility names
+        # Check for each facility type mentioned in the query
         facility_mappings = {
             "wi-fi": "Wi-Fi",
             "wifi": "Wi-Fi",
             "free wi-fi": "Wi-Fi",
-            "free wifi": "Wi-Fi",
             "reading room": "Reading Room",
             "fiction": "Fiction",
             "english fiction": "Fiction",
@@ -96,15 +87,14 @@ async def extract_function_call(
             "children's section": "Children Section",
             "kids section": "Children Section",
             "cafe": "Cafe",
-            "coffee": "Cafe",
+            "coffee": "Cafe"
         }
         
-        for phrase, facility in facility_mappings.items():
-            if phrase in query_lower:
-                if not allowed_values or facility in allowed_values:
-                    if facility not in facilities:
-                        facilities.append(facility)
+        for keyword, facility in facility_mappings.items():
+            if keyword in query_lower and facility not in facilities:
+                facilities.append(facility)
         
-        params["facilities"] = facilities
+        if facilities:
+            params["facilities"] = facilities
     
     return {func_name: params}

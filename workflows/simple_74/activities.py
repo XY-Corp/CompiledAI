@@ -50,7 +50,7 @@ async def extract_function_call(
     params = {}
     query_lower = query.lower()
     
-    # Extract numbers from the query
+    # Extract all numbers from the query
     numbers = re.findall(r'\d+', query)
     
     # For bacteria evolution rate, we need:
@@ -58,42 +58,42 @@ async def extract_function_call(
     # - duplication_frequency: "duplicates every Y hour" (frequency = 1 per Y hours)
     # - duration: "for Z hours"
     
-    # Extract start_population - "start with 5000 bacteria"
-    start_match = re.search(r'start\s+with\s+(\d+)', query_lower)
+    # Extract start_population - "start with X bacteria"
+    start_match = re.search(r'start\s+with\s+(\d+)\s*bacteria', query_lower)
     if start_match:
         params["start_population"] = int(start_match.group(1))
     
-    # Extract duplication_frequency - "duplicates every hour" means frequency = 1
-    # "duplicates every X hours" means frequency = 1/X, but since it's integer, likely 1
-    dup_match = re.search(r'duplicates?\s+every\s+(\d+)?\s*hour', query_lower)
+    # Extract duplication frequency - "duplicates every X hour"
+    # "each bacteria duplicates every hour" means frequency = 1 per hour
+    dup_match = re.search(r'duplicates?\s+every\s+(\d*)\s*hour', query_lower)
     if dup_match:
-        # If "every hour" (no number), frequency is 1
-        # If "every 2 hours", frequency would be different interpretation
-        freq_num = dup_match.group(1)
-        if freq_num:
-            params["duplication_frequency"] = int(freq_num)
+        freq_val = dup_match.group(1)
+        if freq_val:
+            params["duplication_frequency"] = int(freq_val)
         else:
-            # "every hour" means once per hour = frequency of 1
+            # "every hour" without number means 1
             params["duplication_frequency"] = 1
     
-    # Extract duration - "for 6 hours"
-    duration_match = re.search(r'for\s+(\d+)\s+hours?', query_lower)
+    # Extract duration - "for X hours"
+    duration_match = re.search(r'for\s+(\d+)\s*hours?', query_lower)
     if duration_match:
         params["duration"] = int(duration_match.group(1))
     
-    # Fallback: if we didn't extract all required params, try positional numbers
+    # Fallback: if we didn't extract all required params, try positional assignment
     required_params = ["start_population", "duplication_frequency", "duration"]
-    if not all(p in params for p in required_params):
-        # Use numbers in order they appear
-        num_idx = 0
-        for param_name in required_params:
-            if param_name not in params and num_idx < len(numbers):
-                params[param_name] = int(numbers[num_idx])
-                num_idx += 1
+    missing = [p for p in required_params if p not in params]
     
-    # Note: generation_time is optional with default, don't include unless specified
-    gen_time_match = re.search(r'generation\s+time\s+(?:of\s+)?(\d+)', query_lower)
-    if gen_time_match:
-        params["generation_time"] = int(gen_time_match.group(1))
+    if missing and numbers:
+        # Try to assign remaining numbers to missing params
+        used_numbers = set()
+        for key, val in params.items():
+            if isinstance(val, int):
+                used_numbers.add(str(val))
+        
+        remaining_numbers = [n for n in numbers if n not in used_numbers]
+        
+        for i, param_name in enumerate(missing):
+            if i < len(remaining_numbers):
+                params[param_name] = int(remaining_numbers[i])
     
     return {func_name: params}

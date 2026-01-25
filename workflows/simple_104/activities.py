@@ -19,7 +19,7 @@ async def extract_function_call(
     try:
         if isinstance(prompt, str):
             data = json.loads(prompt)
-            # Extract user query from BFCL format: {"question": [[{"role": "user", "content": "..."}]]}
+            # Handle BFCL format: {"question": [[{"role": "user", "content": "..."}]]}
             if "question" in data and isinstance(data["question"], list):
                 if len(data["question"]) > 0 and isinstance(data["question"][0], list):
                     query = data["question"][0][0].get("content", str(prompt))
@@ -41,7 +41,7 @@ async def extract_function_call(
     except (json.JSONDecodeError, TypeError):
         funcs = []
     
-    # Get target function details
+    # Get function details
     func = funcs[0] if funcs else {}
     func_name = func.get("name", "")
     params_schema = func.get("parameters", {}).get("properties", {})
@@ -51,39 +51,39 @@ async def extract_function_call(
     
     # Extract all numbers from the query
     numbers = re.findall(r'\b(\d+(?:\.\d+)?)\b', query)
+    number_idx = 0
     
-    # Look for specific parameter patterns in the query
-    # Pattern: "base X" or "base of X" or "base: X"
-    base_match = re.search(r'base\s*(?:of\s*)?(?:is\s*)?(?:=\s*)?(\d+(?:\.\d+)?)', query, re.IGNORECASE)
-    # Pattern: "height X" or "height of X" or "height: X"
-    height_match = re.search(r'height\s*(?:of\s*)?(?:is\s*)?(?:=\s*)?(\d+(?:\.\d+)?)', query, re.IGNORECASE)
-    
-    # Also check for "with base X and height Y" pattern
-    with_pattern = re.search(r'with\s+base\s+(\d+(?:\.\d+)?)\s+and\s+height\s+(\d+(?:\.\d+)?)', query, re.IGNORECASE)
-    
-    if with_pattern:
-        params["base"] = int(float(with_pattern.group(1)))
-        params["height"] = int(float(with_pattern.group(2)))
-    elif base_match and height_match:
-        params["base"] = int(float(base_match.group(1)))
-        params["height"] = int(float(height_match.group(1)))
-    elif len(numbers) >= 2:
-        # Fallback: assign numbers in order they appear
-        # For "base 6 and height 10", numbers would be ['6', '10']
-        params["base"] = int(float(numbers[0]))
-        params["height"] = int(float(numbers[1]))
-    
-    # Check for optional unit parameter
-    unit_patterns = [
-        r'in\s+(square\s+\w+|\w+\s+squared)',
-        r'unit[s]?\s*(?:is|=|:)?\s*(\w+)',
-        r'(square\s+(?:meters?|feet|inches|centimeters?|cm|m|ft|in))',
-    ]
-    
-    for pattern in unit_patterns:
-        unit_match = re.search(pattern, query, re.IGNORECASE)
-        if unit_match:
-            params["unit"] = unit_match.group(1).strip()
-            break
+    # Map parameters based on schema
+    for param_name, param_info in params_schema.items():
+        param_type = param_info.get("type", "string")
+        
+        if param_type in ["integer", "number", "float"]:
+            # Try to find contextual match first (e.g., "base 6" or "height 10")
+            contextual_pattern = rf'{param_name}\s*(?:of|is|=|:)?\s*(\d+(?:\.\d+)?)'
+            contextual_match = re.search(contextual_pattern, query, re.IGNORECASE)
+            
+            if contextual_match:
+                value = contextual_match.group(1)
+                if param_type == "integer":
+                    params[param_name] = int(float(value))
+                else:
+                    params[param_name] = float(value)
+            elif number_idx < len(numbers):
+                # Fall back to sequential number extraction
+                value = numbers[number_idx]
+                if param_type == "integer":
+                    params[param_name] = int(float(value))
+                else:
+                    params[param_name] = float(value)
+                number_idx += 1
+        
+        elif param_type == "string":
+            # Try to extract string value contextually
+            contextual_pattern = rf'{param_name}\s*(?:of|is|=|:)?\s*["\']?([a-zA-Z\s]+)["\']?'
+            contextual_match = re.search(contextual_pattern, query, re.IGNORECASE)
+            
+            if contextual_match:
+                params[param_name] = contextual_match.group(1).strip()
+            # Only include optional string params if explicitly mentioned
     
     return {func_name: params}

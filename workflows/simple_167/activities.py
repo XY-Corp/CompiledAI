@@ -11,9 +11,11 @@ async def extract_function_call(
     workflow_definition_id: str | None = None,
     workflow_instance_id: str | None = None,
 ) -> dict[str, Any]:
-    """Extract function name and parameters from user query using regex and string matching."""
+    """Extract function name and parameters from user query based on function schema.
     
-    # Parse prompt (may be JSON string with nested structure)
+    Returns format: {"function_name": {"param1": val1, "param2": val2}}
+    """
+    # Parse prompt - may be JSON string with nested structure
     try:
         if isinstance(prompt, str):
             data = json.loads(prompt)
@@ -31,7 +33,7 @@ async def extract_function_call(
     except (json.JSONDecodeError, TypeError, KeyError):
         query = str(prompt)
     
-    # Parse functions (may be JSON string)
+    # Parse functions - may be JSON string
     try:
         if isinstance(functions, str):
             funcs = json.loads(functions)
@@ -54,73 +56,53 @@ async def extract_function_call(
         
         if param_type == "boolean":
             # Look for boolean indicators in the query
-            # Check for positive indicators
-            positive_patterns = [
-                r'\binclude\s+' + re.escape(param_name.replace("_", " ")),
-                r'\binclude\s+' + re.escape(param_name.replace("_", "")),
-                r'\bwith\s+' + re.escape(param_name.replace("_", " ")),
-                r'\b' + re.escape(param_name.replace("_", " ")) + r'\s+information',
-                r'\binclude\b.*\b' + re.escape(param_name.split("_")[-1]),
-            ]
+            query_lower = query.lower()
             
-            # Check for negative indicators
-            negative_patterns = [
-                r'\bexclude\s+' + re.escape(param_name.replace("_", " ")),
-                r'\bwithout\s+' + re.escape(param_name.replace("_", " ")),
-                r'\bno\s+' + re.escape(param_name.replace("_", " ")),
-            ]
-            
-            # Default to False
-            value = False
-            
-            # Check for positive matches
-            for pattern in positive_patterns:
-                if re.search(pattern, query, re.IGNORECASE):
-                    value = True
-                    break
-            
-            # Check for negative matches (override positive if found)
-            for pattern in negative_patterns:
-                if re.search(pattern, query, re.IGNORECASE):
-                    value = False
-                    break
-            
-            # Special case: "Include dissent information" pattern
-            if "dissent" in param_name.lower():
-                if re.search(r'include\s+dissent', query, re.IGNORECASE):
-                    value = True
-                elif re.search(r'exclude\s+dissent|without\s+dissent|no\s+dissent', query, re.IGNORECASE):
-                    value = False
-            
-            params[param_name] = value
+            # Check for explicit mentions related to the parameter
+            if "dissent" in param_name.lower() or "dissent" in param_desc:
+                # Look for "include dissent" or similar patterns
+                if re.search(r'include\s+dissent|with\s+dissent|dissent\s+information|dissenting', query_lower):
+                    params[param_name] = True
+                elif re.search(r'no\s+dissent|without\s+dissent|exclude\s+dissent', query_lower):
+                    params[param_name] = False
+                else:
+                    # Default to False if not mentioned
+                    params[param_name] = False
+            else:
+                # Generic boolean detection
+                if re.search(rf'include\s+{param_name}|with\s+{param_name}', query_lower):
+                    params[param_name] = True
+                else:
+                    params[param_name] = False
         
         elif param_type == "string":
             # Extract string values based on context
             if "title" in param_name.lower() or "case" in param_desc:
-                # Look for case title patterns like "X v. Y" or "X vs Y" or quoted titles
-                # Try quoted string first
-                quoted_match = re.search(r"['\"]([^'\"]+)['\"]", query)
-                if quoted_match:
-                    params[param_name] = quoted_match.group(1)
+                # Look for case title patterns like "Roe v. Wade", "Brown v. Board of Education"
+                # Pattern: Word(s) v. Word(s) - handles various case name formats
+                case_match = re.search(r"['\"]?([A-Z][a-zA-Z]*(?:\s+[A-Z][a-zA-Z]*)?\s+v\.?\s+[A-Z][a-zA-Z]*(?:\s+[a-zA-Z]+)*)['\"]?", query)
+                if case_match:
+                    params[param_name] = case_match.group(1).strip("'\"")
                 else:
-                    # Look for "case titled X" or "case X"
-                    title_match = re.search(r"case\s+(?:titled|named|called)?\s*['\"]?([A-Z][a-zA-Z\s]+\s+v\.?\s*[A-Z][a-zA-Z\s]+)['\"]?", query, re.IGNORECASE)
-                    if title_match:
-                        params[param_name] = title_match.group(1).strip()
+                    # Try to find quoted strings
+                    quoted_match = re.search(r"['\"]([^'\"]+)['\"]", query)
+                    if quoted_match:
+                        params[param_name] = quoted_match.group(1)
                     else:
-                        # Look for "X v. Y" or "X vs Y" pattern anywhere
-                        vs_match = re.search(r"([A-Z][a-zA-Z\s]+)\s+v\.?\s*([A-Z][a-zA-Z\s]+)", query)
-                        if vs_match:
-                            params[param_name] = f"{vs_match.group(1).strip()} v. {vs_match.group(2).strip()}"
-                        else:
-                            params[param_name] = "<UNKNOWN>"
+                        # Fallback: look for "titled X" or "case X"
+                        titled_match = re.search(r"(?:titled|called|named)\s+['\"]?([^'\".,]+)['\"]?", query, re.IGNORECASE)
+                        if titled_match:
+                            params[param_name] = titled_match.group(1).strip()
             else:
-                # Generic string extraction - try quoted values first
+                # Generic string extraction - look for quoted values or after "of/for/with"
                 quoted_match = re.search(r"['\"]([^'\"]+)['\"]", query)
                 if quoted_match:
                     params[param_name] = quoted_match.group(1)
                 else:
-                    params[param_name] = "<UNKNOWN>"
+                    # Try pattern matching for common phrases
+                    pattern_match = re.search(rf"(?:for|of|with)\s+([A-Za-z\s]+?)(?:\s*[.,]|\s+(?:and|with|include)|$)", query, re.IGNORECASE)
+                    if pattern_match:
+                        params[param_name] = pattern_match.group(1).strip()
         
         elif param_type in ["integer", "number", "float"]:
             # Extract numbers
@@ -130,7 +112,5 @@ async def extract_function_call(
                     params[param_name] = int(numbers[0])
                 else:
                     params[param_name] = float(numbers[0])
-            else:
-                params[param_name] = 0
     
     return {func_name: params}

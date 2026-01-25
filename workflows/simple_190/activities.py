@@ -24,13 +24,10 @@ async def extract_function_call(
         
         # Extract user query from BFCL format: {"question": [[{"role": "user", "content": "..."}]]}
         if isinstance(data, dict) and "question" in data:
-            question_data = data.get("question", [])
+            question_data = data["question"]
             if isinstance(question_data, list) and len(question_data) > 0:
-                first_item = question_data[0]
-                if isinstance(first_item, list) and len(first_item) > 0:
-                    query = first_item[0].get("content", str(prompt))
-                elif isinstance(first_item, dict):
-                    query = first_item.get("content", str(prompt))
+                if isinstance(question_data[0], list) and len(question_data[0]) > 0:
+                    query = question_data[0][0].get("content", str(prompt))
                 else:
                     query = str(prompt)
             else:
@@ -52,8 +49,7 @@ async def extract_function_call(
     if not funcs:
         return {"error": "No functions provided"}
     
-    # Get function details
-    func = funcs[0] if isinstance(funcs, list) else funcs
+    func = funcs[0]
     func_name = func.get("name", "")
     params_schema = func.get("parameters", {}).get("properties", {})
     
@@ -64,9 +60,9 @@ async def extract_function_call(
         param_type = param_info.get("type", "string")
         param_desc = param_info.get("description", "").lower()
         
-        if param_name == "park_name" or "park" in param_name.lower() or "name" in param_desc:
+        if param_name == "park_name" or "park" in param_desc or "name" in param_desc:
             # Extract park name - look for patterns like "of X National Park" or "X National Park"
-            # Pattern 1: "of [Park Name] National Park"
+            # Pattern 1: "of [Name] National Park"
             match = re.search(r'(?:of|about|for)\s+([A-Za-z\s]+?)(?:\s+National\s+Park)?(?:\?|$|\.)', query, re.IGNORECASE)
             if match:
                 park_name = match.group(1).strip()
@@ -74,10 +70,17 @@ async def extract_function_call(
                 park_name = re.sub(r'\s*National\s*Park\s*$', '', park_name, flags=re.IGNORECASE).strip()
                 params[param_name] = park_name
             else:
-                # Pattern 2: Look for capitalized words that could be park names
-                match = re.search(r'([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\s+(?:National\s+)?Park', query)
+                # Pattern 2: Look for capitalized words that could be a park name
+                match = re.search(r'([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\s+National\s+Park', query)
                 if match:
                     params[param_name] = match.group(1).strip()
+                else:
+                    # Fallback: extract any proper noun sequence
+                    words = query.split()
+                    for i, word in enumerate(words):
+                        if word[0].isupper() and word.lower() not in ['what', 'the', 'and', 'of']:
+                            params[param_name] = word
+                            break
         
         elif param_type == "array":
             # Extract array values - look for enum values in the query
@@ -88,12 +91,20 @@ async def extract_function_call(
                 # Find which enum values are mentioned in the query
                 found_values = []
                 query_lower = query.lower()
-                
                 for enum_val in enum_values:
                     if enum_val.lower() in query_lower:
                         found_values.append(enum_val)
                 
                 if found_values:
                     params[param_name] = found_values
+                else:
+                    # If no exact matches, try to infer from context
+                    # "elevation and area" -> ["Elevation", "Area"]
+                    inferred = []
+                    for enum_val in enum_values:
+                        # Check for partial matches or related words
+                        if enum_val.lower() in query_lower:
+                            inferred.append(enum_val)
+                    params[param_name] = inferred if inferred else enum_values[:1]
     
     return {func_name: params}

@@ -60,43 +60,36 @@ async def extract_function_call(
         param_desc = param_info.get("description", "").lower()
         
         if param_type == "string":
-            # For movie title: extract text in quotes or after keywords
-            if "title" in param_name.lower() or "movie" in param_desc or "title" in param_desc:
+            # For movie title: extract quoted text or text after "movie" keyword
+            if "title" in param_name.lower() or "movie" in param_desc:
                 # Try quoted string first: 'Interstellar' or "Interstellar"
                 quoted_match = re.search(r"['\"]([^'\"]+)['\"]", query)
                 if quoted_match:
                     params[param_name] = quoted_match.group(1)
                 else:
-                    # Try patterns like "movie X" or "on X" or "about X"
-                    patterns = [
-                        r"movie\s+['\"]?([^'\"]+?)['\"]?(?:\s|$|\?)",
-                        r"(?:on|about|for)\s+(?:movie\s+)?['\"]?([^'\"]+?)['\"]?(?:\s|$|\?)",
-                        r"brief\s+(?:on|about|for)\s+['\"]?([^'\"]+?)['\"]?(?:\s|$|\?)",
-                    ]
-                    for pattern in patterns:
-                        match = re.search(pattern, query, re.IGNORECASE)
-                        if match:
-                            params[param_name] = match.group(1).strip()
-                            break
+                    # Try pattern: "movie X" or "movie 'X'" or "on movie X"
+                    movie_match = re.search(r"movie\s+['\"]?([^'\"]+?)['\"]?(?:\s*$|\s+(?:and|with|,))", query, re.IGNORECASE)
+                    if movie_match:
+                        params[param_name] = movie_match.group(1).strip()
+                    else:
+                        # Fallback: extract text after common prepositions
+                        prep_match = re.search(r"(?:on|about|for|of)\s+(?:movie\s+)?['\"]?([^'\"]+?)['\"]?(?:\s*$|\s+(?:and|with|,))", query, re.IGNORECASE)
+                        if prep_match:
+                            params[param_name] = prep_match.group(1).strip()
             else:
                 # Generic string extraction
-                quoted_match = re.search(r"['\"]([^'\"]+)['\"]", query)
-                if quoted_match:
-                    params[param_name] = quoted_match.group(1)
+                string_match = re.search(r"['\"]([^'\"]+)['\"]", query)
+                if string_match:
+                    params[param_name] = string_match.group(1)
         
         elif param_type == "boolean":
-            # Check for explicit boolean indicators
+            # Check for explicit boolean indicators in query
             if "extra" in param_name.lower() or "additional" in param_desc:
                 # Look for keywords indicating extra info is wanted
-                extra_patterns = [
-                    r"\b(with|include|also|extra|additional|more)\s+(info|information|details)\b",
-                    r"\b(detailed|full|complete)\b",
-                ]
-                wants_extra = any(re.search(p, query, re.IGNORECASE) for p in extra_patterns)
-                # Only include if explicitly requested (not default)
-                if wants_extra:
+                if re.search(r"\b(extra|additional|more|detailed|full|complete)\b", query, re.IGNORECASE):
                     params[param_name] = True
-                # Don't include if not requested (let default apply)
+                # Only include if explicitly requested (not default)
+                # Skip adding if not mentioned - let default apply
         
         elif param_type in ["integer", "number", "float"]:
             # Extract numbers
@@ -111,8 +104,9 @@ async def extract_function_call(
     for req_param in required_params:
         if req_param not in params:
             # Try harder to extract required string params
-            if params_schema.get(req_param, {}).get("type") == "string":
-                # Last resort: extract any quoted text or significant noun phrase
+            param_info = params_schema.get(req_param, {})
+            if param_info.get("type") == "string":
+                # Last resort: extract any quoted text
                 quoted = re.search(r"['\"]([^'\"]+)['\"]", query)
                 if quoted:
                     params[req_param] = quoted.group(1)

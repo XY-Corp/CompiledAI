@@ -83,7 +83,7 @@ async def extract_function_call(
             for pattern in timeframe_patterns:
                 match = re.search(pattern, query_lower)
                 if match:
-                    if 'week' in pattern:
+                    if "week" in pattern:
                         params["timeframe"] = 7
                     else:
                         params["timeframe"] = int(match.group(1))

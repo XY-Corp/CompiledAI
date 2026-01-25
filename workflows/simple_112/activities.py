@@ -29,7 +29,7 @@ async def extract_function_call(
                 query = str(prompt)
         else:
             query = str(prompt)
-    except (json.JSONDecodeError, TypeError, KeyError):
+    except (json.JSONDecodeError, TypeError):
         query = str(prompt)
     
     # Parse functions (may be JSON string)
@@ -46,93 +46,77 @@ async def extract_function_call(
     func_name = func.get("name", "")
     params_schema = func.get("parameters", {}).get("properties", {})
     
-    # Extract parameters based on the function type
-    params = {}
+    # For probability calculation - use domain knowledge
+    # Standard deck of cards: 52 cards total, 4 kings
     query_lower = query.lower()
     
-    if func_name == "calculate_probability":
-        # Domain knowledge: standard deck of cards has 52 cards
-        # Common card probability questions
-        
-        # Check for deck of cards context
+    params = {}
+    
+    if "probability" in func_name.lower() or "calculate_probability" in func_name:
+        # Check for card-related probability questions
         if "deck" in query_lower and "card" in query_lower:
             # Standard deck has 52 cards
-            params["total_outcomes"] = 52
+            total_outcomes = 52
             
             # Determine favorable outcomes based on what's being drawn
+            favorable_outcomes = 0
+            
+            # Check for specific card types
             if "king" in query_lower:
-                # 4 kings in a deck
-                params["favorable_outcomes"] = 4
+                favorable_outcomes = 4  # 4 kings in a deck
             elif "queen" in query_lower:
-                # 4 queens in a deck
-                params["favorable_outcomes"] = 4
+                favorable_outcomes = 4  # 4 queens
             elif "jack" in query_lower:
-                # 4 jacks in a deck
-                params["favorable_outcomes"] = 4
+                favorable_outcomes = 4  # 4 jacks
             elif "ace" in query_lower:
-                # 4 aces in a deck
-                params["favorable_outcomes"] = 4
+                favorable_outcomes = 4  # 4 aces
             elif "heart" in query_lower or "diamond" in query_lower or "club" in query_lower or "spade" in query_lower:
-                # 13 cards per suit
-                params["favorable_outcomes"] = 13
+                favorable_outcomes = 13  # 13 cards per suit
             elif "face card" in query_lower:
-                # 12 face cards (J, Q, K in each suit)
-                params["favorable_outcomes"] = 12
+                favorable_outcomes = 12  # 12 face cards (J, Q, K of each suit)
             elif "red" in query_lower:
-                # 26 red cards (hearts + diamonds)
-                params["favorable_outcomes"] = 26
+                favorable_outcomes = 26  # 26 red cards (hearts + diamonds)
             elif "black" in query_lower:
-                # 26 black cards (clubs + spades)
-                params["favorable_outcomes"] = 26
-            else:
-                # Try to extract numbers from query
-                numbers = re.findall(r'\d+', query)
-                if numbers:
-                    params["favorable_outcomes"] = int(numbers[0])
-                else:
-                    params["favorable_outcomes"] = 1  # Default to 1 specific card
+                favorable_outcomes = 26  # 26 black cards (clubs + spades)
+            
+            params["total_outcomes"] = total_outcomes
+            params["favorable_outcomes"] = favorable_outcomes
         else:
-            # Generic probability - extract numbers from query
+            # Try to extract numbers from the query for generic probability
             numbers = re.findall(r'\d+', query)
             if len(numbers) >= 2:
-                # Assume first number is favorable, second is total (or vice versa)
-                # Usually phrased as "X out of Y" or "X from Y"
-                if "out of" in query_lower or "from" in query_lower:
-                    params["favorable_outcomes"] = int(numbers[0])
-                    params["total_outcomes"] = int(numbers[1])
-                else:
-                    # Larger number is likely total outcomes
-                    nums = [int(n) for n in numbers]
-                    params["total_outcomes"] = max(nums)
-                    params["favorable_outcomes"] = min(nums)
+                params["total_outcomes"] = int(numbers[0])
+                params["favorable_outcomes"] = int(numbers[1])
             elif len(numbers) == 1:
                 params["total_outcomes"] = int(numbers[0])
                 params["favorable_outcomes"] = 1
         
-        # Check for rounding specification
+        # Check for round_to specification
         round_match = re.search(r'round(?:ed)?\s*(?:to)?\s*(\d+)', query_lower)
         if round_match:
             params["round_to"] = int(round_match.group(1))
-        # Note: round_to has a default of 2, so we don't need to set it if not specified
-    
+        elif "decimal" in query_lower:
+            decimal_match = re.search(r'(\d+)\s*decimal', query_lower)
+            if decimal_match:
+                params["round_to"] = int(decimal_match.group(1))
     else:
-        # Generic parameter extraction for other functions
-        numbers = re.findall(r'\d+(?:\.\d+)?', query)
+        # Generic parameter extraction based on schema
+        numbers = re.findall(r'\d+', query)
         num_idx = 0
         
         for param_name, param_info in params_schema.items():
-            param_type = param_info.get("type", "string")
+            param_type = param_info.get("type", "string") if isinstance(param_info, dict) else "string"
             
             if param_type in ["integer", "number", "float"]:
                 if num_idx < len(numbers):
                     if param_type == "integer":
-                        params[param_name] = int(float(numbers[num_idx]))
+                        params[param_name] = int(numbers[num_idx])
                     else:
                         params[param_name] = float(numbers[num_idx])
                     num_idx += 1
             elif param_type == "string":
                 # Try to extract string values
-                string_match = re.search(r'(?:for|in|of|with)\s+([A-Za-z\s]+?)(?:\s+(?:and|with|,|from)|$)', query, re.IGNORECASE)
+                string_match = re.search(r'(?:for|in|of|with|named?)\s+["\']?([A-Za-z\s]+?)["\']?(?:\s+(?:and|with|,|from)|$)', query, re.IGNORECASE)
                 if string_match:
                     params[param_name] = string_match.group(1).strip()
     

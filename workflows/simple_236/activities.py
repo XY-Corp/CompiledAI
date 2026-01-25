@@ -95,7 +95,7 @@ async def extract_function_call(
                     params[param_name] = enum_val
                     break
             
-            # If no match found, try to infer from context
+            # Fallback: infer from query keywords
             if param_name not in params:
                 if "start" in query_lower and "date" in query_lower:
                     params[param_name] = "Start Date"

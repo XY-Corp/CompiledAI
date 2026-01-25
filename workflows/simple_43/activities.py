@@ -19,9 +19,13 @@ async def extract_function_call(
     try:
         if isinstance(prompt, str):
             data = json.loads(prompt)
-            # Extract user query from BFCL format: {"question": [[{"role": "user", "content": "..."}]]}
-            if "question" in data and isinstance(data["question"], list):
-                if len(data["question"]) > 0 and isinstance(data["question"][0], list):
+        else:
+            data = prompt
+        
+        # Extract user query from BFCL format: {"question": [[{"role": "user", "content": "..."}]]}
+        if "question" in data and isinstance(data["question"], list):
+            if len(data["question"]) > 0 and isinstance(data["question"][0], list):
+                if len(data["question"][0]) > 0 and isinstance(data["question"][0][0], dict):
                     query = data["question"][0][0].get("content", str(prompt))
                 else:
                     query = str(prompt)
@@ -29,9 +33,9 @@ async def extract_function_call(
                 query = str(prompt)
         else:
             query = str(prompt)
-    except (json.JSONDecodeError, TypeError, KeyError):
+    except (json.JSONDecodeError, TypeError):
         query = str(prompt)
-
+    
     # Parse functions - may be JSON string
     try:
         if isinstance(functions, str):
@@ -40,13 +44,12 @@ async def extract_function_call(
             funcs = functions
     except (json.JSONDecodeError, TypeError):
         funcs = []
-
+    
     # Get function details
     func = funcs[0] if funcs else {}
     func_name = func.get("name", "")
     params_schema = func.get("parameters", {}).get("properties", {})
-    required_params = func.get("parameters", {}).get("required", [])
-
+    
     # Extract all numbers from the query
     # Pattern matches integers and floats (including scientific notation)
     numbers = re.findall(r'(\d+(?:\.\d+)?(?:e[+-]?\d+)?)', query, re.IGNORECASE)
@@ -59,37 +62,41 @@ async def extract_function_call(
         param_type = param_info.get("type", "string")
         param_desc = param_info.get("description", "").lower()
         
-        if param_type in ["integer", "float", "number"]:
-            # Try to find a contextual match first based on description keywords
-            value = None
+        if param_type in ["integer", "int", "float", "number"]:
+            # Try to match number based on context in description
+            matched = False
             
             # Look for specific patterns based on parameter description
             if "current" in param_desc:
                 # Look for current value - pattern: "X Amperes" or "current of X"
                 current_match = re.search(r'(?:current\s+of\s+)?(\d+(?:\.\d+)?)\s*(?:amperes?|amps?|a\b)', query, re.IGNORECASE)
                 if current_match:
-                    value = current_match.group(1)
+                    val = current_match.group(1)
+                    params[param_name] = int(float(val)) if param_type == "integer" else float(val)
+                    matched = True
+            
             elif "distance" in param_desc:
                 # Look for distance value - pattern: "X meters" or "X m away"
                 distance_match = re.search(r'(\d+(?:\.\d+)?)\s*(?:meters?|m\b)(?:\s+away)?', query, re.IGNORECASE)
                 if distance_match:
-                    value = distance_match.group(1)
+                    val = distance_match.group(1)
+                    params[param_name] = int(float(val)) if param_type == "integer" else float(val)
+                    matched = True
+            
             elif "permeability" in param_desc:
-                # Permeability is optional with default, skip unless explicitly mentioned
-                permeability_match = re.search(r'permeability\s+(?:of\s+)?(\d+(?:\.\d+)?(?:e[+-]?\d+)?)', query, re.IGNORECASE)
-                if permeability_match:
-                    value = permeability_match.group(1)
+                # Permeability is optional with default - only extract if explicitly mentioned
+                perm_match = re.search(r'permeability\s+(?:of\s+)?(\d+(?:\.\d+)?(?:e[+-]?\d+)?)', query, re.IGNORECASE)
+                if perm_match:
+                    params[param_name] = float(perm_match.group(1))
+                    matched = True
+                # Don't set if not mentioned - let default apply
             
-            # If no contextual match and this is a required param, use next available number
-            if value is None and param_name in required_params and num_idx < len(numbers):
-                value = numbers[num_idx]
-                num_idx += 1
-            
-            # Convert to appropriate type
-            if value is not None:
-                if param_type == "integer":
-                    params[param_name] = int(float(value))
-                else:  # float or number
-                    params[param_name] = float(value)
+            # Fallback: assign numbers in order if not matched by context
+            if not matched and num_idx < len(numbers) and param_name not in params:
+                # Skip permeability if it has a default and wasn't explicitly mentioned
+                if "permeability" not in param_name.lower():
+                    val = numbers[num_idx]
+                    params[param_name] = int(float(val)) if param_type == "integer" else float(val)
+                    num_idx += 1
     
     return {func_name: params}

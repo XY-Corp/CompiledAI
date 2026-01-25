@@ -51,53 +51,58 @@ async def extract_function_call(
     # Extract parameters from query
     params = {}
     
+    # Extract all numbers from the query
+    numbers = re.findall(r'\d+', query)
+    
+    # Extract location/city - look for patterns like "of X" or "near X" or city names
+    # Pattern: "of [City], [State]" or "near [City]" or "within X km of [City]"
+    location_patterns = [
+        r'(?:of|near|from|in)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*,?\s*[A-Z][a-z]*)',  # "of Denver, Colorado"
+        r'(?:of|near|from|in)\s+([A-Z][a-z]+(?:,\s*[A-Z][a-z]+)?)',  # "of Denver" or "of Denver, Colorado"
+    ]
+    
+    location = None
+    for pattern in location_patterns:
+        match = re.search(pattern, query)
+        if match:
+            location = match.group(1).strip()
+            break
+    
+    # Map extracted values to parameter names based on schema
+    number_idx = 0
     for param_name, param_info in params_schema.items():
         param_type = param_info.get("type", "string")
         param_desc = param_info.get("description", "").lower()
         
-        if param_type == "integer" or param_type == "number":
-            # Extract numbers based on context clues in description
-            if "radius" in param_desc or "distance" in param_desc or "kilometer" in param_desc:
-                # Look for patterns like "50km", "50 km", "within 50"
-                radius_match = re.search(r'(\d+)\s*(?:km|kilometer|kilometres?)', query, re.IGNORECASE)
-                if radius_match:
-                    params[param_name] = int(radius_match.group(1))
-                else:
-                    # Try "within X" pattern
-                    within_match = re.search(r'within\s+(\d+)', query, re.IGNORECASE)
-                    if within_match:
-                        params[param_name] = int(within_match.group(1))
-            elif "amount" in param_desc or "number" in param_desc or "count" in param_desc:
-                # Look for patterns like "5 tallest", "top 10", "find 3"
-                amount_match = re.search(r'(?:find|get|show|list|top|the)\s*(?:me\s+)?(?:the\s+)?(\d+)', query, re.IGNORECASE)
-                if amount_match:
-                    params[param_name] = int(amount_match.group(1))
-                else:
-                    # Try "X tallest/highest/largest" pattern
-                    count_match = re.search(r'(\d+)\s+(?:tallest|highest|largest|biggest|nearest|closest)', query, re.IGNORECASE)
-                    if count_match:
-                        params[param_name] = int(count_match.group(1))
-            else:
-                # Generic number extraction - get first unmatched number
-                all_numbers = re.findall(r'\d+', query)
-                used_numbers = [str(v) for v in params.values() if isinstance(v, int)]
-                for num in all_numbers:
-                    if num not in used_numbers:
-                        params[param_name] = int(num)
-                        break
+        if param_type == "string":
+            # For location/city parameters
+            if location and any(keyword in param_name.lower() or keyword in param_desc 
+                               for keyword in ["location", "city", "place", "address"]):
+                params[param_name] = location
         
-        elif param_type == "string":
-            # Extract string values based on context
-            if "location" in param_desc or "city" in param_desc or "place" in param_desc:
-                # Look for patterns like "of Denver", "near Denver", "in Denver, Colorado"
-                location_patterns = [
-                    r'(?:of|near|in|around|from)\s+([A-Z][a-zA-Z]+(?:,?\s+[A-Z][a-zA-Z]+)?)',
-                    r'([A-Z][a-zA-Z]+,\s*[A-Z][a-zA-Z]+)',  # "Denver, Colorado"
-                ]
-                for pattern in location_patterns:
-                    loc_match = re.search(pattern, query)
-                    if loc_match:
-                        params[param_name] = loc_match.group(1).strip()
-                        break
+        elif param_type == "integer":
+            # Try to match numbers based on context in description
+            if number_idx < len(numbers):
+                # Check description for hints about which number to use
+                if "radius" in param_desc or "distance" in param_desc or "kilometer" in param_desc:
+                    # Look for number near "km" or "kilometer"
+                    radius_match = re.search(r'(\d+)\s*(?:km|kilometer)', query, re.IGNORECASE)
+                    if radius_match:
+                        params[param_name] = int(radius_match.group(1))
+                    elif number_idx < len(numbers):
+                        params[param_name] = int(numbers[number_idx])
+                        number_idx += 1
+                elif "amount" in param_desc or "number" in param_desc or "count" in param_desc:
+                    # Look for number at start or after "the X" pattern
+                    amount_match = re.search(r'(?:the\s+)?(\d+)\s+(?:tallest|highest|largest|biggest|top)', query, re.IGNORECASE)
+                    if amount_match:
+                        params[param_name] = int(amount_match.group(1))
+                    elif number_idx < len(numbers):
+                        params[param_name] = int(numbers[number_idx])
+                        number_idx += 1
+                else:
+                    # Default: assign next available number
+                    params[param_name] = int(numbers[number_idx])
+                    number_idx += 1
     
     return {func_name: params}

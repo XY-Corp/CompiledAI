@@ -55,22 +55,19 @@ async def extract_function_call(
     for pattern in country_patterns:
         match = re.search(pattern, query)
         if match:
-            country = match.group(1).strip()
-            # Filter out common non-country words
-            if country.lower() not in ['population', 'density', 'calculate', 'the']:
-                params["country"] = country
-                break
+            params["country"] = match.group(1).strip()
+            break
     
     # Extract year - 4-digit number that looks like a year (1900-2100)
     year_match = re.search(r'\b(19\d{2}|20\d{2}|21\d{2})\b', query)
     if year_match:
         params["year"] = year_match.group(1)
     
-    # Extract population - look for "population is X million" or "X million population"
+    # Extract population - look for "population is X million" or similar patterns
     pop_patterns = [
         r'population\s+(?:is|of)\s+(\d+(?:\.\d+)?)\s*million',
         r'(\d+(?:\.\d+)?)\s*million\s+(?:people|population)',
-        r'population\s+(\d+(?:\.\d+)?)\s*million',
+        r'population[:\s]+(\d+(?:\.\d+)?)\s*million',
     ]
     for pattern in pop_patterns:
         match = re.search(pattern, query, re.IGNORECASE)
@@ -80,11 +77,11 @@ async def extract_function_call(
             params["population"] = int(pop_value * 1_000_000)
             break
     
-    # Extract land area - look for "land area is X million square kilometers"
+    # Extract land area - look for "land area is X million square kilometers" or similar
     area_patterns = [
         r'land\s+area\s+(?:is|of)\s+(\d+(?:\.\d+)?)\s*million\s*(?:square\s*)?(?:kilometers|km)',
-        r'(\d+(?:\.\d+)?)\s*million\s*(?:square\s*)?(?:kilometers|km)\s*(?:land\s+)?area',
-        r'area\s+(?:is|of)\s+(\d+(?:\.\d+)?)\s*million',
+        r'(\d+(?:\.\d+)?)\s*million\s*(?:square\s*)?(?:kilometers|km)',
+        r'area[:\s]+(\d+(?:\.\d+)?)\s*million',
     ]
     for pattern in area_patterns:
         match = re.search(pattern, query, re.IGNORECASE)

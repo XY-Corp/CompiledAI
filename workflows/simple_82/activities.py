@@ -102,7 +102,7 @@ async def extract_function_call(
                 params[param_name] = quoted_match.group(1)
             else:
                 # Try to extract after common prepositions
-                prep_match = re.search(r'(?:for|in|of|with|named?)\s+([A-Za-z\s]+?)(?:\s+(?:and|with|,|\.)|$)', query, re.IGNORECASE)
+                prep_match = re.search(r'(?:for|in|of|with|to)\s+([A-Za-z\s]+?)(?:\s+(?:and|with|,|\.)|$)', query, re.IGNORECASE)
                 if prep_match:
                     params[param_name] = prep_match.group(1).strip()
     

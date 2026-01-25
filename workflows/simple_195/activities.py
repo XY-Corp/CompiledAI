@@ -11,7 +11,7 @@ async def extract_function_call(
     workflow_definition_id: str | None = None,
     workflow_instance_id: str | None = None,
 ) -> dict[str, Any]:
-    """Extract function call parameters from natural language query using regex.
+    """Extract function call parameters from user query using regex patterns.
     
     Returns a dict with function name as key and parameters as nested object.
     """
@@ -67,7 +67,7 @@ async def extract_function_call(
     meat_patterns = [
         r'(\d+)\s+meat\s+meals?\s+(?:a\s+|per\s+)?week',
         r'consume\s+(\d+)\s+meat\s+meals?',
-        r'(\d+)\s+meat[- ]based\s+meals?\s+(?:a\s+|per\s+)?week',
+        r'(\d+)\s+meat(?:-based)?\s+meals?\s+(?:per\s+)?week',
         r'meat\s+meals?\s+(?:of\s+)?(\d+)\s+(?:times?\s+)?(?:a\s+|per\s+)?week',
     ]
     for pattern in meat_patterns:
@@ -92,8 +92,8 @@ async def extract_function_call(
     # Pattern for flights per year (optional): "X flights a year"
     flight_patterns = [
         r'(\d+)\s+flights?\s+(?:a\s+|per\s+)?year',
-        r'fly\s+(\d+)\s+times?\s+(?:a\s+|per\s+)?year',
         r'take\s+(\d+)\s+flights?',
+        r'fly\s+(\d+)\s+times?\s+(?:a\s+|per\s+)?year',
     ]
     for pattern in flight_patterns:
         match = re.search(pattern, query, re.IGNORECASE)
@@ -101,7 +101,7 @@ async def extract_function_call(
             params["flights_per_year"] = int(match.group(1))
             break
     
-    # If flights_per_year not found and it has a default, we can omit it
-    # (the function schema says default is 0, so we don't need to include it)
+    # If flights_per_year not found but it's in schema with a default, we can omit it
+    # (the function will use its default value of 0)
     
     return {func_name: params}

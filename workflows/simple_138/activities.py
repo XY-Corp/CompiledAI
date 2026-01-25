@@ -39,7 +39,7 @@ async def extract_function_call(
     except (json.JSONDecodeError, TypeError):
         funcs = []
     
-    # Get function details
+    # Get function schema
     func = funcs[0] if funcs else {}
     func_name = func.get("name", "")
     props = func.get("parameters", {}).get("properties", {})
@@ -47,23 +47,23 @@ async def extract_function_call(
     # Extract parameters from query using regex
     params = {}
     
-    # Extract stock ticker - look for 'stock' followed by quote or ticker pattern
+    # Extract stock ticker - look for patterns like 'stock X', 'stock "X"', 'stock 'X''
     stock_patterns = [
-        r"stock\s+['\"]?([A-Za-z]+)['\"]?",  # stock 'X' or stock X
-        r"in\s+stock\s+['\"]?([A-Za-z]+)['\"]?",  # in stock 'X'
-        r"ticker\s+['\"]?([A-Za-z]+)['\"]?",  # ticker 'X'
+        r"stock\s+['\"]?([A-Za-z]+)['\"]?",
+        r"ticker\s+['\"]?([A-Za-z]+)['\"]?",
+        r"symbol\s+['\"]?([A-Za-z]+)['\"]?",
     ]
     for pattern in stock_patterns:
         match = re.search(pattern, query, re.IGNORECASE)
         if match:
-            params["stock"] = match.group(1)
+            params["stock"] = match.group(1).upper()
             break
     
     # Extract invested amount - look for dollar amounts
     amount_patterns = [
-        r"\$\s*([\d,]+(?:\.\d+)?)",  # $5000 or $5,000
-        r"invest\s+\$?([\d,]+(?:\.\d+)?)",  # invest 5000
-        r"([\d,]+(?:\.\d+)?)\s*(?:dollars|USD)",  # 5000 dollars
+        r"\$\s*([\d,]+(?:\.\d+)?)",
+        r"invest\s+\$?([\d,]+(?:\.\d+)?)",
+        r"([\d,]+(?:\.\d+)?)\s*(?:dollars|USD)",
     ]
     for pattern in amount_patterns:
         match = re.search(pattern, query, re.IGNORECASE)
@@ -74,10 +74,9 @@ async def extract_function_call(
     
     # Extract expected annual return - look for percentage
     return_patterns = [
-        r"(?:annual\s+)?return\s+(?:of\s+)?(\d+(?:\.\d+)?)\s*%",  # return of 5%
-        r"(\d+(?:\.\d+)?)\s*%\s*(?:annual\s+)?return",  # 5% return
-        r"(\d+(?:\.\d+)?)\s*%\s*(?:for|over)",  # 5% for
-        r"(\d+(?:\.\d+)?)\s*(?:percent|%)",  # 5 percent or 5%
+        r"(\d+(?:\.\d+)?)\s*%\s*(?:annual|yearly|return|interest)?",
+        r"return\s+(?:of\s+)?(\d+(?:\.\d+)?)\s*%",
+        r"(\d+(?:\.\d+)?)\s*percent",
     ]
     for pattern in return_patterns:
         match = re.search(pattern, query, re.IGNORECASE)
@@ -86,11 +85,11 @@ async def extract_function_call(
             params["expected_annual_return"] = float(match.group(1)) / 100.0
             break
     
-    # Extract years - look for number followed by years
+    # Extract years - look for number of years
     years_patterns = [
-        r"(?:for|over)\s+(\d+)\s*years?",  # for 7 years
-        r"(\d+)\s*years?\s+(?:period|term|investment)",  # 7 years period
-        r"(\d+)\s*-?\s*year",  # 7-year or 7 year
+        r"(\d+)\s*years?",
+        r"for\s+(\d+)\s*(?:years?|yrs?)",
+        r"(\d+)\s*(?:year|yr)\s*(?:period|term)?",
     ]
     for pattern in years_patterns:
         match = re.search(pattern, query, re.IGNORECASE)

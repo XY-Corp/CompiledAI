@@ -19,7 +19,7 @@ async def extract_function_call(
     try:
         if isinstance(prompt, str):
             data = json.loads(prompt)
-            # Handle BFCL format: {"question": [[{"role": "user", "content": "..."}]], ...}
+            # Extract user query from BFCL format: {"question": [[{"role": "user", "content": "..."}]]}
             if "question" in data and isinstance(data["question"], list):
                 if len(data["question"]) > 0 and isinstance(data["question"][0], list):
                     query = data["question"][0][0].get("content", str(prompt))
@@ -59,99 +59,53 @@ async def extract_function_call(
 
     # First extract "X million" and "X billion" patterns
     for pattern, multiplier in number_patterns[:2]:
-        for match in re.finditer(pattern, query_lower):
-            value = float(match.group(1)) * multiplier
-            extracted_numbers.append((match.start(), int(value)))
+        matches = re.findall(pattern, query_lower)
+        for match in matches:
+            value = float(match.replace(',', '')) * multiplier
+            extracted_numbers.append(int(value))
 
-    # If we didn't find enough numbers with million/billion, look for plain numbers
+    # If we didn't find enough numbers, try plain numbers
     if len(extracted_numbers) < 2:
-        # Find plain numbers not already captured
-        for match in re.finditer(r'(\d+(?:,\d{3})*(?:\.\d+)?)', query):
-            num_str = match.group(1).replace(',', '')
-            value = float(num_str)
-            # Check if this position overlaps with already found numbers
-            pos = match.start()
-            is_duplicate = False
-            for existing_pos, _ in extracted_numbers:
-                if abs(pos - existing_pos) < 20:  # Within 20 chars, likely same number
-                    is_duplicate = True
-                    break
-            if not is_duplicate:
-                extracted_numbers.append((pos, int(value) if value == int(value) else value))
+        plain_numbers = re.findall(r'(\d+(?:,\d{3})*(?:\.\d+)?)', query)
+        for num_str in plain_numbers:
+            num_val = float(num_str.replace(',', ''))
+            # Check if this number is already captured (as part of "X million")
+            if int(num_val) not in extracted_numbers:
+                extracted_numbers.append(int(num_val))
 
-    # Sort by position in text
-    extracted_numbers.sort(key=lambda x: x[0])
-    numbers = [n[1] for n in extracted_numbers]
-
-    # Map numbers to parameters based on context clues in the query
+    # Map extracted values to parameters based on context
     params = {}
     
     # For this specific function, we need to identify:
-    # - total_payout: dividend payout amount
-    # - outstanding_shares: number of shares
+    # - total_payout: "total dividend payout of 50 million USD"
+    # - outstanding_shares: "100 million outstanding shares"
     
-    # Look for contextual clues
-    payout_value = None
-    shares_value = None
+    # Use context clues to assign values correctly
+    payout_match = re.search(r'(?:total\s+)?(?:dividend\s+)?payout\s+(?:of\s+)?(\d+(?:\.\d+)?)\s*(million|billion)?', query_lower)
+    shares_match = re.search(r'(\d+(?:\.\d+)?)\s*(million|billion)?\s*(?:outstanding\s+)?shares', query_lower)
     
-    # Pattern for shares: "X shares" or "X outstanding shares"
-    shares_match = re.search(r'(\d+(?:\.\d+)?)\s*(?:million|billion)?\s*(?:outstanding\s+)?shares', query_lower)
-    if shares_match:
-        num_str = shares_match.group(1)
-        if 'million' in query_lower[shares_match.start():shares_match.end()+10]:
-            shares_value = int(float(num_str) * 1_000_000)
-        elif 'billion' in query_lower[shares_match.start():shares_match.end()+10]:
-            shares_value = int(float(num_str) * 1_000_000_000)
-        else:
-            shares_value = int(float(num_str))
-    
-    # Pattern for payout: "dividend payout of X" or "total dividend payout of X"
-    payout_match = re.search(r'(?:dividend\s+)?payout\s+of\s+(\d+(?:\.\d+)?)\s*(?:million|billion)?', query_lower)
     if payout_match:
-        num_str = payout_match.group(1)
-        # Check for million/billion after the number
-        after_text = query_lower[payout_match.end():payout_match.end()+15]
-        if 'million' in query_lower[payout_match.start():payout_match.end()+15]:
-            payout_value = int(float(num_str) * 1_000_000)
-        elif 'billion' in query_lower[payout_match.start():payout_match.end()+15]:
-            payout_value = int(float(num_str) * 1_000_000_000)
-        else:
-            payout_value = int(float(num_str))
-
-    # If we found specific values, use them
-    if shares_value is not None:
-        params["outstanding_shares"] = shares_value
-    if payout_value is not None:
-        params["total_payout"] = payout_value
-
-    # Fallback: if we couldn't identify specific values but have numbers
-    # Try to assign based on typical patterns (shares usually larger than payout per share)
-    if len(params) < 2 and len(numbers) >= 2:
-        # If we have two numbers, the one associated with "shares" is outstanding_shares
-        # and the one associated with "payout" or "dividend" is total_payout
-        if "outstanding_shares" not in params:
-            # Find the number closest to "shares" keyword
-            for i, (pos, val) in enumerate(extracted_numbers):
-                text_around = query_lower[max(0, pos-30):pos+50]
-                if 'share' in text_around:
-                    params["outstanding_shares"] = val
-                    break
-        
-        if "total_payout" not in params:
-            # Find the number closest to "payout" or "dividend" keyword
-            for i, (pos, val) in enumerate(extracted_numbers):
-                text_around = query_lower[max(0, pos-30):pos+50]
-                if 'payout' in text_around or 'dividend' in text_around:
-                    if val != params.get("outstanding_shares"):
-                        params["total_payout"] = val
-                        break
-
-    # Final fallback: assign remaining numbers to missing params
-    if len(params) < 2 and numbers:
-        remaining_numbers = [n for n in numbers if n not in params.values()]
+        payout_value = float(payout_match.group(1))
+        if payout_match.group(2) == 'million':
+            payout_value *= 1_000_000
+        elif payout_match.group(2) == 'billion':
+            payout_value *= 1_000_000_000
+        params['total_payout'] = int(payout_value)
+    
+    if shares_match:
+        shares_value = float(shares_match.group(1))
+        if shares_match.group(2) == 'million':
+            shares_value *= 1_000_000
+        elif shares_match.group(2) == 'billion':
+            shares_value *= 1_000_000_000
+        params['outstanding_shares'] = int(shares_value)
+    
+    # Fallback: if context-based extraction failed, use positional assignment
+    if len(params) < 2 and len(extracted_numbers) >= 2:
+        # Based on typical query structure, assign in order found
         param_names = list(params_schema.keys())
-        for param_name in param_names:
-            if param_name not in params and remaining_numbers:
-                params[param_name] = remaining_numbers.pop(0)
+        for i, param_name in enumerate(param_names):
+            if param_name not in params and i < len(extracted_numbers):
+                params[param_name] = extracted_numbers[i]
 
     return {func_name: params}

@@ -58,26 +58,42 @@ async def extract_function_call(
         
         if param_type == "integer":
             # Extract integers from query
-            numbers = re.findall(r'\b(\d+)\b', query)
-            if numbers:
-                # Use the first number found (or largest for "number to factor" type queries)
-                params[param_name] = int(numbers[0])
+            # Try patterns like "number X", "of X", or just standalone numbers
+            patterns = [
+                r'(?:number|of|factor(?:s)?)\s+(\d+)',
+                r'(\d+)',
+            ]
+            for pattern in patterns:
+                matches = re.findall(pattern, query, re.IGNORECASE)
+                if matches:
+                    # Take the largest number found (likely the target number)
+                    numbers = [int(m) for m in matches]
+                    params[param_name] = max(numbers)
+                    break
         
         elif param_type == "number" or param_type == "float":
             # Extract floats/numbers
-            numbers = re.findall(r'\b(\d+(?:\.\d+)?)\b', query)
-            if numbers:
-                params[param_name] = float(numbers[0])
+            patterns = [
+                r'(\d+\.?\d*)',
+            ]
+            for pattern in patterns:
+                matches = re.findall(pattern, query)
+                if matches:
+                    params[param_name] = float(matches[0])
+                    break
         
         elif param_type == "string":
-            # Try to extract string values - look for quoted strings or after keywords
-            quoted = re.findall(r'"([^"]+)"', query)
-            if quoted:
-                params[param_name] = quoted[0]
-            else:
-                # Try to extract after common prepositions
-                match = re.search(r'(?:for|in|of|with|named?)\s+([A-Za-z\s]+?)(?:\s*[,.]|$)', query, re.IGNORECASE)
+            # Extract string values - look for quoted strings or named entities
+            # Pattern: "for X" or "in X" or after common prepositions
+            patterns = [
+                r'"([^"]+)"',  # Quoted strings
+                r"'([^']+)'",  # Single quoted
+                r'(?:for|in|of|with|named?)\s+([A-Za-z][A-Za-z\s]+?)(?:\s*[,.]|$)',
+            ]
+            for pattern in patterns:
+                match = re.search(pattern, query, re.IGNORECASE)
                 if match:
                     params[param_name] = match.group(1).strip()
+                    break
     
     return {func_name: params}

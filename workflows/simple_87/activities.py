@@ -76,22 +76,22 @@ async def extract_function_call(
             # Check if it's an enum
             enum_values = param_info.get("enum", [])
             if enum_values:
-                # Look for enum value in query
+                # Look for enum value in query (case-insensitive)
                 query_lower = query.lower()
                 for enum_val in enum_values:
                     if enum_val.lower() in query_lower:
                         params[param_name] = enum_val
                         break
-                # Default to first enum if not found but required
-                if param_name not in params and enum_values:
-                    # Check context clues
-                    if "ascending" in query_lower or "asc" in query_lower:
+                # If not found but we can infer from context
+                if param_name not in params:
+                    # Default based on common patterns
+                    if "ascending" in enum_values and ("ascending" in query_lower or "asc" in query_lower):
                         params[param_name] = "ascending"
-                    elif "descending" in query_lower or "desc" in query_lower:
+                    elif "descending" in enum_values and ("descending" in query_lower or "desc" in query_lower):
                         params[param_name] = "descending"
-                    else:
-                        # Default based on common patterns
-                        params[param_name] = enum_values[0]
+                    elif "ascending" in enum_values:
+                        # Default to ascending if sorting mentioned without explicit order
+                        params[param_name] = "ascending"
             else:
                 # Extract string value - look for quoted strings or after keywords
                 string_match = re.search(r'"([^"]+)"', query)

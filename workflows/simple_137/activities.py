@@ -47,46 +47,25 @@ async def extract_function_call(
     # Extract parameters using regex
     params = {}
     
-    # Extract all numbers (integers and floats) from query
-    # Pattern for currency amounts like $5000
-    currency_match = re.search(r'\$(\d+(?:,\d{3})*(?:\.\d+)?)', query)
+    # Extract dollar amounts (investment_amount)
+    dollar_match = re.search(r'\$(\d+(?:,\d{3})*(?:\.\d+)?)', query)
+    if dollar_match:
+        amount_str = dollar_match.group(1).replace(',', '')
+        params["investment_amount"] = int(float(amount_str))
     
-    # Pattern for percentages like 6%
+    # Extract percentage (annual_growth_rate)
     percent_match = re.search(r'(\d+(?:\.\d+)?)\s*%', query)
+    if percent_match:
+        # Convert percentage to decimal (6% -> 0.06)
+        params["annual_growth_rate"] = float(percent_match.group(1)) / 100
     
-    # Pattern for years/period like "5 years"
+    # Extract holding period (years)
     years_match = re.search(r'(\d+)\s*years?', query, re.IGNORECASE)
+    if years_match:
+        params["holding_period"] = int(years_match.group(1))
     
-    # Map extracted values to parameter names based on schema
-    for param_name, param_info in params_schema.items():
-        param_type = param_info.get("type", "string")
-        param_desc = param_info.get("description", "").lower()
-        
-        if param_name == "investment_amount" or "investment" in param_desc or "amount" in param_desc:
-            if currency_match:
-                # Remove commas and convert to int
-                amount_str = currency_match.group(1).replace(",", "")
-                params[param_name] = int(float(amount_str))
-        
-        elif param_name == "annual_growth_rate" or "growth rate" in param_desc or "rate" in param_desc:
-            if percent_match:
-                # Convert percentage to decimal (6% -> 0.06) or keep as 6 based on context
-                rate_value = float(percent_match.group(1))
-                # Check if description suggests decimal format
-                if "decimal" in param_desc:
-                    params[param_name] = rate_value / 100
-                else:
-                    # Keep as percentage value (6 for 6%)
-                    params[param_name] = rate_value
-        
-        elif param_name == "holding_period" or "years" in param_desc or "period" in param_desc:
-            if years_match:
-                params[param_name] = int(years_match.group(1))
-        
-        elif param_type == "boolean":
-            # Check if the boolean parameter is mentioned in the query
-            if param_name in query.lower() or (param_name == "dividends" and "dividend" in query.lower()):
-                params[param_name] = True
-            # Don't include optional boolean if not mentioned
+    # Check for dividends mention (optional parameter)
+    if re.search(r'\bdividends?\b', query, re.IGNORECASE):
+        params["dividends"] = True
     
     return {func_name: params}

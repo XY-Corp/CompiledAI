@@ -56,14 +56,14 @@ async def extract_function_call(
     ]
     
     # Extract Sample1 array
-    sample1_match = re.search(r'[Ss]ample\s*1:\s*\[([^\]]+)\]', query)
+    sample1_match = re.search(r'[Ss]ample\s*1[:\s]*\[([^\]]+)\]', query)
     if sample1_match:
         sample1_str = sample1_match.group(1)
         sample1 = [int(x.strip()) for x in sample1_str.split(',') if x.strip()]
         params["sample1"] = sample1
     
     # Extract Sample2 array
-    sample2_match = re.search(r'[Ss]ample\s*2:\s*\[([^\]]+)\]', query)
+    sample2_match = re.search(r'[Ss]ample\s*2[:\s]*\[([^\]]+)\]', query)
     if sample2_match:
         sample2_str = sample2_match.group(1)
         sample2 = [int(x.strip()) for x in sample2_str.split(',') if x.strip()]
@@ -79,26 +79,15 @@ async def extract_function_call(
                 params["sample2"] = [int(x.strip()) for x in all_arrays[1].split(',') if x.strip()]
     
     # Extract significance level - look for patterns like "0.05", "significance level of 0.05"
-    sig_patterns = [
-        r'significance\s+level\s+(?:of\s+)?(\d+\.?\d*)',
-        r'alpha\s*[=:]\s*(\d+\.?\d*)',
-        r'at\s+(\d+\.?\d*)\s*(?:significance|level)',
-    ]
-    
-    for pattern in sig_patterns:
-        sig_match = re.search(pattern, query, re.IGNORECASE)
-        if sig_match:
-            params["significance_level"] = float(sig_match.group(1))
-            break
-    
-    # If no significance level found but it's in the schema, check for standalone decimal
-    if "significance_level" not in params and "significance_level" in props:
-        # Look for common significance levels mentioned
-        decimal_match = re.search(r'\b(0\.\d+)\b', query)
+    sig_match = re.search(r'significance\s+level\s+(?:of\s+)?(\d+\.?\d*)', query, re.IGNORECASE)
+    if sig_match:
+        params["significance_level"] = float(sig_match.group(1))
+    else:
+        # Look for standalone decimal that could be significance level (typically 0.01, 0.05, 0.1)
+        decimal_match = re.search(r'(?:at|with|using)\s+(\d+\.\d+)', query, re.IGNORECASE)
         if decimal_match:
             val = float(decimal_match.group(1))
-            # Common significance levels are 0.01, 0.05, 0.10
-            if val in [0.01, 0.05, 0.10, 0.1]:
+            if val <= 1.0:  # Significance levels are <= 1
                 params["significance_level"] = val
     
     return {func_name: params}

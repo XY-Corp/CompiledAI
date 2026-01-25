@@ -55,51 +55,36 @@ async def extract_function_call(
         param_type = param_info.get("type", "string")
         param_desc = param_info.get("description", "").lower()
         
-        if param_type == "boolean":
-            # Check for boolean indicators in query
-            # Look for "detail", "detailed", "more info", etc.
-            detail_patterns = [
-                r'\bdetail(?:ed|s)?\b',
-                r'\bmore\s+info(?:rmation)?\b',
-                r'\bin\s+depth\b',
-                r'\bcomprehensive\b',
-                r'\bfull\b',
-                r'\bextensive\b',
-            ]
-            has_detail = any(re.search(p, query, re.IGNORECASE) for p in detail_patterns)
-            params[param_name] = has_detail
-            
-        elif param_type == "string":
-            # For discovery-related parameters, extract the subject
+        if param_type == "string":
+            # For "discovery" parameter - extract what the user is asking about
             if "discovery" in param_name.lower() or "discovery" in param_desc:
-                # Pattern: "Who discovered X?" or "discoverer of X"
-                discovery_patterns = [
-                    r'(?:who\s+)?discover(?:ed|er\s+of)?\s+(?:the\s+)?([a-zA-Z\s]+?)(?:\?|$|\.|\s+give|\s+tell)',
-                    r'(?:the\s+)?([a-zA-Z]+)\s+(?:was\s+)?discover',
-                    r'discovery\s+of\s+(?:the\s+)?([a-zA-Z\s]+)',
+                # Pattern: "Who discovered X?" or "discovered the X"
+                patterns = [
+                    r'who\s+discovered\s+(?:the\s+)?([a-zA-Z\s]+?)(?:\?|\.|\s+give|\s+tell|$)',
+                    r'discovered\s+(?:the\s+)?([a-zA-Z\s]+?)(?:\?|\.|\s+give|\s+tell|$)',
+                    r'discovery\s+of\s+(?:the\s+)?([a-zA-Z\s]+?)(?:\?|\.|\s+give|\s+tell|$)',
                 ]
-                
-                for pattern in discovery_patterns:
+                for pattern in patterns:
                     match = re.search(pattern, query, re.IGNORECASE)
                     if match:
-                        discovery = match.group(1).strip()
-                        # Clean up common trailing words
-                        discovery = re.sub(r'\s+(give|tell|get|find|show|provide).*$', '', discovery, flags=re.IGNORECASE)
-                        params[param_name] = discovery.strip()
+                        params[param_name] = match.group(1).strip()
                         break
-                
-                # Fallback: if no pattern matched but we know it's about neutron
-                if param_name not in params:
-                    if re.search(r'\bneutron\b', query, re.IGNORECASE):
-                        params[param_name] = "neutron"
-            else:
-                # Generic string extraction - try to find relevant noun phrases
-                # This is a fallback for other string parameters
-                words = re.findall(r'\b[a-zA-Z]+\b', query)
-                if words:
-                    params[param_name] = " ".join(words[:3])  # Take first few words as fallback
-                    
-        elif param_type in ["integer", "number", "float"]:
+                else:
+                    # Fallback: extract key noun after "discovered"
+                    match = re.search(r'discovered\s+(?:the\s+)?(\w+)', query, re.IGNORECASE)
+                    if match:
+                        params[param_name] = match.group(1).strip()
+        
+        elif param_type == "boolean":
+            # For "detail" parameter - check if user wants detailed info
+            detail_keywords = ['detail', 'detailed', 'more info', 'additional', 'full', 'complete', 'in depth']
+            query_lower = query.lower()
+            
+            # Check for detail-related keywords
+            has_detail = any(kw in query_lower for kw in detail_keywords)
+            params[param_name] = has_detail
+        
+        elif param_type == "integer" or param_type == "number":
             # Extract numbers from query
             numbers = re.findall(r'\d+(?:\.\d+)?', query)
             if numbers:

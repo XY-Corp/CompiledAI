@@ -73,7 +73,7 @@ async def extract_function_call(
             start_location = match.group(1).strip()
             end_location = match.group(2).strip()
     
-    # Assign extracted values to parameter names from schema
+    # Assign extracted values to parameters based on schema
     if "start_location" in params_schema and start_location:
         params["start_location"] = start_location
     

@@ -82,7 +82,7 @@ async def extract_function_call(
             # Fallback: if no pattern matched, use the whole query minus question words
             if not event_value:
                 # Remove common question starters
-                event_value = re.sub(r"^(when|what|where|who|how)\s+(was|is|did|does|were|are)\s+(the\s+)?", "", query, flags=re.IGNORECASE)
+                event_value = re.sub(r"^(when|what|where|how|why)\s+(was|is|did|does|were|are)\s+(the\s+)?", "", query, flags=re.IGNORECASE)
                 event_value = event_value.strip().rstrip("?")
             
             if event_value:
@@ -100,15 +100,16 @@ async def extract_function_call(
                 if match:
                     params[param_name] = match.group(1).strip()
                     break
-            # If location not found and not required, don't add it (use default)
+            
+            # If location not found and not required, don't include it
+            # (the function description says "Default to global if not specified")
     
     # Ensure required params are present
     for req_param in required_params:
         if req_param not in params:
-            # If required param missing, try to extract from query as fallback
+            # If required param is missing, try to extract from full query
             if req_param == "event" and "event" not in params:
-                # Use the query itself as the event name (cleaned up)
-                cleaned = re.sub(r"^(when|what|where|who|how)\s+(was|is|did|does|were|are)\s+(the\s+)?", "", query, flags=re.IGNORECASE)
-                params["event"] = cleaned.strip().rstrip("?")
+                # Last resort: use the query as the event
+                params["event"] = query.strip().rstrip("?")
     
     return {func_name: params}

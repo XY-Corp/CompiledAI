@@ -51,58 +51,66 @@ async def extract_function_call(
     func_name = func.get("name", "")
     params_schema = func.get("parameters", {}).get("properties", {})
     
-    # Extract parameters from query using regex
+    # Extract parameters from query using regex and string matching
     params = {}
     query_lower = query.lower()
     
     for param_name, param_info in params_schema.items():
         param_type = param_info.get("type", "string")
+        param_desc = param_info.get("description", "").lower()
         
         if param_type == "integer":
             # Extract numbers - look for patterns like "last 3 days", "3 days", etc.
-            number_patterns = [
-                r'last\s+(\d+)\s+days?',
-                r'(\d+)\s+days?',
-                r'past\s+(\d+)\s+days?',
-                r'previous\s+(\d+)\s+days?',
-                r'for\s+(\d+)\s+days?',
-            ]
-            for pattern in number_patterns:
-                match = re.search(pattern, query_lower)
+            if "day" in param_desc or param_name == "days":
+                # Look for number followed by "day(s)"
+                match = re.search(r'(\d+)\s*days?', query_lower)
                 if match:
                     params[param_name] = int(match.group(1))
-                    break
-            
-            # Fallback: extract any number if param relates to days/count
-            if param_name not in params:
+                else:
+                    # Just find any number
+                    numbers = re.findall(r'\d+', query)
+                    if numbers:
+                        params[param_name] = int(numbers[0])
+            else:
+                # Generic integer extraction
                 numbers = re.findall(r'\d+', query)
                 if numbers:
                     params[param_name] = int(numbers[0])
         
         elif param_type == "string":
-            # Handle company/stock name extraction
-            if param_name == "company":
-                # Common stock/company patterns
+            if "company" in param_desc or param_name == "company":
+                # Extract company name - look for known patterns
+                # Common patterns: "price of X stock", "X stock price", "stock price of X"
                 company_patterns = [
-                    r'price\s+of\s+([A-Za-z]+)\s+stock',
-                    r'([A-Za-z]+)\s+stock\s+price',
-                    r'stock\s+price\s+(?:of|for)\s+([A-Za-z]+)',
-                    r"what'?s?\s+(?:the\s+)?(?:price|stock)\s+(?:of|for)\s+([A-Za-z]+)",
-                    r'([A-Za-z]+)\s+stock',
+                    r"price of\s+([A-Za-z]+)\s+stock",
+                    r"([A-Za-z]+)\s+stock\s+price",
+                    r"stock\s+price\s+(?:of|for)\s+([A-Za-z]+)",
+                    r"(?:for|of)\s+([A-Za-z]+)\s+(?:stock|shares)",
+                    r"([A-Za-z]+)'s\s+(?:stock|share)",
                 ]
+                
                 for pattern in company_patterns:
                     match = re.search(pattern, query, re.IGNORECASE)
                     if match:
                         params[param_name] = match.group(1)
                         break
+                
+                # If no pattern matched, look for capitalized words that might be company names
+                if param_name not in params:
+                    # Known company names
+                    known_companies = ["Amazon", "Apple", "Google", "Microsoft", "Tesla", "Meta", "Netflix", "Nvidia"]
+                    for company in known_companies:
+                        if company.lower() in query_lower:
+                            params[param_name] = company
+                            break
             
-            # Handle data_type parameter (optional - only set if explicitly mentioned)
-            elif param_name == "data_type":
-                data_type_keywords = ['open', 'close', 'high', 'low']
-                for keyword in data_type_keywords:
-                    if keyword in query_lower:
-                        params[param_name] = keyword.capitalize()
+            elif "data_type" in param_name or "type" in param_desc:
+                # Look for price data types
+                price_types = ["open", "close", "high", "low"]
+                for pt in price_types:
+                    if pt in query_lower:
+                        params[param_name] = pt.capitalize()
                         break
-                # Don't set default - let the function use its own default
+                # Don't set default - let it be omitted if not specified (optional param)
     
     return {func_name: params}

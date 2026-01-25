@@ -11,22 +11,18 @@ async def extract_function_call(
     workflow_definition_id: str | None = None,
     workflow_instance_id: str | None = None,
 ) -> dict[str, Any]:
-    """Extract function call parameters from natural language query.
+    """Extract function call parameters from user query and return as {func_name: {params}}."""
     
-    Parses the user query and function schema to extract parameter values
-    using regex and string matching - no LLM calls needed.
-    """
-    # Parse prompt (may be JSON string with nested structure)
+    # Parse prompt - may be JSON string with nested structure
     try:
         if isinstance(prompt, str):
             data = json.loads(prompt)
-        else:
-            data = prompt
-        
-        # Extract user query from BFCL format: {"question": [[{"role": "user", "content": "..."}]]}
-        if "question" in data and isinstance(data["question"], list):
-            if len(data["question"]) > 0 and isinstance(data["question"][0], list):
-                query = data["question"][0][0].get("content", str(prompt))
+            # Handle BFCL format: {"question": [[{"role": "user", "content": "..."}]], ...}
+            if "question" in data and isinstance(data["question"], list):
+                if len(data["question"]) > 0 and isinstance(data["question"][0], list):
+                    query = data["question"][0][0].get("content", str(prompt))
+                else:
+                    query = str(prompt)
             else:
                 query = str(prompt)
         else:
@@ -34,7 +30,7 @@ async def extract_function_call(
     except (json.JSONDecodeError, TypeError, KeyError):
         query = str(prompt)
     
-    # Parse functions (may be JSON string)
+    # Parse functions - may be JSON string
     try:
         if isinstance(functions, str):
             funcs = json.loads(functions)
@@ -48,41 +44,54 @@ async def extract_function_call(
     func_name = func.get("name", "")
     params_schema = func.get("parameters", {}).get("properties", {})
     
-    # Extract parameters from query
+    # Extract parameters from query using regex
     params = {}
     
-    # Extract patient_id - look for numeric ID patterns
-    # Patterns: "patient with id 546382", "patient id 546382", "id 546382"
-    patient_id_match = re.search(r'(?:patient\s+)?(?:with\s+)?id\s+(\d+)', query, re.IGNORECASE)
-    if patient_id_match and "patient_id" in params_schema:
-        params["patient_id"] = patient_id_match.group(1)
-    
-    # Extract mri_type - look for MRI type keywords
-    if "mri_type" in params_schema:
-        mri_types = ["brain", "spinal", "chest", "abdominal"]
-        for mri_type in mri_types:
-            if mri_type.lower() in query.lower():
-                params["mri_type"] = mri_type
-                break
-        # Default to 'brain' if not found (as per schema description)
-        if "mri_type" not in params:
-            params["mri_type"] = "brain"
-    
-    # Extract status - look for status keywords
-    if "status" in params_schema:
-        status_values = ["in progress", "concluded", "draft"]
-        for status in status_values:
-            if status.lower() in query.lower():
-                params["status"] = status
-                break
-        # Also check for quoted status values
-        if "status" not in params:
-            status_match = re.search(r"['\"](\w+(?:\s+\w+)?)['\"]", query)
-            if status_match:
-                matched_status = status_match.group(1).lower()
-                for status in status_values:
-                    if matched_status == status.lower():
-                        params["status"] = status
+    for param_name, param_info in params_schema.items():
+        param_type = param_info.get("type", "string")
+        param_desc = param_info.get("description", "").lower()
+        enum_values = param_info.get("enum", [])
+        
+        # Extract based on parameter name and context
+        if param_name == "patient_id":
+            # Look for patient id patterns: "patient with id X", "patient id X", "id X"
+            id_patterns = [
+                r'patient\s+(?:with\s+)?id\s+[\'"]?(\d+)[\'"]?',
+                r'id\s+[\'"]?(\d+)[\'"]?',
+                r'patient\s+[\'"]?(\d+)[\'"]?',
+            ]
+            for pattern in id_patterns:
+                match = re.search(pattern, query, re.IGNORECASE)
+                if match:
+                    params[param_name] = match.group(1)
+                    break
+        
+        elif param_name == "mri_type":
+            # Check for MRI type in enum values
+            if enum_values:
+                for enum_val in enum_values:
+                    if enum_val.lower() in query.lower():
+                        params[param_name] = enum_val
                         break
+            # Default to 'brain' if mentioned or if default specified
+            if param_name not in params:
+                if "brain" in query.lower():
+                    params[param_name] = "brain"
+                elif "default" in param_desc and "brain" in param_desc:
+                    params[param_name] = "brain"
+        
+        elif param_name == "status":
+            # Check for status in enum values
+            if enum_values:
+                for enum_val in enum_values:
+                    # Handle multi-word enum values like "in progress"
+                    if enum_val.lower() in query.lower():
+                        params[param_name] = enum_val
+                        break
+            # Also check for quoted status values
+            if param_name not in params:
+                status_match = re.search(r"status\s+['\"]([^'\"]+)['\"]", query, re.IGNORECASE)
+                if status_match:
+                    params[param_name] = status_match.group(1)
     
     return {func_name: params}

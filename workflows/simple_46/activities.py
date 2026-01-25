@@ -73,9 +73,9 @@ async def extract_function_call(
         params["mass2"] = int(float(numbers[2]))
         params["temperature2"] = int(float(numbers[3]))
     
-    # Check for specific_heat_capacity if mentioned (optional parameter)
-    # Pattern: "specific heat capacity of X" or "X kJ/kg/K"
-    shc_pattern = r'(?:specific\s+heat\s+capacity\s+(?:of\s+)?|capacity\s+(?:of\s+)?)(\d+(?:\.\d+)?)'
+    # Check if specific_heat_capacity is mentioned (optional parameter)
+    # Look for patterns like "specific heat capacity of X" or "X kJ/kg/K"
+    shc_pattern = r'(?:specific\s+heat\s+capacity\s+(?:of\s+)?|heat\s+capacity\s+)(\d+(?:\.\d+)?)'
     shc_match = re.search(shc_pattern, query, re.IGNORECASE)
     if shc_match:
         params["specific_heat_capacity"] = float(shc_match.group(1))

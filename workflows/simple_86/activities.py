@@ -11,7 +11,7 @@ async def extract_function_call(
     workflow_definition_id: str | None = None,
     workflow_instance_id: str | None = None,
 ) -> dict[str, Any]:
-    """Extract function name and parameters from user query using regex and string matching."""
+    """Extract function name and parameters from user query. Returns {func_name: {params}}."""
     
     # Parse prompt - may be JSON string with nested structure
     try:
@@ -21,10 +21,11 @@ async def extract_function_call(
             data = prompt
         
         # Extract user query from BFCL format: {"question": [[{"role": "user", "content": "..."}]]}
-        if "question" in data and isinstance(data["question"], list):
-            if len(data["question"]) > 0 and isinstance(data["question"][0], list):
-                if len(data["question"][0]) > 0 and isinstance(data["question"][0][0], dict):
-                    query = data["question"][0][0].get("content", str(prompt))
+        if isinstance(data, dict) and "question" in data:
+            question = data["question"]
+            if isinstance(question, list) and len(question) > 0:
+                if isinstance(question[0], list) and len(question[0]) > 0:
+                    query = question[0][0].get("content", str(prompt))
                 else:
                     query = str(prompt)
             else:
@@ -52,15 +53,12 @@ async def extract_function_call(
     params = {}
     query_lower = query.lower()
     
-    # Extract cities - look for patterns like "between X and Y" or "from X to Y"
+    # Extract city names - look for patterns like "between X and Y" or "from X to Y"
     # Pattern 1: "between city1 and city2"
     between_match = re.search(r'between\s+([A-Za-z\s]+?)\s+and\s+([A-Za-z\s]+?)(?:\s*,|\s+through|\s+via|\.|$)', query, re.IGNORECASE)
     
     # Pattern 2: "from city1 to city2"
     from_to_match = re.search(r'from\s+([A-Za-z\s]+?)\s+to\s+([A-Za-z\s]+?)(?:\s*,|\s+through|\s+via|\.|$)', query, re.IGNORECASE)
-    
-    # Pattern 3: "two cities, X and Y" or "cities X and Y"
-    cities_match = re.search(r'cities[,\s]+([A-Za-z\s]+?)\s+and\s+([A-Za-z\s]+?)(?:\s*,|\s+through|\s+via|\.|$)', query, re.IGNORECASE)
     
     start_city = None
     end_city = None
@@ -71,11 +69,14 @@ async def extract_function_call(
     elif from_to_match:
         start_city = from_to_match.group(1).strip()
         end_city = from_to_match.group(2).strip()
-    elif cities_match:
-        start_city = cities_match.group(1).strip()
-        end_city = cities_match.group(2).strip()
+    else:
+        # Fallback: look for known city names or capitalized words
+        # Pattern: "two cities, City1 and City2"
+        cities_match = re.search(r'cities[,\s]+([A-Z][a-zA-Z\s]+?)\s+and\s+([A-Z][a-zA-Z\s]+?)(?:\s*,|\s+through|\s+via|\.|$)', query)
+        if cities_match:
+            start_city = cities_match.group(1).strip()
+            end_city = cities_match.group(2).strip()
     
-    # Assign to params if found
     if start_city and "start_city" in params_schema:
         params["start_city"] = start_city
     if end_city and "end_city" in params_schema:
@@ -91,11 +92,13 @@ async def extract_function_call(
     
     # Extract allow_transfer boolean
     if "allow_transfer" in params_schema:
-        # Check for transfer-related keywords
-        if re.search(r'\b(can transfer|allow transfer|transfer allowed|you can transfer|with transfer)\b', query_lower):
+        # Look for transfer-related keywords
+        if "transfer" in query_lower or "can transfer" in query_lower or "allow transfer" in query_lower:
             params["allow_transfer"] = True
-        elif re.search(r'\b(no transfer|direct|without transfer|non-stop)\b', query_lower):
+        elif "no transfer" in query_lower or "direct" in query_lower or "without transfer" in query_lower:
             params["allow_transfer"] = False
-        # Default not set if not mentioned (let function use its default)
+        # If "you can transfer" is mentioned, it's True
+        if re.search(r'you\s+can\s+transfer', query_lower):
+            params["allow_transfer"] = True
     
     return {func_name: params}

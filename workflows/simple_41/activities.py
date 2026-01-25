@@ -46,7 +46,7 @@ async def extract_function_call(
     
     # Extract all numbers from the query
     # Pattern matches integers and floats
-    numbers = re.findall(r'\d+(?:\.\d+)?', query)
+    numbers = re.findall(r'(\d+(?:\.\d+)?)', query)
     
     # Build parameters based on schema
     params = {}
@@ -54,31 +54,24 @@ async def extract_function_call(
     
     # For electromagnetic_force: charge1, charge2, distance (in order they appear)
     # Query: "two charges of 5C and 7C placed 3 meters apart"
-    # Numbers extracted: ['5', '7', '3']
+    # Numbers in order: 5, 7, 3
     
     for param_name, param_info in params_schema.items():
         param_type = param_info.get("type", "string")
         
-        # Skip optional parameters unless explicitly mentioned
-        if param_name == "medium_permittivity":
-            # Only include if explicitly mentioned in query
-            if "permittivity" in query.lower() or "medium" in query.lower():
-                # Try to find a float value for permittivity
-                float_match = re.search(r'(\d+\.?\d*e?-?\d*)\s*(?:permittivity|medium)', query, re.IGNORECASE)
-                if float_match:
-                    params[param_name] = float(float_match.group(1))
-            continue
-        
-        # Assign numbers to numeric parameters in order
-        if param_type in ["integer", "int", "number", "float"] and num_idx < len(numbers):
-            value = numbers[num_idx]
-            if param_type in ["integer", "int"]:
-                params[param_name] = int(float(value))
-            else:
-                params[param_name] = float(value)
-            num_idx += 1
+        if param_type in ["integer", "number", "float"]:
+            if num_idx < len(numbers):
+                value = numbers[num_idx]
+                if param_type == "integer":
+                    params[param_name] = int(float(value))
+                else:
+                    params[param_name] = float(value)
+                num_idx += 1
         elif param_type == "string":
-            # For string parameters, try to extract relevant text
-            params[param_name] = ""
+            # Extract string values using common patterns
+            string_match = re.search(r'(?:for|in|of|with|named?)\s+([A-Za-z\s]+?)(?:\s+(?:and|with|,)|$)', query, re.IGNORECASE)
+            if string_match:
+                params[param_name] = string_match.group(1).strip()
     
+    # Return format: {"function_name": {params}} - NO extra fields
     return {func_name: params}

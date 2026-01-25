@@ -60,36 +60,35 @@ async def extract_function_call(
             # Extract polynomial function - look for patterns like "3x^2 + 2x - 1"
             # Match polynomial expressions with terms like ax^n, ax, or constants
             poly_patterns = [
-                r'(?:function|of)\s+([0-9x\^\+\-\*\s\.]+)',  # "function 3x^2 + 2x - 1"
-                r'derivative of\s+(?:the\s+)?(?:function\s+)?([0-9x\^\+\-\*\s\.]+)',  # "derivative of 3x^2..."
-                r'([0-9]*x\^?[0-9]*(?:\s*[\+\-]\s*[0-9]*x?\^?[0-9]*)+)',  # General polynomial pattern
+                r'(?:function|derivative of|of)\s+(?:the\s+)?(?:function\s+)?([0-9x\^\+\-\*\s\.]+)',
+                r'([0-9]*x\^?[0-9]*[\s\+\-]+[0-9x\^\+\-\*\s\.]+)',
             ]
             
             for pattern in poly_patterns:
                 match = re.search(pattern, query, re.IGNORECASE)
                 if match:
                     func_str = match.group(1).strip()
-                    # Clean up the function string - remove trailing periods
+                    # Clean up the function string
                     func_str = func_str.rstrip('.')
-                    if func_str and ('x' in func_str or any(c.isdigit() for c in func_str)):
+                    if func_str:
                         params[param_name] = func_str
                         break
             
-            # If no pattern matched, try to find any expression with x
+            # Fallback: extract anything that looks like a polynomial
             if param_name not in params:
-                # Look for anything that looks like a polynomial
-                match = re.search(r'(\d*x\^?\d*(?:\s*[\+\-]\s*\d*x?\^?\d*)*)', query)
-                if match:
-                    params[param_name] = match.group(1).strip()
+                # Look for expressions with x and numbers
+                poly_match = re.search(r'(\d*x\^?\d*(?:\s*[\+\-]\s*\d*x?\^?\d*)+)', query)
+                if poly_match:
+                    params[param_name] = poly_match.group(1).strip()
         
         elif param_type == "float" or param_type == "number":
             # Extract numeric value - look for x_value or similar
             if "x-value" in param_desc or "x_value" in param_name:
                 # Look for explicit x value mentions
                 x_patterns = [
-                    r'(?:at\s+)?x\s*=\s*([+-]?\d+\.?\d*)',  # "x = 5" or "at x = 5"
-                    r'at\s+([+-]?\d+\.?\d*)',  # "at 5"
-                    r'x-value\s+(?:of\s+)?([+-]?\d+\.?\d*)',  # "x-value of 5"
+                    r'(?:at\s+)?x\s*=\s*([+-]?\d+\.?\d*)',
+                    r'(?:at|when)\s+([+-]?\d+\.?\d*)',
+                    r'x[_\s-]?value\s*(?:of|is|=)?\s*([+-]?\d+\.?\d*)',
                 ]
                 
                 for pattern in x_patterns:
@@ -97,28 +96,31 @@ async def extract_function_call(
                     if match:
                         params[param_name] = float(match.group(1))
                         break
-                
-                # x_value is optional with default 0.00, so don't add if not found
+            else:
+                # Generic number extraction
+                numbers = re.findall(r'(?<![x\^])([+-]?\d+\.?\d*)(?![x\^])', query)
+                if numbers:
+                    params[param_name] = float(numbers[0])
         
         elif param_type == "integer":
-            # Extract integer values
-            numbers = re.findall(r'\b(\d+)\b', query)
-            if numbers and param_name not in params:
+            numbers = re.findall(r'\d+', query)
+            if numbers:
                 params[param_name] = int(numbers[0])
         
         elif param_type == "string":
             # For generic string params, try to extract relevant text
             # This is a fallback - specific handling above is preferred
-            pass
+            if param_name not in params:
+                # Try to find quoted strings first
+                quoted = re.findall(r'"([^"]+)"', query)
+                if quoted:
+                    params[param_name] = quoted[0]
     
-    # Ensure required params are present
-    for req_param in required_params:
-        if req_param not in params:
-            # Try harder to find the required param
-            if req_param == "function":
-                # Last resort: extract everything after "derivative of"
-                match = re.search(r'derivative of\s+(?:the\s+)?(?:function\s+)?(.+?)(?:\.|$)', query, re.IGNORECASE)
-                if match:
-                    params[req_param] = match.group(1).strip()
+    # Only include required params and params we found values for
+    # Don't include optional params without values
+    final_params = {}
+    for param_name in params_schema.keys():
+        if param_name in params:
+            final_params[param_name] = params[param_name]
     
-    return {func_name: params}
+    return {func_name: final_params}

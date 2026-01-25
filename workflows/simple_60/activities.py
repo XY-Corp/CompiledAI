@@ -45,7 +45,7 @@ async def extract_function_call(
     params_schema = func.get("parameters", {}).get("properties", {})
     required_params = func.get("parameters", {}).get("required", [])
     
-    # Extract parameters from query
+    # Extract parameters based on schema
     params = {}
     
     for param_name, param_info in params_schema.items():
@@ -59,33 +59,32 @@ async def extract_function_call(
                 params[param_name] = snp_match.group(0)
                 continue
         
-        # For species parameter - check if mentioned, otherwise use default
+        # For species - check if mentioned, otherwise use default if not required
         if "species" in param_name.lower():
             # Look for species mentions in query
             species_patterns = [
                 r'(?:in|for|of)\s+([A-Z][a-z]+\s+[a-z]+)',  # Scientific name like "Homo sapiens"
                 r'(?:in|for|of)\s+(humans?|mice?|rats?|dogs?|cats?)',  # Common names
             ]
+            
+            species_found = None
             for pattern in species_patterns:
-                species_match = re.search(pattern, query, re.IGNORECASE)
-                if species_match:
-                    params[param_name] = species_match.group(1)
+                match = re.search(pattern, query, re.IGNORECASE)
+                if match:
+                    species_found = match.group(1)
                     break
-            # Don't include optional param if not found - let default apply
+            
+            # Only include if found or if required
+            if species_found:
+                params[param_name] = species_found
+            # Don't include optional species param if not specified - let default apply
             continue
         
-        # For generic string parameters - try to extract relevant text
+        # Generic string extraction for other params
         if param_type == "string" and param_name in required_params:
-            # Try to find quoted strings
+            # Try to extract any quoted strings or identifiers
             quoted_match = re.search(r'"([^"]+)"', query)
             if quoted_match:
                 params[param_name] = quoted_match.group(1)
-                continue
-            
-            # Try to find IDs (alphanumeric with possible prefixes)
-            id_match = re.search(r'\b([a-zA-Z]{1,3}\d+)\b', query)
-            if id_match:
-                params[param_name] = id_match.group(1)
-                continue
     
     return {func_name: params}

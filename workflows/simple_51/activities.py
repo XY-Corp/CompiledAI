@@ -53,7 +53,7 @@ async def extract_function_call(
     numbers = re.findall(r'\d+(?:\.\d+)?', query)
     
     # Map numbers to parameters based on context clues in the query
-    # For entropy change: initial_temp, final_temp, heat_capacity
+    # For entropy calculation: initial_temp, final_temp, heat_capacity
     
     # Look for specific patterns
     # Initial temperature pattern
@@ -78,11 +78,13 @@ async def extract_function_call(
         params["final_temp"] = int(float(numbers[1]))
         params["heat_capacity"] = int(float(numbers[2]))
     
-    # Check for isothermal parameter (optional, default True)
-    # Only include if explicitly mentioned as False
-    isothermal_match = re.search(r'isothermal\s*[=:]\s*(false|no|0)', query, re.IGNORECASE)
-    if isothermal_match:
-        params["isothermal"] = False
-    # Don't include isothermal if not explicitly set to false (let default apply)
+    # Check for isothermal keyword (optional parameter)
+    if "isothermal" in params_schema:
+        # Only include if explicitly mentioned
+        isothermal_match = re.search(r'isothermal', query, re.IGNORECASE)
+        if isothermal_match:
+            # Check if it's negated
+            not_isothermal = re.search(r'not\s+isothermal|non-isothermal', query, re.IGNORECASE)
+            params["isothermal"] = not bool(not_isothermal)
 
     return {func_name: params}

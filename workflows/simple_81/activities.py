@@ -54,14 +54,14 @@ async def extract_function_call(
     # For routing function: extract start_location, end_location, avoid_tolls
     if "start_location" in params_schema:
         # Pattern: "from X to Y" or "from X ... to Y"
-        route_match = re.search(r'from\s+([A-Za-z\s]+?)\s+to\s+([A-Za-z\s]+?)(?:\s+with|\s+avoiding|\s*\.|$)', query, re.IGNORECASE)
+        route_match = re.search(r'from\s+([A-Za-z\s]+?)\s+to\s+([A-Za-z\s]+?)(?:\s+with|\s+avoiding|\s*[.,]|$)', query, re.IGNORECASE)
         if route_match:
             params["start_location"] = route_match.group(1).strip()
             params["end_location"] = route_match.group(2).strip()
     
     if "end_location" in params_schema and "end_location" not in params:
         # Fallback pattern for destination
-        dest_match = re.search(r'to\s+([A-Za-z\s]+?)(?:\s+with|\s+avoiding|\s*\.|$)', query, re.IGNORECASE)
+        dest_match = re.search(r'to\s+([A-Za-z\s]+?)(?:\s+with|\s+avoiding|\s*[.,]|$)', query, re.IGNORECASE)
         if dest_match:
             params["end_location"] = dest_match.group(1).strip()
     
@@ -72,7 +72,7 @@ async def extract_function_call(
             r'toll\s+roads?\s+avoided',
             r'no\s+toll',
             r'without\s+toll',
-            r'toll-free'
+            r'with\s+toll\s+roads?\s+avoided'
         ]
         avoid_tolls = any(re.search(pattern, query, re.IGNORECASE) for pattern in avoid_toll_patterns)
         params["avoid_tolls"] = avoid_tolls

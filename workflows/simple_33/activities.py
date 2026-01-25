@@ -11,9 +11,9 @@ async def extract_function_call(
     workflow_definition_id: str | None = None,
     workflow_instance_id: str | None = None,
 ) -> dict[str, Any]:
-    """Extract function name and parameters from user query. Returns {func_name: {params}}."""
+    """Extract function name and parameters from user query using regex and string matching."""
     
-    # Parse prompt - may be JSON string with nested structure
+    # Parse prompt (may be JSON string with nested structure)
     try:
         if isinstance(prompt, str):
             data = json.loads(prompt)
@@ -30,7 +30,7 @@ async def extract_function_call(
     except (json.JSONDecodeError, TypeError, KeyError):
         query = str(prompt)
     
-    # Parse functions - may be JSON string
+    # Parse functions (may be JSON string)
     try:
         if isinstance(functions, str):
             funcs = json.loads(functions)
@@ -39,10 +39,8 @@ async def extract_function_call(
     except (json.JSONDecodeError, TypeError):
         funcs = []
     
-    if not funcs:
-        return {"error": "No functions provided"}
-    
-    func = funcs[0]
+    # Get function details
+    func = funcs[0] if funcs else {}
     func_name = func.get("name", "")
     params_schema = func.get("parameters", {}).get("properties", {})
     
@@ -65,6 +63,7 @@ async def extract_function_call(
             params["route_type"] = "scenic"
     else:
         # Generic extraction for other functions
+        # Extract string values using common patterns
         for param_name, param_info in params_schema.items():
             param_type = param_info.get("type", "string") if isinstance(param_info, dict) else "string"
             
@@ -76,19 +75,13 @@ async def extract_function_call(
                         params[param_name] = int(numbers[0])
                     else:
                         params[param_name] = float(numbers[0])
-                    # Remove used number for next param
-                    query = query.replace(numbers[0], "", 1)
+                    numbers.pop(0)  # Remove used number
             elif param_type == "string":
-                # Try to extract string values based on common patterns
-                # Pattern: "param_name X" or "for X" or "in X"
-                patterns = [
-                    rf'{param_name}\s+["\']?([^"\']+)["\']?',
-                    r'(?:for|in|from|to)\s+([A-Za-z\s]+?)(?:\s+(?:and|with|using|,)|$)',
-                ]
-                for pattern in patterns:
-                    match = re.search(pattern, query, re.IGNORECASE)
-                    if match:
-                        params[param_name] = match.group(1).strip()
-                        break
+                # Try to extract based on param name patterns
+                # Pattern: "param_name X" or "param_name: X"
+                pattern = rf'{param_name.replace("_", " ")}[:\s]+([A-Za-z0-9\s]+?)(?:\s+(?:and|with|using|,)|$)'
+                match = re.search(pattern, query, re.IGNORECASE)
+                if match:
+                    params[param_name] = match.group(1).strip()
     
     return {func_name: params}

@@ -13,7 +13,7 @@ async def extract_function_call(
 ) -> dict[str, Any]:
     """Extract function call parameters from user query and return as {func_name: {params}}."""
     
-    # Parse prompt (may be JSON string with nested structure)
+    # Parse prompt - may be JSON string with nested structure
     try:
         if isinstance(prompt, str):
             data = json.loads(prompt)
@@ -30,7 +30,7 @@ async def extract_function_call(
     except (json.JSONDecodeError, TypeError, KeyError):
         query = str(prompt)
     
-    # Parse functions (may be JSON string)
+    # Parse functions - may be JSON string
     try:
         if isinstance(functions, str):
             funcs = json.loads(functions)
@@ -39,29 +39,26 @@ async def extract_function_call(
     except (json.JSONDecodeError, TypeError):
         funcs = []
     
-    if not funcs:
-        return {"error": "No functions provided"}
-    
-    func = funcs[0]
+    # Get function details
+    func = funcs[0] if funcs else {}
     func_name = func.get("name", "")
     params_schema = func.get("parameters", {}).get("properties", {})
     
-    # Extract parameters based on the function schema
+    # For send_email, extract specific parameters using regex
     params = {}
     
-    # For send_email function, extract specific fields
     if func_name == "send_email":
-        # Extract email address - look for pattern like "to X at email@domain.com" or just email
-        email_match = re.search(r'(?:to\s+\w+(?:\s+\w+)?\s+at\s+)?([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})', query, re.IGNORECASE)
+        # Extract email address - look for pattern like "at email@domain.com" or "to email@domain.com"
+        email_match = re.search(r'(?:at|to)\s+([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})', query, re.IGNORECASE)
         if email_match:
             params["to"] = email_match.group(1)
         
-        # Extract subject - look for "subject 'X'" or "subject \"X\""
+        # Extract subject - look for "subject 'X'" or 'subject "X"'
         subject_match = re.search(r"subject\s+['\"]([^'\"]+)['\"]", query, re.IGNORECASE)
         if subject_match:
             params["subject"] = subject_match.group(1)
         
-        # Extract body - look for "body 'X'" or "body \"X\""
+        # Extract body - look for "body 'X'" or 'body "X"'
         body_match = re.search(r"body\s+['\"]([^'\"]+)['\"]", query, re.IGNORECASE)
         if body_match:
             params["body"] = body_match.group(1)

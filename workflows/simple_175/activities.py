@@ -11,13 +11,11 @@ async def extract_function_call(
     workflow_definition_id: str | None = None,
     workflow_instance_id: str | None = None,
 ) -> dict[str, Any]:
-    """Extract function call parameters from natural language query.
+    """Extract function call parameters from user query and return as {func_name: {params}}.
     
-    Parses the prompt to extract the user query and matches it against
-    the function schema to extract parameter values using regex patterns.
-    Returns format: {"function_name": {"param1": val1, "param2": val2}}
+    Uses regex and string matching to extract parameter values - no LLM calls needed.
     """
-    # Parse prompt - may be JSON string with nested structure
+    # Parse prompt (may be JSON string with nested structure)
     try:
         if isinstance(prompt, str):
             data = json.loads(prompt)
@@ -38,7 +36,7 @@ async def extract_function_call(
     except (json.JSONDecodeError, TypeError):
         query = str(prompt)
     
-    # Parse functions - may be JSON string
+    # Parse functions (may be JSON string)
     try:
         if isinstance(functions, str):
             funcs = json.loads(functions)
@@ -47,11 +45,8 @@ async def extract_function_call(
     except (json.JSONDecodeError, TypeError):
         funcs = []
     
-    if not funcs:
-        return {"error": "No functions provided"}
-    
     # Get function details
-    func = funcs[0]
+    func = funcs[0] if funcs else {}
     func_name = func.get("name", "")
     params_schema = func.get("parameters", {}).get("properties", {})
     
@@ -60,15 +55,13 @@ async def extract_function_call(
     
     for param_name, param_info in params_schema.items():
         param_desc = param_info.get("description", "").lower()
-        param_type = param_info.get("type", "string")
         
-        # Extract based on parameter name and description
-        if param_name == "name" or "name" in param_desc:
-            # Extract full name - look for capitalized words that form a name
-            # Pattern: "Lawyer John Doe" or just "John Doe"
+        if param_name == "name" and "lawyer" in param_desc:
+            # Extract lawyer name - look for capitalized names
+            # Pattern: "Lawyer [Name]" or just capitalized proper names
             name_patterns = [
-                r'(?:Lawyer|Attorney|Mr\.|Ms\.|Mrs\.|Dr\.)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)',
-                r'([A-Z][a-z]+\s+[A-Z][a-z]+)',  # Simple "First Last" pattern
+                r'[Ll]awyer\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)',  # "Lawyer John Doe"
+                r'([A-Z][a-z]+\s+[A-Z][a-z]+)(?:\s+has|\s+have)',  # "John Doe has"
             ]
             for pattern in name_patterns:
                 match = re.search(pattern, query)
@@ -76,32 +69,18 @@ async def extract_function_call(
                     params[param_name] = match.group(1).strip()
                     break
         
-        elif param_name == "law_type" or "type" in param_desc or "law" in param_desc:
-            # Extract law type - look for common law types
-            law_types = [
-                "Bankruptcy", "Criminal", "Civil", "Family", "Corporate", 
-                "Immigration", "Tax", "Real Estate", "Personal Injury",
-                "Employment", "Intellectual Property", "Environmental"
+        elif param_name == "law_type" or "type of law" in param_desc:
+            # Extract law type - look for specific case types
+            # Common patterns: "handling X cases", "X law", "X cases"
+            law_type_patterns = [
+                r'handling\s+([A-Z][a-z]+)\s+cases',  # "handling Bankruptcy cases"
+                r'([A-Z][a-z]+)\s+cases',  # "Bankruptcy cases"
+                r'([A-Z][a-z]+)\s+law',  # "Bankruptcy law"
             ]
-            for law_type in law_types:
-                if law_type.lower() in query.lower():
-                    params[param_name] = law_type
+            for pattern in law_type_patterns:
+                match = re.search(pattern, query)
+                if match:
+                    params[param_name] = match.group(1).strip()
                     break
-            
-            # If not found in predefined list, try to extract from context
-            if param_name not in params:
-                # Pattern: "handling X cases" or "X law" or "X cases"
-                type_patterns = [
-                    r'handling\s+(\w+)\s+cases',
-                    r'(\w+)\s+cases',
-                    r'(\w+)\s+law',
-                ]
-                for pattern in type_patterns:
-                    match = re.search(pattern, query, re.IGNORECASE)
-                    if match:
-                        extracted = match.group(1).strip()
-                        # Capitalize first letter
-                        params[param_name] = extracted.capitalize()
-                        break
     
     return {func_name: params}

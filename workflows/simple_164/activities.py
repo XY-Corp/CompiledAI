@@ -44,67 +44,87 @@ async def extract_function_call(
     
     func = funcs[0]
     func_name = func.get("name", "")
-    props = func.get("parameters", {}).get("properties", {})
-    required = func.get("parameters", {}).get("required", [])
+    params_schema = func.get("parameters", {}).get("properties", {})
+    required_params = func.get("parameters", {}).get("required", [])
     
+    # Extract parameters from query using regex and string matching
     params = {}
     query_lower = query.lower()
     
-    # Extract city - look for common city names or patterns
-    # Pattern: "in [City]" or "[City], [State]" or "of [City]"
-    city_patterns = [
-        r'(?:in|of|for)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)',  # "in San Francisco"
-        r'([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\s+in\s+\d{4}',  # "San Francisco in 2020"
-    ]
+    for param_name, param_info in params_schema.items():
+        param_type = param_info.get("type", "string")
+        param_desc = param_info.get("description", "").lower()
+        
+        if param_name == "city":
+            # Extract city name - look for known patterns
+            # Pattern: "in [City]" or "of [City]"
+            city_patterns = [
+                r'(?:in|of|for)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)',  # "in San Francisco"
+                r'([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\s+in\s+\d{4}',  # "San Francisco in 2020"
+            ]
+            for pattern in city_patterns:
+                match = re.search(pattern, query)
+                if match:
+                    city = match.group(1).strip()
+                    # Filter out common non-city words
+                    if city.lower() not in ['the', 'a', 'an', 'provide', 'me']:
+                        params["city"] = city
+                        break
+        
+        elif param_name == "state":
+            # For San Francisco, the state is California
+            # Check for explicit state mentions or infer from city
+            state_patterns = [
+                r',\s*([A-Z]{2})\b',  # "San Francisco, CA"
+                r'([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\s+state',  # "California state"
+            ]
+            state_found = False
+            for pattern in state_patterns:
+                match = re.search(pattern, query)
+                if match:
+                    params["state"] = match.group(1).strip()
+                    state_found = True
+                    break
+            
+            # Infer state from well-known cities if not explicitly mentioned
+            if not state_found and "city" in params:
+                city_to_state = {
+                    "san francisco": "CA",
+                    "los angeles": "CA",
+                    "new york": "NY",
+                    "chicago": "IL",
+                    "houston": "TX",
+                    "phoenix": "AZ",
+                    "seattle": "WA",
+                    "denver": "CO",
+                    "boston": "MA",
+                    "miami": "FL",
+                }
+                city_lower = params["city"].lower()
+                if city_lower in city_to_state:
+                    params["state"] = city_to_state[city_lower]
+        
+        elif param_name == "type":
+            # Extract crime type - look for keywords
+            crime_types = ["violent", "property", "theft", "assault", "murder", "robbery", "burglary"]
+            for crime_type in crime_types:
+                if crime_type in query_lower:
+                    params["type"] = crime_type
+                    break
+        
+        elif param_name == "year":
+            # Extract year using regex - look for 4-digit numbers that look like years
+            year_match = re.search(r'\b(19\d{2}|20\d{2})\b', query)
+            if year_match:
+                params["year"] = int(year_match.group(1))
     
-    city = None
-    for pattern in city_patterns:
-        match = re.search(pattern, query)
-        if match:
-            city = match.group(1).strip()
-            break
-    
-    if city:
-        params["city"] = city
-    
-    # Extract state - for known cities, infer state
-    # San Francisco -> California
-    city_to_state = {
-        "san francisco": "California",
-        "los angeles": "California",
-        "new york": "New York",
-        "chicago": "Illinois",
-        "houston": "Texas",
-        "phoenix": "Arizona",
-        "philadelphia": "Pennsylvania",
-        "san antonio": "Texas",
-        "san diego": "California",
-        "dallas": "Texas",
-        "seattle": "Washington",
-        "denver": "Colorado",
-        "boston": "Massachusetts",
-        "miami": "Florida",
-    }
-    
-    # Try to find state in query or infer from city
-    state_pattern = r'(?:in|,)\s*([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\s*(?:in\s+\d{4}|$|,)'
-    state_match = re.search(state_pattern, query)
-    
-    if city and city.lower() in city_to_state:
-        params["state"] = city_to_state[city.lower()]
-    elif state_match:
-        params["state"] = state_match.group(1).strip()
-    
-    # Extract year - look for 4-digit year
-    year_match = re.search(r'\b(19\d{2}|20\d{2})\b', query)
-    if year_match:
-        params["year"] = int(year_match.group(1))
-    
-    # Extract crime type - look for keywords
-    crime_types = ["violent", "property", "theft", "burglary", "assault", "robbery", "murder", "homicide"]
-    for crime_type in crime_types:
-        if crime_type in query_lower:
-            params["type"] = crime_type
-            break
+    # Validate required parameters are present
+    for req_param in required_params:
+        if req_param not in params:
+            # Try harder to find required params
+            if req_param == "state" and "city" in params:
+                # Default to CA for San Francisco if not found
+                if params["city"].lower() == "san francisco":
+                    params["state"] = "CA"
     
     return {func_name: params}

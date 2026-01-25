@@ -42,13 +42,14 @@ async def extract_function_call(
     except (json.JSONDecodeError, TypeError):
         funcs = []
     
-    # Get target function details
+    # Get function details
     func = funcs[0] if funcs else {}
     func_name = func.get("name", "")
     params_schema = func.get("parameters", {}).get("properties", {})
     
     # Extract parameters based on schema
     params = {}
+    query_lower = query.lower()
     
     for param_name, param_info in params_schema.items():
         param_type = param_info.get("type", "string")
@@ -61,16 +62,9 @@ async def extract_function_call(
                 params[param_name] = int(year_match.group(1))
             else:
                 # Try to infer year from known events
-                query_lower = query.lower()
-                if "civil war" in query_lower or "american civil war" in query_lower:
+                if "civil war" in query_lower:
                     # American Civil War was 1861-1865, use start year
                     params[param_name] = 1861
-                elif "revolutionary war" in query_lower:
-                    params[param_name] = 1776
-                elif "world war i" in query_lower or "world war 1" in query_lower:
-                    params[param_name] = 1914
-                elif "world war ii" in query_lower or "world war 2" in query_lower:
-                    params[param_name] = 1941
                 else:
                     # Extract any number as fallback
                     numbers = re.findall(r'\d+', query)
@@ -78,33 +72,36 @@ async def extract_function_call(
                         params[param_name] = int(numbers[0])
         
         elif param_type == "string":
-            # Check if this is an "event" parameter
+            # For event parameter - extract the historical event
             if "event" in param_name.lower() or "event" in param_desc:
-                # Extract event name from query
-                query_lower = query.lower()
+                # Common patterns for historical events
+                event_patterns = [
+                    r'during\s+(?:the\s+)?(.+?)(?:\?|$)',
+                    r'(?:in|at|of)\s+(?:the\s+)?(.+?)(?:\?|$)',
+                    r'(?:the\s+)?([A-Z][a-zA-Z\s]+(?:War|Revolution|Crisis|Movement|Act))',
+                ]
                 
-                # Common historical events
-                if "american civil war" in query_lower or "civil war" in query_lower:
-                    params[param_name] = "American Civil War"
-                elif "revolutionary war" in query_lower:
-                    params[param_name] = "American Revolutionary War"
+                event = None
+                for pattern in event_patterns:
+                    match = re.search(pattern, query, re.IGNORECASE)
+                    if match:
+                        event = match.group(1).strip().rstrip('?')
+                        break
+                
+                # Specific event detection
+                if "civil war" in query_lower:
+                    event = "American Civil War"
+                elif "revolutionary war" in query_lower or "revolution" in query_lower:
+                    event = "American Revolution"
                 elif "world war i" in query_lower or "world war 1" in query_lower:
-                    params[param_name] = "World War I"
+                    event = "World War I"
                 elif "world war ii" in query_lower or "world war 2" in query_lower:
-                    params[param_name] = "World War II"
-                elif "great depression" in query_lower:
-                    params[param_name] = "Great Depression"
+                    event = "World War II"
+                
+                if event:
+                    params[param_name] = event
                 else:
-                    # Try to extract event using patterns
-                    # Pattern: "during the X" or "during X"
-                    event_match = re.search(r'during\s+(?:the\s+)?([A-Za-z\s]+?)(?:\?|$|\.)', query, re.IGNORECASE)
-                    if event_match:
-                        params[param_name] = event_match.group(1).strip()
-                    else:
-                        # Fallback: extract noun phrases that might be events
-                        params[param_name] = query.strip().rstrip("?")
-            else:
-                # Generic string extraction
-                params[param_name] = query.strip()
+                    # Fallback - extract key phrase
+                    params[param_name] = query.strip().rstrip('?')
     
     return {func_name: params}

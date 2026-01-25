@@ -51,75 +51,80 @@ async def extract_function_call(
     if poly_match:
         poly_expr = poly_match.group(1).strip()
         
-        # Extract terms: look for patterns like "3x^2", "+2x", "-4", etc.
-        # First, normalize the expression (handle spaces around operators)
-        poly_expr = re.sub(r'\s*([+-])\s*', r' \1', poly_expr)
+        # Parse polynomial terms - handle formats like "3x^2 + 2x - 4"
+        # First, normalize the expression: replace - with + - for splitting
+        normalized = poly_expr.replace('-', '+-').replace(' ', '')
+        terms = [t for t in normalized.split('+') if t]
         
-        # Find all terms with their coefficients and powers
-        terms = {}
+        # Determine the highest power to build coefficient array
+        term_dict = {}  # power -> coefficient
         
-        # Pattern for terms like "3x^2", "-2x^3", "+x^2", "x", "-x", "5", "-4"
-        term_pattern = r'([+-]?\s*\d*\.?\d*)\s*x\s*\^\s*(\d+)|([+-]?\s*\d*\.?\d*)\s*x(?!\^)|([+-]?\s*\d+\.?\d*)'
-        
-        for match in re.finditer(term_pattern, poly_expr):
-            if match.group(1) is not None and match.group(2) is not None:
-                # Term with x^n
-                coef_str = match.group(1).replace(' ', '')
-                power = int(match.group(2))
+        for term in terms:
+            term = term.strip()
+            if not term:
+                continue
+                
+            # Match patterns: "3x^2", "-2x^3", "x^2", "5x", "x", "-4", "4"
+            # Pattern for x^n terms
+            power_match = re.match(r'^([+-]?\d*\.?\d*)x\^(\d+)$', term)
+            if power_match:
+                coef_str = power_match.group(1)
                 if coef_str in ['', '+']:
                     coef = 1.0
                 elif coef_str == '-':
                     coef = -1.0
                 else:
                     coef = float(coef_str)
-                terms[power] = terms.get(power, 0) + coef
-            elif match.group(3) is not None:
-                # Term with just x (power = 1)
-                coef_str = match.group(3).replace(' ', '')
+                power = int(power_match.group(2))
+                term_dict[power] = coef
+                continue
+            
+            # Pattern for x terms (power = 1)
+            x_match = re.match(r'^([+-]?\d*\.?\d*)x$', term)
+            if x_match:
+                coef_str = x_match.group(1)
                 if coef_str in ['', '+']:
                     coef = 1.0
                 elif coef_str == '-':
                     coef = -1.0
                 else:
                     coef = float(coef_str)
-                terms[1] = terms.get(1, 0) + coef
-            elif match.group(4) is not None:
-                # Constant term (power = 0)
-                coef_str = match.group(4).replace(' ', '')
-                if coef_str and coef_str not in ['+', '-']:
-                    coef = float(coef_str)
-                    terms[0] = terms.get(0, 0) + coef
+                term_dict[1] = coef
+                continue
+            
+            # Pattern for constant terms
+            const_match = re.match(r'^([+-]?\d+\.?\d*)$', term)
+            if const_match:
+                coef = float(const_match.group(1))
+                term_dict[0] = coef
+                continue
         
-        # Convert to polynomial array (descending order of powers)
-        if terms:
-            max_power = max(terms.keys())
-            polynomial = [terms.get(p, 0.0) for p in range(max_power, -1, -1)]
+        # Build polynomial array in decreasing order of exponent
+        if term_dict:
+            max_power = max(term_dict.keys())
+            polynomial = [term_dict.get(p, 0.0) for p in range(max_power, -1, -1)]
     
     # Extract limits from expressions like "between x = -1 and x = 2" or "from -1 to 2"
     limits = []
     
-    # Try various patterns for limits
-    limit_patterns = [
-        r'between\s+x\s*=\s*([+-]?\d+\.?\d*)\s+and\s+x\s*=\s*([+-]?\d+\.?\d*)',
-        r'between\s+([+-]?\d+\.?\d*)\s+and\s+([+-]?\d+\.?\d*)',
-        r'from\s+x\s*=\s*([+-]?\d+\.?\d*)\s+to\s+x\s*=\s*([+-]?\d+\.?\d*)',
-        r'from\s+([+-]?\d+\.?\d*)\s+to\s+([+-]?\d+\.?\d*)',
-        r'interval\s*\[?\s*([+-]?\d+\.?\d*)\s*,\s*([+-]?\d+\.?\d*)\s*\]?',
-        r'x\s*=\s*([+-]?\d+\.?\d*)\s+(?:and|to)\s+x\s*=\s*([+-]?\d+\.?\d*)',
-    ]
+    # Pattern: "between x = -1 and x = 2" or "between -1 and 2"
+    between_match = re.search(r'between\s+(?:x\s*=\s*)?([+-]?\d+\.?\d*)\s+and\s+(?:x\s*=\s*)?([+-]?\d+\.?\d*)', query, re.IGNORECASE)
+    if between_match:
+        limits = [float(between_match.group(1)), float(between_match.group(2))]
+    else:
+        # Pattern: "from x = -1 to x = 2" or "from -1 to 2"
+        from_to_match = re.search(r'from\s+(?:x\s*=\s*)?([+-]?\d+\.?\d*)\s+to\s+(?:x\s*=\s*)?([+-]?\d+\.?\d*)', query, re.IGNORECASE)
+        if from_to_match:
+            limits = [float(from_to_match.group(1)), float(from_to_match.group(2))]
+        else:
+            # Pattern: "interval [a, b]" or "[a, b]"
+            interval_match = re.search(r'\[([+-]?\d+\.?\d*)\s*,\s*([+-]?\d+\.?\d*)\]', query)
+            if interval_match:
+                limits = [float(interval_match.group(1)), float(interval_match.group(2))]
     
-    for pattern in limit_patterns:
-        limit_match = re.search(pattern, query, re.IGNORECASE)
-        if limit_match:
-            limits = [float(limit_match.group(1)), float(limit_match.group(2))]
-            break
-    
-    # Build result with exact parameter names from schema
-    result = {
+    return {
         func_name: {
             "polynomial": polynomial,
             "limits": limits
         }
     }
-    
-    return result

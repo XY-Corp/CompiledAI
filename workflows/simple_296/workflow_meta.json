@@ -1,0 +1,26 @@
+{
+  "workflow_id": "simple_296",
+  "name": "Function Call Extractor",
+  "description": "Extract function name and parameters from natural language query",
+  "task_id": "simple_296",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"Generate a major C scale progression with tempo 80 BPM and duration 4 beats.\"}]], \"function\": [{\"name\": \"music_generator.generate_scale_progression\", \"description\": \"Generate a music scale progression in a specific key with a given tempo and duration.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"key\": {\"type\": \"string\", \"description\": \"The key in which to generate the scale progression.\"}, \"tempo\": {\"type\": \"integer\", \"description\": \"The tempo of the scale progression in BPM.\"}, \"duration\": {\"type\": \"integer\", \"description\": \"The duration of each note in beats.\"}, \"scale_type\": {\"type\": \"string\", \"default\": \"major\", \"description\": \"The type of scale to generate. Defaults to 'major'.\"}}, \"required\": [\"key\", \"tempo\", \"duration\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"music_generator.generate_scale_progression\": {\n    \"key\": \"string - The key in which to generate the scale progression.\",\n    \"tempo\": \"integer - The tempo of the scale progression in BPM.\",\n    \"duration\": \"integer - The duration of each note in beats.\",\n    \"scale_type\": \"string - The type of scale to generate. Defaults to 'major'.\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "activities": [
+    "extract_function_call"
+  ],
+  "variables": [
+    {
+      "name": "prompt",
+      "default": null
+    },
+    {
+      "name": "functions",
+      "default": null
+    }
+  ],
+  "execution_pattern": "sequence",
+  "reasoning": "BFCL template: single activity for function call extraction",
+  "metrics": {
+    "total_tokens": 10809,
+    "regeneration_count": 0
+  }
+}

@@ -53,71 +53,41 @@ async def extract_function_call(
     # Extract dataset_path - look for file paths
     if "dataset_path" in props:
         # Match Windows or Unix paths ending in common data extensions
-        path_patterns = [
-            r'(?:path|file|dataset)\s+(?:is\s+)?([A-Za-z]:[/\\][^\s,]+\.\w+)',  # Windows path with drive letter
-            r'(?:in\s+path|at\s+path|path)\s+([A-Za-z]:[/\\][^\s,]+\.\w+)',  # "in path C:/..."
-            r'([A-Za-z]:[/\\][^\s,]+\.csv)',  # Direct Windows CSV path
-            r'(/[^\s,]+\.csv)',  # Unix path
-        ]
-        for pattern in path_patterns:
-            match = re.search(pattern, query, re.IGNORECASE)
-            if match:
-                params["dataset_path"] = match.group(1)
-                break
+        path_match = re.search(r'(?:path\s+)?([A-Za-z]:[/\\][^\s,]+\.\w+|/[^\s,]+\.\w+)', query, re.IGNORECASE)
+        if path_match:
+            params["dataset_path"] = path_match.group(1)
+        else:
+            # Try to find any path-like string
+            path_match = re.search(r'([A-Za-z]:[/\\][^\s]+)', query)
+            if path_match:
+                params["dataset_path"] = path_match.group(1)
     
-    # Extract independent_variables - look for variable names used as predictors
-    if "independent_variables" in props:
-        # Look for patterns like "using X and Y variables" or "X and Y to predict"
-        # Common patterns: "using A and B variables", "A and B to predict", "variables A and B"
-        var_patterns = [
-            r'using\s+([a-z_]+(?:\s+and\s+[a-z_]+)*)\s+(?:variables?\s+)?to\s+predict',
-            r'using\s+([a-z_]+)\s+and\s+([a-z_]+)\s+variables?\s+to\s+predict',
-            r'(?:independent\s+)?variables?\s+([a-z_]+(?:\s+and\s+[a-z_]+)*)',
-        ]
-        
-        independent_vars = []
-        
-        # Try pattern: "using X and Y variables to predict"
-        match = re.search(r'using\s+([a-z_\s]+)\s+variables?\s+to\s+predict', query, re.IGNORECASE)
-        if match:
-            vars_text = match.group(1)
-            # Split by "and" to get individual variables
-            vars_list = re.split(r'\s+and\s+', vars_text, flags=re.IGNORECASE)
-            independent_vars = [v.strip() for v in vars_list if v.strip()]
-        
-        if not independent_vars:
-            # Try another pattern: look for words before "to predict"
-            match = re.search(r'using\s+(.+?)\s+to\s+predict', query, re.IGNORECASE)
-            if match:
-                vars_text = match.group(1)
-                # Remove "variables" word and split by "and"
-                vars_text = re.sub(r'\s*variables?\s*', ' ', vars_text, flags=re.IGNORECASE)
-                vars_list = re.split(r'\s+and\s+', vars_text, flags=re.IGNORECASE)
-                independent_vars = [v.strip().replace(' ', '_') for v in vars_list if v.strip()]
-        
-        # Convert natural language to variable names (e.g., "engine size" -> "engine_size")
-        cleaned_vars = []
-        for var in independent_vars:
-            # Replace spaces with underscores for multi-word variables
-            cleaned_var = var.strip().replace(' ', '_').lower()
-            if cleaned_var:
-                cleaned_vars.append(cleaned_var)
-        
-        if cleaned_vars:
-            params["independent_variables"] = cleaned_vars
-    
-    # Extract dependent_variable - look for what we're predicting
+    # Extract dependent_variable - typically "predict X" or "to predict X"
     if "dependent_variable" in props:
-        # Look for patterns like "predict X" or "predicting X"
-        dep_patterns = [
-            r'to\s+predict\s+([a-z_]+)',
-            r'predict(?:ing)?\s+([a-z_]+)',
-            r'dependent\s+variable\s+([a-z_]+)',
-        ]
-        for pattern in dep_patterns:
-            match = re.search(pattern, query, re.IGNORECASE)
-            if match:
-                params["dependent_variable"] = match.group(1).strip().lower()
-                break
+        # Look for "predict <variable>" pattern
+        dep_match = re.search(r'predict\s+(\w+)', query, re.IGNORECASE)
+        if dep_match:
+            params["dependent_variable"] = dep_match.group(1)
+    
+    # Extract independent_variables - look for "using X and Y variables" or similar
+    if "independent_variables" in props:
+        # Pattern: "using X and Y variables" or "using X and Y"
+        ind_match = re.search(r'using\s+(.+?)\s+(?:variables?\s+)?to\s+predict', query, re.IGNORECASE)
+        if ind_match:
+            vars_text = ind_match.group(1)
+            # Split by "and" or commas, clean up
+            vars_list = re.split(r'\s+and\s+|\s*,\s*', vars_text)
+            # Clean each variable name (remove extra words like "variables")
+            cleaned_vars = []
+            for v in vars_list:
+                # Extract just the variable name (word characters, underscores, spaces for multi-word)
+                v = v.strip()
+                # Remove trailing "variables" or "variable"
+                v = re.sub(r'\s*variables?\s*$', '', v, flags=re.IGNORECASE)
+                # Replace spaces with underscores for variable names
+                v = v.replace(' ', '_')
+                if v:
+                    cleaned_vars.append(v)
+            params["independent_variables"] = cleaned_vars
     
     return {func_name: params}

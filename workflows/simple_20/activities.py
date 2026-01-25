@@ -25,17 +25,13 @@ async def extract_function_call(
         # Extract user query from BFCL format: {"question": [[{"role": "user", "content": "..."}]]}
         if isinstance(data, dict) and "question" in data:
             question_list = data.get("question", [])
-            if isinstance(question_list, list) and len(question_list) > 0:
-                inner_list = question_list[0]
-                if isinstance(inner_list, list) and len(inner_list) > 0:
-                    query = inner_list[0].get("content", str(prompt))
-                else:
-                    query = str(prompt)
+            if question_list and isinstance(question_list[0], list) and question_list[0]:
+                query = question_list[0][0].get("content", str(prompt))
             else:
                 query = str(prompt)
         else:
             query = str(prompt)
-    except (json.JSONDecodeError, TypeError):
+    except (json.JSONDecodeError, TypeError, KeyError):
         query = str(prompt)
     
     # Parse functions - may be JSON string
@@ -72,8 +68,8 @@ async def extract_function_call(
     
     # Fallback: extract all numbers if patterns didn't match
     if not numbers:
-        all_numbers = re.findall(r'\d+', query)
-        numbers = [int(n) for n in all_numbers[:2]]  # Take first two
+        all_nums = re.findall(r'\d+', query)
+        numbers = [int(n) for n in all_nums[:2]]  # Take first two numbers
     
     # Build parameters dict matching schema exactly
     params = {}
@@ -81,15 +77,13 @@ async def extract_function_call(
     
     # Assign extracted numbers to parameters in order
     for i, param_name in enumerate(param_names):
-        if i < len(numbers):
-            param_info = params_schema.get(param_name, {})
-            param_type = param_info.get("type", "string")
-            
-            if param_type == "integer":
-                params[param_name] = numbers[i]
-            elif param_type in ["float", "number"]:
-                params[param_name] = float(numbers[i])
-            else:
-                params[param_name] = str(numbers[i])
+        param_info = params_schema.get(param_name, {})
+        param_type = param_info.get("type", "string")
+        
+        if param_type == "integer" and i < len(numbers):
+            params[param_name] = numbers[i]
+        elif param_type in ["number", "float"] and i < len(numbers):
+            params[param_name] = float(numbers[i])
     
+    # Return format: {"function_name": {params}}
     return {func_name: params}

@@ -11,18 +11,16 @@ async def extract_function_call(
     workflow_definition_id: str | None = None,
     workflow_instance_id: str | None = None,
 ) -> dict[str, Any]:
-    """Extract function name and parameters from user query based on function schema.
+    """Extract function name and parameters from user query using regex and string matching."""
     
-    Returns format: {"function_name": {"param1": val1, "param2": val2}}
-    """
-    # Parse prompt - may be JSON string with nested structure
+    # Parse prompt (may be JSON string with nested structure)
     try:
         if isinstance(prompt, str):
             data = json.loads(prompt)
-            # Extract user query from BFCL format: {"question": [[{"role": "user", "content": "..."}]]}
+            # Extract user query from BFCL format
             if "question" in data and isinstance(data["question"], list):
                 if len(data["question"]) > 0 and isinstance(data["question"][0], list):
-                    query = data["question"][0][0].get("content", str(prompt))
+                    query = data["question"][0][0].get("content", prompt)
                 else:
                     query = str(prompt)
             else:
@@ -32,7 +30,7 @@ async def extract_function_call(
     except (json.JSONDecodeError, TypeError, KeyError):
         query = str(prompt)
     
-    # Parse functions - may be JSON string
+    # Parse functions (may be JSON string)
     try:
         if isinstance(functions, str):
             funcs = json.loads(functions)
@@ -46,49 +44,51 @@ async def extract_function_call(
     func_name = func.get("name", "")
     params_schema = func.get("parameters", {}).get("properties", {})
     
-    # Extract parameters from query using regex and string matching
+    # Extract parameters from query
     params = {}
     query_lower = query.lower()
     
-    for param_name, param_info in params_schema.items():
-        param_type = param_info.get("type", "string")
-        param_desc = param_info.get("description", "").lower()
-        
-        if param_name == "city":
-            # Extract city - look for "in [City]" pattern
-            city_match = re.search(r'\bin\s+([A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+)?)', query)
-            if city_match:
-                city = city_match.group(1).strip()
-                # Add state abbreviation if it's a known city
-                if city.lower() == "chicago":
-                    params["city"] = "Chicago, IL"
-                else:
-                    params["city"] = city
-        
-        elif param_name == "specialty":
-            # Extract specialty from enum values
-            enum_values = param_info.get("items", {}).get("enum", [])
-            found_specialties = []
-            for specialty in enum_values:
-                if specialty.lower() in query_lower:
-                    found_specialties.append(specialty)
-            if found_specialties:
-                params["specialty"] = found_specialties
-        
-        elif param_name == "fee":
-            # Extract fee - look for number near "fee", "charge", "less than", "under", dollar amounts
-            # Pattern: "less than X dollars" or "under X" or "fee X" or "$X"
-            fee_patterns = [
-                r'(?:less\s+than|under|below|max(?:imum)?)\s+\$?(\d+)',
-                r'\$(\d+)',
-                r'(\d+)\s*(?:dollars?|usd)',
-                r'fee\s+(?:of\s+)?(?:less\s+than\s+)?\$?(\d+)',
-                r'charge\s+(?:fee\s+)?(?:less\s+than\s+)?\$?(\d+)',
-            ]
-            for pattern in fee_patterns:
-                fee_match = re.search(pattern, query_lower)
-                if fee_match:
-                    params["fee"] = int(fee_match.group(1))
-                    break
+    # Extract city - look for "in [City]" pattern
+    city_match = re.search(r'\bin\s+([A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+)?)', query)
+    if city_match:
+        city = city_match.group(1).strip()
+        # Add state abbreviation if it's a known city
+        city_state_map = {
+            "Chicago": "Chicago, IL",
+            "New York": "New York, NY",
+            "Los Angeles": "Los Angeles, CA",
+            "Houston": "Houston, TX",
+        }
+        params["city"] = city_state_map.get(city, city)
+    
+    # Extract specialty - look for specialty keywords
+    specialty_keywords = {
+        "civil": "Civil",
+        "divorce": "Divorce",
+        "immigration": "Immigration",
+        "business": "Business",
+        "criminal": "Criminal"
+    }
+    specialties = []
+    for keyword, value in specialty_keywords.items():
+        if keyword in query_lower:
+            specialties.append(value)
+    if specialties:
+        params["specialty"] = specialties
+    
+    # Extract fee - look for dollar amounts with "less than" or "under" patterns
+    fee_match = re.search(r'(?:less\s+than|under|below|max(?:imum)?)\s*\$?\s*(\d+)', query_lower)
+    if fee_match:
+        params["fee"] = int(fee_match.group(1))
+    else:
+        # Try to find any dollar amount
+        dollar_match = re.search(r'\$\s*(\d+)', query)
+        if dollar_match:
+            params["fee"] = int(dollar_match.group(1))
+        else:
+            # Try to find number followed by "dollars"
+            dollars_match = re.search(r'(\d+)\s*dollars?', query_lower)
+            if dollars_match:
+                params["fee"] = int(dollars_match.group(1))
     
     return {func_name: params}

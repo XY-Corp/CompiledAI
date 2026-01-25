@@ -1,0 +1,34 @@
+{
+  "activity_name": "extract_function_call",
+  "description": "Parse natural language query and extract function call with parameters",
+  "task_id": "exec_simple_90",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"I'm planning a business trip to New York, and I've decided to extend my stay to enjoy the city a bit more. I'd like to book a deluxe room for the duration of my trip. The dates I'm looking at are from August 11, 2024, to August 15, 2024. I've got a budget set aside for accommodation, and I'm willing to spend up to $1000 for a comfortable stay. My customer ID is 123. Could you go ahead and book that room for me?\"}]], \"function\": [{\"name\": \"book_room\", \"description\": \"Books a room for a customer.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"room_type\": {\"type\": \"string\", \"description\": \"The room type to book.\"}, \"price\": {\"type\": \"float\", \"description\": \"The max price of the room. Default 0.0\"}, \"check_in_date\": {\"type\": \"string\", \"description\": \"The check-in date in format of MM-DD-YYYY. \"}, \"check_out_date\": {\"type\": \"string\", \"description\": \"The check-out date in format of MM-DD-YYYY.\"}, \"customer_id\": {\"type\": \"string\", \"description\": \"The customer ID.\"}, \"discount_code\": {\"type\": \"string\", \"description\": \"The discount code (if any).\", \"default\": null}}, \"required\": [\"room_type\", \"check_in_date\", \"check_out_date\", \"customer_id\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"book_room\": {\n    \"room_type\": \"string - The room type to book.\",\n    \"price\": \"float - The max price of the room. Default 0.0\",\n    \"check_in_date\": \"string - The check-in date in format of MM-DD-YYYY. \",\n    \"check_out_date\": \"string - The check-out date in format of MM-DD-YYYY.\",\n    \"customer_id\": \"string - The customer ID.\",\n    \"discount_code\": \"string - The discount code (if any).\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "inputs": [
+    {
+      "name": "prompt",
+      "type": "str",
+      "description": "The natural language query containing the function call request",
+      "required": true
+    },
+    {
+      "name": "functions",
+      "type": "list",
+      "description": "List of available function definitions with their parameter schemas",
+      "required": true
+    }
+  ],
+  "output": {
+    "type": "dict",
+    "description": "Returns a dict with function name as key and parameters as nested dict value",
+    "fields": {
+      "function_name": "dict[str, Any]"
+    }
+  },
+  "reference_activity": null,
+  "workflow_spec": {
+    "workflow_id": "exec_simple_90",
+    "name": "Function Call Extractor",
+    "description": "Extract function name and parameters from natural language query",
+    "execution_pattern": "sequence"
+  }
+}

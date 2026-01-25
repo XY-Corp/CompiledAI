@@ -64,10 +64,10 @@ async def extract_function_call(
             if quoted_match:
                 params[param_name] = quoted_match.group(1)
             else:
-                # Fallback: extract text after common phrases
-                text_match = re.search(r"(?:analyze|review|text|of)\s+(.+?)(?:\.|$)", query, re.IGNORECASE)
+                # Fallback: try to extract text after common phrases
+                text_match = re.search(r"(?:analyze|review|text|of)\s+['\"]?(.+?)['\"]?(?:\.|$)", query, re.IGNORECASE)
                 if text_match:
-                    params[param_name] = text_match.group(1).strip()
+                    params[param_name] = text_match.group(1).strip("'\"")
         
         elif param_name == "language":
             # Check for explicit language mention

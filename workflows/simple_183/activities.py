@@ -17,7 +17,7 @@ async def extract_function_call(
     try:
         if isinstance(prompt, str):
             data = json.loads(prompt)
-            # Handle BFCL format: {"question": [[{"role": "user", "content": "..."}]], ...}
+            # Handle BFCL format: {"question": [[{"role": "user", "content": "..."}]]}
             if "question" in data and isinstance(data["question"], list):
                 if len(data["question"]) > 0 and isinstance(data["question"][0], list):
                     query = data["question"][0][0].get("content", str(prompt))
@@ -56,7 +56,7 @@ async def extract_function_call(
             # Common patterns: "against X", "involving X", "filed against X"
             entity_patterns = [
                 r'(?:against|involving|for|about)\s+([A-Z][A-Za-z]+(?:\s+[A-Z][A-Za-z]+)*)',
-                r'lawsuits\s+(?:filed\s+)?(?:against|involving)\s+([A-Z][A-Za-z]+)',
+                r'lawsuits?\s+(?:filed\s+)?(?:against|involving)\s+([A-Z][A-Za-z]+)',
             ]
             for pattern in entity_patterns:
                 match = re.search(pattern, query)

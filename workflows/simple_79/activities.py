@@ -96,10 +96,10 @@ async def extract_function_call(
                 if bin_match:
                     params[param_name] = int(bin_match.group(1))
                 else:
-                    # Fallback: look for last number in query
-                    numbers = re.findall(r'\b(\d+)\b', query)
-                    if numbers:
-                        params[param_name] = int(numbers[-1])
+                    # Fallback: look for standalone number after "range" or "bin"
+                    fallback_match = re.search(r'(?:range|bin)\D+(\d+)', query, re.IGNORECASE)
+                    if fallback_match:
+                        params[param_name] = int(fallback_match.group(1))
             else:
                 # Generic integer extraction
                 numbers = re.findall(r'\b(\d+)\b', query)
@@ -113,28 +113,13 @@ async def extract_function_call(
                 
         elif param_type == "string":
             # Extract string values - look for quoted strings or after keywords
-            quoted = re.findall(r'["\']([^"\']+)["\']', query)
+            quoted = re.search(r'["\']([^"\']+)["\']', query)
             if quoted:
-                params[param_name] = quoted[0]
+                params[param_name] = quoted.group(1)
             else:
-                # Try to extract based on param name context
-                pattern = rf'{param_name}\s*(?:is|=|:)?\s*(\w+)'
-                match = re.search(pattern, query, re.IGNORECASE)
-                if match:
-                    params[param_name] = match.group(1)
-    
-    # For histogram specifically, ensure data doesn't include the bin value
-    if func_name == "create_histogram" and "data" in params and "bins" in params:
-        bin_val = params["bins"]
-        # Remove bin value from data if it was accidentally included
-        if bin_val in params["data"]:
-            # Only remove if it appears to be separate (at the end after bin keyword)
-            # Check the original query structure
-            data_section = re.search(r'data[:\s]+([^a-zA-Z]+?)(?:and|bin|$)', query, re.IGNORECASE)
-            if data_section:
-                data_nums = re.findall(r'\d+', data_section.group(1))
-                data_nums = [int(n) for n in data_nums]
-                if data_nums:
-                    params["data"] = data_nums
+                # Try to extract based on common patterns
+                for_match = re.search(r'(?:for|in|of|with)\s+([A-Za-z\s]+?)(?:\s+(?:and|with|,|$))', query, re.IGNORECASE)
+                if for_match:
+                    params[param_name] = for_match.group(1).strip()
     
     return {func_name: params}

@@ -13,7 +13,7 @@ async def extract_function_call(
 ) -> dict[str, Any]:
     """Extract function name and parameters from user query and function schema.
     
-    Returns format: {"function_name": {"param1": val1, "param2": val2}}
+    Returns a dict with function name as key and parameters as nested object.
     """
     # Parse prompt - may be JSON string with nested structure
     try:
@@ -71,19 +71,29 @@ async def extract_function_call(
                 # Common patterns for location extraction
                 location_patterns = [
                     r'(?:king|queen|monarch|ruler)\s+of\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)',
-                    r'in\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)',
-                    r'of\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\s+in',
+                    r'(?:in|of)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\s+(?:in|during)',
+                    r'([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\s+(?:monarch|king|queen)',
                 ]
+                
                 for pattern in location_patterns:
                     match = re.search(pattern, query)
                     if match:
                         params[param_name] = match.group(1).strip()
                         break
+                
+                # Fallback: look for known country names
+                if param_name not in params:
+                    countries = ["England", "France", "Spain", "Germany", "Italy", "Russia", 
+                                "China", "Japan", "India", "Britain", "United Kingdom", "UK"]
+                    for country in countries:
+                        if country.lower() in query_lower:
+                            params[param_name] = country
+                            break
         
         elif param_type == "boolean":
-            # Check for boolean indicators in query
+            # Check for keywords indicating true/false
             if param_name == "fullName":
-                # Check if "full name" is mentioned in the query
+                # Look for "full name" or "full title" in query
                 if "full name" in query_lower or "full title" in query_lower:
                     params[param_name] = True
                 # Don't include if not explicitly requested (use default)

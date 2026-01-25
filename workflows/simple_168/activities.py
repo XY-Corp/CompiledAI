@@ -54,8 +54,8 @@ async def extract_function_call(
     if company_match:
         params["company"] = company_match.group(1)
     
-    # Extract date - look for patterns like "after January 1, 2021" or "MM-DD-YYYY"
-    date_match = re.search(r"after\s+(\w+)\s+(\d{1,2}),?\s+(\d{4})", query, re.IGNORECASE)
+    # Extract date - look for patterns like "after January 1, 2021" or "filed after MM-DD-YYYY"
+    date_match = re.search(r"(?:after|since|from)\s+(\w+)\s+(\d{1,2}),?\s+(\d{4})", query, re.IGNORECASE)
     if date_match:
         month_name = date_match.group(1)
         day = date_match.group(2)
@@ -70,14 +70,9 @@ async def extract_function_call(
         month_num = months.get(month_name.lower(), "01")
         # Format as MM-DD-YYYY
         params["start_date"] = f"{month_num}-{day.zfill(2)}-{year}"
-    else:
-        # Try direct MM-DD-YYYY format
-        direct_date = re.search(r"(\d{2}-\d{2}-\d{4})", query)
-        if direct_date:
-            params["start_date"] = direct_date.group(1)
     
     # Extract location - look for state names
-    us_states = [
+    states = [
         "Alabama", "Alaska", "Arizona", "Arkansas", "California", "Colorado",
         "Connecticut", "Delaware", "Florida", "Georgia", "Hawaii", "Idaho",
         "Illinois", "Indiana", "Iowa", "Kansas", "Kentucky", "Louisiana",
@@ -90,7 +85,7 @@ async def extract_function_call(
         "West Virginia", "Wisconsin", "Wyoming"
     ]
     
-    for state in us_states:
+    for state in states:
         if state.lower() in query_lower:
             params["location"] = state
             break

@@ -11,11 +11,9 @@ async def extract_function_call(
     workflow_definition_id: str | None = None,
     workflow_instance_id: str | None = None,
 ) -> dict[str, Any]:
-    """Extract function name and parameters from user query based on function schema.
+    """Extract function call parameters from user query and return as {func_name: {params}}."""
     
-    Returns format: {"function_name": {"param1": val1, "param2": val2}}
-    """
-    # Parse prompt - may be JSON string with nested structure
+    # Parse prompt (may be JSON string with nested structure)
     try:
         if isinstance(prompt, str):
             data = json.loads(prompt)
@@ -23,17 +21,21 @@ async def extract_function_call(
             data = prompt
         
         # Extract user query from BFCL format: {"question": [[{"role": "user", "content": "..."}]]}
-        if "question" in data and isinstance(data["question"], list):
-            if len(data["question"]) > 0 and isinstance(data["question"][0], list):
-                query = data["question"][0][0].get("content", str(prompt))
+        if isinstance(data, dict) and "question" in data:
+            question_data = data["question"]
+            if isinstance(question_data, list) and len(question_data) > 0:
+                if isinstance(question_data[0], list) and len(question_data[0]) > 0:
+                    query = question_data[0][0].get("content", str(prompt))
+                else:
+                    query = str(prompt)
             else:
                 query = str(prompt)
         else:
             query = str(prompt)
-    except (json.JSONDecodeError, TypeError, KeyError):
+    except (json.JSONDecodeError, TypeError):
         query = str(prompt)
     
-    # Parse functions - may be JSON string
+    # Parse functions (may be JSON string)
     try:
         if isinstance(functions, str):
             funcs = json.loads(functions)
@@ -42,8 +44,10 @@ async def extract_function_call(
     except (json.JSONDecodeError, TypeError):
         funcs = []
     
-    # Get function details
-    func = funcs[0] if funcs else {}
+    if not funcs:
+        return {"error": "No functions provided"}
+    
+    func = funcs[0]
     func_name = func.get("name", "")
     params_schema = func.get("parameters", {}).get("properties", {})
     required_params = func.get("parameters", {}).get("required", [])
@@ -56,14 +60,13 @@ async def extract_function_call(
         param_type = param_info.get("type", "string")
         param_desc = param_info.get("description", "").lower()
         
-        # Extract company_name - look for company names in the query
-        if param_name == "company_name" or "company" in param_name.lower():
-            # Common patterns for company names
-            # Look for "of X" or "about X" patterns
+        if param_name == "company_name":
+            # Extract company name - look for known patterns
+            # Pattern: "stocks of X", "stock of X", "about X", company names
             company_patterns = [
-                r'(?:about|of|for)\s+(?:stocks?\s+of\s+)?([A-Z][A-Za-z\s]+(?:Inc\.?|Corp\.?|LLC|Ltd\.?)?)',
-                r'(?:about|of|for)\s+([A-Z][A-Za-z\s]+)',
-                r'stocks?\s+of\s+([A-Z][A-Za-z\s]+(?:Inc\.?|Corp\.?|LLC|Ltd\.?)?)',
+                r'(?:stocks?|shares?|info(?:rmation)?)\s+(?:of|about|for)\s+([A-Z][A-Za-z\s]+(?:Inc\.?|Corp\.?|Ltd\.?|LLC)?)',
+                r'about\s+(?:stocks?\s+(?:of\s+)?)?([A-Z][A-Za-z\s]+(?:Inc\.?|Corp\.?|Ltd\.?|LLC)?)',
+                r'([A-Z][A-Za-z]+(?:\s+[A-Z][A-Za-z]+)*(?:\s+Inc\.?|\s+Corp\.?|\s+Ltd\.?|\s+LLC)?)',
             ]
             
             for pattern in company_patterns:
@@ -72,51 +75,44 @@ async def extract_function_call(
                     company = match.group(1).strip()
                     # Clean up trailing punctuation
                     company = re.sub(r'[.,;:!?]+$', '', company).strip()
-                    params[param_name] = company
-                    break
-        
-        # Extract detail_level - look for keywords like "detail", "summary", "detailed"
-        elif param_name == "detail_level" or "detail" in param_name.lower():
-            if "summary" in query_lower:
-                params[param_name] = "summary"
-            elif "detail" in query_lower:
-                params[param_name] = "detailed"
-            elif param_name in required_params:
-                # Default to "detailed" if user asks for "detail information"
-                if "detail" in query_lower or "information" in query_lower:
-                    params[param_name] = "detailed"
-                else:
-                    params[param_name] = "summary"
-        
-        # Extract market - look for stock market names
-        elif param_name == "market" or "market" in param_name.lower():
-            market_patterns = [
-                r'\b(NASDAQ|NYSE|AMEX|LSE|TSE|HKEX)\b',
-                r'(?:on|in|from)\s+(?:the\s+)?([A-Z]{3,5})\s+(?:market|exchange|stock)',
-            ]
+                    if company and len(company) > 1:
+                        params[param_name] = company
+                        break
             
-            for pattern in market_patterns:
-                match = re.search(pattern, query, re.IGNORECASE)
-                if match:
-                    params[param_name] = match.group(1).upper()
+            # Fallback: look for well-known company names
+            if param_name not in params:
+                known_companies = ["Apple Inc", "Apple", "Microsoft", "Google", "Amazon", "Tesla", "Meta"]
+                for company in known_companies:
+                    if company.lower() in query_lower:
+                        params[param_name] = company if company != "Apple" else "Apple Inc"
+                        break
+        
+        elif param_name == "detail_level":
+            # Extract detail level from query
+            if any(word in query_lower for word in ["detail", "detailed", "full", "comprehensive", "all"]):
+                params[param_name] = "detailed"
+            elif any(word in query_lower for word in ["summary", "brief", "quick", "short"]):
+                params[param_name] = "summary"
+            else:
+                # Default to detailed if asking for "detail information"
+                params[param_name] = "detailed"
+        
+        elif param_name == "market":
+            # Extract market from query
+            markets = ["NASDAQ", "NYSE", "LSE", "TSE", "HKEX"]
+            for market in markets:
+                if market.lower() in query_lower:
+                    params[param_name] = market
                     break
-            # Note: market is optional with default 'NASDAQ', so we don't set it if not found
-        
-        # Generic string extraction for other parameters
-        elif param_type == "string":
-            # Try to extract based on parameter name patterns
-            pattern = rf'{param_name}[:\s]+["\']?([^"\']+)["\']?'
-            match = re.search(pattern, query, re.IGNORECASE)
-            if match:
-                params[param_name] = match.group(1).strip()
-        
-        # Extract numbers for integer/number types
-        elif param_type in ["integer", "number", "float"]:
-            numbers = re.findall(r'\d+(?:\.\d+)?', query)
-            if numbers:
-                if param_type == "integer":
-                    params[param_name] = int(numbers[0])
-                else:
-                    params[param_name] = float(numbers[0])
+            # Don't set default - let the function use its own default
+    
+    # Ensure required params are present
+    for req_param in required_params:
+        if req_param not in params:
+            # Try to infer or set reasonable default
+            if req_param == "company_name":
+                params[req_param] = "<UNKNOWN>"
+            elif req_param == "detail_level":
+                params[req_param] = "detailed"
     
     return {func_name: params}

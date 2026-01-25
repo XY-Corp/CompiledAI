@@ -11,7 +11,7 @@ async def extract_function_call(
     workflow_definition_id: str | None = None,
     workflow_instance_id: str | None = None,
 ) -> dict[str, Any]:
-    """Extract function name and parameters from user query using regex and string matching."""
+    """Extract function name and parameters from user query. Returns {func_name: {params}}."""
     
     # Parse prompt (may be JSON string with nested structure)
     try:
@@ -45,44 +45,53 @@ async def extract_function_call(
     func_name = func.get("name", "")
     params_schema = func.get("parameters", {}).get("properties", {})
     
-    # Extract parameters from query
+    # Extract parameters from query using regex and string matching
     params = {}
     
     for param_name, param_info in params_schema.items():
         param_type = param_info.get("type", "string")
+        param_desc = param_info.get("description", "").lower()
         
         if param_type == "integer":
             # Extract year (4-digit number)
-            year_match = re.search(r'\b(19\d{2}|20\d{2})\b', query)
-            if year_match:
-                params[param_name] = int(year_match.group(1))
+            if "year" in param_name.lower() or "year" in param_desc:
+                year_match = re.search(r'\b(19\d{2}|20\d{2})\b', query)
+                if year_match:
+                    params[param_name] = int(year_match.group(1))
+            else:
+                # Extract any integer
+                numbers = re.findall(r'\b\d+\b', query)
+                if numbers:
+                    params[param_name] = int(numbers[0])
         
         elif param_type == "string":
-            # Check if it's an enum type (like status)
+            # Check for enum values first
             if "enum" in param_info:
-                enum_values = param_info.get("enum", [])
+                enum_values = param_info["enum"]
                 query_lower = query.lower()
                 for enum_val in enum_values:
                     if enum_val.lower() in query_lower:
                         params[param_name] = enum_val
                         break
-                # Don't set if not found - it's optional
             
-            elif param_name == "company_name":
-                # Extract company name - look for known patterns
-                # Pattern: "of [Company]" or "[Company]'s" or "related to [Company]"
+            # Extract company name
+            elif "company" in param_name.lower() or "company" in param_desc:
+                # Common patterns: "of [Company]", "[Company]'s", "related to [Company]"
                 company_patterns = [
-                    r'(?:of|for|about|related to|against)\s+([A-Z][A-Za-z]+(?:\s+[A-Z][A-Za-z]+)*)',
-                    r'([A-Z][A-Za-z]+(?:\s+[A-Z][A-Za-z]+)*?)(?:\'s|\s+in\s+\d)',
+                    r'(?:of|for|about|related to|regarding)\s+([A-Z][A-Za-z0-9\s&\-\.]+?)(?:\s+in\s+|\s+during\s+|\s+from\s+|\'s|\s*$)',
+                    r'([A-Z][A-Za-z0-9]+(?:\s+[A-Z][A-Za-z0-9]+)*)\s+(?:lawsuit|cases|patent)',
+                    r'cases\s+of\s+([A-Z][A-Za-z0-9\s&\-\.]+?)(?:\s+in\s+|\s*$)',
                 ]
-                
                 for pattern in company_patterns:
                     match = re.search(pattern, query)
                     if match:
-                        company = match.group(1).strip()
-                        # Filter out common words that aren't company names
-                        if company.lower() not in ['patent', 'lawsuit', 'cases', 'all', 'find']:
-                            params[param_name] = company
-                            break
+                        params[param_name] = match.group(1).strip()
+                        break
+            
+            # Extract case type (e.g., "Patent lawsuit")
+            elif "type" in param_name.lower() or "type" in param_desc:
+                type_match = re.search(r'(Patent|Copyright|Trademark|Civil|Criminal)\s+(?:lawsuit|case)', query, re.IGNORECASE)
+                if type_match:
+                    params[param_name] = type_match.group(1)
     
     return {func_name: params}

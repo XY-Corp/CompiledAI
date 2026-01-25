@@ -11,20 +11,22 @@ async def extract_function_call(
     workflow_definition_id: str | None = None,
     workflow_instance_id: str | None = None,
 ) -> dict[str, Any]:
-    """Extract function call parameters from natural language query using regex.
+    """Extract function call parameters from natural language query.
     
-    Returns format: {"function_name": {"param1": val1, "param2": val2}}
+    Parses the user query to extract parameter values and returns them
+    in the format {"function_name": {"param1": val1, ...}}.
     """
-    # Parse prompt - may be JSON string with nested structure
+    # Parse prompt (may be JSON string with nested structure)
     try:
         if isinstance(prompt, str):
             data = json.loads(prompt)
-            # Extract user query from BFCL format: {"question": [[{"role": "user", "content": "..."}]]}
-            if "question" in data and isinstance(data["question"], list):
-                if len(data["question"]) > 0 and isinstance(data["question"][0], list):
-                    query = data["question"][0][0].get("content", str(prompt))
-                else:
-                    query = str(prompt)
+        else:
+            data = prompt
+        
+        # Extract user query from BFCL format
+        if "question" in data and isinstance(data["question"], list):
+            if len(data["question"]) > 0 and isinstance(data["question"][0], list):
+                query = data["question"][0][0].get("content", str(prompt))
             else:
                 query = str(prompt)
         else:
@@ -32,7 +34,7 @@ async def extract_function_call(
     except (json.JSONDecodeError, TypeError, KeyError):
         query = str(prompt)
     
-    # Parse functions - may be JSON string
+    # Parse functions (may be JSON string)
     try:
         if isinstance(functions, str):
             funcs = json.loads(functions)
@@ -50,7 +52,7 @@ async def extract_function_call(
     params = {}
     
     # Extract all numbers (floats and integers) from the query
-    # Pattern matches: 0.6, 5, 1e9, 1.5e-3, etc.
+    # Pattern matches numbers like 0.6, 5, 1e9, etc.
     float_pattern = r'[-+]?\d*\.?\d+(?:[eE][-+]?\d+)?'
     numbers = re.findall(float_pattern, query)
     
@@ -65,7 +67,7 @@ async def extract_function_call(
         except ValueError:
             continue
     
-    # Map extracted values to parameters based on context clues in the query
+    # Map extracted values to parameters based on context
     query_lower = query.lower()
     
     for param_name, param_info in params_schema.items():
@@ -73,53 +75,57 @@ async def extract_function_call(
         param_desc = param_info.get("description", "").lower()
         
         if param_name == "optical_density":
-            # Look for "optical density of X" or "OD of X" patterns
+            # Look for optical density value - typically a decimal like 0.6
             od_patterns = [
-                r'optical\s+density\s+(?:of\s+)?(\d*\.?\d+)',
-                r'od\s+(?:of\s+)?(\d*\.?\d+)',
-                r'(\d*\.?\d+)\s*(?:od|optical\s+density)',
+                r'optical density (?:of |is |=\s*)?(\d*\.?\d+)',
+                r'od (?:of |is |=\s*)?(\d*\.?\d+)',
+                r'(\d*\.\d+)(?:,|\s|$)',  # Decimal number
             ]
             for pattern in od_patterns:
                 match = re.search(pattern, query_lower)
                 if match:
                     params[param_name] = float(match.group(1))
                     break
-            # Fallback: first float-like number (typically 0.x for OD)
+            
+            # Fallback: first float-like number (with decimal point)
             if param_name not in params:
                 for num in parsed_numbers:
-                    if isinstance(num, float) and 0 < num < 10:
+                    if isinstance(num, float) and 0 < num < 10:  # OD typically 0-10
                         params[param_name] = num
                         break
         
         elif param_name == "dilution":
-            # Look for "dilution is X" or "X times" or "dilution factor of X"
+            # Look for dilution factor - typically an integer
             dilution_patterns = [
-                r'dilution\s+(?:is\s+|of\s+|factor\s+(?:is\s+|of\s+)?)?(\d+)',
-                r'(\d+)\s*(?:times|x)\s*(?:dilution)?',
-                r'(\d+)\s*fold',
+                r'dilution (?:is |of |factor )?(\d+)',
+                r'(\d+)\s*(?:times|x|fold)',
+                r'diluted\s*(\d+)',
             ]
             for pattern in dilution_patterns:
                 match = re.search(pattern, query_lower)
                 if match:
                     params[param_name] = int(match.group(1))
                     break
-            # Fallback: look for integer that's likely a dilution factor
+            
+            # Fallback: look for integer that's not the OD
             if param_name not in params:
                 for num in parsed_numbers:
-                    if isinstance(num, int) and num > 0:
-                        params[param_name] = num
-                        break
+                    if isinstance(num, int) or (isinstance(num, float) and num == int(num)):
+                        int_val = int(num)
+                        # Skip if it looks like OD (small decimal)
+                        if int_val > 1:
+                            params[param_name] = int_val
+                            break
         
         elif param_name == "calibration_factor":
-            # Look for "calibration factor of X" or scientific notation
+            # Only include if explicitly mentioned (it's optional with default)
             cal_patterns = [
-                r'calibration\s+factor\s+(?:of\s+|is\s+)?(\d+(?:\.\d+)?(?:[eE][-+]?\d+)?)',
+                r'calibration (?:factor )?(?:is |of |=\s*)?(\d+(?:\.\d+)?(?:[eE][-+]?\d+)?)',
             ]
             for pattern in cal_patterns:
                 match = re.search(pattern, query_lower)
                 if match:
                     params[param_name] = float(match.group(1))
                     break
-            # This is optional with default, so don't add if not found
     
     return {func_name: params}

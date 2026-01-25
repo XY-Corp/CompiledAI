@@ -23,10 +23,11 @@ async def extract_function_call(
             data = prompt
         
         # Extract user query from BFCL format: {"question": [[{"role": "user", "content": "..."}]]}
-        if "question" in data and isinstance(data["question"], list):
-            if len(data["question"]) > 0 and isinstance(data["question"][0], list):
-                if len(data["question"][0]) > 0 and isinstance(data["question"][0][0], dict):
-                    query = data["question"][0][0].get("content", str(prompt))
+        if isinstance(data, dict) and "question" in data:
+            question_data = data["question"]
+            if isinstance(question_data, list) and len(question_data) > 0:
+                if isinstance(question_data[0], list) and len(question_data[0]) > 0:
+                    query = question_data[0][0].get("content", str(prompt))
                 else:
                     query = str(prompt)
             else:
@@ -57,47 +58,47 @@ async def extract_function_call(
     
     for param_name, param_info in params_schema.items():
         param_type = param_info.get("type", "string")
-        param_desc = param_info.get("description", "").lower()
         
         if param_type == "string":
-            # For location/city parameters - extract city name
-            if "city" in param_desc or "location" in param_desc:
-                # Common patterns: "for Chicago", "in Chicago", "about Chicago"
-                city_patterns = [
+            # For location/city extraction - look for city names
+            if param_name in ["location", "city"]:
+                # Common patterns: "for Chicago", "in Chicago", "about ... for Chicago"
+                patterns = [
                     r'(?:for|in|about|of)\s+([A-Z][a-zA-Z\s]+?)(?:\?|$|,|\.|!)',
-                    r'(?:for|in|about|of)\s+([A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+)?)',
-                    r'data\s+for\s+([A-Z][a-zA-Z\s]+?)(?:\?|$|,|\.|!)',
+                    r'(?:data|quality|information|weather)\s+(?:for|in)\s+([A-Z][a-zA-Z\s]+?)(?:\?|$|,|\.|!)',
+                    r'([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\s*\??\s*$',  # City at end
                 ]
                 
-                for pattern in city_patterns:
+                for pattern in patterns:
                     match = re.search(pattern, query)
                     if match:
                         city = match.group(1).strip().rstrip('?.,!')
-                        params[param_name] = city
-                        break
+                        # Filter out common non-city words
+                        if city.lower() not in ['can', 'you', 'find', 'me', 'the', 'latest', 'information', 'about', 'air', 'quality', 'index', 'and', 'pollution', 'data']:
+                            params[param_name] = city
+                            break
+                
+                # Fallback: look for known city patterns
+                if param_name not in params:
+                    # Try to find capitalized words that look like city names
+                    city_match = re.search(r'\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\b(?:\?|$)', query)
+                    if city_match:
+                        params[param_name] = city_match.group(1).strip()
         
         elif param_type == "boolean":
             # Check for keywords indicating true/false
             query_lower = query.lower()
             
             # Keywords that suggest detail=true
-            detail_keywords = ["detailed", "detail", "additional", "more info", "full", "complete", "all data", "comprehensive"]
-            # Keywords that suggest detail=false
-            simple_keywords = ["simple", "basic", "just", "only", "brief"]
+            detail_keywords = ['detailed', 'detail', 'additional', 'more info', 'pm2.5', 'pm10', 'ozone', 'pollution sources', 'comprehensive', 'full']
             
-            if any(kw in query_lower for kw in detail_keywords):
+            # Check if any detail keywords are present
+            has_detail = any(kw in query_lower for kw in detail_keywords)
+            
+            # Only include boolean param if explicitly requested or if it's required
+            # For optional booleans, only include if there's evidence in the query
+            if has_detail:
                 params[param_name] = True
-            elif any(kw in query_lower for kw in simple_keywords):
-                params[param_name] = False
-            # If not specified, don't include optional boolean (use default)
-        
-        elif param_type in ["integer", "number", "float"]:
-            # Extract numbers from query
-            numbers = re.findall(r'\d+(?:\.\d+)?', query)
-            if numbers:
-                if param_type == "integer":
-                    params[param_name] = int(numbers[0])
-                else:
-                    params[param_name] = float(numbers[0])
+            # Don't include false for optional boolean params - let default apply
     
     return {func_name: params}

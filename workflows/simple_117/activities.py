@@ -24,7 +24,7 @@ async def extract_function_call(
         else:
             data = prompt
         
-        # Extract user query from BFCL format
+        # Extract user query from BFCL format: {"question": [[{"role": "user", "content": "..."}]]}
         if "question" in data and isinstance(data["question"], list):
             if len(data["question"]) > 0 and isinstance(data["question"][0], list):
                 query = data["question"][0][0].get("content", str(prompt))
@@ -69,25 +69,19 @@ async def extract_function_call(
             params["success_outcomes"] = 13
         elif "diamond" in query_lower or "diamonds" in query_lower:
             params["success_outcomes"] = 13
-        elif "ace" in query_lower:
-            params["success_outcomes"] = 4
-        elif "king" in query_lower or "queen" in query_lower or "jack" in query_lower:
-            params["success_outcomes"] = 4
         elif numbers:
-            # Use first number as success_outcomes if no suit/rank detected
+            # Use first number as success outcomes if no suit mentioned
             params["success_outcomes"] = int(numbers[0])
         
-        # Look for total outcomes (deck size)
-        if "52" in query:
-            params["total_outcomes"] = 52
-        elif "deck" in query_lower:
-            # Standard deck
+        # Look for total outcomes - "deck of 52" or just extract number
+        deck_match = re.search(r'(\d+)\s*cards?', query_lower)
+        if deck_match:
+            params["total_outcomes"] = int(deck_match.group(1))
+        elif "standard deck" in query_lower or "deck of cards" in query_lower:
             params["total_outcomes"] = 52
         elif len(numbers) >= 2:
-            # Use second number as total if available
-            params["total_outcomes"] = int(numbers[1])
-        elif len(numbers) >= 1 and "success_outcomes" not in params:
-            params["total_outcomes"] = int(numbers[0])
+            # If we have multiple numbers, second one might be total
+            params["total_outcomes"] = int(numbers[-1])
         
         # Check for ratio format request
         if "ratio" in query_lower or "as ratio" in query_lower or "format it as ratio" in query_lower:
@@ -96,6 +90,7 @@ async def extract_function_call(
             params["format_as_ratio"] = False
     else:
         # Generic extraction for other functions
+        # Extract all numbers
         numbers = re.findall(r'\d+(?:\.\d+)?', query)
         num_idx = 0
         
@@ -111,13 +106,17 @@ async def extract_function_call(
                     num_idx += 1
             elif param_type == "boolean":
                 # Check for boolean indicators in query
-                if param_name in query_lower or param_name.replace("_", " ") in query_lower:
+                param_lower = param_name.lower().replace("_", " ")
+                if param_lower in query_lower or f"as {param_lower.split()[-1]}" in query_lower:
                     params[param_name] = True
             elif param_type == "string":
-                # Try to extract string values with patterns
-                pattern = rf'(?:for|in|of|with)\s+([A-Za-z\s]+?)(?:\s+(?:and|with|,|\.)|$)'
-                match = re.search(pattern, query, re.IGNORECASE)
-                if match:
-                    params[param_name] = match.group(1).strip()
+                # Try to extract string values with patterns like "for X" or "in X"
+                string_match = re.search(
+                    r'(?:for|in|of|with|named?)\s+([A-Za-z][A-Za-z\s]+?)(?:\s+(?:and|with|,|\.)|$)',
+                    query,
+                    re.IGNORECASE
+                )
+                if string_match:
+                    params[param_name] = string_match.group(1).strip()
     
     return {func_name: params}

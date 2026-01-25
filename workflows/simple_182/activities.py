@@ -17,17 +17,22 @@ async def extract_function_call(
     try:
         if isinstance(prompt, str):
             data = json.loads(prompt)
-            # Handle BFCL format: {"question": [[{"role": "user", "content": "..."}]], ...}
-            if "question" in data and isinstance(data["question"], list):
-                if len(data["question"]) > 0 and isinstance(data["question"][0], list):
-                    query = data["question"][0][0].get("content", str(prompt))
+        else:
+            data = prompt
+        
+        # Extract user query from BFCL format: {"question": [[{"role": "user", "content": "..."}]]}
+        if isinstance(data, dict) and "question" in data:
+            question_data = data["question"]
+            if isinstance(question_data, list) and len(question_data) > 0:
+                if isinstance(question_data[0], list) and len(question_data[0]) > 0:
+                    query = question_data[0][0].get("content", str(prompt))
                 else:
                     query = str(prompt)
             else:
                 query = str(prompt)
         else:
             query = str(prompt)
-    except (json.JSONDecodeError, TypeError, KeyError):
+    except (json.JSONDecodeError, TypeError):
         query = str(prompt)
     
     # Parse functions - may be JSON string
@@ -39,7 +44,7 @@ async def extract_function_call(
     except (json.JSONDecodeError, TypeError):
         funcs = []
     
-    # Get function details
+    # Get target function details
     func = funcs[0] if funcs else {}
     func_name = func.get("name", "")
     params_schema = func.get("parameters", {}).get("properties", {})
@@ -80,13 +85,12 @@ async def extract_function_call(
             # Look for location patterns
             location_patterns = [
                 r'(?:in|at|from)\s+([A-Za-z\s]+?)(?:\s+court|\s+jurisdiction)?(?:\.|,|$)',
-                r'(?:court|jurisdiction)\s+(?:in|of|at)\s+([A-Za-z\s]+)',
+                r'(?:court|jurisdiction)\s+(?:of|in)\s+([A-Za-z\s]+)',
             ]
             for pattern in location_patterns:
                 match = re.search(pattern, query, re.IGNORECASE)
                 if match:
                     params[param_name] = match.group(1).strip()
                     break
-            # Don't add default for optional params
     
     return {func_name: params}

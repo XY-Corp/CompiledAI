@@ -101,7 +101,7 @@ async def extract_function_call(
             if "Running Track" not in found_amenities:
                 found_amenities.append("Running Track")
         
-        # Only include amenities if found (otherwise let default apply)
+        # Only include amenities if found (it has a default, so optional)
         if found_amenities:
             params["amenities"] = found_amenities
     

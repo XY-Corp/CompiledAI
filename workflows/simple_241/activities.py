@@ -24,18 +24,17 @@ async def extract_function_call(
             data = prompt
         
         # Extract user query from BFCL format: {"question": [[{"role": "user", "content": "..."}]]}
-        if isinstance(data, dict) and "question" in data:
-            question_data = data["question"]
-            if isinstance(question_data, list) and len(question_data) > 0:
-                if isinstance(question_data[0], list) and len(question_data[0]) > 0:
-                    query = question_data[0][0].get("content", str(prompt))
+        if "question" in data and isinstance(data["question"], list):
+            if len(data["question"]) > 0 and isinstance(data["question"][0], list):
+                if len(data["question"][0]) > 0 and isinstance(data["question"][0][0], dict):
+                    query = data["question"][0][0].get("content", str(prompt))
                 else:
                     query = str(prompt)
             else:
                 query = str(prompt)
         else:
             query = str(prompt)
-    except (json.JSONDecodeError, TypeError, KeyError):
+    except (json.JSONDecodeError, TypeError):
         query = str(prompt)
     
     # Parse functions (may be JSON string)
@@ -60,62 +59,50 @@ async def extract_function_call(
         param_type = param_info.get("type", "string")
         param_desc = param_info.get("description", "").lower()
         
-        # For this specific function: US_President_During_Event
-        # We need to extract "event" (the historical event mentioned)
+        # For this specific case: extract "event" parameter
+        # The query asks about a historical event - extract the event name
         if param_name == "event":
-            # Extract the historical event from the query
-            # Common patterns: "during the X", "during X", "in the X", "about X"
+            # Pattern: "during the X" or "during X"
             event_patterns = [
-                r'during\s+the\s+([A-Za-z\s]+?)(?:\?|$|\.)',
-                r'during\s+([A-Za-z\s]+?)(?:\?|$|\.)',
-                r'in\s+the\s+([A-Za-z\s]+?)(?:\?|$|\.)',
-                r'about\s+the\s+([A-Za-z\s]+?)(?:\?|$|\.)',
+                r'during\s+the\s+([A-Za-z\s]+?)(?:\?|$)',
+                r'during\s+([A-Za-z\s]+?)(?:\?|$)',
+                r'(?:in|at)\s+the\s+([A-Za-z\s]+?)(?:\?|$)',
             ]
             
-            event_value = None
             for pattern in event_patterns:
                 match = re.search(pattern, query, re.IGNORECASE)
                 if match:
                     event_value = match.group(1).strip()
+                    # Clean up trailing punctuation
+                    event_value = re.sub(r'[\?\.\!]+$', '', event_value).strip()
+                    params[param_name] = event_value
                     break
             
-            if event_value:
-                params[param_name] = event_value
-            elif param_name in required_params:
-                # Fallback: try to find any capitalized phrase that looks like an event
-                # Look for phrases like "Civil War", "World War II", etc.
-                event_match = re.search(r'([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*(?:\s+(?:War|Revolution|Crisis|Era|Period|Movement))?)', query)
-                if event_match:
-                    params[param_name] = event_match.group(1).strip()
+            # If no match found but it's required, try to extract any capitalized phrase
+            if param_name not in params and param_name in required_params:
+                # Look for capitalized words that might be event names
+                cap_match = re.search(r'([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*\s+(?:War|Revolution|Crisis|Event|Battle|Movement))', query)
+                if cap_match:
+                    params[param_name] = cap_match.group(1).strip()
         
+        # For "country" parameter - it's optional, only include if explicitly mentioned
         elif param_name == "country":
-            # Extract country if mentioned, otherwise don't include (it's optional)
+            # Check if a country is explicitly mentioned
             country_patterns = [
                 r'(?:in|of|for)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\s+president',
                 r'([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\s+president',
-                r'president\s+of\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)',
             ]
             
             for pattern in country_patterns:
                 match = re.search(pattern, query)
                 if match:
                     country_value = match.group(1).strip()
-                    # Only include if it looks like a country name
+                    # Only add if it looks like a country name (not "U.S." which is already implied)
                     if country_value.lower() not in ['the', 'a', 'an']:
                         params[param_name] = country_value
                         break
             
-            # Note: "country" is optional per schema, so we don't add it if not found
-        
-        else:
-            # Generic extraction for other string parameters
-            if param_type == "string":
-                # Try to extract based on description keywords
-                if "event" in param_desc:
-                    # Already handled above
-                    pass
-                elif "country" in param_desc:
-                    # Already handled above
-                    pass
+            # Note: "country" is optional and defaults to 'USA', so we don't need to include it
+            # if not explicitly specified in the query
     
     return {func_name: params}

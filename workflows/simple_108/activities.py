@@ -54,86 +54,87 @@ async def extract_function_call(
     for param_name, param_info in params_schema.items():
         param_type = param_info.get("type", "string")
         
-        if param_name == "predictors":
-            # Extract array of predictor variable names
-            # Look for patterns like: 'Age', 'Income' and 'Education' or predictor variables X, Y, Z
-            # Pattern 1: quoted strings with 'var1', 'var2' and 'var3'
-            quoted_vars = re.findall(r"'([^']+)'", query)
-            if quoted_vars:
-                # Filter out the target variable if it appears
-                # Target is usually mentioned after "target variable" phrase
-                target_match = re.search(r"target\s+variable\s+'([^']+)'", query, re.IGNORECASE)
-                target_var = target_match.group(1) if target_match else None
-                predictors = [v for v in quoted_vars if v != target_var]
-                params[param_name] = predictors
-            else:
-                params[param_name] = []
-        
-        elif param_name == "target":
-            # Extract target variable name
-            # Look for: "target variable 'X'" or "target variable X"
-            target_match = re.search(r"target\s+variable\s+'([^']+)'", query, re.IGNORECASE)
-            if target_match:
-                params[param_name] = target_match.group(1)
-            else:
-                # Try without quotes
-                target_match = re.search(r"target\s+variable\s+(\w+)", query, re.IGNORECASE)
-                if target_match:
-                    params[param_name] = target_match.group(1)
+        if param_type == "array":
+            # Extract array values - look for quoted strings in lists
+            # Pattern: 'Age', 'Income' and 'Education' or "Age", "Income", "Education"
+            # Also handles: predictor variables 'X', 'Y', 'Z'
+            
+            # Try to find quoted strings that appear to be list items
+            quoted_items = re.findall(r"['\"]([^'\"]+)['\"]", query)
+            
+            # Filter based on context - for predictors, exclude target variable
+            if param_name == "predictors":
+                # Look for target variable pattern to exclude it
+                target_match = re.search(r"target\s+(?:variable\s+)?['\"]?([^'\".,]+)['\"]?", query, re.IGNORECASE)
+                target_var = target_match.group(1).strip() if target_match else None
+                
+                # Also check for "and a target variable 'X'" pattern
+                target_match2 = re.search(r"and\s+a?\s*target\s+(?:variable\s+)?['\"]([^'\"]+)['\"]", query, re.IGNORECASE)
+                if target_match2:
+                    target_var = target_match2.group(1).strip()
+                
+                # Filter out the target variable from predictors
+                if target_var and quoted_items:
+                    params[param_name] = [item for item in quoted_items if item != target_var]
+                elif quoted_items:
+                    # If we can't identify target, take all but last (often target is mentioned last)
+                    params[param_name] = quoted_items[:-1] if len(quoted_items) > 1 else quoted_items
                 else:
-                    params[param_name] = ""
-        
-        elif param_name == "standardize":
-            # Extract boolean for standardization
-            # Look for: "apply standardization", "standardize", "with standardization"
-            standardize_patterns = [
-                r"apply\s+standardization",
-                r"with\s+standardization",
-                r"use\s+standardization",
-                r"standardize\s*=\s*true",
-                r"also\s+(?:apply\s+)?standardiz",
-            ]
-            standardize = False
-            for pattern in standardize_patterns:
-                if re.search(pattern, query, re.IGNORECASE):
-                    standardize = True
-                    break
-            params[param_name] = standardize
-        
-        elif param_type == "boolean":
-            # Generic boolean extraction
-            # Check for positive indicators
-            positive_patterns = [rf"{param_name}\s*=\s*true", rf"with\s+{param_name}", rf"enable\s+{param_name}"]
-            value = False
-            for pattern in positive_patterns:
-                if re.search(pattern, query, re.IGNORECASE):
-                    value = True
-                    break
-            params[param_name] = value
-        
-        elif param_type == "array":
-            # Generic array extraction - look for quoted strings
-            items = re.findall(r"'([^']+)'", query)
-            params[param_name] = items
-        
-        elif param_type in ["integer", "number", "float"]:
-            # Extract numbers
-            numbers = re.findall(r'\d+(?:\.\d+)?', query)
-            if numbers:
-                if param_type == "integer":
-                    params[param_name] = int(numbers[0])
-                else:
-                    params[param_name] = float(numbers[0])
+                    params[param_name] = []
+            else:
+                params[param_name] = quoted_items if quoted_items else []
         
         elif param_type == "string":
-            # Generic string extraction - try to find relevant value
-            # Look for pattern: "param_name 'value'" or "param_name value"
-            match = re.search(rf"{param_name}\s+'([^']+)'", query, re.IGNORECASE)
-            if match:
-                params[param_name] = match.group(1)
+            # Extract string value based on parameter name context
+            if param_name == "target":
+                # Look for target variable pattern
+                # Patterns: "target variable 'X'" or "target variable X"
+                target_patterns = [
+                    r"target\s+(?:variable\s+)?['\"]([^'\"]+)['\"]",
+                    r"target\s+(?:variable\s+)?(\w+)",
+                ]
+                
+                for pattern in target_patterns:
+                    match = re.search(pattern, query, re.IGNORECASE)
+                    if match:
+                        params[param_name] = match.group(1).strip()
+                        break
             else:
-                match = re.search(rf"{param_name}\s+(\w+)", query, re.IGNORECASE)
+                # Generic string extraction - look for quoted value after param name
+                pattern = rf"{param_name}\s*[=:]\s*['\"]?([^'\".,]+)['\"]?"
+                match = re.search(pattern, query, re.IGNORECASE)
                 if match:
-                    params[param_name] = match.group(1)
+                    params[param_name] = match.group(1).strip()
+        
+        elif param_type == "boolean":
+            # Extract boolean based on keywords
+            if param_name == "standardize":
+                # Look for standardization keywords
+                if re.search(r"\bstandardiz(?:e|ation)\b", query, re.IGNORECASE):
+                    # Check if it's negated
+                    if re.search(r"\b(?:no|without|don't|do not|disable)\s+standardiz", query, re.IGNORECASE):
+                        params[param_name] = False
+                    else:
+                        params[param_name] = True
+                # Also check for "apply standardization"
+                elif re.search(r"apply\s+standardiz", query, re.IGNORECASE):
+                    params[param_name] = True
+            else:
+                # Generic boolean - look for true/false or yes/no
+                if re.search(rf"{param_name}\s*[=:]\s*(?:true|yes|1)", query, re.IGNORECASE):
+                    params[param_name] = True
+                elif re.search(rf"{param_name}\s*[=:]\s*(?:false|no|0)", query, re.IGNORECASE):
+                    params[param_name] = False
+        
+        elif param_type in ["integer", "number", "float"]:
+            # Extract numeric value
+            pattern = rf"{param_name}\s*[=:]\s*(\d+(?:\.\d+)?)"
+            match = re.search(pattern, query, re.IGNORECASE)
+            if match:
+                value = match.group(1)
+                if param_type == "integer":
+                    params[param_name] = int(value)
+                else:
+                    params[param_name] = float(value)
     
     return {func_name: params}

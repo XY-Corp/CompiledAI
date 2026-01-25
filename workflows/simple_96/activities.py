@@ -14,7 +14,7 @@ async def extract_function_call(
     """Extract function call parameters from natural language query.
     
     Parses the user query and function schema to extract the appropriate
-    function name and parameters using regex and string matching.
+    function name and parameters. Returns format: {"function_name": {params}}.
     """
     # Parse prompt (may be JSON string with nested structure)
     try:
@@ -48,79 +48,98 @@ async def extract_function_call(
     func_name = func.get("name", "")
     params_schema = func.get("parameters", {}).get("properties", {})
     
-    # For database.query, extract table and conditions
+    # For database.query, extract table name and conditions
     params = {}
     
     # Extract table name - look for "in X table" or "from X table" patterns
-    table_patterns = [
-        r'in\s+(\w+)\s+table',
-        r'from\s+(\w+)\s+table',
-        r'table\s+(\w+)',
-        r'in\s+database\s+in\s+(\w+)\s+table',
-    ]
+    table_match = re.search(r'(?:in|from)\s+(?:database\s+in\s+)?(\w+)\s+table', query, re.IGNORECASE)
+    if table_match:
+        params["table"] = table_match.group(1)
     
-    table_name = None
-    for pattern in table_patterns:
-        match = re.search(pattern, query, re.IGNORECASE)
-        if match:
-            table_name = match.group(1)
-            break
-    
-    if table_name:
-        params["table"] = table_name
-    
-    # Extract conditions - look for field, operation, value patterns
+    # Extract conditions from the query
     conditions = []
     
-    # Pattern for conditions like "age is greater than 25" or "field > value"
-    condition_patterns = [
-        # "field is greater than value" / "field is less than value"
-        (r'(\w+)\s+is\s+greater\s+than\s+(\d+)', '>'),
-        (r'(\w+)\s+is\s+less\s+than\s+(\d+)', '<'),
-        (r'(\w+)\s+is\s+greater\s+than\s+or\s+equal\s+to\s+(\d+)', '>='),
-        (r'(\w+)\s+is\s+less\s+than\s+or\s+equal\s+to\s+(\d+)', '<='),
-        (r'(\w+)\s+is\s+equal\s+to\s+(\d+)', '='),
-        # "field > value" style
-        (r'(\w+)\s*>\s*(\d+)', '>'),
-        (r'(\w+)\s*<\s*(\d+)', '<'),
-        (r'(\w+)\s*>=\s*(\d+)', '>='),
-        (r'(\w+)\s*<=\s*(\d+)', '<='),
-        (r'(\w+)\s*=\s*(\d+)', '='),
+    # Pattern for "field is/= 'value'" or "field = value"
+    eq_patterns = [
+        r"(\w+)\s+is\s+'([^']+)'",  # field is 'value'
+        r"(\w+)\s+is\s+\"([^\"]+)\"",  # field is "value"
+        r"(\w+)\s+=\s+'([^']+)'",  # field = 'value'
+        r"(\w+)\s+=\s+\"([^\"]+)\"",  # field = "value"
     ]
     
-    # Extract numeric conditions
-    for pattern, operation in condition_patterns:
-        for match in re.finditer(pattern, query, re.IGNORECASE):
-            field = match.group(1)
-            value = match.group(2)
-            # Avoid duplicates
-            if not any(c["field"] == field and c["operation"] == operation for c in conditions):
-                conditions.append({
-                    "field": field,
-                    "operation": operation,
-                    "value": value
-                })
+    for pattern in eq_patterns:
+        matches = re.findall(pattern, query, re.IGNORECASE)
+        for match in matches:
+            field, value = match
+            conditions.append({
+                "field": field,
+                "operation": "=",
+                "value": value
+            })
     
-    # Extract string equality conditions like "job is 'engineer'" or "field = 'value'"
-    string_patterns = [
-        r"(\w+)\s+is\s+['\"]([^'\"]+)['\"]",
-        r"(\w+)\s*=\s*['\"]([^'\"]+)['\"]",
+    # Pattern for "field > number" or "field is greater than number"
+    gt_patterns = [
+        r"(\w+)\s+is\s+greater\s+than\s+(\d+)",  # field is greater than N
+        r"(\w+)\s+>\s+(\d+)",  # field > N
     ]
     
-    for pattern in string_patterns:
-        for match in re.finditer(pattern, query, re.IGNORECASE):
-            field = match.group(1)
-            value = match.group(2)
-            # Skip if field is a common word that's not a field name
-            if field.lower() in ['is', 'and', 'or', 'where', 'the']:
-                continue
-            # Avoid duplicates
-            if not any(c["field"] == field and c["value"] == value for c in conditions):
-                conditions.append({
-                    "field": field,
-                    "operation": "=",
-                    "value": value
-                })
+    for pattern in gt_patterns:
+        matches = re.findall(pattern, query, re.IGNORECASE)
+        for match in matches:
+            field, value = match
+            conditions.append({
+                "field": field,
+                "operation": ">",
+                "value": value
+            })
+    
+    # Pattern for "field < number" or "field is less than number"
+    lt_patterns = [
+        r"(\w+)\s+is\s+less\s+than\s+(\d+)",  # field is less than N
+        r"(\w+)\s+<\s+(\d+)",  # field < N
+    ]
+    
+    for pattern in lt_patterns:
+        matches = re.findall(pattern, query, re.IGNORECASE)
+        for match in matches:
+            field, value = match
+            conditions.append({
+                "field": field,
+                "operation": "<",
+                "value": value
+            })
+    
+    # Pattern for ">=" or "greater than or equal"
+    gte_patterns = [
+        r"(\w+)\s+is\s+greater\s+than\s+or\s+equal\s+to\s+(\d+)",
+        r"(\w+)\s+>=\s+(\d+)",
+    ]
+    
+    for pattern in gte_patterns:
+        matches = re.findall(pattern, query, re.IGNORECASE)
+        for match in matches:
+            field, value = match
+            conditions.append({
+                "field": field,
+                "operation": ">=",
+                "value": value
+            })
+    
+    # Pattern for "<=" or "less than or equal"
+    lte_patterns = [
+        r"(\w+)\s+is\s+less\s+than\s+or\s+equal\s+to\s+(\d+)",
+        r"(\w+)\s+<=\s+(\d+)",
+    ]
+    
+    for pattern in lte_patterns:
+        matches = re.findall(pattern, query, re.IGNORECASE)
+        for match in matches:
+            field, value = match
+            conditions.append({
+                "field": field,
+                "operation": "<=",
+                "value": value
+            })
     
     if conditions:
         params["conditions"] = conditions

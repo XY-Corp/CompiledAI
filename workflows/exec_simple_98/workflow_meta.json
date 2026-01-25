@@ -1,0 +1,26 @@
+{
+  "workflow_id": "exec_simple_98",
+  "name": "Function Call Extractor",
+  "description": "Extract function name and parameters from natural language query",
+  "task_id": "exec_simple_98",
+  "task_description": "{\"question\": [[{\"role\": \"user\", \"content\": \"I'm working on some land survey data and need to calculate the area of a particular triangular plot. I've got the coordinates of the vertices of the triangle, which are (1,2), (3,4), and (1,3). Can you help me figure out the area of this triangle using these points?\"}]], \"function\": [{\"name\": \"polygon_area\", \"description\": \"Calculate the area of a polygon given its vertices using the shoelace formula.\", \"parameters\": {\"type\": \"dict\", \"properties\": {\"vertices\": {\"type\": \"array\", \"items\": {\"type\": \"array\", \"items\": {\"type\": \"integer\"}, \"description\": \"A single vertex represented by a 2 element list [x, y].\"}, \"description\": \"The vertices of the polygon, where each vertex is a 2 element list [x, y].\"}}, \"required\": [\"vertices\"]}}]}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `functions` (list) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, functions\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"description\": \"A single function call with the function name as the top-level key and its parameters as a nested object\",\n  \"polygon_area\": {\n    \"vertices\": \"array - The vertices of the polygon, where each vertex is a 2 element list [x, y].\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "activities": [
+    "extract_function_call"
+  ],
+  "variables": [
+    {
+      "name": "prompt",
+      "default": null
+    },
+    {
+      "name": "functions",
+      "default": null
+    }
+  ],
+  "execution_pattern": "sequence",
+  "reasoning": "BFCL template: single activity for function call extraction",
+  "metrics": {
+    "total_tokens": 10683,
+    "regeneration_count": 0
+  }
+}

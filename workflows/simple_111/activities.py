@@ -50,78 +50,67 @@ async def extract_function_call(
     func_name = func.get("name", "")
     params_schema = func.get("parameters", {}).get("properties", {})
     
-    # Extract parameters using regex based on schema
+    # Extract parameters using regex patterns
     params = {}
+    query_lower = query.lower()
     
-    # Extract all numbers from the query
-    numbers = re.findall(r'-?\d+(?:\.\d+)?', query)
-    
-    # Common patterns for mean/mu and standard deviation/sigma
-    # Pattern: "mean X" or "mean of X" or "mu X" or "mu = X"
-    mean_patterns = [
-        r'mean\s+(?:of\s+)?(-?\d+(?:\.\d+)?)',
-        r'mu\s*[=:]?\s*(-?\d+(?:\.\d+)?)',
-        r'mean\s*[=:]?\s*(-?\d+(?:\.\d+)?)',
-    ]
-    
-    # Pattern: "standard deviation X" or "std X" or "sigma X"
-    sigma_patterns = [
-        r'standard\s+deviation\s+(?:of\s+)?(-?\d+(?:\.\d+)?)',
-        r'std\s*[=:]?\s*(-?\d+(?:\.\d+)?)',
-        r'sigma\s*[=:]?\s*(-?\d+(?:\.\d+)?)',
-    ]
-    
-    # Try to extract mu (mean)
-    mu_value = None
-    for pattern in mean_patterns:
-        match = re.search(pattern, query, re.IGNORECASE)
-        if match:
-            mu_value = match.group(1)
-            break
-    
-    # Try to extract sigma (standard deviation)
-    sigma_value = None
-    for pattern in sigma_patterns:
-        match = re.search(pattern, query, re.IGNORECASE)
-        if match:
-            sigma_value = match.group(1)
-            break
-    
-    # If patterns didn't work, use positional numbers
-    # Common phrasing: "mean X and standard deviation Y"
-    if mu_value is None and sigma_value is None and len(numbers) >= 2:
-        mu_value = numbers[0]
-        sigma_value = numbers[1]
-    elif mu_value is None and len(numbers) >= 1:
-        mu_value = numbers[0]
-        if len(numbers) >= 2:
-            sigma_value = numbers[1]
-    elif sigma_value is None and len(numbers) >= 1:
-        # If we found mu but not sigma, sigma might be the remaining number
-        for num in numbers:
-            if num != mu_value:
-                sigma_value = num
-                break
-    
-    # Build params dict based on schema
     for param_name, param_info in params_schema.items():
-        param_type = param_info.get("type", "string") if isinstance(param_info, dict) else "string"
+        param_type = param_info.get("type", "string")
+        param_desc = param_info.get("description", "").lower()
         
-        if param_name in ["mu", "mean"]:
-            if mu_value is not None:
+        value = None
+        
+        # For mean (mu) parameter
+        if param_name == "mu" or "mean" in param_desc:
+            # Look for "mean X" or "mean of X" patterns
+            mean_patterns = [
+                r'mean\s+(?:of\s+)?(-?\d+(?:\.\d+)?)',
+                r'mean\s*[=:]\s*(-?\d+(?:\.\d+)?)',
+                r'μ\s*[=:]\s*(-?\d+(?:\.\d+)?)',
+            ]
+            for pattern in mean_patterns:
+                match = re.search(pattern, query_lower)
+                if match:
+                    value = float(match.group(1))
+                    if param_type == "integer":
+                        value = int(value)
+                    break
+        
+        # For standard deviation (sigma) parameter
+        elif param_name == "sigma" or "standard deviation" in param_desc:
+            # Look for "standard deviation X" patterns
+            std_patterns = [
+                r'standard\s+deviation\s+(?:of\s+)?(-?\d+(?:\.\d+)?)',
+                r'std\s*[=:]\s*(-?\d+(?:\.\d+)?)',
+                r'σ\s*[=:]\s*(-?\d+(?:\.\d+)?)',
+                r'deviation\s+(-?\d+(?:\.\d+)?)',
+            ]
+            for pattern in std_patterns:
+                match = re.search(pattern, query_lower)
+                if match:
+                    value = float(match.group(1))
+                    if param_type == "integer":
+                        value = int(value)
+                    break
+        
+        if value is not None:
+            params[param_name] = value
+    
+    # Fallback: if we didn't find specific patterns, extract all numbers in order
+    if len(params) < len(params_schema):
+        numbers = re.findall(r'-?\d+(?:\.\d+)?', query)
+        param_names = list(params_schema.keys())
+        
+        num_idx = 0
+        for param_name in param_names:
+            if param_name not in params and num_idx < len(numbers):
+                param_type = params_schema[param_name].get("type", "string")
                 if param_type == "integer":
-                    params[param_name] = int(float(mu_value))
+                    params[param_name] = int(float(numbers[num_idx]))
                 elif param_type in ["number", "float"]:
-                    params[param_name] = float(mu_value)
+                    params[param_name] = float(numbers[num_idx])
                 else:
-                    params[param_name] = mu_value
-        elif param_name in ["sigma", "std", "standard_deviation"]:
-            if sigma_value is not None:
-                if param_type == "integer":
-                    params[param_name] = int(float(sigma_value))
-                elif param_type in ["number", "float"]:
-                    params[param_name] = float(sigma_value)
-                else:
-                    params[param_name] = sigma_value
+                    params[param_name] = numbers[num_idx]
+                num_idx += 1
     
     return {func_name: params}

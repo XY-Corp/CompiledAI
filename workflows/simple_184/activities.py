@@ -66,18 +66,31 @@ async def extract_function_call(
             # Check for "closed" status indicators
             if "closed" in param_name.lower() or "status" in param_name.lower():
                 # Look for phrases indicating closed status check
-                if any(phrase in query_lower for phrase in ["if it's already closed", "is closed", "check if closed", "verify if closed", "already closed"]):
+                if any(phrase in query_lower for phrase in [
+                    "if it's already closed",
+                    "if it is closed",
+                    "is closed",
+                    "already closed",
+                    "check if closed",
+                    "verify if closed",
+                    "closed status"
+                ]):
                     params[param_name] = True
-                elif any(phrase in query_lower for phrase in ["if it's open", "is open", "not closed"]):
+                elif any(phrase in query_lower for phrase in [
+                    "if it's open",
+                    "if it is open",
+                    "is open",
+                    "still open"
+                ]):
                     params[param_name] = False
                 else:
-                    # Default based on context - if asking to verify closed status, set to True
+                    # Default: if asking about closed status, assume checking for True
                     params[param_name] = True
             else:
                 # Generic boolean extraction
-                if any(word in query_lower for word in ["true", "yes", "enable", "on"]):
+                if "true" in query_lower or "yes" in query_lower:
                     params[param_name] = True
-                elif any(word in query_lower for word in ["false", "no", "disable", "off"]):
+                elif "false" in query_lower or "no" in query_lower:
                     params[param_name] = False
                 else:
                     params[param_name] = True  # Default
