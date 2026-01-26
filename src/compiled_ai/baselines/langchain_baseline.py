@@ -205,7 +205,7 @@ class LangChainBaseline(BaseBaseline):
                 latency_ms = (time.perf_counter() - start_time) * 1000
                 usage = response.usage_metadata or {}
                 
-                print(f"LangChain: {usage.get('input_tokens', 0)} in / {usage.get('output_tokens', 0)} out - {latency_ms:.0f}ms")
+                print(f"LangChain: {usage.get('input_tokens', 0)} in / {usage.get('output_tokens', 0)} out - {latency_ms:.0f}ms", flush=True)
                 
                 return BaselineResult(
                     task_id=task_input.task_id,

@@ -187,7 +187,7 @@ class BFCLAdapter(DatasetAdapter):
                         "'name' and 'arguments' keys."
                     ),
                     instances=instances,
-                    evaluation_type="ast_match",
+                    evaluation_type="llm",
                     tags=["function_calling", "bfcl", category],
                     source="bfcl_v4",
                 )
