@@ -1,0 +1,397 @@
+{
+  "id": "data_002",
+  "name": "Healthcare Schema Mapping",
+  "category": "data_transformation",
+  "difficulty": "medium",
+  "description": "Map records from a legacy healthcare schema to FHIR-compliant format with field transformations.",
+  
+  "specification": {
+    "natural_language": "Convert patient encounter records from a legacy EHR format to FHIR-compliant structure. Map field names, transform date formats (MM/DD/YYYY to ISO 8601), convert status codes (A/I/D to active/inactive/deleted), and split full names into given/family components.",
+    
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "encounters": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "ENCNTR_ID": {"type": "string"},
+              "PAT_NAME": {"type": "string"},
+              "PAT_DOB": {"type": "string"},
+              "VISIT_DT": {"type": "string"},
+              "VISIT_TYPE_CD": {"type": "string"},
+              "PROV_NAME": {"type": "string"},
+              "STATUS_CD": {"type": "string"},
+              "DIAG_CD": {"type": "string"},
+              "NOTES_TXT": {"type": "string"}
+            }
+          }
+        }
+      }
+    },
+    
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "fhir_encounters": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "resourceType": {"type": "string", "const": "Encounter"},
+              "id": {"type": "string"},
+              "status": {"type": "string"},
+              "subject": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "object",
+                    "properties": {
+                      "given": {"type": "array", "items": {"type": "string"}},
+                      "family": {"type": "string"}
+                    }
+                  },
+                  "birthDate": {"type": "string", "format": "date"}
+                }
+              },
+              "period": {
+                "type": "object",
+                "properties": {
+                  "start": {"type": "string", "format": "date"}
+                }
+              },
+              "type": {"type": "string"},
+              "participant": {"type": "string"},
+              "diagnosis": {"type": "string"},
+              "note": {"type": "string"}
+            }
+          }
+        },
+        "mapping_stats": {
+          "type": "object",
+          "properties": {
+            "total_records": {"type": "integer"},
+            "successful": {"type": "integer"},
+            "warnings": {"type": "integer"}
+          }
+        }
+      }
+    }
+  },
+  
+  "test_cases": [
+    {
+      "id": "tc_001",
+      "input": {
+        "encounters": [
+          {
+            "ENCNTR_ID": "E001",
+            "PAT_NAME": "Smith, John Michael",
+            "PAT_DOB": "03/15/1985",
+            "VISIT_DT": "01/20/2025",
+            "VISIT_TYPE_CD": "OFFICE",
+            "PROV_NAME": "Dr. Jane Wilson",
+            "STATUS_CD": "A",
+            "DIAG_CD": "J06.9",
+            "NOTES_TXT": "Follow-up for URI symptoms"
+          },
+          {
+            "ENCNTR_ID": "E002",
+            "PAT_NAME": "Doe, Jane",
+            "PAT_DOB": "07/22/1990",
+            "VISIT_DT": "01/21/2025",
+            "VISIT_TYPE_CD": "TELEHEALTH",
+            "PROV_NAME": "Dr. Bob Johnson",
+            "STATUS_CD": "I",
+            "DIAG_CD": "F41.1",
+            "NOTES_TXT": ""
+          }
+        ]
+      },
+      "expected_output": {
+        "fhir_encounters": [
+          {
+            "resourceType": "Encounter",
+            "id": "E001",
+            "status": "active",
+            "subject": {
+              "name": {
+                "given": ["John", "Michael"],
+                "family": "Smith"
+              },
+              "birthDate": "1985-03-15"
+            },
+            "period": {"start": "2025-01-20"},
+            "type": "OFFICE",
+            "participant": "Dr. Jane Wilson",
+            "diagnosis": "J06.9",
+            "note": "Follow-up for URI symptoms"
+          },
+          {
+            "resourceType": "Encounter",
+            "id": "E002",
+            "status": "inactive",
+            "subject": {
+              "name": {
+                "given": ["Jane"],
+                "family": "Doe"
+              },
+              "birthDate": "1990-07-22"
+            },
+            "period": {"start": "2025-01-21"},
+            "type": "TELEHEALTH",
+            "participant": "Dr. Bob Johnson",
+            "diagnosis": "F41.1",
+            "note": ""
+          }
+        ],
+        "mapping_stats": {
+          "total_records": 2,
+          "successful": 2,
+          "warnings": 0
+        }
+      }
+    },
+    {
+      "id": "tc_002",
+      "description": "Empty encounters list",
+      "input": {
+        "encounters": []
+      },
+      "expected_output": {
+        "fhir_encounters": [],
+        "mapping_stats": {
+          "total_records": 0,
+          "successful": 0,
+          "warnings": 0
+        }
+      }
+    },
+    {
+      "id": "tc_003",
+      "description": "Deleted status and single name (no middle name)",
+      "input": {
+        "encounters": [
+          {
+            "ENCNTR_ID": "E010",
+            "PAT_NAME": "Garcia, Maria",
+            "PAT_DOB": "12/01/1975",
+            "VISIT_DT": "02/14/2025",
+            "VISIT_TYPE_CD": "EMERGENCY",
+            "PROV_NAME": "Dr. Ahmed Khan",
+            "STATUS_CD": "D",
+            "DIAG_CD": "I21.0",
+            "NOTES_TXT": "Record deleted - duplicate entry"
+          }
+        ]
+      },
+      "expected_output": {
+        "fhir_encounters": [
+          {
+            "resourceType": "Encounter",
+            "id": "E010",
+            "status": "deleted",
+            "subject": {
+              "name": {
+                "given": ["Maria"],
+                "family": "Garcia"
+              },
+              "birthDate": "1975-12-01"
+            },
+            "period": {"start": "2025-02-14"},
+            "type": "EMERGENCY",
+            "participant": "Dr. Ahmed Khan",
+            "diagnosis": "I21.0",
+            "note": "Record deleted - duplicate entry"
+          }
+        ],
+        "mapping_stats": {
+          "total_records": 1,
+          "successful": 1,
+          "warnings": 0
+        }
+      }
+    },
+    {
+      "id": "tc_004",
+      "description": "Multiple middle names and various visit types",
+      "input": {
+        "encounters": [
+          {
+            "ENCNTR_ID": "E020",
+            "PAT_NAME": "O'Brien, Sean Patrick James",
+            "PAT_DOB": "06/30/2000",
+            "VISIT_DT": "03/01/2025",
+            "VISIT_TYPE_CD": "INPATIENT",
+            "PROV_NAME": "Dr. Lisa Chen",
+            "STATUS_CD": "A",
+            "DIAG_CD": "K35.80",
+            "NOTES_TXT": "Admitted for appendectomy"
+          },
+          {
+            "ENCNTR_ID": "E021",
+            "PAT_NAME": "Kim, Min-Ji",
+            "PAT_DOB": "09/15/1988",
+            "VISIT_DT": "03/02/2025",
+            "VISIT_TYPE_CD": "LAB",
+            "PROV_NAME": "Lab Technician",
+            "STATUS_CD": "A",
+            "DIAG_CD": "Z01.89",
+            "NOTES_TXT": "Annual blood work"
+          }
+        ]
+      },
+      "expected_output": {
+        "fhir_encounters": [
+          {
+            "resourceType": "Encounter",
+            "id": "E020",
+            "status": "active",
+            "subject": {
+              "name": {
+                "given": ["Sean", "Patrick", "James"],
+                "family": "O'Brien"
+              },
+              "birthDate": "2000-06-30"
+            },
+            "period": {"start": "2025-03-01"},
+            "type": "INPATIENT",
+            "participant": "Dr. Lisa Chen",
+            "diagnosis": "K35.80",
+            "note": "Admitted for appendectomy"
+          },
+          {
+            "resourceType": "Encounter",
+            "id": "E021",
+            "status": "active",
+            "subject": {
+              "name": {
+                "given": ["Min-Ji"],
+                "family": "Kim"
+              },
+              "birthDate": "1988-09-15"
+            },
+            "period": {"start": "2025-03-02"},
+            "type": "LAB",
+            "participant": "Lab Technician",
+            "diagnosis": "Z01.89",
+            "note": "Annual blood work"
+          }
+        ],
+        "mapping_stats": {
+          "total_records": 2,
+          "successful": 2,
+          "warnings": 0
+        }
+      }
+    },
+    {
+      "id": "tc_005",
+      "description": "Mixed statuses in batch with edge case dates",
+      "input": {
+        "encounters": [
+          {
+            "ENCNTR_ID": "E030",
+            "PAT_NAME": "Johnson, Robert Lee Jr",
+            "PAT_DOB": "01/01/1950",
+            "VISIT_DT": "12/31/2024",
+            "VISIT_TYPE_CD": "ANNUAL_WELLNESS",
+            "PROV_NAME": "Dr. Sarah Miller",
+            "STATUS_CD": "A",
+            "DIAG_CD": "Z00.00",
+            "NOTES_TXT": "Annual wellness visit - all clear"
+          },
+          {
+            "ENCNTR_ID": "E031",
+            "PAT_NAME": "Williams, Emma Grace",
+            "PAT_DOB": "02/29/2000",
+            "VISIT_DT": "01/15/2025",
+            "VISIT_TYPE_CD": "FOLLOWUP",
+            "PROV_NAME": "Dr. James Brown",
+            "STATUS_CD": "I",
+            "DIAG_CD": "M54.5",
+            "NOTES_TXT": "Back pain follow-up - improving"
+          },
+          {
+            "ENCNTR_ID": "E032",
+            "PAT_NAME": "Martinez, Carlos",
+            "PAT_DOB": "11/11/1995",
+            "VISIT_DT": "01/16/2025",
+            "VISIT_TYPE_CD": "URGENT",
+            "PROV_NAME": "Dr. Nancy White",
+            "STATUS_CD": "D",
+            "DIAG_CD": "J02.9",
+            "NOTES_TXT": "Cancelled by patient"
+          }
+        ]
+      },
+      "expected_output": {
+        "fhir_encounters": [
+          {
+            "resourceType": "Encounter",
+            "id": "E030",
+            "status": "active",
+            "subject": {
+              "name": {
+                "given": ["Robert", "Lee", "Jr"],
+                "family": "Johnson"
+              },
+              "birthDate": "1950-01-01"
+            },
+            "period": {"start": "2024-12-31"},
+            "type": "ANNUAL_WELLNESS",
+            "participant": "Dr. Sarah Miller",
+            "diagnosis": "Z00.00",
+            "note": "Annual wellness visit - all clear"
+          },
+          {
+            "resourceType": "Encounter",
+            "id": "E031",
+            "status": "inactive",
+            "subject": {
+              "name": {
+                "given": ["Emma", "Grace"],
+                "family": "Williams"
+              },
+              "birthDate": "2000-02-29"
+            },
+            "period": {"start": "2025-01-15"},
+            "type": "FOLLOWUP",
+            "participant": "Dr. James Brown",
+            "diagnosis": "M54.5",
+            "note": "Back pain follow-up - improving"
+          },
+          {
+            "resourceType": "Encounter",
+            "id": "E032",
+            "status": "deleted",
+            "subject": {
+              "name": {
+                "given": ["Carlos"],
+                "family": "Martinez"
+              },
+              "birthDate": "1995-11-11"
+            },
+            "period": {"start": "2025-01-16"},
+            "type": "URGENT",
+            "participant": "Dr. Nancy White",
+            "diagnosis": "J02.9",
+            "note": "Cancelled by patient"
+          }
+        ],
+        "mapping_stats": {
+          "total_records": 3,
+          "successful": 3,
+          "warnings": 0
+        }
+      }
+    }
+  ],
+  
+  "validation_hints": {
+    "name_parsing": "Format is 'Last, First Middle' - split on comma, then space",
+    "date_format": "MM/DD/YYYY to YYYY-MM-DD",
+    "status_mapping": {"A": "active", "I": "inactive", "D": "deleted"}
+  }
+}

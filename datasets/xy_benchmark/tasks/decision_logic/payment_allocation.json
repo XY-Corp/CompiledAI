@@ -1,0 +1,175 @@
+{
+  "id": "logic_004",
+  "name": "Payment Allocation Rules",
+  "category": "decision_logic",
+  "difficulty": "medium",
+  "description": "Allocate incoming payments to outstanding invoices using configurable allocation rules (oldest first, highest balance, or specific invoice).",
+  
+  "specification": {
+    "natural_language": "Given an incoming payment and a list of outstanding invoices, allocate the payment according to the specified strategy: 'oldest_first' (by due date), 'highest_first' (largest balance), or 'specific' (to specified invoice IDs). Handle partial payments, overpayments, and return allocation details with any remaining credit.",
+    
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "payment_id": {"type": "string"},
+        "payment_amount": {"type": "number"},
+        "allocation_strategy": {"type": "string", "enum": ["oldest_first", "highest_first", "specific"]},
+        "specific_invoices": {"type": "array", "items": {"type": "string"}},
+        "outstanding_invoices": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "invoice_id": {"type": "string"},
+              "balance": {"type": "number"},
+              "due_date": {"type": "string", "format": "date"},
+              "patient_name": {"type": "string"}
+            }
+          }
+        }
+      }
+    },
+    
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "payment_id": {"type": "string"},
+        "allocations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "invoice_id": {"type": "string"},
+              "amount_applied": {"type": "number"},
+              "remaining_balance": {"type": "number"},
+              "fully_paid": {"type": "boolean"}
+            }
+          }
+        },
+        "total_applied": {"type": "number"},
+        "remaining_credit": {"type": "number"},
+        "invoices_paid_in_full": {"type": "integer"}
+      }
+    }
+  },
+  
+  "test_cases": [
+    {
+      "id": "tc_001",
+      "input": {
+        "payment_id": "PAY-001",
+        "payment_amount": 500.00,
+        "allocation_strategy": "oldest_first",
+        "specific_invoices": [],
+        "outstanding_invoices": [
+          {"invoice_id": "INV-001", "balance": 200.00, "due_date": "2025-01-10", "patient_name": "John Smith"},
+          {"invoice_id": "INV-002", "balance": 150.00, "due_date": "2025-01-05", "patient_name": "John Smith"},
+          {"invoice_id": "INV-003", "balance": 300.00, "due_date": "2025-01-15", "patient_name": "John Smith"}
+        ]
+      },
+      "expected_output": {
+        "payment_id": "PAY-001",
+        "allocations": [
+          {"invoice_id": "INV-002", "amount_applied": 150.00, "remaining_balance": 0.00, "fully_paid": true},
+          {"invoice_id": "INV-001", "amount_applied": 200.00, "remaining_balance": 0.00, "fully_paid": true},
+          {"invoice_id": "INV-003", "amount_applied": 150.00, "remaining_balance": 150.00, "fully_paid": false}
+        ],
+        "total_applied": 500.00,
+        "remaining_credit": 0.00,
+        "invoices_paid_in_full": 2
+      }
+    },
+    {
+      "id": "tc_002",
+      "input": {
+        "payment_id": "PAY-002",
+        "payment_amount": 1000.00,
+        "allocation_strategy": "highest_first",
+        "specific_invoices": [],
+        "outstanding_invoices": [
+          {"invoice_id": "INV-004", "balance": 100.00, "due_date": "2025-01-20", "patient_name": "Jane Doe"},
+          {"invoice_id": "INV-005", "balance": 500.00, "due_date": "2025-01-18", "patient_name": "Jane Doe"},
+          {"invoice_id": "INV-006", "balance": 250.00, "due_date": "2025-01-22", "patient_name": "Jane Doe"}
+        ]
+      },
+      "expected_output": {
+        "payment_id": "PAY-002",
+        "allocations": [
+          {"invoice_id": "INV-005", "amount_applied": 500.00, "remaining_balance": 0.00, "fully_paid": true},
+          {"invoice_id": "INV-006", "amount_applied": 250.00, "remaining_balance": 0.00, "fully_paid": true},
+          {"invoice_id": "INV-004", "amount_applied": 100.00, "remaining_balance": 0.00, "fully_paid": true}
+        ],
+        "total_applied": 850.00,
+        "remaining_credit": 150.00,
+        "invoices_paid_in_full": 3
+      }
+    },
+    {
+      "id": "tc_003",
+      "input": {
+        "payment_id": "PAY-003",
+        "payment_amount": 300.00,
+        "allocation_strategy": "specific",
+        "specific_invoices": ["INV-008"],
+        "outstanding_invoices": [
+          {"invoice_id": "INV-007", "balance": 150.00, "due_date": "2025-01-10", "patient_name": "Bob Wilson"},
+          {"invoice_id": "INV-008", "balance": 400.00, "due_date": "2025-01-12", "patient_name": "Bob Wilson"}
+        ]
+      },
+      "expected_output": {
+        "payment_id": "PAY-003",
+        "allocations": [
+          {"invoice_id": "INV-008", "amount_applied": 300.00, "remaining_balance": 100.00, "fully_paid": false}
+        ],
+        "total_applied": 300.00,
+        "remaining_credit": 0.00,
+        "invoices_paid_in_full": 0
+      }
+    },
+    {
+      "id": "tc_004",
+      "input": {
+        "payment_id": "PAY-004",
+        "payment_amount": 50.00,
+        "allocation_strategy": "oldest_first",
+        "specific_invoices": [],
+        "outstanding_invoices": [
+          {"invoice_id": "INV-009", "balance": 500.00, "due_date": "2025-01-01", "patient_name": "Alice Brown"}
+        ]
+      },
+      "expected_output": {
+        "payment_id": "PAY-004",
+        "allocations": [
+          {"invoice_id": "INV-009", "amount_applied": 50.00, "remaining_balance": 450.00, "fully_paid": false}
+        ],
+        "total_applied": 50.00,
+        "remaining_credit": 0.00,
+        "invoices_paid_in_full": 0
+      }
+    },
+    {
+      "id": "tc_005",
+      "input": {
+        "payment_id": "PAY-005",
+        "payment_amount": 200.00,
+        "allocation_strategy": "oldest_first",
+        "specific_invoices": [],
+        "outstanding_invoices": []
+      },
+      "expected_output": {
+        "payment_id": "PAY-005",
+        "allocations": [],
+        "total_applied": 0.00,
+        "remaining_credit": 200.00,
+        "invoices_paid_in_full": 0
+      }
+    }
+  ],
+  
+  "validation_hints": {
+    "oldest_first": "sort by due_date ascending",
+    "highest_first": "sort by balance descending",
+    "specific": "only apply to invoices in specific_invoices list",
+    "overpayment": "return remaining_credit when payment exceeds total outstanding"
+  }
+}

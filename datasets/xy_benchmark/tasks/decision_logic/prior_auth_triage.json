@@ -1,0 +1,222 @@
+{
+  "id": "logic_003",
+  "name": "Prior Authorization Triage Router",
+  "category": "decision_logic",
+  "difficulty": "medium",
+  "description": "Route prior authorization requests to appropriate processing queues based on urgency level, service type, and payer-specific rules with SLA hour assignments.",
+
+  "specification": {
+    "natural_language": "Given prior authorization requests, route each to the appropriate queue with SLA hours. Rules: (1) Emergency requests (life-threatening, stroke, MI) go to 'emergency' queue with 2-hour SLA, (2) Urgent requests (surgery within 72h, cancer treatment) go to 'urgent' queue with 24-hour SLA, (3) Routine imaging/DME go to 'standard' queue with 72-hour SLA, (4) Medications requiring step therapy review go to 'pharmacy_review' with 48-hour SLA, (5) Apply payer-specific overrides when defined. Priority order: emergency > urgent > pharmacy_review > standard.",
+
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "auth_requests": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "request_id": {"type": "string"},
+              "member_id": {"type": "string"},
+              "service_type": {"type": "string", "enum": ["imaging", "surgery", "dme", "medication", "behavioral_health", "home_health"]},
+              "urgency_indicator": {"type": "string", "enum": ["emergency", "urgent", "routine"]},
+              "diagnosis_codes": {"type": "array", "items": {"type": "string"}},
+              "procedure_codes": {"type": "array", "items": {"type": "string"}},
+              "payer_id": {"type": "string"},
+              "requested_date": {"type": "string", "format": "date"},
+              "service_date": {"type": "string", "format": "date"},
+              "requires_step_therapy": {"type": "boolean"}
+            }
+          }
+        },
+        "payer_rules": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "expedited_imaging_sla": {"type": "integer"},
+              "surgery_always_urgent": {"type": "boolean"},
+              "dme_auto_approve_under": {"type": "number"}
+            }
+          }
+        }
+      }
+    },
+
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "routed_requests": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "request_id": {"type": "string"},
+              "queue": {"type": "string", "enum": ["emergency", "urgent", "pharmacy_review", "standard", "auto_approve"]},
+              "sla_hours": {"type": "integer"},
+              "routing_reason": {"type": "string"},
+              "priority": {"type": "integer"}
+            }
+          }
+        },
+        "queue_summary": {
+          "type": "object",
+          "properties": {
+            "emergency": {"type": "integer"},
+            "urgent": {"type": "integer"},
+            "pharmacy_review": {"type": "integer"},
+            "standard": {"type": "integer"},
+            "auto_approve": {"type": "integer"}
+          }
+        }
+      }
+    }
+  },
+
+  "test_cases": [
+    {
+      "id": "tc_001",
+      "description": "Mixed urgency levels with different service types",
+      "input": {
+        "auth_requests": [
+          {"request_id": "PA-001", "member_id": "M1001", "service_type": "surgery", "urgency_indicator": "emergency", "diagnosis_codes": ["I21.3"], "procedure_codes": ["33533"], "payer_id": "BCBS", "requested_date": "2025-01-15", "service_date": "2025-01-15", "requires_step_therapy": false},
+          {"request_id": "PA-002", "member_id": "M1002", "service_type": "imaging", "urgency_indicator": "routine", "diagnosis_codes": ["M54.5"], "procedure_codes": ["72148"], "payer_id": "AETNA", "requested_date": "2025-01-15", "service_date": "2025-01-25", "requires_step_therapy": false},
+          {"request_id": "PA-003", "member_id": "M1003", "service_type": "medication", "urgency_indicator": "routine", "diagnosis_codes": ["E11.9"], "procedure_codes": [], "payer_id": "UHC", "requested_date": "2025-01-15", "service_date": "2025-01-20", "requires_step_therapy": true},
+          {"request_id": "PA-004", "member_id": "M1004", "service_type": "surgery", "urgency_indicator": "urgent", "diagnosis_codes": ["C34.90"], "procedure_codes": ["32480"], "payer_id": "CIGNA", "requested_date": "2025-01-15", "service_date": "2025-01-17", "requires_step_therapy": false},
+          {"request_id": "PA-005", "member_id": "M1005", "service_type": "dme", "urgency_indicator": "routine", "diagnosis_codes": ["J44.1"], "procedure_codes": ["E0424"], "payer_id": "BCBS", "requested_date": "2025-01-15", "service_date": "2025-01-30", "requires_step_therapy": false}
+        ],
+        "payer_rules": {}
+      },
+      "expected_output": {
+        "routed_requests": [
+          {"request_id": "PA-001", "queue": "emergency", "sla_hours": 2, "routing_reason": "Emergency surgery - acute MI (I21.3)", "priority": 1},
+          {"request_id": "PA-002", "queue": "standard", "sla_hours": 72, "routing_reason": "Routine imaging request", "priority": 4},
+          {"request_id": "PA-003", "queue": "pharmacy_review", "sla_hours": 48, "routing_reason": "Medication requires step therapy review", "priority": 3},
+          {"request_id": "PA-004", "queue": "urgent", "sla_hours": 24, "routing_reason": "Urgent surgery - oncology (C34.90)", "priority": 2},
+          {"request_id": "PA-005", "queue": "standard", "sla_hours": 72, "routing_reason": "Routine DME request", "priority": 4}
+        ],
+        "queue_summary": {
+          "emergency": 1,
+          "urgent": 1,
+          "pharmacy_review": 1,
+          "standard": 2,
+          "auto_approve": 0
+        }
+      }
+    },
+    {
+      "id": "tc_002",
+      "description": "Payer-specific rules override defaults",
+      "input": {
+        "auth_requests": [
+          {"request_id": "PA-010", "member_id": "M2001", "service_type": "imaging", "urgency_indicator": "routine", "diagnosis_codes": ["M79.3"], "procedure_codes": ["70553"], "payer_id": "MEDICARE", "requested_date": "2025-02-01", "service_date": "2025-02-10", "requires_step_therapy": false},
+          {"request_id": "PA-011", "member_id": "M2002", "service_type": "surgery", "urgency_indicator": "routine", "diagnosis_codes": ["K80.20"], "procedure_codes": ["47562"], "payer_id": "MEDICARE", "requested_date": "2025-02-01", "service_date": "2025-02-20", "requires_step_therapy": false},
+          {"request_id": "PA-012", "member_id": "M2003", "service_type": "dme", "urgency_indicator": "routine", "diagnosis_codes": ["G47.33"], "procedure_codes": ["E0601"], "payer_id": "MEDICARE", "requested_date": "2025-02-01", "service_date": "2025-02-15", "requires_step_therapy": false}
+        ],
+        "payer_rules": {
+          "MEDICARE": {
+            "expedited_imaging_sla": 48,
+            "surgery_always_urgent": true,
+            "dme_auto_approve_under": 500
+          }
+        }
+      },
+      "expected_output": {
+        "routed_requests": [
+          {"request_id": "PA-010", "queue": "standard", "sla_hours": 48, "routing_reason": "Routine imaging - Medicare expedited SLA", "priority": 4},
+          {"request_id": "PA-011", "queue": "urgent", "sla_hours": 24, "routing_reason": "Surgery - Medicare policy requires urgent review", "priority": 2},
+          {"request_id": "PA-012", "queue": "auto_approve", "sla_hours": 0, "routing_reason": "DME under Medicare auto-approve threshold", "priority": 5}
+        ],
+        "queue_summary": {
+          "emergency": 0,
+          "urgent": 1,
+          "pharmacy_review": 0,
+          "standard": 1,
+          "auto_approve": 1
+        }
+      }
+    },
+    {
+      "id": "tc_003",
+      "description": "Empty request batch",
+      "input": {
+        "auth_requests": [],
+        "payer_rules": {}
+      },
+      "expected_output": {
+        "routed_requests": [],
+        "queue_summary": {
+          "emergency": 0,
+          "urgent": 0,
+          "pharmacy_review": 0,
+          "standard": 0,
+          "auto_approve": 0
+        }
+      }
+    },
+    {
+      "id": "tc_004",
+      "description": "Multiple emergency diagnoses - stroke codes",
+      "input": {
+        "auth_requests": [
+          {"request_id": "PA-020", "member_id": "M3001", "service_type": "imaging", "urgency_indicator": "emergency", "diagnosis_codes": ["I63.9"], "procedure_codes": ["70496"], "payer_id": "BCBS", "requested_date": "2025-03-01", "service_date": "2025-03-01", "requires_step_therapy": false},
+          {"request_id": "PA-021", "member_id": "M3002", "service_type": "medication", "urgency_indicator": "emergency", "diagnosis_codes": ["I63.9", "Z86.73"], "procedure_codes": [], "payer_id": "AETNA", "requested_date": "2025-03-01", "service_date": "2025-03-01", "requires_step_therapy": true}
+        ],
+        "payer_rules": {}
+      },
+      "expected_output": {
+        "routed_requests": [
+          {"request_id": "PA-020", "queue": "emergency", "sla_hours": 2, "routing_reason": "Emergency imaging - acute stroke (I63.9)", "priority": 1},
+          {"request_id": "PA-021", "queue": "emergency", "sla_hours": 2, "routing_reason": "Emergency medication - acute stroke (I63.9)", "priority": 1}
+        ],
+        "queue_summary": {
+          "emergency": 2,
+          "urgent": 0,
+          "pharmacy_review": 0,
+          "standard": 0,
+          "auto_approve": 0
+        }
+      }
+    },
+    {
+      "id": "tc_005",
+      "description": "Behavioral health and home health routing",
+      "input": {
+        "auth_requests": [
+          {"request_id": "PA-030", "member_id": "M4001", "service_type": "behavioral_health", "urgency_indicator": "urgent", "diagnosis_codes": ["F32.9"], "procedure_codes": ["90837"], "payer_id": "UHC", "requested_date": "2025-03-15", "service_date": "2025-03-17", "requires_step_therapy": false},
+          {"request_id": "PA-031", "member_id": "M4002", "service_type": "home_health", "urgency_indicator": "routine", "diagnosis_codes": ["I50.9", "E11.9"], "procedure_codes": ["99341"], "payer_id": "HUMANA", "requested_date": "2025-03-15", "service_date": "2025-03-25", "requires_step_therapy": false},
+          {"request_id": "PA-032", "member_id": "M4003", "service_type": "behavioral_health", "urgency_indicator": "emergency", "diagnosis_codes": ["F32.9", "R45.851"], "procedure_codes": ["90839"], "payer_id": "CIGNA", "requested_date": "2025-03-15", "service_date": "2025-03-15", "requires_step_therapy": false}
+        ],
+        "payer_rules": {}
+      },
+      "expected_output": {
+        "routed_requests": [
+          {"request_id": "PA-030", "queue": "urgent", "sla_hours": 24, "routing_reason": "Urgent behavioral health - major depressive disorder", "priority": 2},
+          {"request_id": "PA-031", "queue": "standard", "sla_hours": 72, "routing_reason": "Routine home health request", "priority": 4},
+          {"request_id": "PA-032", "queue": "emergency", "sla_hours": 2, "routing_reason": "Emergency behavioral health - suicidal ideation (R45.851)", "priority": 1}
+        ],
+        "queue_summary": {
+          "emergency": 1,
+          "urgent": 1,
+          "pharmacy_review": 0,
+          "standard": 1,
+          "auto_approve": 0
+        }
+      }
+    }
+  ],
+
+  "validation_hints": {
+    "priority_order": ["emergency", "urgent", "pharmacy_review", "standard", "auto_approve"],
+    "emergency_diagnosis_codes": ["I21", "I22", "I63", "R45.851", "G45"],
+    "emergency_overrides_step_therapy": true,
+    "payer_rules_override_defaults": true,
+    "sla_hours_by_queue": {
+      "emergency": 2,
+      "urgent": 24,
+      "pharmacy_review": 48,
+      "standard": 72,
+      "auto_approve": 0
+    }
+  }
+}

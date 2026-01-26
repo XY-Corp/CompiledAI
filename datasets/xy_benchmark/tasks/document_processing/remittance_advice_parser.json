@@ -1,0 +1,313 @@
+{
+  "id": "doc_004",
+  "name": "Remittance Advice Parser",
+  "category": "document_processing",
+  "difficulty": "hard",
+  "description": "Parse ERA (Electronic Remittance Advice) data to extract payment details, adjustments, and reconciliation information.",
+  
+  "specification": {
+    "natural_language": "Parse an 835 ERA document containing payment information from a payer. Extract claim-level payments, adjustment codes with amounts, patient responsibility, and calculate payment reconciliation totals. Group by claim and flag any claims with unexpected denials.",
+    
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "era_id": {"type": "string"},
+        "payer": {"type": "string"},
+        "payment_date": {"type": "string"},
+        "check_number": {"type": "string"},
+        "claims": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "claim_id": {"type": "string"},
+              "patient_name": {"type": "string"},
+              "service_date": {"type": "string"},
+              "billed_amount": {"type": "number"},
+              "adjustments": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "code": {"type": "string"},
+                    "reason": {"type": "string"},
+                    "amount": {"type": "number"}
+                  }
+                }
+              },
+              "paid_amount": {"type": "number"},
+              "patient_responsibility": {"type": "number"}
+            }
+          }
+        }
+      }
+    },
+    
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "era_id": {"type": "string"},
+        "summary": {
+          "type": "object",
+          "properties": {
+            "payer": {"type": "string"},
+            "check_number": {"type": "string"},
+            "payment_date": {"type": "string"},
+            "total_billed": {"type": "number"},
+            "total_adjustments": {"type": "number"},
+            "total_paid": {"type": "number"},
+            "total_patient_responsibility": {"type": "number"}
+          }
+        },
+        "claims": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "claim_id": {"type": "string"},
+              "patient_name": {"type": "string"},
+              "billed": {"type": "number"},
+              "adjustments_total": {"type": "number"},
+              "paid": {"type": "number"},
+              "patient_resp": {"type": "number"},
+              "adjustment_codes": {"type": "array"},
+              "has_denial": {"type": "boolean"}
+            }
+          }
+        },
+        "denial_claims": {"type": "array", "items": {"type": "string"}},
+        "reconciliation_balanced": {"type": "boolean"}
+      }
+    }
+  },
+  
+  "test_cases": [
+    {
+      "id": "tc_001",
+      "input": {
+        "era_id": "ERA-2025-001",
+        "payer": "BlueCross BlueShield",
+        "payment_date": "2025-01-25",
+        "check_number": "CHK-987654",
+        "claims": [
+          {
+            "claim_id": "CLM-001",
+            "patient_name": "John Smith",
+            "service_date": "2025-01-10",
+            "billed_amount": 500.00,
+            "adjustments": [
+              {"code": "CO-45", "reason": "Contractual adjustment", "amount": 150.00}
+            ],
+            "paid_amount": 350.00,
+            "patient_responsibility": 0.00
+          },
+          {
+            "claim_id": "CLM-002",
+            "patient_name": "Jane Doe",
+            "service_date": "2025-01-12",
+            "billed_amount": 200.00,
+            "adjustments": [
+              {"code": "CO-45", "reason": "Contractual adjustment", "amount": 50.00},
+              {"code": "PR-1", "reason": "Deductible", "amount": 25.00}
+            ],
+            "paid_amount": 125.00,
+            "patient_responsibility": 25.00
+          }
+        ]
+      },
+      "expected_output": {
+        "era_id": "ERA-2025-001",
+        "summary": {
+          "payer": "BlueCross BlueShield",
+          "check_number": "CHK-987654",
+          "payment_date": "2025-01-25",
+          "total_billed": 700.00,
+          "total_adjustments": 225.00,
+          "total_paid": 475.00,
+          "total_patient_responsibility": 25.00
+        },
+        "claims": [
+          {"claim_id": "CLM-001", "patient_name": "John Smith", "billed": 500.00, "adjustments_total": 150.00, "paid": 350.00, "patient_resp": 0.00, "adjustment_codes": ["CO-45"], "has_denial": false},
+          {"claim_id": "CLM-002", "patient_name": "Jane Doe", "billed": 200.00, "adjustments_total": 75.00, "paid": 125.00, "patient_resp": 25.00, "adjustment_codes": ["CO-45", "PR-1"], "has_denial": false}
+        ],
+        "denial_claims": [],
+        "reconciliation_balanced": true
+      }
+    },
+    {
+      "id": "tc_002",
+      "input": {
+        "era_id": "ERA-2025-002",
+        "payer": "Aetna",
+        "payment_date": "2025-01-26",
+        "check_number": "CHK-111222",
+        "claims": [
+          {
+            "claim_id": "CLM-003",
+            "patient_name": "Bob Wilson",
+            "service_date": "2025-01-15",
+            "billed_amount": 1000.00,
+            "adjustments": [
+              {"code": "CO-4", "reason": "Service not covered", "amount": 1000.00}
+            ],
+            "paid_amount": 0.00,
+            "patient_responsibility": 0.00
+          }
+        ]
+      },
+      "expected_output": {
+        "era_id": "ERA-2025-002",
+        "summary": {
+          "payer": "Aetna",
+          "check_number": "CHK-111222",
+          "payment_date": "2025-01-26",
+          "total_billed": 1000.00,
+          "total_adjustments": 1000.00,
+          "total_paid": 0.00,
+          "total_patient_responsibility": 0.00
+        },
+        "claims": [
+          {"claim_id": "CLM-003", "patient_name": "Bob Wilson", "billed": 1000.00, "adjustments_total": 1000.00, "paid": 0.00, "patient_resp": 0.00, "adjustment_codes": ["CO-4"], "has_denial": true}
+        ],
+        "denial_claims": ["CLM-003"],
+        "reconciliation_balanced": true
+      }
+    },
+    {
+      "id": "tc_003",
+      "input": {
+        "era_id": "ERA-2025-003",
+        "payer": "UnitedHealth",
+        "payment_date": "2025-01-27",
+        "check_number": "CHK-333444",
+        "claims": []
+      },
+      "expected_output": {
+        "era_id": "ERA-2025-003",
+        "summary": {
+          "payer": "UnitedHealth",
+          "check_number": "CHK-333444",
+          "payment_date": "2025-01-27",
+          "total_billed": 0.00,
+          "total_adjustments": 0.00,
+          "total_paid": 0.00,
+          "total_patient_responsibility": 0.00
+        },
+        "claims": [],
+        "denial_claims": [],
+        "reconciliation_balanced": true
+      }
+    },
+    {
+      "id": "tc_004",
+      "input": {
+        "era_id": "ERA-2025-004",
+        "payer": "Cigna",
+        "payment_date": "2025-01-28",
+        "check_number": "CHK-555666",
+        "claims": [
+          {
+            "claim_id": "CLM-004",
+            "patient_name": "Alice Brown",
+            "service_date": "2025-01-18",
+            "billed_amount": 750.00,
+            "adjustments": [
+              {"code": "CO-45", "reason": "Contractual", "amount": 200.00},
+              {"code": "PR-2", "reason": "Coinsurance", "amount": 110.00}
+            ],
+            "paid_amount": 440.00,
+            "patient_responsibility": 110.00
+          },
+          {
+            "claim_id": "CLM-005",
+            "patient_name": "Charlie Green",
+            "service_date": "2025-01-19",
+            "billed_amount": 300.00,
+            "adjustments": [
+              {"code": "CO-16", "reason": "Claim lacks info", "amount": 300.00}
+            ],
+            "paid_amount": 0.00,
+            "patient_responsibility": 0.00
+          },
+          {
+            "claim_id": "CLM-006",
+            "patient_name": "Diana White",
+            "service_date": "2025-01-20",
+            "billed_amount": 450.00,
+            "adjustments": [
+              {"code": "CO-45", "reason": "Contractual", "amount": 100.00}
+            ],
+            "paid_amount": 350.00,
+            "patient_responsibility": 0.00
+          }
+        ]
+      },
+      "expected_output": {
+        "era_id": "ERA-2025-004",
+        "summary": {
+          "payer": "Cigna",
+          "check_number": "CHK-555666",
+          "payment_date": "2025-01-28",
+          "total_billed": 1500.00,
+          "total_adjustments": 710.00,
+          "total_paid": 790.00,
+          "total_patient_responsibility": 110.00
+        },
+        "claims": [
+          {"claim_id": "CLM-004", "patient_name": "Alice Brown", "billed": 750.00, "adjustments_total": 310.00, "paid": 440.00, "patient_resp": 110.00, "adjustment_codes": ["CO-45", "PR-2"], "has_denial": false},
+          {"claim_id": "CLM-005", "patient_name": "Charlie Green", "billed": 300.00, "adjustments_total": 300.00, "paid": 0.00, "patient_resp": 0.00, "adjustment_codes": ["CO-16"], "has_denial": true},
+          {"claim_id": "CLM-006", "patient_name": "Diana White", "billed": 450.00, "adjustments_total": 100.00, "paid": 350.00, "patient_resp": 0.00, "adjustment_codes": ["CO-45"], "has_denial": false}
+        ],
+        "denial_claims": ["CLM-005"],
+        "reconciliation_balanced": true
+      }
+    },
+    {
+      "id": "tc_005",
+      "input": {
+        "era_id": "ERA-2025-005",
+        "payer": "Humana",
+        "payment_date": "2025-01-29",
+        "check_number": "CHK-777888",
+        "claims": [
+          {
+            "claim_id": "CLM-007",
+            "patient_name": "Eve Black",
+            "service_date": "2025-01-21",
+            "billed_amount": 2500.00,
+            "adjustments": [
+              {"code": "CO-45", "reason": "Contractual", "amount": 800.00},
+              {"code": "PR-1", "reason": "Deductible", "amount": 500.00},
+              {"code": "PR-2", "reason": "Coinsurance", "amount": 240.00}
+            ],
+            "paid_amount": 960.00,
+            "patient_responsibility": 740.00
+          }
+        ]
+      },
+      "expected_output": {
+        "era_id": "ERA-2025-005",
+        "summary": {
+          "payer": "Humana",
+          "check_number": "CHK-777888",
+          "payment_date": "2025-01-29",
+          "total_billed": 2500.00,
+          "total_adjustments": 1540.00,
+          "total_paid": 960.00,
+          "total_patient_responsibility": 740.00
+        },
+        "claims": [
+          {"claim_id": "CLM-007", "patient_name": "Eve Black", "billed": 2500.00, "adjustments_total": 1540.00, "paid": 960.00, "patient_resp": 740.00, "adjustment_codes": ["CO-45", "PR-1", "PR-2"], "has_denial": false}
+        ],
+        "denial_claims": [],
+        "reconciliation_balanced": true
+      }
+    }
+  ],
+  
+  "validation_hints": {
+    "denial_codes": ["CO-4", "CO-16", "CO-18", "CO-27", "CO-29", "CO-50"],
+    "reconciliation_check": "billed = adjustments + paid + patient_resp",
+    "pr_codes_are_patient_resp": "PR-* codes indicate patient responsibility"
+  }
+}

@@ -1,0 +1,351 @@
+{
+  "id": "data_001",
+  "name": "Patient Record Merge",
+  "category": "data_transformation",
+  "difficulty": "hard",
+  "description": "Merge patient records from two healthcare systems, resolving conflicts using priority rules and tracking data lineage.",
+  
+  "specification": {
+    "natural_language": "Given patient records from System A (EHR) and System B (billing), merge into a single canonical record. System A is authoritative for clinical data (allergies, conditions). System B is authoritative for insurance data. For demographics, prefer most recently updated. Track which system each field came from.",
+    
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "system_a_record": {
+          "type": "object",
+          "properties": {
+            "patient_id": {"type": "string"},
+            "first_name": {"type": "string"},
+            "last_name": {"type": "string"},
+            "dob": {"type": "string", "format": "date"},
+            "phone": {"type": "string"},
+            "allergies": {"type": "array", "items": {"type": "string"}},
+            "conditions": {"type": "array", "items": {"type": "string"}},
+            "last_updated": {"type": "string", "format": "date-time"}
+          }
+        },
+        "system_b_record": {
+          "type": "object",
+          "properties": {
+            "patient_id": {"type": "string"},
+            "first_name": {"type": "string"},
+            "last_name": {"type": "string"},
+            "dob": {"type": "string", "format": "date"},
+            "phone": {"type": "string"},
+            "insurance_id": {"type": "string"},
+            "insurance_plan": {"type": "string"},
+            "copay": {"type": "number"},
+            "last_updated": {"type": "string", "format": "date-time"}
+          }
+        }
+      }
+    },
+    
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "merged_record": {
+          "type": "object",
+          "properties": {
+            "patient_id": {"type": "string"},
+            "first_name": {"type": "string"},
+            "last_name": {"type": "string"},
+            "dob": {"type": "string"},
+            "phone": {"type": "string"},
+            "allergies": {"type": "array"},
+            "conditions": {"type": "array"},
+            "insurance_id": {"type": "string"},
+            "insurance_plan": {"type": "string"},
+            "copay": {"type": "number"}
+          }
+        },
+        "lineage": {
+          "type": "object",
+          "additionalProperties": {"type": "string"}
+        },
+        "conflicts_resolved": {"type": "integer"}
+      }
+    }
+  },
+  
+  "test_cases": [
+    {
+      "id": "tc_001",
+      "input": {
+        "system_a_record": {
+          "patient_id": "EHR-001",
+          "first_name": "John",
+          "last_name": "Smith",
+          "dob": "1985-03-15",
+          "phone": "555-0101",
+          "allergies": ["Penicillin", "Sulfa"],
+          "conditions": ["Hypertension", "Type 2 Diabetes"],
+          "last_updated": "2025-01-20T10:30:00Z"
+        },
+        "system_b_record": {
+          "patient_id": "BILL-001",
+          "first_name": "John",
+          "last_name": "Smith",
+          "dob": "1985-03-15",
+          "phone": "555-0199",
+          "insurance_id": "INS-123456",
+          "insurance_plan": "Gold PPO",
+          "copay": 25.00,
+          "last_updated": "2025-01-22T14:00:00Z"
+        }
+      },
+      "expected_output": {
+        "merged_record": {
+          "patient_id": "EHR-001",
+          "first_name": "John",
+          "last_name": "Smith",
+          "dob": "1985-03-15",
+          "phone": "555-0199",
+          "allergies": ["Penicillin", "Sulfa"],
+          "conditions": ["Hypertension", "Type 2 Diabetes"],
+          "insurance_id": "INS-123456",
+          "insurance_plan": "Gold PPO",
+          "copay": 25.00
+        },
+        "lineage": {
+          "patient_id": "system_a",
+          "first_name": "system_b",
+          "last_name": "system_b",
+          "dob": "system_b",
+          "phone": "system_b",
+          "allergies": "system_a",
+          "conditions": "system_a",
+          "insurance_id": "system_b",
+          "insurance_plan": "system_b",
+          "copay": "system_b"
+        },
+        "conflicts_resolved": 1
+      }
+    },
+    {
+      "id": "tc_002",
+      "input": {
+        "system_a_record": {
+          "patient_id": "EHR-002",
+          "first_name": "Jane",
+          "last_name": "Doe",
+          "dob": "1990-07-22",
+          "phone": "555-0202",
+          "allergies": [],
+          "conditions": ["Asthma"],
+          "last_updated": "2025-01-25T08:00:00Z"
+        },
+        "system_b_record": {
+          "patient_id": "BILL-002",
+          "first_name": "Jane",
+          "last_name": "Doe",
+          "dob": "1990-07-22",
+          "phone": "555-0202",
+          "insurance_id": "INS-789012",
+          "insurance_plan": "Silver HMO",
+          "copay": 40.00,
+          "last_updated": "2025-01-18T16:00:00Z"
+        }
+      },
+      "expected_output": {
+        "merged_record": {
+          "patient_id": "EHR-002",
+          "first_name": "Jane",
+          "last_name": "Doe",
+          "dob": "1990-07-22",
+          "phone": "555-0202",
+          "allergies": [],
+          "conditions": ["Asthma"],
+          "insurance_id": "INS-789012",
+          "insurance_plan": "Silver HMO",
+          "copay": 40.00
+        },
+        "lineage": {
+          "patient_id": "system_a",
+          "first_name": "system_a",
+          "last_name": "system_a",
+          "dob": "system_a",
+          "phone": "system_a",
+          "allergies": "system_a",
+          "conditions": "system_a",
+          "insurance_id": "system_b",
+          "insurance_plan": "system_b",
+          "copay": "system_b"
+        },
+        "conflicts_resolved": 0
+      }
+    },
+    {
+      "id": "tc_003",
+      "description": "Same timestamps - tie-breaking scenario",
+      "input": {
+        "system_a_record": {
+          "patient_id": "EHR-003",
+          "first_name": "Robert",
+          "last_name": "Johnson",
+          "dob": "1978-11-30",
+          "phone": "555-0303",
+          "allergies": ["Latex"],
+          "conditions": [],
+          "last_updated": "2025-02-01T12:00:00Z"
+        },
+        "system_b_record": {
+          "patient_id": "BILL-003",
+          "first_name": "Bob",
+          "last_name": "Johnson",
+          "dob": "1978-11-30",
+          "phone": "555-0333",
+          "insurance_id": "INS-456789",
+          "insurance_plan": "Bronze EPO",
+          "copay": 50.00,
+          "last_updated": "2025-02-01T12:00:00Z"
+        }
+      },
+      "expected_output": {
+        "merged_record": {
+          "patient_id": "EHR-003",
+          "first_name": "Robert",
+          "last_name": "Johnson",
+          "dob": "1978-11-30",
+          "phone": "555-0303",
+          "allergies": ["Latex"],
+          "conditions": [],
+          "insurance_id": "INS-456789",
+          "insurance_plan": "Bronze EPO",
+          "copay": 50.00
+        },
+        "lineage": {
+          "patient_id": "system_a",
+          "first_name": "system_a",
+          "last_name": "system_a",
+          "dob": "system_a",
+          "phone": "system_a",
+          "allergies": "system_a",
+          "conditions": "system_a",
+          "insurance_id": "system_b",
+          "insurance_plan": "system_b",
+          "copay": "system_b"
+        },
+        "conflicts_resolved": 2
+      }
+    },
+    {
+      "id": "tc_004",
+      "description": "Multiple allergies and conditions with name discrepancy",
+      "input": {
+        "system_a_record": {
+          "patient_id": "EHR-004",
+          "first_name": "Maria",
+          "last_name": "Garcia-Lopez",
+          "dob": "1965-04-10",
+          "phone": "555-0404",
+          "allergies": ["Penicillin", "Aspirin", "Ibuprofen", "Codeine"],
+          "conditions": ["Rheumatoid Arthritis", "Osteoporosis", "GERD"],
+          "last_updated": "2025-01-10T09:00:00Z"
+        },
+        "system_b_record": {
+          "patient_id": "BILL-004",
+          "first_name": "Maria",
+          "last_name": "Garcia",
+          "dob": "1965-04-10",
+          "phone": "555-0444",
+          "insurance_id": "INS-111222",
+          "insurance_plan": "Medicare Advantage",
+          "copay": 0.00,
+          "last_updated": "2025-01-28T15:30:00Z"
+        }
+      },
+      "expected_output": {
+        "merged_record": {
+          "patient_id": "EHR-004",
+          "first_name": "Maria",
+          "last_name": "Garcia",
+          "dob": "1965-04-10",
+          "phone": "555-0444",
+          "allergies": ["Penicillin", "Aspirin", "Ibuprofen", "Codeine"],
+          "conditions": ["Rheumatoid Arthritis", "Osteoporosis", "GERD"],
+          "insurance_id": "INS-111222",
+          "insurance_plan": "Medicare Advantage",
+          "copay": 0.00
+        },
+        "lineage": {
+          "patient_id": "system_a",
+          "first_name": "system_b",
+          "last_name": "system_b",
+          "dob": "system_b",
+          "phone": "system_b",
+          "allergies": "system_a",
+          "conditions": "system_a",
+          "insurance_id": "system_b",
+          "insurance_plan": "system_b",
+          "copay": "system_b"
+        },
+        "conflicts_resolved": 2
+      }
+    },
+    {
+      "id": "tc_005",
+      "description": "No conditions or allergies - minimal clinical data",
+      "input": {
+        "system_a_record": {
+          "patient_id": "EHR-005",
+          "first_name": "David",
+          "last_name": "Lee",
+          "dob": "2010-08-20",
+          "phone": "555-0505",
+          "allergies": [],
+          "conditions": [],
+          "last_updated": "2025-01-05T11:00:00Z"
+        },
+        "system_b_record": {
+          "patient_id": "BILL-005",
+          "first_name": "David",
+          "last_name": "Lee",
+          "dob": "2010-08-20",
+          "phone": "555-0505",
+          "insurance_id": "INS-333444",
+          "insurance_plan": "Family Plus",
+          "copay": 15.00,
+          "last_updated": "2025-01-30T10:00:00Z"
+        }
+      },
+      "expected_output": {
+        "merged_record": {
+          "patient_id": "EHR-005",
+          "first_name": "David",
+          "last_name": "Lee",
+          "dob": "2010-08-20",
+          "phone": "555-0505",
+          "allergies": [],
+          "conditions": [],
+          "insurance_id": "INS-333444",
+          "insurance_plan": "Family Plus",
+          "copay": 15.00
+        },
+        "lineage": {
+          "patient_id": "system_a",
+          "first_name": "system_b",
+          "last_name": "system_b",
+          "dob": "system_b",
+          "phone": "system_b",
+          "allergies": "system_a",
+          "conditions": "system_a",
+          "insurance_id": "system_b",
+          "insurance_plan": "system_b",
+          "copay": "system_b"
+        },
+        "conflicts_resolved": 0
+      }
+    }
+  ],
+  
+  "validation_hints": {
+    "priority_rules": {
+      "clinical_fields": "system_a always wins",
+      "insurance_fields": "system_b always wins",
+      "demographics": "most recent last_updated wins"
+    },
+    "patient_id": "always use system_a patient_id",
+    "tie_breaking": "when timestamps are equal, system_a wins for demographics"
+  }
+}

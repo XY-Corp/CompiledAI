@@ -31,6 +31,7 @@ dependencies = [
     "jsonschema>=4.23.0",
     # Dataset downloads
     "huggingface-hub>=0.20.0",
+    "datasets>=2.16.0",
     # Testing & metrics
     "pytest>=8.0.0",
     "pytest-asyncio>=0.24.0",
@@ -47,6 +48,7 @@ dependencies = [
     # Semantic search
     "sentence-transformers>=3.0.0",
     "scikit-learn>=1.5.0",
+    "duckdb>=1.4.4",
 ]
 
 [dependency-groups]

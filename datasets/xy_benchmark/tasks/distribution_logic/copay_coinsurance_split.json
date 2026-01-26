@@ -1,0 +1,392 @@
+{
+  "id": "distribution_001",
+  "name": "Copay and Coinsurance Distribution Calculator",
+  "category": "distribution_logic",
+  "difficulty": "hard",
+  "description": "Calculate patient vs payer responsibility given plan design (deductible, copay, coinsurance%, OOP max) and YTD accumulators for a list of services.",
+
+  "specification": {
+    "natural_language": "Given a health plan design and year-to-date accumulators, calculate cost sharing for each service. Rules: (1) Apply remaining deductible first to allowed amount, (2) After deductible, apply copay if fixed copay service, otherwise apply coinsurance percentage, (3) Patient responsibility capped at remaining OOP max, (4) Track accumulator updates across services in order. Return per-service breakdown and updated accumulators.",
+
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "plan_design": {
+          "type": "object",
+          "properties": {
+            "annual_deductible": {"type": "number"},
+            "coinsurance_percent": {"type": "number", "minimum": 0, "maximum": 100},
+            "out_of_pocket_max": {"type": "number"},
+            "copay_services": {
+              "type": "object",
+              "additionalProperties": {"type": "number"}
+            }
+          }
+        },
+        "ytd_accumulators": {
+          "type": "object",
+          "properties": {
+            "deductible_met": {"type": "number"},
+            "out_of_pocket_met": {"type": "number"}
+          }
+        },
+        "services": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "service_id": {"type": "string"},
+              "service_type": {"type": "string"},
+              "allowed_amount": {"type": "number"},
+              "service_date": {"type": "string", "format": "date"}
+            }
+          }
+        }
+      }
+    },
+
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "service_calculations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "service_id": {"type": "string"},
+              "allowed_amount": {"type": "number"},
+              "deductible_applied": {"type": "number"},
+              "copay_applied": {"type": "number"},
+              "coinsurance_applied": {"type": "number"},
+              "patient_responsibility": {"type": "number"},
+              "payer_responsibility": {"type": "number"},
+              "oop_cap_applied": {"type": "boolean"}
+            }
+          }
+        },
+        "updated_accumulators": {
+          "type": "object",
+          "properties": {
+            "deductible_met": {"type": "number"},
+            "out_of_pocket_met": {"type": "number"},
+            "deductible_remaining": {"type": "number"},
+            "oop_remaining": {"type": "number"}
+          }
+        },
+        "totals": {
+          "type": "object",
+          "properties": {
+            "total_allowed": {"type": "number"},
+            "total_patient": {"type": "number"},
+            "total_payer": {"type": "number"}
+          }
+        }
+      }
+    }
+  },
+
+  "test_cases": [
+    {
+      "id": "tc_001",
+      "description": "Standard plan with deductible not yet met",
+      "input": {
+        "plan_design": {
+          "annual_deductible": 1000.00,
+          "coinsurance_percent": 20,
+          "out_of_pocket_max": 5000.00,
+          "copay_services": {
+            "office_visit": 25.00,
+            "specialist": 50.00
+          }
+        },
+        "ytd_accumulators": {
+          "deductible_met": 0.00,
+          "out_of_pocket_met": 0.00
+        },
+        "services": [
+          {"service_id": "SVC-001", "service_type": "lab", "allowed_amount": 150.00, "service_date": "2025-02-01"},
+          {"service_id": "SVC-002", "service_type": "office_visit", "allowed_amount": 120.00, "service_date": "2025-02-01"},
+          {"service_id": "SVC-003", "service_type": "imaging", "allowed_amount": 500.00, "service_date": "2025-02-05"}
+        ]
+      },
+      "expected_output": {
+        "service_calculations": [
+          {
+            "service_id": "SVC-001",
+            "allowed_amount": 150.00,
+            "deductible_applied": 150.00,
+            "copay_applied": 0.00,
+            "coinsurance_applied": 0.00,
+            "patient_responsibility": 150.00,
+            "payer_responsibility": 0.00,
+            "oop_cap_applied": false
+          },
+          {
+            "service_id": "SVC-002",
+            "allowed_amount": 120.00,
+            "deductible_applied": 95.00,
+            "copay_applied": 25.00,
+            "coinsurance_applied": 0.00,
+            "patient_responsibility": 120.00,
+            "payer_responsibility": 0.00,
+            "oop_cap_applied": false
+          },
+          {
+            "service_id": "SVC-003",
+            "allowed_amount": 500.00,
+            "deductible_applied": 500.00,
+            "copay_applied": 0.00,
+            "coinsurance_applied": 0.00,
+            "patient_responsibility": 500.00,
+            "payer_responsibility": 0.00,
+            "oop_cap_applied": false
+          }
+        ],
+        "updated_accumulators": {
+          "deductible_met": 745.00,
+          "out_of_pocket_met": 770.00,
+          "deductible_remaining": 255.00,
+          "oop_remaining": 4230.00
+        },
+        "totals": {
+          "total_allowed": 770.00,
+          "total_patient": 770.00,
+          "total_payer": 0.00
+        }
+      }
+    },
+    {
+      "id": "tc_002",
+      "description": "Deductible fully met - coinsurance applies",
+      "input": {
+        "plan_design": {
+          "annual_deductible": 500.00,
+          "coinsurance_percent": 20,
+          "out_of_pocket_max": 3000.00,
+          "copay_services": {}
+        },
+        "ytd_accumulators": {
+          "deductible_met": 500.00,
+          "out_of_pocket_met": 500.00
+        },
+        "services": [
+          {"service_id": "SVC-010", "service_type": "surgery", "allowed_amount": 5000.00, "service_date": "2025-03-15"}
+        ]
+      },
+      "expected_output": {
+        "service_calculations": [
+          {
+            "service_id": "SVC-010",
+            "allowed_amount": 5000.00,
+            "deductible_applied": 0.00,
+            "copay_applied": 0.00,
+            "coinsurance_applied": 1000.00,
+            "patient_responsibility": 1000.00,
+            "payer_responsibility": 4000.00,
+            "oop_cap_applied": false
+          }
+        ],
+        "updated_accumulators": {
+          "deductible_met": 500.00,
+          "out_of_pocket_met": 1500.00,
+          "deductible_remaining": 0.00,
+          "oop_remaining": 1500.00
+        },
+        "totals": {
+          "total_allowed": 5000.00,
+          "total_patient": 1000.00,
+          "total_payer": 4000.00
+        }
+      }
+    },
+    {
+      "id": "tc_003",
+      "description": "OOP max reached mid-service",
+      "input": {
+        "plan_design": {
+          "annual_deductible": 1000.00,
+          "coinsurance_percent": 30,
+          "out_of_pocket_max": 2000.00,
+          "copay_services": {}
+        },
+        "ytd_accumulators": {
+          "deductible_met": 1000.00,
+          "out_of_pocket_met": 1800.00
+        },
+        "services": [
+          {"service_id": "SVC-020", "service_type": "hospital", "allowed_amount": 10000.00, "service_date": "2025-04-10"}
+        ]
+      },
+      "expected_output": {
+        "service_calculations": [
+          {
+            "service_id": "SVC-020",
+            "allowed_amount": 10000.00,
+            "deductible_applied": 0.00,
+            "copay_applied": 0.00,
+            "coinsurance_applied": 200.00,
+            "patient_responsibility": 200.00,
+            "payer_responsibility": 9800.00,
+            "oop_cap_applied": true
+          }
+        ],
+        "updated_accumulators": {
+          "deductible_met": 1000.00,
+          "out_of_pocket_met": 2000.00,
+          "deductible_remaining": 0.00,
+          "oop_remaining": 0.00
+        },
+        "totals": {
+          "total_allowed": 10000.00,
+          "total_patient": 200.00,
+          "total_payer": 9800.00
+        }
+      }
+    },
+    {
+      "id": "tc_004",
+      "description": "OOP already maxed - payer covers 100%",
+      "input": {
+        "plan_design": {
+          "annual_deductible": 500.00,
+          "coinsurance_percent": 20,
+          "out_of_pocket_max": 2500.00,
+          "copay_services": {"specialist": 40.00}
+        },
+        "ytd_accumulators": {
+          "deductible_met": 500.00,
+          "out_of_pocket_met": 2500.00
+        },
+        "services": [
+          {"service_id": "SVC-030", "service_type": "specialist", "allowed_amount": 200.00, "service_date": "2025-05-01"},
+          {"service_id": "SVC-031", "service_type": "lab", "allowed_amount": 75.00, "service_date": "2025-05-01"}
+        ]
+      },
+      "expected_output": {
+        "service_calculations": [
+          {
+            "service_id": "SVC-030",
+            "allowed_amount": 200.00,
+            "deductible_applied": 0.00,
+            "copay_applied": 0.00,
+            "coinsurance_applied": 0.00,
+            "patient_responsibility": 0.00,
+            "payer_responsibility": 200.00,
+            "oop_cap_applied": true
+          },
+          {
+            "service_id": "SVC-031",
+            "allowed_amount": 75.00,
+            "deductible_applied": 0.00,
+            "copay_applied": 0.00,
+            "coinsurance_applied": 0.00,
+            "patient_responsibility": 0.00,
+            "payer_responsibility": 75.00,
+            "oop_cap_applied": true
+          }
+        ],
+        "updated_accumulators": {
+          "deductible_met": 500.00,
+          "out_of_pocket_met": 2500.00,
+          "deductible_remaining": 0.00,
+          "oop_remaining": 0.00
+        },
+        "totals": {
+          "total_allowed": 275.00,
+          "total_patient": 0.00,
+          "total_payer": 275.00
+        }
+      }
+    },
+    {
+      "id": "tc_005",
+      "description": "Mixed services crossing deductible threshold",
+      "input": {
+        "plan_design": {
+          "annual_deductible": 750.00,
+          "coinsurance_percent": 25,
+          "out_of_pocket_max": 4000.00,
+          "copay_services": {
+            "office_visit": 30.00,
+            "urgent_care": 75.00
+          }
+        },
+        "ytd_accumulators": {
+          "deductible_met": 600.00,
+          "out_of_pocket_met": 600.00
+        },
+        "services": [
+          {"service_id": "SVC-040", "service_type": "urgent_care", "allowed_amount": 250.00, "service_date": "2025-06-01"},
+          {"service_id": "SVC-041", "service_type": "lab", "allowed_amount": 100.00, "service_date": "2025-06-01"},
+          {"service_id": "SVC-042", "service_type": "imaging", "allowed_amount": 800.00, "service_date": "2025-06-05"},
+          {"service_id": "SVC-043", "service_type": "office_visit", "allowed_amount": 150.00, "service_date": "2025-06-10"}
+        ]
+      },
+      "expected_output": {
+        "service_calculations": [
+          {
+            "service_id": "SVC-040",
+            "allowed_amount": 250.00,
+            "deductible_applied": 150.00,
+            "copay_applied": 75.00,
+            "coinsurance_applied": 6.25,
+            "patient_responsibility": 231.25,
+            "payer_responsibility": 18.75,
+            "oop_cap_applied": false
+          },
+          {
+            "service_id": "SVC-041",
+            "allowed_amount": 100.00,
+            "deductible_applied": 0.00,
+            "copay_applied": 0.00,
+            "coinsurance_applied": 25.00,
+            "patient_responsibility": 25.00,
+            "payer_responsibility": 75.00,
+            "oop_cap_applied": false
+          },
+          {
+            "service_id": "SVC-042",
+            "allowed_amount": 800.00,
+            "deductible_applied": 0.00,
+            "copay_applied": 0.00,
+            "coinsurance_applied": 200.00,
+            "patient_responsibility": 200.00,
+            "payer_responsibility": 600.00,
+            "oop_cap_applied": false
+          },
+          {
+            "service_id": "SVC-043",
+            "allowed_amount": 150.00,
+            "deductible_applied": 0.00,
+            "copay_applied": 30.00,
+            "coinsurance_applied": 30.00,
+            "patient_responsibility": 60.00,
+            "payer_responsibility": 90.00,
+            "oop_cap_applied": false
+          }
+        ],
+        "updated_accumulators": {
+          "deductible_met": 750.00,
+          "out_of_pocket_met": 1116.25,
+          "deductible_remaining": 0.00,
+          "oop_remaining": 2883.75
+        },
+        "totals": {
+          "total_allowed": 1300.00,
+          "total_patient": 516.25,
+          "total_payer": 783.75
+        }
+      }
+    }
+  ],
+
+  "validation_hints": {
+    "processing_order": "services processed in array order",
+    "deductible_first": true,
+    "copay_vs_coinsurance": "copay replaces coinsurance for defined service types",
+    "oop_includes_deductible": true,
+    "oop_includes_copay": true,
+    "oop_includes_coinsurance": true,
+    "rounding": "round_half_up_to_cents"
+  }
+}

@@ -101,6 +101,15 @@ DATASETS = {
         "environments": list(AgentBenchAdapter.ENVIRONMENTS.keys()),
         "icon": "🤖",
     },
+    "swebench": {
+        "name": "SWE-bench Lite",
+        "description": "Real-world GitHub issue resolution (300 tasks)",
+        "path": "datasets/swebench",
+        "type": "external",
+        "adapter": "swebench",
+        "variants": ["lite", "verified", "full"],
+        "icon": "🔧",
+    },
 }
 
 PROVIDERS = {

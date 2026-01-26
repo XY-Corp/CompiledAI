@@ -1,0 +1,212 @@
+{
+  "id": "logic_002",
+  "name": "Claims Processing Router",
+  "category": "decision_logic",
+  "difficulty": "medium",
+  "description": "Route insurance claims to appropriate processing queues based on claim type, amount thresholds, and payer rules.",
+  
+  "specification": {
+    "natural_language": "Given a batch of insurance claims, route each to the appropriate processing queue. Rules: (1) Claims over $10,000 go to 'high_value' queue, (2) Claims with specific denial codes go to 'appeals' queue, (3) Out-of-network claims go to 'oon_review' queue, (4) All others go to 'standard' queue. Apply rules in priority order (high_value > appeals > oon_review > standard).",
+    
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "claims": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "claim_id": {"type": "string"},
+              "patient_id": {"type": "string"},
+              "amount": {"type": "number"},
+              "payer_id": {"type": "string"},
+              "provider_network_status": {"type": "string", "enum": ["in_network", "out_of_network"]},
+              "denial_code": {"type": "string"},
+              "service_date": {"type": "string", "format": "date"}
+            }
+          }
+        },
+        "routing_rules": {
+          "type": "object",
+          "properties": {
+            "high_value_threshold": {"type": "number"},
+            "appeal_denial_codes": {"type": "array", "items": {"type": "string"}}
+          }
+        }
+      }
+    },
+    
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "routed_claims": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "claim_id": {"type": "string"},
+              "queue": {"type": "string"},
+              "routing_reason": {"type": "string"},
+              "priority": {"type": "integer"}
+            }
+          }
+        },
+        "queue_summary": {
+          "type": "object",
+          "properties": {
+            "high_value": {"type": "integer"},
+            "appeals": {"type": "integer"},
+            "oon_review": {"type": "integer"},
+            "standard": {"type": "integer"}
+          }
+        }
+      }
+    }
+  },
+  
+  "test_cases": [
+    {
+      "id": "tc_001",
+      "input": {
+        "claims": [
+          {"claim_id": "CLM-001", "patient_id": "P001", "amount": 15000.00, "payer_id": "BCBS", "provider_network_status": "in_network", "denial_code": null, "service_date": "2025-01-15"},
+          {"claim_id": "CLM-002", "patient_id": "P002", "amount": 500.00, "payer_id": "AETNA", "provider_network_status": "in_network", "denial_code": "CO-4", "service_date": "2025-01-16"},
+          {"claim_id": "CLM-003", "patient_id": "P003", "amount": 2500.00, "payer_id": "UHC", "provider_network_status": "out_of_network", "denial_code": null, "service_date": "2025-01-17"},
+          {"claim_id": "CLM-004", "patient_id": "P004", "amount": 750.00, "payer_id": "CIGNA", "provider_network_status": "in_network", "denial_code": null, "service_date": "2025-01-18"},
+          {"claim_id": "CLM-005", "patient_id": "P005", "amount": 12000.00, "payer_id": "BCBS", "provider_network_status": "out_of_network", "denial_code": "PR-1", "service_date": "2025-01-19"}
+        ],
+        "routing_rules": {
+          "high_value_threshold": 10000,
+          "appeal_denial_codes": ["CO-4", "CO-45", "PR-1", "PR-2"]
+        }
+      },
+      "expected_output": {
+        "routed_claims": [
+          {"claim_id": "CLM-001", "queue": "high_value", "routing_reason": "Amount exceeds $10,000 threshold", "priority": 1},
+          {"claim_id": "CLM-002", "queue": "appeals", "routing_reason": "Denial code CO-4 requires appeal review", "priority": 2},
+          {"claim_id": "CLM-003", "queue": "oon_review", "routing_reason": "Out-of-network provider", "priority": 3},
+          {"claim_id": "CLM-004", "queue": "standard", "routing_reason": "No special routing criteria", "priority": 4},
+          {"claim_id": "CLM-005", "queue": "high_value", "routing_reason": "Amount exceeds $10,000 threshold", "priority": 1}
+        ],
+        "queue_summary": {
+          "high_value": 2,
+          "appeals": 1,
+          "oon_review": 1,
+          "standard": 1
+        }
+      }
+    },
+    {
+      "id": "tc_002",
+      "description": "Empty claims batch",
+      "input": {
+        "claims": [],
+        "routing_rules": {
+          "high_value_threshold": 10000,
+          "appeal_denial_codes": ["CO-4", "CO-45"]
+        }
+      },
+      "expected_output": {
+        "routed_claims": [],
+        "queue_summary": {
+          "high_value": 0,
+          "appeals": 0,
+          "oon_review": 0,
+          "standard": 0
+        }
+      }
+    },
+    {
+      "id": "tc_003",
+      "description": "Boundary conditions - amount exactly at threshold",
+      "input": {
+        "claims": [
+          {"claim_id": "CLM-010", "patient_id": "P010", "amount": 10000.00, "payer_id": "BCBS", "provider_network_status": "in_network", "denial_code": null, "service_date": "2025-02-01"},
+          {"claim_id": "CLM-011", "patient_id": "P011", "amount": 10000.01, "payer_id": "AETNA", "provider_network_status": "in_network", "denial_code": null, "service_date": "2025-02-02"},
+          {"claim_id": "CLM-012", "patient_id": "P012", "amount": 9999.99, "payer_id": "UHC", "provider_network_status": "in_network", "denial_code": null, "service_date": "2025-02-03"}
+        ],
+        "routing_rules": {
+          "high_value_threshold": 10000,
+          "appeal_denial_codes": ["CO-4"]
+        }
+      },
+      "expected_output": {
+        "routed_claims": [
+          {"claim_id": "CLM-010", "queue": "standard", "routing_reason": "No special routing criteria", "priority": 4},
+          {"claim_id": "CLM-011", "queue": "high_value", "routing_reason": "Amount exceeds $10,000 threshold", "priority": 1},
+          {"claim_id": "CLM-012", "queue": "standard", "routing_reason": "No special routing criteria", "priority": 4}
+        ],
+        "queue_summary": {
+          "high_value": 1,
+          "appeals": 0,
+          "oon_review": 0,
+          "standard": 2
+        }
+      }
+    },
+    {
+      "id": "tc_004",
+      "description": "All claims route to same queue (all standard)",
+      "input": {
+        "claims": [
+          {"claim_id": "CLM-020", "patient_id": "P020", "amount": 150.00, "payer_id": "BCBS", "provider_network_status": "in_network", "denial_code": null, "service_date": "2025-02-10"},
+          {"claim_id": "CLM-021", "patient_id": "P021", "amount": 275.50, "payer_id": "AETNA", "provider_network_status": "in_network", "denial_code": null, "service_date": "2025-02-11"},
+          {"claim_id": "CLM-022", "patient_id": "P022", "amount": 1000.00, "payer_id": "UHC", "provider_network_status": "in_network", "denial_code": null, "service_date": "2025-02-12"}
+        ],
+        "routing_rules": {
+          "high_value_threshold": 10000,
+          "appeal_denial_codes": ["CO-4", "CO-45"]
+        }
+      },
+      "expected_output": {
+        "routed_claims": [
+          {"claim_id": "CLM-020", "queue": "standard", "routing_reason": "No special routing criteria", "priority": 4},
+          {"claim_id": "CLM-021", "queue": "standard", "routing_reason": "No special routing criteria", "priority": 4},
+          {"claim_id": "CLM-022", "queue": "standard", "routing_reason": "No special routing criteria", "priority": 4}
+        ],
+        "queue_summary": {
+          "high_value": 0,
+          "appeals": 0,
+          "oon_review": 0,
+          "standard": 3
+        }
+      }
+    },
+    {
+      "id": "tc_005",
+      "description": "Custom threshold and denial codes - different routing rules",
+      "input": {
+        "claims": [
+          {"claim_id": "CLM-030", "patient_id": "P030", "amount": 5500.00, "payer_id": "MEDICARE", "provider_network_status": "in_network", "denial_code": null, "service_date": "2025-03-01"},
+          {"claim_id": "CLM-031", "patient_id": "P031", "amount": 4999.00, "payer_id": "MEDICARE", "provider_network_status": "out_of_network", "denial_code": "N-100", "service_date": "2025-03-02"},
+          {"claim_id": "CLM-032", "patient_id": "P032", "amount": 250.00, "payer_id": "MEDICAID", "provider_network_status": "in_network", "denial_code": "N-100", "service_date": "2025-03-03"},
+          {"claim_id": "CLM-033", "patient_id": "P033", "amount": 8000.00, "payer_id": "TRICARE", "provider_network_status": "out_of_network", "denial_code": null, "service_date": "2025-03-04"}
+        ],
+        "routing_rules": {
+          "high_value_threshold": 5000,
+          "appeal_denial_codes": ["N-100", "N-200"]
+        }
+      },
+      "expected_output": {
+        "routed_claims": [
+          {"claim_id": "CLM-030", "queue": "high_value", "routing_reason": "Amount exceeds $5,000 threshold", "priority": 1},
+          {"claim_id": "CLM-031", "queue": "appeals", "routing_reason": "Denial code N-100 requires appeal review", "priority": 2},
+          {"claim_id": "CLM-032", "queue": "appeals", "routing_reason": "Denial code N-100 requires appeal review", "priority": 2},
+          {"claim_id": "CLM-033", "queue": "high_value", "routing_reason": "Amount exceeds $5,000 threshold", "priority": 1}
+        ],
+        "queue_summary": {
+          "high_value": 2,
+          "appeals": 2,
+          "oon_review": 0,
+          "standard": 0
+        }
+      }
+    }
+  ],
+  
+  "validation_hints": {
+    "priority_order": ["high_value", "appeals", "oon_review", "standard"],
+    "null_denial_code": "treat as no denial",
+    "multiple_criteria": "highest priority queue wins"
+  }
+}

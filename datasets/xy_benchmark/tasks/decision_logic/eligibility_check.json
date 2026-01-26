@@ -1,0 +1,213 @@
+{
+  "id": "logic_001",
+  "name": "Insurance Eligibility Verification",
+  "category": "decision_logic",
+  "difficulty": "medium",
+  "description": "Determine patient eligibility for a medical procedure based on insurance rules, coverage dates, and authorization requirements.",
+  
+  "specification": {
+    "natural_language": "Given a patient's insurance information and a requested procedure, determine eligibility. Check: (1) coverage is active on service date, (2) procedure code is covered under the plan, (3) any required prior authorization is obtained, (4) annual deductible status. Return eligibility decision with reasons.",
+    
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "patient_id": {"type": "string"},
+        "service_date": {"type": "string", "format": "date"},
+        "procedure_code": {"type": "string"},
+        "procedure_category": {"type": "string"},
+        "insurance": {
+          "type": "object",
+          "properties": {
+            "plan_id": {"type": "string"},
+            "coverage_start": {"type": "string", "format": "date"},
+            "coverage_end": {"type": "string", "format": "date"},
+            "covered_categories": {"type": "array", "items": {"type": "string"}},
+            "requires_auth_categories": {"type": "array", "items": {"type": "string"}},
+            "annual_deductible": {"type": "number"},
+            "deductible_met": {"type": "number"}
+          }
+        },
+        "prior_auth": {
+          "type": "object",
+          "properties": {
+            "auth_number": {"type": "string"},
+            "procedure_code": {"type": "string"},
+            "valid_from": {"type": "string", "format": "date"},
+            "valid_to": {"type": "string", "format": "date"}
+          }
+        }
+      }
+    },
+    
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "patient_id": {"type": "string"},
+        "procedure_code": {"type": "string"},
+        "eligible": {"type": "boolean"},
+        "decision_factors": {
+          "type": "object",
+          "properties": {
+            "coverage_active": {"type": "boolean"},
+            "procedure_covered": {"type": "boolean"},
+            "auth_required": {"type": "boolean"},
+            "auth_valid": {"type": "boolean"},
+            "deductible_remaining": {"type": "number"}
+          }
+        },
+        "denial_reasons": {"type": "array", "items": {"type": "string"}},
+        "patient_responsibility": {"type": "number"}
+      }
+    }
+  },
+  
+  "test_cases": [
+    {
+      "id": "tc_001",
+      "description": "Fully eligible - all conditions met",
+      "input": {
+        "patient_id": "P001",
+        "service_date": "2025-02-15",
+        "procedure_code": "27447",
+        "procedure_category": "orthopedic_surgery",
+        "insurance": {
+          "plan_id": "GOLD-500",
+          "coverage_start": "2025-01-01",
+          "coverage_end": "2025-12-31",
+          "covered_categories": ["preventive", "diagnostic", "orthopedic_surgery", "emergency"],
+          "requires_auth_categories": ["orthopedic_surgery"],
+          "annual_deductible": 500.00,
+          "deductible_met": 500.00
+        },
+        "prior_auth": {
+          "auth_number": "AUTH-2025-001",
+          "procedure_code": "27447",
+          "valid_from": "2025-02-01",
+          "valid_to": "2025-03-31"
+        }
+      },
+      "expected_output": {
+        "patient_id": "P001",
+        "procedure_code": "27447",
+        "eligible": true,
+        "decision_factors": {
+          "coverage_active": true,
+          "procedure_covered": true,
+          "auth_required": true,
+          "auth_valid": true,
+          "deductible_remaining": 0.00
+        },
+        "denial_reasons": [],
+        "patient_responsibility": 0.00
+      }
+    },
+    {
+      "id": "tc_002",
+      "description": "Denied - no prior auth",
+      "input": {
+        "patient_id": "P002",
+        "service_date": "2025-02-20",
+        "procedure_code": "27447",
+        "procedure_category": "orthopedic_surgery",
+        "insurance": {
+          "plan_id": "SILVER-1000",
+          "coverage_start": "2025-01-01",
+          "coverage_end": "2025-12-31",
+          "covered_categories": ["preventive", "diagnostic", "orthopedic_surgery"],
+          "requires_auth_categories": ["orthopedic_surgery"],
+          "annual_deductible": 1000.00,
+          "deductible_met": 250.00
+        },
+        "prior_auth": null
+      },
+      "expected_output": {
+        "patient_id": "P002",
+        "procedure_code": "27447",
+        "eligible": false,
+        "decision_factors": {
+          "coverage_active": true,
+          "procedure_covered": true,
+          "auth_required": true,
+          "auth_valid": false,
+          "deductible_remaining": 750.00
+        },
+        "denial_reasons": ["Prior authorization required but not obtained"],
+        "patient_responsibility": 750.00
+      }
+    },
+    {
+      "id": "tc_003",
+      "description": "Denied - procedure not covered",
+      "input": {
+        "patient_id": "P003",
+        "service_date": "2025-03-01",
+        "procedure_code": "00100",
+        "procedure_category": "cosmetic",
+        "insurance": {
+          "plan_id": "BASIC-2000",
+          "coverage_start": "2025-01-01",
+          "coverage_end": "2025-12-31",
+          "covered_categories": ["preventive", "emergency"],
+          "requires_auth_categories": [],
+          "annual_deductible": 2000.00,
+          "deductible_met": 0.00
+        },
+        "prior_auth": null
+      },
+      "expected_output": {
+        "patient_id": "P003",
+        "procedure_code": "00100",
+        "eligible": false,
+        "decision_factors": {
+          "coverage_active": true,
+          "procedure_covered": false,
+          "auth_required": false,
+          "auth_valid": false,
+          "deductible_remaining": 2000.00
+        },
+        "denial_reasons": ["Procedure category 'cosmetic' not covered under plan"],
+        "patient_responsibility": 2000.00
+      }
+    },
+    {
+      "id": "tc_004",
+      "description": "Denied - coverage not active",
+      "input": {
+        "patient_id": "P004",
+        "service_date": "2025-02-15",
+        "procedure_code": "99213",
+        "procedure_category": "preventive",
+        "insurance": {
+          "plan_id": "GOLD-500",
+          "coverage_start": "2025-03-01",
+          "coverage_end": "2025-12-31",
+          "covered_categories": ["preventive", "diagnostic"],
+          "requires_auth_categories": [],
+          "annual_deductible": 500.00,
+          "deductible_met": 0.00
+        },
+        "prior_auth": null
+      },
+      "expected_output": {
+        "patient_id": "P004",
+        "procedure_code": "99213",
+        "eligible": false,
+        "decision_factors": {
+          "coverage_active": false,
+          "procedure_covered": true,
+          "auth_required": false,
+          "auth_valid": false,
+          "deductible_remaining": 500.00
+        },
+        "denial_reasons": ["Coverage not active on service date"],
+        "patient_responsibility": 500.00
+      }
+    }
+  ],
+  
+  "validation_hints": {
+    "date_comparisons": "inclusive range checks",
+    "null_prior_auth": "treat as no auth obtained",
+    "denial_reasons": "list all applicable reasons, not just first"
+  }
+}

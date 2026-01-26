@@ -1,0 +1,343 @@
+{
+  "id": "workflow_001",
+  "name": "Denial Appeal Workflow Router",
+  "category": "workflow_orchestration",
+  "difficulty": "hard",
+  "description": "Route claim denials to appropriate appeal workflows based on denial reason codes, payer-specific appeal rules, and timely filing requirements.",
+
+  "specification": {
+    "natural_language": "Given claim denials with reason codes, route each to the appropriate appeal workflow. Rules: (1) Clinical necessity denials (CO-50, PR-204) go to 'peer_to_peer' workflow with clinical documentation required, (2) Timely filing denials (CO-29) go to 'proof_of_timely' workflow requiring submission evidence, (3) Authorization denials (CO-15, PR-197) go to 'auth_reconsideration' workflow, (4) Coding denials (CO-4, CO-16) go to 'coding_review' workflow, (5) Apply payer-specific appeal deadlines and requirements, (6) Flag denials past appeal deadline as 'write_off'. Return workflow assignment, required documentation, and deadline.",
+
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "denials": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "claim_id": {"type": "string"},
+              "denial_date": {"type": "string", "format": "date"},
+              "payer_id": {"type": "string"},
+              "denial_codes": {"type": "array", "items": {"type": "string"}},
+              "denied_amount": {"type": "number"},
+              "service_date": {"type": "string", "format": "date"},
+              "original_submission_date": {"type": "string", "format": "date"},
+              "procedure_codes": {"type": "array", "items": {"type": "string"}},
+              "diagnosis_codes": {"type": "array", "items": {"type": "string"}}
+            }
+          }
+        },
+        "payer_appeal_rules": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "appeal_deadline_days": {"type": "integer"},
+              "peer_to_peer_available": {"type": "boolean"},
+              "requires_written_appeal": {"type": "boolean"},
+              "expedited_review_codes": {"type": "array", "items": {"type": "string"}}
+            }
+          }
+        },
+        "current_date": {"type": "string", "format": "date"}
+      }
+    },
+
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "routed_denials": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "claim_id": {"type": "string"},
+              "workflow": {"type": "string", "enum": ["peer_to_peer", "proof_of_timely", "auth_reconsideration", "coding_review", "corrected_claim", "write_off", "escalation"]},
+              "priority": {"type": "string", "enum": ["urgent", "standard", "low"]},
+              "appeal_deadline": {"type": "string", "format": "date"},
+              "days_remaining": {"type": "integer"},
+              "required_documentation": {"type": "array", "items": {"type": "string"}},
+              "recommended_actions": {"type": "array", "items": {"type": "string"}},
+              "routing_reason": {"type": "string"}
+            }
+          }
+        },
+        "workflow_summary": {
+          "type": "object",
+          "properties": {
+            "peer_to_peer": {"type": "integer"},
+            "proof_of_timely": {"type": "integer"},
+            "auth_reconsideration": {"type": "integer"},
+            "coding_review": {"type": "integer"},
+            "corrected_claim": {"type": "integer"},
+            "write_off": {"type": "integer"},
+            "escalation": {"type": "integer"}
+          }
+        },
+        "total_denied_amount": {"type": "number"},
+        "recoverable_amount": {"type": "number"}
+      }
+    }
+  },
+
+  "test_cases": [
+    {
+      "id": "tc_001",
+      "description": "Mixed denial codes with various workflows",
+      "input": {
+        "denials": [
+          {"claim_id": "CLM-D001", "denial_date": "2025-01-15", "payer_id": "BCBS", "denial_codes": ["CO-50"], "denied_amount": 2500.00, "service_date": "2024-12-20", "original_submission_date": "2024-12-28", "procedure_codes": ["27447"], "diagnosis_codes": ["M17.11"]},
+          {"claim_id": "CLM-D002", "denial_date": "2025-01-10", "payer_id": "AETNA", "denial_codes": ["CO-29"], "denied_amount": 450.00, "service_date": "2024-06-15", "original_submission_date": "2024-12-20", "procedure_codes": ["99213"], "diagnosis_codes": ["J06.9"]},
+          {"claim_id": "CLM-D003", "denial_date": "2025-01-20", "payer_id": "UHC", "denial_codes": ["CO-15"], "denied_amount": 8500.00, "service_date": "2025-01-05", "original_submission_date": "2025-01-10", "procedure_codes": ["70553"], "diagnosis_codes": ["G43.909"]},
+          {"claim_id": "CLM-D004", "denial_date": "2025-01-18", "payer_id": "CIGNA", "denial_codes": ["CO-4"], "denied_amount": 175.00, "service_date": "2025-01-02", "original_submission_date": "2025-01-08", "procedure_codes": ["99214"], "diagnosis_codes": ["E11.9"]}
+        ],
+        "payer_appeal_rules": {
+          "BCBS": {"appeal_deadline_days": 60, "peer_to_peer_available": true, "requires_written_appeal": false, "expedited_review_codes": ["27447", "27130"]},
+          "AETNA": {"appeal_deadline_days": 90, "peer_to_peer_available": false, "requires_written_appeal": true, "expedited_review_codes": []},
+          "UHC": {"appeal_deadline_days": 45, "peer_to_peer_available": true, "requires_written_appeal": true, "expedited_review_codes": []},
+          "CIGNA": {"appeal_deadline_days": 60, "peer_to_peer_available": false, "requires_written_appeal": false, "expedited_review_codes": []}
+        },
+        "current_date": "2025-02-01"
+      },
+      "expected_output": {
+        "routed_denials": [
+          {
+            "claim_id": "CLM-D001",
+            "workflow": "peer_to_peer",
+            "priority": "urgent",
+            "appeal_deadline": "2025-03-16",
+            "days_remaining": 43,
+            "required_documentation": ["Medical records", "Clinical notes", "Letter of medical necessity", "Peer-to-peer request form"],
+            "recommended_actions": ["Schedule peer-to-peer with medical director", "Prepare clinical justification for knee replacement"],
+            "routing_reason": "Clinical necessity denial (CO-50) - peer-to-peer available"
+          },
+          {
+            "claim_id": "CLM-D002",
+            "workflow": "proof_of_timely",
+            "priority": "standard",
+            "appeal_deadline": "2025-04-10",
+            "days_remaining": 68,
+            "required_documentation": ["Original claim submission confirmation", "Clearinghouse transmission report", "ERA/EOB showing original receipt"],
+            "recommended_actions": ["Gather proof of timely filing", "Submit written appeal with transmission evidence"],
+            "routing_reason": "Timely filing denial (CO-29) - submission date within payer deadline"
+          },
+          {
+            "claim_id": "CLM-D003",
+            "workflow": "auth_reconsideration",
+            "priority": "urgent",
+            "appeal_deadline": "2025-03-06",
+            "days_remaining": 33,
+            "required_documentation": ["Prior authorization request records", "Clinical documentation", "Written appeal letter"],
+            "recommended_actions": ["Verify if auth was obtained", "If auth exists, submit with appeal", "If no auth, request retroactive authorization"],
+            "routing_reason": "Authorization denial (CO-15)"
+          },
+          {
+            "claim_id": "CLM-D004",
+            "workflow": "coding_review",
+            "priority": "standard",
+            "appeal_deadline": "2025-03-19",
+            "days_remaining": 46,
+            "required_documentation": ["Medical records", "Coding rationale"],
+            "recommended_actions": ["Review procedure-diagnosis link", "Verify code selection accuracy", "Submit corrected claim if coding error confirmed"],
+            "routing_reason": "Coding/billing denial (CO-4)"
+          }
+        ],
+        "workflow_summary": {
+          "peer_to_peer": 1,
+          "proof_of_timely": 1,
+          "auth_reconsideration": 1,
+          "coding_review": 1,
+          "corrected_claim": 0,
+          "write_off": 0,
+          "escalation": 0
+        },
+        "total_denied_amount": 11625.00,
+        "recoverable_amount": 11625.00
+      }
+    },
+    {
+      "id": "tc_002",
+      "description": "Denial past appeal deadline - write-off",
+      "input": {
+        "denials": [
+          {"claim_id": "CLM-D010", "denial_date": "2024-09-01", "payer_id": "BCBS", "denial_codes": ["CO-50"], "denied_amount": 3200.00, "service_date": "2024-08-15", "original_submission_date": "2024-08-20", "procedure_codes": ["43239"], "diagnosis_codes": ["K21.0"]}
+        ],
+        "payer_appeal_rules": {
+          "BCBS": {"appeal_deadline_days": 60, "peer_to_peer_available": true, "requires_written_appeal": false, "expedited_review_codes": []}
+        },
+        "current_date": "2025-02-01"
+      },
+      "expected_output": {
+        "routed_denials": [
+          {
+            "claim_id": "CLM-D010",
+            "workflow": "write_off",
+            "priority": "low",
+            "appeal_deadline": "2024-10-31",
+            "days_remaining": -93,
+            "required_documentation": [],
+            "recommended_actions": ["Appeal deadline expired", "Recommend write-off of denied amount", "Document for future process improvement"],
+            "routing_reason": "Appeal deadline expired on 2024-10-31 (93 days past)"
+          }
+        ],
+        "workflow_summary": {
+          "peer_to_peer": 0,
+          "proof_of_timely": 0,
+          "auth_reconsideration": 0,
+          "coding_review": 0,
+          "corrected_claim": 0,
+          "write_off": 1,
+          "escalation": 0
+        },
+        "total_denied_amount": 3200.00,
+        "recoverable_amount": 0.00
+      }
+    },
+    {
+      "id": "tc_003",
+      "description": "Multiple denial codes on single claim",
+      "input": {
+        "denials": [
+          {"claim_id": "CLM-D020", "denial_date": "2025-01-25", "payer_id": "UHC", "denial_codes": ["CO-50", "CO-15"], "denied_amount": 12000.00, "service_date": "2025-01-10", "original_submission_date": "2025-01-15", "procedure_codes": ["27130"], "diagnosis_codes": ["M16.11"]}
+        ],
+        "payer_appeal_rules": {
+          "UHC": {"appeal_deadline_days": 45, "peer_to_peer_available": true, "requires_written_appeal": true, "expedited_review_codes": ["27130"]}
+        },
+        "current_date": "2025-02-01"
+      },
+      "expected_output": {
+        "routed_denials": [
+          {
+            "claim_id": "CLM-D020",
+            "workflow": "peer_to_peer",
+            "priority": "urgent",
+            "appeal_deadline": "2025-03-11",
+            "days_remaining": 38,
+            "required_documentation": ["Medical records", "Clinical notes", "Letter of medical necessity", "Prior authorization documentation", "Written appeal letter"],
+            "recommended_actions": ["Address both clinical necessity and authorization issues", "Schedule expedited peer-to-peer (high-value procedure)", "Include auth status in clinical appeal"],
+            "routing_reason": "Multiple denials (CO-50, CO-15) - clinical necessity takes precedence for peer-to-peer"
+          }
+        ],
+        "workflow_summary": {
+          "peer_to_peer": 1,
+          "proof_of_timely": 0,
+          "auth_reconsideration": 0,
+          "coding_review": 0,
+          "corrected_claim": 0,
+          "write_off": 0,
+          "escalation": 0
+        },
+        "total_denied_amount": 12000.00,
+        "recoverable_amount": 12000.00
+      }
+    },
+    {
+      "id": "tc_004",
+      "description": "Correctable coding error - corrected claim workflow",
+      "input": {
+        "denials": [
+          {"claim_id": "CLM-D030", "denial_date": "2025-01-28", "payer_id": "MEDICARE", "denial_codes": ["CO-16"], "denied_amount": 850.00, "service_date": "2025-01-05", "original_submission_date": "2025-01-12", "procedure_codes": ["99215"], "diagnosis_codes": ["R10.9"]},
+          {"claim_id": "CLM-D031", "denial_date": "2025-01-29", "payer_id": "MEDICARE", "denial_codes": ["CO-4", "MA130"], "denied_amount": 125.00, "service_date": "2025-01-08", "original_submission_date": "2025-01-15", "procedure_codes": ["36415"], "diagnosis_codes": ["Z00.00"]}
+        ],
+        "payer_appeal_rules": {
+          "MEDICARE": {"appeal_deadline_days": 120, "peer_to_peer_available": false, "requires_written_appeal": true, "expedited_review_codes": []}
+        },
+        "current_date": "2025-02-01"
+      },
+      "expected_output": {
+        "routed_denials": [
+          {
+            "claim_id": "CLM-D030",
+            "workflow": "coding_review",
+            "priority": "standard",
+            "appeal_deadline": "2025-05-28",
+            "days_remaining": 116,
+            "required_documentation": ["Medical records", "Coding guidelines reference", "Written appeal letter"],
+            "recommended_actions": ["Review claim lacks info denial (CO-16)", "Obtain additional documentation from provider", "Resubmit with complete information"],
+            "routing_reason": "Claim lacks information (CO-16) - requires documentation review"
+          },
+          {
+            "claim_id": "CLM-D031",
+            "workflow": "corrected_claim",
+            "priority": "standard",
+            "appeal_deadline": "2025-05-29",
+            "days_remaining": 117,
+            "required_documentation": ["Corrected claim form", "Supporting medical records"],
+            "recommended_actions": ["Review procedure/diagnosis code mismatch", "Submit corrected claim with appropriate codes", "Verify medical necessity for venipuncture"],
+            "routing_reason": "Coding error (CO-4, MA130) - corrected claim appropriate"
+          }
+        ],
+        "workflow_summary": {
+          "peer_to_peer": 0,
+          "proof_of_timely": 0,
+          "auth_reconsideration": 0,
+          "coding_review": 1,
+          "corrected_claim": 1,
+          "write_off": 0,
+          "escalation": 0
+        },
+        "total_denied_amount": 975.00,
+        "recoverable_amount": 975.00
+      }
+    },
+    {
+      "id": "tc_005",
+      "description": "High-value denial requiring escalation",
+      "input": {
+        "denials": [
+          {"claim_id": "CLM-D040", "denial_date": "2025-01-20", "payer_id": "AETNA", "denial_codes": ["PR-204", "CO-50"], "denied_amount": 85000.00, "service_date": "2025-01-02", "original_submission_date": "2025-01-08", "procedure_codes": ["33533", "33534"], "diagnosis_codes": ["I25.10", "I25.5"]}
+        ],
+        "payer_appeal_rules": {
+          "AETNA": {"appeal_deadline_days": 90, "peer_to_peer_available": true, "requires_written_appeal": true, "expedited_review_codes": ["33533", "33534"]}
+        },
+        "current_date": "2025-02-01"
+      },
+      "expected_output": {
+        "routed_denials": [
+          {
+            "claim_id": "CLM-D040",
+            "workflow": "escalation",
+            "priority": "urgent",
+            "appeal_deadline": "2025-04-20",
+            "days_remaining": 78,
+            "required_documentation": ["Complete medical records", "Operative report", "Cardiologist clinical notes", "Letter of medical necessity", "Peer-to-peer request form", "Written appeal letter", "Pre-operative testing results"],
+            "recommended_actions": ["High-value claim - escalate to senior leadership", "Request expedited peer-to-peer review", "Engage external consultant if needed", "Prepare comprehensive clinical appeal package", "Consider external review if peer-to-peer fails"],
+            "routing_reason": "High-value clinical necessity denial ($85,000) - requires escalation and peer-to-peer"
+          }
+        ],
+        "workflow_summary": {
+          "peer_to_peer": 0,
+          "proof_of_timely": 0,
+          "auth_reconsideration": 0,
+          "coding_review": 0,
+          "corrected_claim": 0,
+          "write_off": 0,
+          "escalation": 1
+        },
+        "total_denied_amount": 85000.00,
+        "recoverable_amount": 85000.00
+      }
+    }
+  ],
+
+  "validation_hints": {
+    "denial_code_workflow_mapping": {
+      "CO-50": "peer_to_peer",
+      "PR-204": "peer_to_peer",
+      "CO-29": "proof_of_timely",
+      "CO-15": "auth_reconsideration",
+      "PR-197": "auth_reconsideration",
+      "CO-4": "coding_review",
+      "CO-16": "coding_review",
+      "MA130": "corrected_claim"
+    },
+    "escalation_threshold": 50000,
+    "priority_rules": {
+      "urgent": "days_remaining < 30 OR denied_amount > 10000",
+      "standard": "days_remaining >= 30 AND days_remaining < 60",
+      "low": "days_remaining >= 60 OR workflow = write_off"
+    },
+    "multiple_codes_precedence": ["peer_to_peer", "auth_reconsideration", "proof_of_timely", "coding_review", "corrected_claim"]
+  }
+}

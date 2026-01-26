@@ -1,0 +1,550 @@
+{
+  "id": "api_001",
+  "name": "Eligibility 270/271 Response Generator",
+  "category": "api_orchestration",
+  "difficulty": "hard",
+  "description": "Given eligibility inquiry data (subscriber, dates, service types), generate structured eligibility response with coverage details, copays, deductible remaining, and network status following X12 270/271 transaction semantics.",
+
+  "specification": {
+    "natural_language": "Given an eligibility inquiry (270 transaction data), generate a structured eligibility response (271 semantics). For each requested service type, return coverage status, benefit details (copay, coinsurance, deductible), network status, and remaining accumulators. Handle subscriber vs dependent queries, date-specific eligibility, and service type codes (30=health benefit plan coverage, 33=chiropractic, 47=hospital, 48=hospital inpatient, 50=hospital outpatient, 86=emergency, 88=pharmacy, 98=professional physician visit, AL=vision, AJ=dental).",
+
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "inquiry": {
+          "type": "object",
+          "properties": {
+            "subscriber_id": {"type": "string"},
+            "member_id": {"type": "string"},
+            "relationship": {"type": "string", "enum": ["self", "spouse", "child", "other"]},
+            "first_name": {"type": "string"},
+            "last_name": {"type": "string"},
+            "dob": {"type": "string", "format": "date"},
+            "service_date": {"type": "string", "format": "date"},
+            "service_type_codes": {"type": "array", "items": {"type": "string"}},
+            "provider_npi": {"type": "string"}
+          }
+        },
+        "member_record": {
+          "type": "object",
+          "properties": {
+            "subscriber_id": {"type": "string"},
+            "member_id": {"type": "string"},
+            "plan_id": {"type": "string"},
+            "coverage_start": {"type": "string", "format": "date"},
+            "coverage_end": {"type": "string", "format": "date"},
+            "status": {"type": "string", "enum": ["active", "terminated", "pending"]},
+            "network_providers": {"type": "array", "items": {"type": "string"}},
+            "benefits": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object",
+                "properties": {
+                  "covered": {"type": "boolean"},
+                  "copay": {"type": "number"},
+                  "coinsurance_percent": {"type": "number"},
+                  "requires_auth": {"type": "boolean"}
+                }
+              }
+            },
+            "accumulators": {
+              "type": "object",
+              "properties": {
+                "individual_deductible": {"type": "number"},
+                "individual_deductible_met": {"type": "number"},
+                "family_deductible": {"type": "number"},
+                "family_deductible_met": {"type": "number"},
+                "individual_oop_max": {"type": "number"},
+                "individual_oop_met": {"type": "number"}
+              }
+            }
+          }
+        }
+      }
+    },
+
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "response_status": {"type": "string", "enum": ["found", "not_found", "invalid_request"]},
+        "subscriber_info": {
+          "type": "object",
+          "properties": {
+            "subscriber_id": {"type": "string"},
+            "member_id": {"type": "string"},
+            "name": {"type": "string"},
+            "relationship": {"type": "string"}
+          }
+        },
+        "coverage_info": {
+          "type": "object",
+          "properties": {
+            "plan_id": {"type": "string"},
+            "coverage_status": {"type": "string", "enum": ["active", "inactive", "not_covered"]},
+            "coverage_dates": {
+              "type": "object",
+              "properties": {
+                "start": {"type": "string"},
+                "end": {"type": "string"}
+              }
+            },
+            "network_status": {"type": "string", "enum": ["in_network", "out_of_network", "unknown"]}
+          }
+        },
+        "service_eligibility": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "service_type_code": {"type": "string"},
+              "service_type_name": {"type": "string"},
+              "coverage_status": {"type": "string", "enum": ["covered", "not_covered", "requires_auth"]},
+              "in_network_benefits": {
+                "type": "object",
+                "properties": {
+                  "copay": {"type": "number"},
+                  "coinsurance_percent": {"type": "number"},
+                  "deductible_applies": {"type": "boolean"}
+                }
+              },
+              "notes": {"type": "array", "items": {"type": "string"}}
+            }
+          }
+        },
+        "accumulators": {
+          "type": "object",
+          "properties": {
+            "individual_deductible_remaining": {"type": "number"},
+            "family_deductible_remaining": {"type": "number"},
+            "individual_oop_remaining": {"type": "number"}
+          }
+        },
+        "response_codes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "code": {"type": "string"},
+              "description": {"type": "string"}
+            }
+          }
+        }
+      }
+    }
+  },
+
+  "test_cases": [
+    {
+      "id": "tc_001",
+      "description": "Active subscriber with multiple service type inquiries",
+      "input": {
+        "inquiry": {
+          "subscriber_id": "SUB-12345",
+          "member_id": "MEM-12345-00",
+          "relationship": "self",
+          "first_name": "JOHN",
+          "last_name": "SMITH",
+          "dob": "1980-05-15",
+          "service_date": "2025-02-01",
+          "service_type_codes": ["30", "98", "86"],
+          "provider_npi": "1234567890"
+        },
+        "member_record": {
+          "subscriber_id": "SUB-12345",
+          "member_id": "MEM-12345-00",
+          "plan_id": "BCBS-PPO-500",
+          "coverage_start": "2024-01-01",
+          "coverage_end": "2025-12-31",
+          "status": "active",
+          "network_providers": ["1234567890", "0987654321"],
+          "benefits": {
+            "30": {"covered": true, "copay": 0, "coinsurance_percent": 20, "requires_auth": false},
+            "98": {"covered": true, "copay": 25, "coinsurance_percent": 0, "requires_auth": false},
+            "86": {"covered": true, "copay": 150, "coinsurance_percent": 0, "requires_auth": false}
+          },
+          "accumulators": {
+            "individual_deductible": 500.00,
+            "individual_deductible_met": 350.00,
+            "family_deductible": 1500.00,
+            "family_deductible_met": 800.00,
+            "individual_oop_max": 4000.00,
+            "individual_oop_met": 450.00
+          }
+        }
+      },
+      "expected_output": {
+        "response_status": "found",
+        "subscriber_info": {
+          "subscriber_id": "SUB-12345",
+          "member_id": "MEM-12345-00",
+          "name": "JOHN SMITH",
+          "relationship": "self"
+        },
+        "coverage_info": {
+          "plan_id": "BCBS-PPO-500",
+          "coverage_status": "active",
+          "coverage_dates": {
+            "start": "2024-01-01",
+            "end": "2025-12-31"
+          },
+          "network_status": "in_network"
+        },
+        "service_eligibility": [
+          {
+            "service_type_code": "30",
+            "service_type_name": "Health Benefit Plan Coverage",
+            "coverage_status": "covered",
+            "in_network_benefits": {
+              "copay": 0,
+              "coinsurance_percent": 20,
+              "deductible_applies": true
+            },
+            "notes": []
+          },
+          {
+            "service_type_code": "98",
+            "service_type_name": "Professional Physician Visit",
+            "coverage_status": "covered",
+            "in_network_benefits": {
+              "copay": 25,
+              "coinsurance_percent": 0,
+              "deductible_applies": false
+            },
+            "notes": []
+          },
+          {
+            "service_type_code": "86",
+            "service_type_name": "Emergency Services",
+            "coverage_status": "covered",
+            "in_network_benefits": {
+              "copay": 150,
+              "coinsurance_percent": 0,
+              "deductible_applies": false
+            },
+            "notes": []
+          }
+        ],
+        "accumulators": {
+          "individual_deductible_remaining": 150.00,
+          "family_deductible_remaining": 700.00,
+          "individual_oop_remaining": 3550.00
+        },
+        "response_codes": [
+          {"code": "1", "description": "Active Coverage"}
+        ]
+      }
+    },
+    {
+      "id": "tc_002",
+      "description": "Dependent member with out-of-network provider",
+      "input": {
+        "inquiry": {
+          "subscriber_id": "SUB-67890",
+          "member_id": "MEM-67890-02",
+          "relationship": "child",
+          "first_name": "EMMA",
+          "last_name": "JOHNSON",
+          "dob": "2015-08-20",
+          "service_date": "2025-03-15",
+          "service_type_codes": ["98", "88"],
+          "provider_npi": "5555555555"
+        },
+        "member_record": {
+          "subscriber_id": "SUB-67890",
+          "member_id": "MEM-67890-02",
+          "plan_id": "AETNA-HMO-250",
+          "coverage_start": "2024-06-01",
+          "coverage_end": "2025-05-31",
+          "status": "active",
+          "network_providers": ["1111111111", "2222222222"],
+          "benefits": {
+            "98": {"covered": true, "copay": 20, "coinsurance_percent": 0, "requires_auth": false},
+            "88": {"covered": true, "copay": 10, "coinsurance_percent": 0, "requires_auth": false}
+          },
+          "accumulators": {
+            "individual_deductible": 250.00,
+            "individual_deductible_met": 250.00,
+            "family_deductible": 750.00,
+            "family_deductible_met": 500.00,
+            "individual_oop_max": 3000.00,
+            "individual_oop_met": 350.00
+          }
+        }
+      },
+      "expected_output": {
+        "response_status": "found",
+        "subscriber_info": {
+          "subscriber_id": "SUB-67890",
+          "member_id": "MEM-67890-02",
+          "name": "EMMA JOHNSON",
+          "relationship": "child"
+        },
+        "coverage_info": {
+          "plan_id": "AETNA-HMO-250",
+          "coverage_status": "active",
+          "coverage_dates": {
+            "start": "2024-06-01",
+            "end": "2025-05-31"
+          },
+          "network_status": "out_of_network"
+        },
+        "service_eligibility": [
+          {
+            "service_type_code": "98",
+            "service_type_name": "Professional Physician Visit",
+            "coverage_status": "covered",
+            "in_network_benefits": {
+              "copay": 20,
+              "coinsurance_percent": 0,
+              "deductible_applies": false
+            },
+            "notes": ["Out-of-network benefits may differ", "HMO plan may require in-network PCP referral"]
+          },
+          {
+            "service_type_code": "88",
+            "service_type_name": "Pharmacy",
+            "coverage_status": "covered",
+            "in_network_benefits": {
+              "copay": 10,
+              "coinsurance_percent": 0,
+              "deductible_applies": false
+            },
+            "notes": []
+          }
+        ],
+        "accumulators": {
+          "individual_deductible_remaining": 0.00,
+          "family_deductible_remaining": 250.00,
+          "individual_oop_remaining": 2650.00
+        },
+        "response_codes": [
+          {"code": "1", "description": "Active Coverage"},
+          {"code": "27", "description": "Out-of-Network Provider"}
+        ]
+      }
+    },
+    {
+      "id": "tc_003",
+      "description": "Terminated coverage - service date after termination",
+      "input": {
+        "inquiry": {
+          "subscriber_id": "SUB-11111",
+          "member_id": "MEM-11111-00",
+          "relationship": "self",
+          "first_name": "ROBERT",
+          "last_name": "WILLIAMS",
+          "dob": "1975-03-10",
+          "service_date": "2025-02-15",
+          "service_type_codes": ["30"],
+          "provider_npi": "9999999999"
+        },
+        "member_record": {
+          "subscriber_id": "SUB-11111",
+          "member_id": "MEM-11111-00",
+          "plan_id": "UHC-CHOICE-1000",
+          "coverage_start": "2023-01-01",
+          "coverage_end": "2024-12-31",
+          "status": "terminated",
+          "network_providers": [],
+          "benefits": {},
+          "accumulators": {
+            "individual_deductible": 1000.00,
+            "individual_deductible_met": 1000.00,
+            "family_deductible": 2000.00,
+            "family_deductible_met": 1500.00,
+            "individual_oop_max": 6000.00,
+            "individual_oop_met": 2500.00
+          }
+        }
+      },
+      "expected_output": {
+        "response_status": "found",
+        "subscriber_info": {
+          "subscriber_id": "SUB-11111",
+          "member_id": "MEM-11111-00",
+          "name": "ROBERT WILLIAMS",
+          "relationship": "self"
+        },
+        "coverage_info": {
+          "plan_id": "UHC-CHOICE-1000",
+          "coverage_status": "inactive",
+          "coverage_dates": {
+            "start": "2023-01-01",
+            "end": "2024-12-31"
+          },
+          "network_status": "unknown"
+        },
+        "service_eligibility": [
+          {
+            "service_type_code": "30",
+            "service_type_name": "Health Benefit Plan Coverage",
+            "coverage_status": "not_covered",
+            "in_network_benefits": null,
+            "notes": ["Coverage terminated as of 2024-12-31", "Service date 2025-02-15 is outside coverage period"]
+          }
+        ],
+        "accumulators": {
+          "individual_deductible_remaining": 0.00,
+          "family_deductible_remaining": 500.00,
+          "individual_oop_remaining": 3500.00
+        },
+        "response_codes": [
+          {"code": "6", "description": "Inactive Coverage"},
+          {"code": "33", "description": "Service Date Outside Coverage Period"}
+        ]
+      }
+    },
+    {
+      "id": "tc_004",
+      "description": "Member not found",
+      "input": {
+        "inquiry": {
+          "subscriber_id": "SUB-99999",
+          "member_id": "MEM-99999-00",
+          "relationship": "self",
+          "first_name": "UNKNOWN",
+          "last_name": "PERSON",
+          "dob": "1990-01-01",
+          "service_date": "2025-04-01",
+          "service_type_codes": ["30"],
+          "provider_npi": "1234567890"
+        },
+        "member_record": null
+      },
+      "expected_output": {
+        "response_status": "not_found",
+        "subscriber_info": {
+          "subscriber_id": "SUB-99999",
+          "member_id": "MEM-99999-00",
+          "name": "UNKNOWN PERSON",
+          "relationship": "self"
+        },
+        "coverage_info": null,
+        "service_eligibility": [],
+        "accumulators": null,
+        "response_codes": [
+          {"code": "72", "description": "Subscriber/Insured Not Found"}
+        ]
+      }
+    },
+    {
+      "id": "tc_005",
+      "description": "Service requiring prior authorization",
+      "input": {
+        "inquiry": {
+          "subscriber_id": "SUB-55555",
+          "member_id": "MEM-55555-01",
+          "relationship": "spouse",
+          "first_name": "SARAH",
+          "last_name": "DAVIS",
+          "dob": "1982-11-25",
+          "service_date": "2025-05-10",
+          "service_type_codes": ["48", "47", "33"],
+          "provider_npi": "7777777777"
+        },
+        "member_record": {
+          "subscriber_id": "SUB-55555",
+          "member_id": "MEM-55555-01",
+          "plan_id": "CIGNA-OPEN-750",
+          "coverage_start": "2025-01-01",
+          "coverage_end": "2025-12-31",
+          "status": "active",
+          "network_providers": ["7777777777", "8888888888"],
+          "benefits": {
+            "48": {"covered": true, "copay": 500, "coinsurance_percent": 20, "requires_auth": true},
+            "47": {"covered": true, "copay": 250, "coinsurance_percent": 20, "requires_auth": true},
+            "33": {"covered": true, "copay": 30, "coinsurance_percent": 0, "requires_auth": false}
+          },
+          "accumulators": {
+            "individual_deductible": 750.00,
+            "individual_deductible_met": 0.00,
+            "family_deductible": 1500.00,
+            "family_deductible_met": 200.00,
+            "individual_oop_max": 5000.00,
+            "individual_oop_met": 0.00
+          }
+        }
+      },
+      "expected_output": {
+        "response_status": "found",
+        "subscriber_info": {
+          "subscriber_id": "SUB-55555",
+          "member_id": "MEM-55555-01",
+          "name": "SARAH DAVIS",
+          "relationship": "spouse"
+        },
+        "coverage_info": {
+          "plan_id": "CIGNA-OPEN-750",
+          "coverage_status": "active",
+          "coverage_dates": {
+            "start": "2025-01-01",
+            "end": "2025-12-31"
+          },
+          "network_status": "in_network"
+        },
+        "service_eligibility": [
+          {
+            "service_type_code": "48",
+            "service_type_name": "Hospital Inpatient",
+            "coverage_status": "requires_auth",
+            "in_network_benefits": {
+              "copay": 500,
+              "coinsurance_percent": 20,
+              "deductible_applies": true
+            },
+            "notes": ["Prior authorization required", "Contact UM department at 1-800-XXX-XXXX"]
+          },
+          {
+            "service_type_code": "47",
+            "service_type_name": "Hospital",
+            "coverage_status": "requires_auth",
+            "in_network_benefits": {
+              "copay": 250,
+              "coinsurance_percent": 20,
+              "deductible_applies": true
+            },
+            "notes": ["Prior authorization required"]
+          },
+          {
+            "service_type_code": "33",
+            "service_type_name": "Chiropractic",
+            "coverage_status": "covered",
+            "in_network_benefits": {
+              "copay": 30,
+              "coinsurance_percent": 0,
+              "deductible_applies": false
+            },
+            "notes": []
+          }
+        ],
+        "accumulators": {
+          "individual_deductible_remaining": 750.00,
+          "family_deductible_remaining": 1300.00,
+          "individual_oop_remaining": 5000.00
+        },
+        "response_codes": [
+          {"code": "1", "description": "Active Coverage"},
+          {"code": "11", "description": "Prior Authorization Required"}
+        ]
+      }
+    }
+  ],
+
+  "validation_hints": {
+    "service_type_code_mapping": {
+      "30": "Health Benefit Plan Coverage",
+      "33": "Chiropractic",
+      "47": "Hospital",
+      "48": "Hospital Inpatient",
+      "50": "Hospital Outpatient",
+      "86": "Emergency Services",
+      "88": "Pharmacy",
+      "98": "Professional Physician Visit",
+      "AL": "Vision",
+      "AJ": "Dental"
+    },
+    "network_check": "provider_npi in network_providers array",
+    "coverage_date_check": "service_date between coverage_start and coverage_end",
+    "response_code_reference": "X12 271 AAA segment codes"
+  }
+}

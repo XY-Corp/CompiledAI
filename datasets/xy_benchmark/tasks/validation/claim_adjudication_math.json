@@ -1,0 +1,278 @@
+{
+  "id": "validation_001",
+  "name": "Claim Adjudication Math Validator",
+  "category": "validation",
+  "difficulty": "medium",
+  "description": "Validate claim line-level mathematics ensuring billed_amount - contractual_adjustment - other_adjustment = allowed_amount, and allowed_amount - payer_paid = patient_responsibility. Flag lines that don't balance.",
+
+  "specification": {
+    "natural_language": "Given claim lines with adjudication amounts, validate the math for each line. Rule 1: billed_amount - contractual_adjustment - other_adjustment = allowed_amount (tolerance: $0.01). Rule 2: allowed_amount - payer_paid = patient_responsibility (tolerance: $0.01). Flag any lines where these equations don't balance. Return validation status, discrepancies, and corrected values where determinable.",
+
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "claim_id": {"type": "string"},
+        "claim_lines": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "line_number": {"type": "integer"},
+              "procedure_code": {"type": "string"},
+              "billed_amount": {"type": "number"},
+              "contractual_adjustment": {"type": "number"},
+              "other_adjustment": {"type": "number"},
+              "allowed_amount": {"type": "number"},
+              "payer_paid": {"type": "number"},
+              "patient_responsibility": {"type": "number"}
+            },
+            "required": ["line_number", "billed_amount", "contractual_adjustment", "other_adjustment", "allowed_amount", "payer_paid", "patient_responsibility"]
+          }
+        },
+        "tolerance": {"type": "number", "default": 0.01}
+      }
+    },
+
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "claim_id": {"type": "string"},
+        "overall_status": {"type": "string", "enum": ["valid", "invalid"]},
+        "line_validations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "line_number": {"type": "integer"},
+              "status": {"type": "string", "enum": ["valid", "invalid"]},
+              "allowed_amount_check": {
+                "type": "object",
+                "properties": {
+                  "passed": {"type": "boolean"},
+                  "expected": {"type": "number"},
+                  "actual": {"type": "number"},
+                  "discrepancy": {"type": "number"}
+                }
+              },
+              "patient_responsibility_check": {
+                "type": "object",
+                "properties": {
+                  "passed": {"type": "boolean"},
+                  "expected": {"type": "number"},
+                  "actual": {"type": "number"},
+                  "discrepancy": {"type": "number"}
+                }
+              },
+              "errors": {"type": "array", "items": {"type": "string"}}
+            }
+          }
+        },
+        "summary": {
+          "type": "object",
+          "properties": {
+            "total_lines": {"type": "integer"},
+            "valid_lines": {"type": "integer"},
+            "invalid_lines": {"type": "integer"},
+            "total_discrepancy": {"type": "number"}
+          }
+        }
+      }
+    }
+  },
+
+  "test_cases": [
+    {
+      "id": "tc_001",
+      "description": "All lines balance correctly",
+      "input": {
+        "claim_id": "CLM-2025-001",
+        "claim_lines": [
+          {"line_number": 1, "procedure_code": "99213", "billed_amount": 150.00, "contractual_adjustment": 50.00, "other_adjustment": 0.00, "allowed_amount": 100.00, "payer_paid": 80.00, "patient_responsibility": 20.00},
+          {"line_number": 2, "procedure_code": "85025", "billed_amount": 45.00, "contractual_adjustment": 15.00, "other_adjustment": 0.00, "allowed_amount": 30.00, "payer_paid": 24.00, "patient_responsibility": 6.00},
+          {"line_number": 3, "procedure_code": "36415", "billed_amount": 25.00, "contractual_adjustment": 10.00, "other_adjustment": 0.00, "allowed_amount": 15.00, "payer_paid": 12.00, "patient_responsibility": 3.00}
+        ],
+        "tolerance": 0.01
+      },
+      "expected_output": {
+        "claim_id": "CLM-2025-001",
+        "overall_status": "valid",
+        "line_validations": [
+          {
+            "line_number": 1,
+            "status": "valid",
+            "allowed_amount_check": {"passed": true, "expected": 100.00, "actual": 100.00, "discrepancy": 0.00},
+            "patient_responsibility_check": {"passed": true, "expected": 20.00, "actual": 20.00, "discrepancy": 0.00},
+            "errors": []
+          },
+          {
+            "line_number": 2,
+            "status": "valid",
+            "allowed_amount_check": {"passed": true, "expected": 30.00, "actual": 30.00, "discrepancy": 0.00},
+            "patient_responsibility_check": {"passed": true, "expected": 6.00, "actual": 6.00, "discrepancy": 0.00},
+            "errors": []
+          },
+          {
+            "line_number": 3,
+            "status": "valid",
+            "allowed_amount_check": {"passed": true, "expected": 15.00, "actual": 15.00, "discrepancy": 0.00},
+            "patient_responsibility_check": {"passed": true, "expected": 3.00, "actual": 3.00, "discrepancy": 0.00},
+            "errors": []
+          }
+        ],
+        "summary": {
+          "total_lines": 3,
+          "valid_lines": 3,
+          "invalid_lines": 0,
+          "total_discrepancy": 0.00
+        }
+      }
+    },
+    {
+      "id": "tc_002",
+      "description": "Allowed amount calculation error",
+      "input": {
+        "claim_id": "CLM-2025-002",
+        "claim_lines": [
+          {"line_number": 1, "procedure_code": "99214", "billed_amount": 200.00, "contractual_adjustment": 75.00, "other_adjustment": 10.00, "allowed_amount": 120.00, "payer_paid": 96.00, "patient_responsibility": 24.00}
+        ],
+        "tolerance": 0.01
+      },
+      "expected_output": {
+        "claim_id": "CLM-2025-002",
+        "overall_status": "invalid",
+        "line_validations": [
+          {
+            "line_number": 1,
+            "status": "invalid",
+            "allowed_amount_check": {"passed": false, "expected": 115.00, "actual": 120.00, "discrepancy": 5.00},
+            "patient_responsibility_check": {"passed": true, "expected": 24.00, "actual": 24.00, "discrepancy": 0.00},
+            "errors": ["Allowed amount mismatch: expected $115.00 (billed $200.00 - contractual $75.00 - other $10.00), got $120.00"]
+          }
+        ],
+        "summary": {
+          "total_lines": 1,
+          "valid_lines": 0,
+          "invalid_lines": 1,
+          "total_discrepancy": 5.00
+        }
+      }
+    },
+    {
+      "id": "tc_003",
+      "description": "Patient responsibility calculation error",
+      "input": {
+        "claim_id": "CLM-2025-003",
+        "claim_lines": [
+          {"line_number": 1, "procedure_code": "71046", "billed_amount": 350.00, "contractual_adjustment": 150.00, "other_adjustment": 0.00, "allowed_amount": 200.00, "payer_paid": 160.00, "patient_responsibility": 50.00}
+        ],
+        "tolerance": 0.01
+      },
+      "expected_output": {
+        "claim_id": "CLM-2025-003",
+        "overall_status": "invalid",
+        "line_validations": [
+          {
+            "line_number": 1,
+            "status": "invalid",
+            "allowed_amount_check": {"passed": true, "expected": 200.00, "actual": 200.00, "discrepancy": 0.00},
+            "patient_responsibility_check": {"passed": false, "expected": 40.00, "actual": 50.00, "discrepancy": 10.00},
+            "errors": ["Patient responsibility mismatch: expected $40.00 (allowed $200.00 - payer_paid $160.00), got $50.00"]
+          }
+        ],
+        "summary": {
+          "total_lines": 1,
+          "valid_lines": 0,
+          "invalid_lines": 1,
+          "total_discrepancy": 10.00
+        }
+      }
+    },
+    {
+      "id": "tc_004",
+      "description": "Multiple errors on same line",
+      "input": {
+        "claim_id": "CLM-2025-004",
+        "claim_lines": [
+          {"line_number": 1, "procedure_code": "99215", "billed_amount": 250.00, "contractual_adjustment": 100.00, "other_adjustment": 25.00, "allowed_amount": 150.00, "payer_paid": 100.00, "patient_responsibility": 75.00},
+          {"line_number": 2, "procedure_code": "90837", "billed_amount": 180.00, "contractual_adjustment": 40.00, "other_adjustment": 0.00, "allowed_amount": 140.00, "payer_paid": 112.00, "patient_responsibility": 28.00}
+        ],
+        "tolerance": 0.01
+      },
+      "expected_output": {
+        "claim_id": "CLM-2025-004",
+        "overall_status": "invalid",
+        "line_validations": [
+          {
+            "line_number": 1,
+            "status": "invalid",
+            "allowed_amount_check": {"passed": false, "expected": 125.00, "actual": 150.00, "discrepancy": 25.00},
+            "patient_responsibility_check": {"passed": false, "expected": 50.00, "actual": 75.00, "discrepancy": 25.00},
+            "errors": [
+              "Allowed amount mismatch: expected $125.00 (billed $250.00 - contractual $100.00 - other $25.00), got $150.00",
+              "Patient responsibility mismatch: expected $50.00 (allowed $150.00 - payer_paid $100.00), got $75.00"
+            ]
+          },
+          {
+            "line_number": 2,
+            "status": "valid",
+            "allowed_amount_check": {"passed": true, "expected": 140.00, "actual": 140.00, "discrepancy": 0.00},
+            "patient_responsibility_check": {"passed": true, "expected": 28.00, "actual": 28.00, "discrepancy": 0.00},
+            "errors": []
+          }
+        ],
+        "summary": {
+          "total_lines": 2,
+          "valid_lines": 1,
+          "invalid_lines": 1,
+          "total_discrepancy": 50.00
+        }
+      }
+    },
+    {
+      "id": "tc_005",
+      "description": "Rounding tolerance edge case - within tolerance",
+      "input": {
+        "claim_id": "CLM-2025-005",
+        "claim_lines": [
+          {"line_number": 1, "procedure_code": "99203", "billed_amount": 175.00, "contractual_adjustment": 58.33, "other_adjustment": 0.00, "allowed_amount": 116.67, "payer_paid": 93.34, "patient_responsibility": 23.33},
+          {"line_number": 2, "procedure_code": "87880", "billed_amount": 33.33, "contractual_adjustment": 11.11, "other_adjustment": 0.00, "allowed_amount": 22.23, "payer_paid": 17.78, "patient_responsibility": 4.45}
+        ],
+        "tolerance": 0.01
+      },
+      "expected_output": {
+        "claim_id": "CLM-2025-005",
+        "overall_status": "valid",
+        "line_validations": [
+          {
+            "line_number": 1,
+            "status": "valid",
+            "allowed_amount_check": {"passed": true, "expected": 116.67, "actual": 116.67, "discrepancy": 0.00},
+            "patient_responsibility_check": {"passed": true, "expected": 23.33, "actual": 23.33, "discrepancy": 0.00},
+            "errors": []
+          },
+          {
+            "line_number": 2,
+            "status": "valid",
+            "allowed_amount_check": {"passed": true, "expected": 22.22, "actual": 22.23, "discrepancy": 0.01},
+            "patient_responsibility_check": {"passed": true, "expected": 4.45, "actual": 4.45, "discrepancy": 0.00},
+            "errors": []
+          }
+        ],
+        "summary": {
+          "total_lines": 2,
+          "valid_lines": 2,
+          "invalid_lines": 0,
+          "total_discrepancy": 0.01
+        }
+      }
+    }
+  ],
+
+  "validation_hints": {
+    "allowed_amount_formula": "billed_amount - contractual_adjustment - other_adjustment",
+    "patient_responsibility_formula": "allowed_amount - payer_paid",
+    "default_tolerance": 0.01,
+    "rounding_method": "round_half_up_to_cents",
+    "negative_amounts_invalid": true
+  }
+}

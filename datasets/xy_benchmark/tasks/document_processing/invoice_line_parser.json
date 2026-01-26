@@ -1,0 +1,177 @@
+{
+  "id": "doc_002",
+  "name": "Invoice Line Item Parser",
+  "category": "document_processing",
+  "difficulty": "easy",
+  "description": "Parse invoice line items from a vendor invoice and normalize to standard format with tax calculations.",
+  
+  "specification": {
+    "natural_language": "Extract line items from a vendor invoice. Normalize product codes to uppercase, calculate line totals (quantity × unit_price), apply tax rate, and compute invoice total.",
+    
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "invoice_number": {"type": "string"},
+        "vendor": {"type": "string"},
+        "invoice_date": {"type": "string", "format": "date"},
+        "tax_rate": {"type": "number"},
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "product_code": {"type": "string"},
+              "description": {"type": "string"},
+              "quantity": {"type": "integer"},
+              "unit_price": {"type": "number"}
+            }
+          }
+        }
+      }
+    },
+    
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "invoice_number": {"type": "string"},
+        "vendor": {"type": "string"},
+        "line_items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "product_code": {"type": "string"},
+              "quantity": {"type": "integer"},
+              "unit_price": {"type": "number"},
+              "line_total": {"type": "number"}
+            }
+          }
+        },
+        "subtotal": {"type": "number"},
+        "tax_amount": {"type": "number"},
+        "total": {"type": "number"}
+      }
+    }
+  },
+  
+  "test_cases": [
+    {
+      "id": "tc_001",
+      "input": {
+        "invoice_number": "INV-2025-0042",
+        "vendor": "Office Supplies Co",
+        "invoice_date": "2025-01-20",
+        "tax_rate": 0.08,
+        "items": [
+          {"product_code": "pen-bl-12", "description": "Blue pens (12pk)", "quantity": 5, "unit_price": 8.99},
+          {"product_code": "paper-a4", "description": "A4 Paper Ream", "quantity": 10, "unit_price": 12.50}
+        ]
+      },
+      "expected_output": {
+        "invoice_number": "INV-2025-0042",
+        "vendor": "Office Supplies Co",
+        "line_items": [
+          {"product_code": "PEN-BL-12", "quantity": 5, "unit_price": 8.99, "line_total": 44.95},
+          {"product_code": "PAPER-A4", "quantity": 10, "unit_price": 12.50, "line_total": 125.00}
+        ],
+        "subtotal": 169.95,
+        "tax_amount": 13.60,
+        "total": 183.55
+      }
+    },
+    {
+      "id": "tc_002",
+      "input": {
+        "invoice_number": "INV-2025-0043",
+        "vendor": "Tech Hardware Inc",
+        "invoice_date": "2025-01-21",
+        "tax_rate": 0.0,
+        "items": [
+          {"product_code": "USB-C-CABLE", "description": "USB-C Cable 2m", "quantity": 3, "unit_price": 15.00}
+        ]
+      },
+      "expected_output": {
+        "invoice_number": "INV-2025-0043",
+        "vendor": "Tech Hardware Inc",
+        "line_items": [
+          {"product_code": "USB-C-CABLE", "quantity": 3, "unit_price": 15.00, "line_total": 45.00}
+        ],
+        "subtotal": 45.00,
+        "tax_amount": 0.00,
+        "total": 45.00
+      }
+    },
+    {
+      "id": "tc_003",
+      "description": "Empty items list",
+      "input": {
+        "invoice_number": "INV-2025-0044",
+        "vendor": "Empty Vendor LLC",
+        "invoice_date": "2025-01-22",
+        "tax_rate": 0.10,
+        "items": []
+      },
+      "expected_output": {
+        "invoice_number": "INV-2025-0044",
+        "vendor": "Empty Vendor LLC",
+        "line_items": [],
+        "subtotal": 0.00,
+        "tax_amount": 0.00,
+        "total": 0.00
+      }
+    },
+    {
+      "id": "tc_004",
+      "description": "High tax rate and decimal precision edge case",
+      "input": {
+        "invoice_number": "INV-2025-0045",
+        "vendor": "Euro Imports GmbH",
+        "invoice_date": "2025-01-23",
+        "tax_rate": 0.21,
+        "items": [
+          {"product_code": "widget-pro", "description": "Widget Pro", "quantity": 3, "unit_price": 33.33},
+          {"product_code": "gadget-x", "description": "Gadget X", "quantity": 7, "unit_price": 14.29}
+        ]
+      },
+      "expected_output": {
+        "invoice_number": "INV-2025-0045",
+        "vendor": "Euro Imports GmbH",
+        "line_items": [
+          {"product_code": "WIDGET-PRO", "quantity": 3, "unit_price": 33.33, "line_total": 99.99},
+          {"product_code": "GADGET-X", "quantity": 7, "unit_price": 14.29, "line_total": 100.03}
+        ],
+        "subtotal": 200.02,
+        "tax_amount": 42.00,
+        "total": 242.02
+      }
+    },
+    {
+      "id": "tc_005",
+      "description": "Single item with quantity of 1 and mixed case product code",
+      "input": {
+        "invoice_number": "INV-2025-0046",
+        "vendor": "Single Item Store",
+        "invoice_date": "2025-01-24",
+        "tax_rate": 0.0625,
+        "items": [
+          {"product_code": "LaPtOp-DeLL-15", "description": "Dell Laptop 15 inch", "quantity": 1, "unit_price": 1299.99}
+        ]
+      },
+      "expected_output": {
+        "invoice_number": "INV-2025-0046",
+        "vendor": "Single Item Store",
+        "line_items": [
+          {"product_code": "LAPTOP-DELL-15", "quantity": 1, "unit_price": 1299.99, "line_total": 1299.99}
+        ],
+        "subtotal": 1299.99,
+        "tax_amount": 81.25,
+        "total": 1381.24
+      }
+    }
+  ],
+  
+  "validation_hints": {
+    "rounding": "round to 2 decimal places",
+    "product_code_normalization": "uppercase"
+  }
+}

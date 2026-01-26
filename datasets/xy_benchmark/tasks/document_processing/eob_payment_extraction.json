@@ -1,0 +1,437 @@
+{
+  "id": "doc_001",
+  "name": "Insurance Payment Extraction",
+  "category": "document_processing",
+  "difficulty": "medium",
+  "description": "Extract payment line items from an insurance Explanation of Benefits (EOB) document, calculate totals, and flag discrepancies.",
+  "specification": {
+    "natural_language": "Given an EOB document with patient info, payer details, and payment line items, extract all payments into a structured format. Calculate the total billed, allowed, and paid amounts. Flag any line item where the paid amount differs from allowed by more than 5%.",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "document_id": {
+          "type": "string"
+        },
+        "patient": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "name": {
+              "type": "string"
+            },
+            "dob": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        },
+        "payer": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "plan_id": {
+              "type": "string"
+            }
+          }
+        },
+        "service_date": {
+          "type": "string",
+          "format": "date"
+        },
+        "line_items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "service_code": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              },
+              "billed_amount": {
+                "type": "number"
+              },
+              "allowed_amount": {
+                "type": "number"
+              },
+              "paid_amount": {
+                "type": "number"
+              },
+              "adjustment_reason": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "document_id": {
+          "type": "string"
+        },
+        "patient_id": {
+          "type": "string"
+        },
+        "payments": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "service_code": {
+                "type": "string"
+              },
+              "billed": {
+                "type": "number"
+              },
+              "allowed": {
+                "type": "number"
+              },
+              "paid": {
+                "type": "number"
+              },
+              "variance_flag": {
+                "type": "boolean"
+              }
+            }
+          }
+        },
+        "totals": {
+          "type": "object",
+          "properties": {
+            "total_billed": {
+              "type": "number"
+            },
+            "total_allowed": {
+              "type": "number"
+            },
+            "total_paid": {
+              "type": "number"
+            }
+          }
+        },
+        "flagged_count": {
+          "type": "integer"
+        }
+      }
+    }
+  },
+  "test_cases": [
+    {
+      "id": "tc_001",
+      "input": {
+        "document_id": "EOB-2025-001",
+        "patient": {
+          "id": "P123",
+          "name": "John Smith",
+          "dob": "1985-03-15"
+        },
+        "payer": {
+          "name": "HealthFirst Insurance",
+          "plan_id": "HF-PPO-500"
+        },
+        "service_date": "2025-01-10",
+        "line_items": [
+          {
+            "service_code": "99213",
+            "description": "Office visit",
+            "billed_amount": 150.0,
+            "allowed_amount": 120.0,
+            "paid_amount": 120.0,
+            "adjustment_reason": "contracted rate"
+          },
+          {
+            "service_code": "85025",
+            "description": "CBC blood test",
+            "billed_amount": 45.0,
+            "allowed_amount": 35.0,
+            "paid_amount": 35.0,
+            "adjustment_reason": "contracted rate"
+          },
+          {
+            "service_code": "36415",
+            "description": "Venipuncture",
+            "billed_amount": 25.0,
+            "allowed_amount": 20.0,
+            "paid_amount": 15.0,
+            "adjustment_reason": "plan limitation"
+          }
+        ]
+      },
+      "expected_output": {
+        "document_id": "EOB-2025-001",
+        "patient_id": "P123",
+        "payments": [
+          {
+            "service_code": "99213",
+            "billed": 150.0,
+            "allowed": 120.0,
+            "paid": 120.0,
+            "variance_flag": false
+          },
+          {
+            "service_code": "85025",
+            "billed": 45.0,
+            "allowed": 35.0,
+            "paid": 35.0,
+            "variance_flag": false
+          },
+          {
+            "service_code": "36415",
+            "billed": 25.0,
+            "allowed": 20.0,
+            "paid": 15.0,
+            "variance_flag": true
+          }
+        ],
+        "totals": {
+          "total_billed": 220.0,
+          "total_allowed": 175.0,
+          "total_paid": 170.0
+        },
+        "flagged_count": 1
+      }
+    },
+    {
+      "id": "tc_002",
+      "input": {
+        "document_id": "EOB-2025-002",
+        "patient": {
+          "id": "P456",
+          "name": "Jane Doe",
+          "dob": "1972-08-22"
+        },
+        "payer": {
+          "name": "BlueCare Plus",
+          "plan_id": "BC-HMO-100"
+        },
+        "service_date": "2025-01-12",
+        "line_items": [
+          {
+            "service_code": "99214",
+            "description": "Office visit - established",
+            "billed_amount": 200.0,
+            "allowed_amount": 165.0,
+            "paid_amount": 165.0,
+            "adjustment_reason": ""
+          },
+          {
+            "service_code": "90834",
+            "description": "Psychotherapy 45min",
+            "billed_amount": 175.0,
+            "allowed_amount": 140.0,
+            "paid_amount": 140.0,
+            "adjustment_reason": ""
+          }
+        ]
+      },
+      "expected_output": {
+        "document_id": "EOB-2025-002",
+        "patient_id": "P456",
+        "payments": [
+          {
+            "service_code": "99214",
+            "billed": 200.0,
+            "allowed": 165.0,
+            "paid": 165.0,
+            "variance_flag": false
+          },
+          {
+            "service_code": "90834",
+            "billed": 175.0,
+            "allowed": 140.0,
+            "paid": 140.0,
+            "variance_flag": false
+          }
+        ],
+        "totals": {
+          "total_billed": 375.0,
+          "total_allowed": 305.0,
+          "total_paid": 305.0
+        },
+        "flagged_count": 0
+      }
+    },
+    {
+      "id": "tc_003",
+      "input": {
+        "document_id": "EOB-2025-003",
+        "patient": {
+          "id": "P789",
+          "name": "Bob Wilson",
+          "dob": "1990-11-30"
+        },
+        "payer": {
+          "name": "United Health",
+          "plan_id": "UH-EPO-250"
+        },
+        "service_date": "2025-01-15",
+        "line_items": []
+      },
+      "expected_output": {
+        "document_id": "EOB-2025-003",
+        "patient_id": "P789",
+        "payments": [],
+        "totals": {
+          "total_billed": 0,
+          "total_allowed": 0,
+          "total_paid": 0
+        },
+        "flagged_count": 0
+      }
+    },
+    {
+      "id": "tc_004",
+      "input": {
+        "document_id": "EOB-2025-004",
+        "patient": {
+          "id": "P999",
+          "name": "Mary Johnson",
+          "dob": "1968-11-08"
+        },
+        "payer": {
+          "name": "Cigna Health",
+          "plan_id": "CIG-HMO-200"
+        },
+        "service_date": "2025-01-18",
+        "line_items": [
+          {
+            "service_code": "99215",
+            "description": "Office visit - complex",
+            "billed_amount": 300.0,
+            "allowed_amount": 250.0,
+            "paid_amount": 200.0,
+            "adjustment_reason": "copay applied"
+          },
+          {
+            "service_code": "87880",
+            "description": "Strep test",
+            "billed_amount": 50.0,
+            "allowed_amount": 40.0,
+            "paid_amount": 40.0,
+            "adjustment_reason": ""
+          },
+          {
+            "service_code": "99000",
+            "description": "Specimen handling",
+            "billed_amount": 15.0,
+            "allowed_amount": 10.0,
+            "paid_amount": 0.0,
+            "adjustment_reason": "bundled service"
+          }
+        ]
+      },
+      "expected_output": {
+        "document_id": "EOB-2025-004",
+        "patient_id": "P999",
+        "payments": [
+          {
+            "service_code": "99215",
+            "billed": 300.0,
+            "allowed": 250.0,
+            "paid": 200.0,
+            "variance_flag": true
+          },
+          {
+            "service_code": "87880",
+            "billed": 50.0,
+            "allowed": 40.0,
+            "paid": 40.0,
+            "variance_flag": false
+          },
+          {
+            "service_code": "99000",
+            "billed": 15.0,
+            "allowed": 10.0,
+            "paid": 0.0,
+            "variance_flag": true
+          }
+        ],
+        "totals": {
+          "total_billed": 365.0,
+          "total_allowed": 300.0,
+          "total_paid": 240.0
+        },
+        "flagged_count": 2
+      }
+    },
+    {
+      "id": "tc_005",
+      "input": {
+        "document_id": "EOB-2025-005",
+        "patient": {
+          "id": "P888",
+          "name": "Robert Lee",
+          "dob": "1995-04-20"
+        },
+        "payer": {
+          "name": "Medicare",
+          "plan_id": "MCARE-A"
+        },
+        "service_date": "2025-01-20",
+        "line_items": [
+          {
+            "service_code": "99213",
+            "description": "Office visit",
+            "billed_amount": 150.0,
+            "allowed_amount": 75.0,
+            "paid_amount": 60.0,
+            "adjustment_reason": "Medicare rate"
+          },
+          {
+            "service_code": "36415",
+            "description": "Blood draw",
+            "billed_amount": 20.0,
+            "allowed_amount": 3.0,
+            "paid_amount": 2.4,
+            "adjustment_reason": "Medicare rate"
+          }
+        ]
+      },
+      "expected_output": {
+        "document_id": "EOB-2025-005",
+        "patient_id": "P888",
+        "payments": [
+          {
+            "service_code": "99213",
+            "billed": 150.0,
+            "allowed": 75.0,
+            "paid": 60.0,
+            "variance_flag": true
+          },
+          {
+            "service_code": "36415",
+            "billed": 20.0,
+            "allowed": 3.0,
+            "paid": 2.4,
+            "variance_flag": true
+          }
+        ],
+        "totals": {
+          "total_billed": 170.0,
+          "total_allowed": 78.0,
+          "total_paid": 62.4
+        },
+        "flagged_count": 2
+      }
+    }
+  ],
+  "validation_hints": {
+    "variance_threshold": 0.05,
+    "required_functions": [
+      "extract_payments",
+      "calculate_totals",
+      "check_variance"
+    ],
+    "error_handling": [
+      "empty_line_items",
+      "missing_amounts"
+    ]
+  }
+}

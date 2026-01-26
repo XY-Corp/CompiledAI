@@ -1,0 +1,33 @@
+{
+  "variant": "lite",
+  "dataset_name": "princeton-nlp/SWE-bench_Lite",
+  "total_instances": 300,
+  "repos": {
+    "astropy/astropy": 6,
+    "django/django": 114,
+    "matplotlib/matplotlib": 23,
+    "mwaskom/seaborn": 4,
+    "pallets/flask": 3,
+    "psf/requests": 6,
+    "pydata/xarray": 5,
+    "pylint-dev/pylint": 6,
+    "pytest-dev/pytest": 17,
+    "scikit-learn/scikit-learn": 23,
+    "sphinx-doc/sphinx": 16,
+    "sympy/sympy": 77
+  },
+  "fields": [
+    "repo",
+    "instance_id",
+    "base_commit",
+    "patch",
+    "test_patch",
+    "problem_statement",
+    "hints_text",
+    "created_at",
+    "version",
+    "FAIL_TO_PASS",
+    "PASS_TO_PASS",
+    "environment_setup_commit"
+  ]
+}

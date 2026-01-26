@@ -1,0 +1,145 @@
+{
+  "name": "CompiledAI-Bench",
+  "version": "2.0",
+  "description": "Enterprise workflow benchmark for evaluating Compiled AI systems",
+  "created": "2025-01-26",
+  "updated": "2025-01-26",
+  
+  "statistics": {
+    "total_tasks": 13,
+    "total_test_cases": 65,
+    "categories": {
+      "document_processing": 4,
+      "data_transformation": 3,
+      "decision_logic": 4,
+      "api_orchestration": 2
+    },
+    "difficulty_distribution": {
+      "easy": 1,
+      "medium": 7,
+      "hard": 5
+    }
+  },
+  
+  "tasks": [
+    {
+      "id": "doc_001",
+      "name": "Insurance Payment Extraction",
+      "path": "tasks/document_processing/eob_payment_extraction.json",
+      "category": "document_processing",
+      "difficulty": "medium",
+      "test_cases": 5
+    },
+    {
+      "id": "doc_002",
+      "name": "Invoice Line Item Parser",
+      "path": "tasks/document_processing/invoice_line_parser.json",
+      "category": "document_processing",
+      "difficulty": "easy",
+      "test_cases": 5
+    },
+    {
+      "id": "doc_003",
+      "name": "Medical Form Data Extraction",
+      "path": "tasks/document_processing/medical_form_extraction.json",
+      "category": "document_processing",
+      "difficulty": "medium",
+      "test_cases": 5
+    },
+    {
+      "id": "doc_004",
+      "name": "Remittance Advice Parser",
+      "path": "tasks/document_processing/remittance_advice_parser.json",
+      "category": "document_processing",
+      "difficulty": "hard",
+      "test_cases": 5
+    },
+    {
+      "id": "data_001",
+      "name": "Patient Record Merge",
+      "path": "tasks/data_transformation/patient_record_merge.json",
+      "category": "data_transformation",
+      "difficulty": "hard",
+      "test_cases": 5
+    },
+    {
+      "id": "data_002",
+      "name": "Healthcare Schema Mapping",
+      "path": "tasks/data_transformation/schema_mapping.json",
+      "category": "data_transformation",
+      "difficulty": "medium",
+      "test_cases": 5
+    },
+    {
+      "id": "data_003",
+      "name": "Appointment Schedule Aggregation",
+      "path": "tasks/data_transformation/appointment_aggregation.json",
+      "category": "data_transformation",
+      "difficulty": "medium",
+      "test_cases": 5
+    },
+    {
+      "id": "logic_001",
+      "name": "Insurance Eligibility Verification",
+      "path": "tasks/decision_logic/eligibility_check.json",
+      "category": "decision_logic",
+      "difficulty": "medium",
+      "test_cases": 5
+    },
+    {
+      "id": "logic_002",
+      "name": "Claims Processing Router",
+      "path": "tasks/decision_logic/claim_routing.json",
+      "category": "decision_logic",
+      "difficulty": "medium",
+      "test_cases": 5
+    },
+    {
+      "id": "logic_003",
+      "name": "Prior Authorization Decision Engine",
+      "path": "tasks/decision_logic/prior_auth_decision.json",
+      "category": "decision_logic",
+      "difficulty": "hard",
+      "test_cases": 5
+    },
+    {
+      "id": "logic_004",
+      "name": "Payment Allocation Rules",
+      "path": "tasks/decision_logic/payment_allocation.json",
+      "category": "decision_logic",
+      "difficulty": "medium",
+      "test_cases": 5
+    },
+    {
+      "id": "api_001",
+      "name": "Lab Result System Sync",
+      "path": "tasks/api_orchestration/lab_result_sync.json",
+      "category": "api_orchestration",
+      "difficulty": "hard",
+      "test_cases": 5
+    },
+    {
+      "id": "api_002",
+      "name": "Patient Onboarding Orchestration",
+      "path": "tasks/api_orchestration/patient_onboarding_flow.json",
+      "category": "api_orchestration",
+      "difficulty": "hard",
+      "test_cases": 5
+    }
+  ],
+  
+  "evaluation_guidance": {
+    "metrics": {
+      "exact_match_rate": "Percentage of test cases with output exactly matching expected",
+      "schema_compliance": "Percentage of outputs conforming to output_schema",
+      "functional_correctness": "Percentage passing business logic validation"
+    },
+    "recommended_evaluation_order": [
+      "1. Validate generated code compiles/parses",
+      "2. Run security analysis (Bandit)",
+      "3. Run type checking (mypy)",
+      "4. Execute against test cases",
+      "5. Compare outputs to expected"
+    ]
+  }
+}

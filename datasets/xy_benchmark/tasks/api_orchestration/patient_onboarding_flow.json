@@ -1,0 +1,351 @@
+{
+  "id": "api_002",
+  "name": "Patient Onboarding Orchestration",
+  "category": "api_orchestration",
+  "difficulty": "hard",
+  "description": "Orchestrate a multi-step patient onboarding flow across multiple systems: EHR, billing, portal, and notifications.",
+  
+  "specification": {
+    "natural_language": "Process a new patient registration by: (1) Create patient record in EHR, (2) Set up billing account with insurance info, (3) Create patient portal account, (4) Send welcome notifications (email + SMS). Track success/failure of each step, handle partial failures gracefully, and return overall status.",
+    
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "registration_id": {"type": "string"},
+        "patient_info": {
+          "type": "object",
+          "properties": {
+            "first_name": {"type": "string"},
+            "last_name": {"type": "string"},
+            "dob": {"type": "string"},
+            "email": {"type": "string"},
+            "phone": {"type": "string"},
+            "address": {"type": "string"}
+          }
+        },
+        "insurance_info": {
+          "type": "object",
+          "properties": {
+            "payer_id": {"type": "string"},
+            "member_id": {"type": "string"},
+            "group_number": {"type": "string"}
+          }
+        },
+        "preferences": {
+          "type": "object",
+          "properties": {
+            "portal_access": {"type": "boolean"},
+            "email_notifications": {"type": "boolean"},
+            "sms_notifications": {"type": "boolean"}
+          }
+        },
+        "system_status": {
+          "type": "object",
+          "properties": {
+            "ehr_available": {"type": "boolean"},
+            "billing_available": {"type": "boolean"},
+            "portal_available": {"type": "boolean"},
+            "notification_available": {"type": "boolean"}
+          }
+        }
+      }
+    },
+    
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "registration_id": {"type": "string"},
+        "overall_status": {"type": "string", "enum": ["success", "partial_success", "failed"]},
+        "steps": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "step_name": {"type": "string"},
+              "status": {"type": "string", "enum": ["success", "failed", "skipped"]},
+              "system_id": {"type": "string"},
+              "error_message": {"type": "string"}
+            }
+          }
+        },
+        "created_ids": {
+          "type": "object",
+          "properties": {
+            "ehr_patient_id": {"type": "string"},
+            "billing_account_id": {"type": "string"},
+            "portal_user_id": {"type": "string"}
+          }
+        },
+        "notifications_sent": {
+          "type": "object",
+          "properties": {
+            "email": {"type": "boolean"},
+            "sms": {"type": "boolean"}
+          }
+        },
+        "requires_manual_followup": {"type": "boolean"},
+        "followup_items": {"type": "array", "items": {"type": "string"}}
+      }
+    }
+  },
+  
+  "test_cases": [
+    {
+      "id": "tc_001",
+      "description": "Full success - all systems available, all preferences enabled",
+      "input": {
+        "registration_id": "REG-001",
+        "patient_info": {
+          "first_name": "John",
+          "last_name": "Smith",
+          "dob": "1985-03-15",
+          "email": "john.smith@email.com",
+          "phone": "555-0101",
+          "address": "123 Main St, Anytown, ST 12345"
+        },
+        "insurance_info": {
+          "payer_id": "BCBS",
+          "member_id": "XYZ123456",
+          "group_number": "GRP001"
+        },
+        "preferences": {
+          "portal_access": true,
+          "email_notifications": true,
+          "sms_notifications": true
+        },
+        "system_status": {
+          "ehr_available": true,
+          "billing_available": true,
+          "portal_available": true,
+          "notification_available": true
+        }
+      },
+      "expected_output": {
+        "registration_id": "REG-001",
+        "overall_status": "success",
+        "steps": [
+          {"step_name": "create_ehr_patient", "status": "success", "system_id": "EHR-P001", "error_message": ""},
+          {"step_name": "create_billing_account", "status": "success", "system_id": "BILL-A001", "error_message": ""},
+          {"step_name": "create_portal_account", "status": "success", "system_id": "PORT-U001", "error_message": ""},
+          {"step_name": "send_email_notification", "status": "success", "system_id": "NOTIF-E001", "error_message": ""},
+          {"step_name": "send_sms_notification", "status": "success", "system_id": "NOTIF-S001", "error_message": ""}
+        ],
+        "created_ids": {
+          "ehr_patient_id": "EHR-P001",
+          "billing_account_id": "BILL-A001",
+          "portal_user_id": "PORT-U001"
+        },
+        "notifications_sent": {"email": true, "sms": true},
+        "requires_manual_followup": false,
+        "followup_items": []
+      }
+    },
+    {
+      "id": "tc_002",
+      "description": "Partial success - billing system unavailable",
+      "input": {
+        "registration_id": "REG-002",
+        "patient_info": {
+          "first_name": "Jane",
+          "last_name": "Doe",
+          "dob": "1990-07-22",
+          "email": "jane.doe@email.com",
+          "phone": "555-0202",
+          "address": "456 Oak Ave, Somewhere, ST 67890"
+        },
+        "insurance_info": {
+          "payer_id": "AETNA",
+          "member_id": "ABC789012",
+          "group_number": "GRP002"
+        },
+        "preferences": {
+          "portal_access": true,
+          "email_notifications": true,
+          "sms_notifications": false
+        },
+        "system_status": {
+          "ehr_available": true,
+          "billing_available": false,
+          "portal_available": true,
+          "notification_available": true
+        }
+      },
+      "expected_output": {
+        "registration_id": "REG-002",
+        "overall_status": "partial_success",
+        "steps": [
+          {"step_name": "create_ehr_patient", "status": "success", "system_id": "EHR-P002", "error_message": ""},
+          {"step_name": "create_billing_account", "status": "failed", "system_id": "", "error_message": "Billing system unavailable"},
+          {"step_name": "create_portal_account", "status": "success", "system_id": "PORT-U002", "error_message": ""},
+          {"step_name": "send_email_notification", "status": "success", "system_id": "NOTIF-E002", "error_message": ""},
+          {"step_name": "send_sms_notification", "status": "skipped", "system_id": "", "error_message": "SMS notifications disabled by patient preference"}
+        ],
+        "created_ids": {
+          "ehr_patient_id": "EHR-P002",
+          "billing_account_id": "",
+          "portal_user_id": "PORT-U002"
+        },
+        "notifications_sent": {"email": true, "sms": false},
+        "requires_manual_followup": true,
+        "followup_items": ["Create billing account manually for patient Jane Doe (EHR-P002)"]
+      }
+    },
+    {
+      "id": "tc_003",
+      "description": "Failed - EHR unavailable (critical system)",
+      "input": {
+        "registration_id": "REG-003",
+        "patient_info": {
+          "first_name": "Bob",
+          "last_name": "Wilson",
+          "dob": "1975-12-01",
+          "email": "bob.wilson@email.com",
+          "phone": "555-0303",
+          "address": "789 Pine Rd, Nowhere, ST 11111"
+        },
+        "insurance_info": {
+          "payer_id": "UHC",
+          "member_id": "DEF456789",
+          "group_number": "GRP003"
+        },
+        "preferences": {
+          "portal_access": false,
+          "email_notifications": true,
+          "sms_notifications": true
+        },
+        "system_status": {
+          "ehr_available": false,
+          "billing_available": true,
+          "portal_available": true,
+          "notification_available": true
+        }
+      },
+      "expected_output": {
+        "registration_id": "REG-003",
+        "overall_status": "failed",
+        "steps": [
+          {"step_name": "create_ehr_patient", "status": "failed", "system_id": "", "error_message": "EHR system unavailable - cannot proceed with registration"}
+        ],
+        "created_ids": {
+          "ehr_patient_id": "",
+          "billing_account_id": "",
+          "portal_user_id": ""
+        },
+        "notifications_sent": {"email": false, "sms": false},
+        "requires_manual_followup": true,
+        "followup_items": ["Complete full patient registration when EHR system is available"]
+      }
+    },
+    {
+      "id": "tc_004",
+      "description": "Success with minimal preferences (no portal, no notifications)",
+      "input": {
+        "registration_id": "REG-004",
+        "patient_info": {
+          "first_name": "Alice",
+          "last_name": "Brown",
+          "dob": "2000-05-10",
+          "email": "",
+          "phone": "555-0404",
+          "address": "321 Elm St, Anywhere, ST 22222"
+        },
+        "insurance_info": {
+          "payer_id": "CIGNA",
+          "member_id": "GHI101112",
+          "group_number": "GRP004"
+        },
+        "preferences": {
+          "portal_access": false,
+          "email_notifications": false,
+          "sms_notifications": false
+        },
+        "system_status": {
+          "ehr_available": true,
+          "billing_available": true,
+          "portal_available": true,
+          "notification_available": true
+        }
+      },
+      "expected_output": {
+        "registration_id": "REG-004",
+        "overall_status": "success",
+        "steps": [
+          {"step_name": "create_ehr_patient", "status": "success", "system_id": "EHR-P004", "error_message": ""},
+          {"step_name": "create_billing_account", "status": "success", "system_id": "BILL-A004", "error_message": ""},
+          {"step_name": "create_portal_account", "status": "skipped", "system_id": "", "error_message": "Portal access disabled by patient preference"},
+          {"step_name": "send_email_notification", "status": "skipped", "system_id": "", "error_message": "No email address provided"},
+          {"step_name": "send_sms_notification", "status": "skipped", "system_id": "", "error_message": "SMS notifications disabled by patient preference"}
+        ],
+        "created_ids": {
+          "ehr_patient_id": "EHR-P004",
+          "billing_account_id": "BILL-A004",
+          "portal_user_id": ""
+        },
+        "notifications_sent": {"email": false, "sms": false},
+        "requires_manual_followup": false,
+        "followup_items": []
+      }
+    },
+    {
+      "id": "tc_005",
+      "description": "Partial success - notification system down",
+      "input": {
+        "registration_id": "REG-005",
+        "patient_info": {
+          "first_name": "Charlie",
+          "last_name": "Green",
+          "dob": "1988-09-25",
+          "email": "charlie.g@email.com",
+          "phone": "555-0505",
+          "address": "654 Maple Dr, Elsewhere, ST 33333"
+        },
+        "insurance_info": {
+          "payer_id": "HUMANA",
+          "member_id": "JKL131415",
+          "group_number": "GRP005"
+        },
+        "preferences": {
+          "portal_access": true,
+          "email_notifications": true,
+          "sms_notifications": true
+        },
+        "system_status": {
+          "ehr_available": true,
+          "billing_available": true,
+          "portal_available": true,
+          "notification_available": false
+        }
+      },
+      "expected_output": {
+        "registration_id": "REG-005",
+        "overall_status": "partial_success",
+        "steps": [
+          {"step_name": "create_ehr_patient", "status": "success", "system_id": "EHR-P005", "error_message": ""},
+          {"step_name": "create_billing_account", "status": "success", "system_id": "BILL-A005", "error_message": ""},
+          {"step_name": "create_portal_account", "status": "success", "system_id": "PORT-U005", "error_message": ""},
+          {"step_name": "send_email_notification", "status": "failed", "system_id": "", "error_message": "Notification system unavailable"},
+          {"step_name": "send_sms_notification", "status": "failed", "system_id": "", "error_message": "Notification system unavailable"}
+        ],
+        "created_ids": {
+          "ehr_patient_id": "EHR-P005",
+          "billing_account_id": "BILL-A005",
+          "portal_user_id": "PORT-U005"
+        },
+        "notifications_sent": {"email": false, "sms": false},
+        "requires_manual_followup": true,
+        "followup_items": ["Send welcome email to charlie.g@email.com", "Send welcome SMS to 555-0505"]
+      }
+    }
+  ],
+  
+  "validation_hints": {
+    "critical_systems": ["ehr_available"],
+    "step_dependency": "EHR must succeed before billing/portal can proceed",
+    "id_generation": "Use registration suffix (REG-001 → EHR-P001, BILL-A001, etc.)",
+    "overall_status_rules": {
+      "success": "all critical steps succeeded",
+      "partial_success": "EHR succeeded but other steps failed",
+      "failed": "EHR failed"
+    }
+  }
+}

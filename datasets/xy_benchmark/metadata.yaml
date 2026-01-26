@@ -1,23 +1,48 @@
-name: XY_Benchmark
+name: CompiledAI-Bench
 description: |
-  Custom benchmark for evaluating Compiled AI systems.
-  Focuses on deterministic data transformation tasks.
-version: "1.0"
-author: CompiledAI Team
+  Benchmark for evaluating Compiled AI systems on enterprise workflow tasks.
+  Tasks span document processing, data transformation, decision logic, and 
+  API orchestration - representing common patterns in healthcare and business automation.
+  
+  Each task includes:
+  - Natural language specification
+  - Input/output schemas with test cases
+  - Expected code structure (for validation metrics)
+  
+  Evaluation measures:
+  - Functional correctness (exact match on test cases)
+  - Code quality (security, typing, linting)
+  - Token efficiency (generation cost)
+  - Determinism (output variance across runs)
+
+version: "2.0"
+author: XY.AI Labs
 license: MIT
 
 categories:
-  - document_processing
-  - data_transformation
-  - decision_logic
-  - function_calling
+  - document_processing    # EOB, invoice, form extraction
+  - data_transformation    # Schema mapping, normalization, aggregation
+  - decision_logic         # Eligibility, routing, classification, validation
+  - api_orchestration      # Multi-step API calls, data sync, webhooks
+
+difficulty_levels:
+  - easy      # Single-step, clear mapping
+  - medium    # Multi-step, some conditionals
+  - hard      # Complex logic, error handling, edge cases
 
 metrics:
-  primary: exact_match_rate
+  primary:
+    - exact_match_rate      # % of test cases with correct output
+    - functional_pass_rate  # % passing all validation stages
   secondary:
-    - latency_p50
-    - token_efficiency
-    - consistency
+    - generation_tokens     # Tokens used to generate code
+    - security_score        # Bandit/Semgrep findings
+    - type_coverage         # mypy coverage %
+    - cyclomatic_complexity # Average complexity
+  operational:
+    - first_pass_rate       # % passing validation without regeneration
+    - regeneration_attempts # Distribution of retry counts
 
-task_count: 5
-instance_count: 12
+task_count: 80
+instances_per_task: 5
+total_evaluations: 400

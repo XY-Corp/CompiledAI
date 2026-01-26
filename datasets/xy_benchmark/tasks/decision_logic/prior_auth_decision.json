@@ -1,0 +1,291 @@
+{
+  "id": "logic_003",
+  "name": "Prior Authorization Decision Engine",
+  "category": "decision_logic",
+  "difficulty": "hard",
+  "description": "Evaluate prior authorization requests against clinical criteria and payer policies to auto-approve, deny, or escalate for medical review.",
+  
+  "specification": {
+    "natural_language": "Process a prior authorization request by checking: (1) Is the service on the auto-approve list for this payer? (2) Does the patient meet clinical criteria (diagnosis codes, failed conservative treatments)? (3) Is the provider in-network? Make a decision: auto_approve, auto_deny (with reason), or escalate_to_medical_review. Include confidence score.",
+    
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "auth_request_id": {"type": "string"},
+        "patient": {
+          "type": "object",
+          "properties": {
+            "patient_id": {"type": "string"},
+            "diagnosis_codes": {"type": "array", "items": {"type": "string"}},
+            "prior_treatments": {"type": "array", "items": {"type": "string"}}
+          }
+        },
+        "service": {
+          "type": "object",
+          "properties": {
+            "procedure_code": {"type": "string"},
+            "service_type": {"type": "string"},
+            "provider_npi": {"type": "string"},
+            "place_of_service": {"type": "string"}
+          }
+        },
+        "payer_rules": {
+          "type": "object",
+          "properties": {
+            "payer_id": {"type": "string"},
+            "auto_approve_codes": {"type": "array", "items": {"type": "string"}},
+            "in_network_npis": {"type": "array", "items": {"type": "string"}},
+            "clinical_criteria": {
+              "type": "object",
+              "properties": {
+                "required_diagnosis": {"type": "array", "items": {"type": "string"}},
+                "required_prior_treatments": {"type": "array", "items": {"type": "string"}},
+                "min_prior_treatments": {"type": "integer"}
+              }
+            }
+          }
+        }
+      }
+    },
+    
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "auth_request_id": {"type": "string"},
+        "decision": {"type": "string", "enum": ["auto_approve", "auto_deny", "escalate_to_medical_review"]},
+        "confidence_score": {"type": "number"},
+        "decision_factors": {
+          "type": "object",
+          "properties": {
+            "is_auto_approve_code": {"type": "boolean"},
+            "diagnosis_match": {"type": "boolean"},
+            "prior_treatment_met": {"type": "boolean"},
+            "provider_in_network": {"type": "boolean"}
+          }
+        },
+        "denial_reason": {"type": "string"},
+        "escalation_reason": {"type": "string"},
+        "notes": {"type": "array", "items": {"type": "string"}}
+      }
+    }
+  },
+  
+  "test_cases": [
+    {
+      "id": "tc_001",
+      "description": "Auto-approve: all criteria met",
+      "input": {
+        "auth_request_id": "AUTH-001",
+        "patient": {
+          "patient_id": "P001",
+          "diagnosis_codes": ["M17.11", "Z96.641"],
+          "prior_treatments": ["physical_therapy", "nsaids", "corticosteroid_injection"]
+        },
+        "service": {
+          "procedure_code": "27447",
+          "service_type": "knee_replacement",
+          "provider_npi": "1234567890",
+          "place_of_service": "hospital_outpatient"
+        },
+        "payer_rules": {
+          "payer_id": "BCBS",
+          "auto_approve_codes": ["99213", "99214"],
+          "in_network_npis": ["1234567890", "0987654321"],
+          "clinical_criteria": {
+            "required_diagnosis": ["M17.11", "M17.12"],
+            "required_prior_treatments": ["physical_therapy", "nsaids"],
+            "min_prior_treatments": 2
+          }
+        }
+      },
+      "expected_output": {
+        "auth_request_id": "AUTH-001",
+        "decision": "auto_approve",
+        "confidence_score": 0.95,
+        "decision_factors": {
+          "is_auto_approve_code": false,
+          "diagnosis_match": true,
+          "prior_treatment_met": true,
+          "provider_in_network": true
+        },
+        "denial_reason": "",
+        "escalation_reason": "",
+        "notes": ["All clinical criteria met", "Provider in network", "3 prior treatments documented"]
+      }
+    },
+    {
+      "id": "tc_002",
+      "description": "Auto-deny: out of network provider",
+      "input": {
+        "auth_request_id": "AUTH-002",
+        "patient": {
+          "patient_id": "P002",
+          "diagnosis_codes": ["M17.11"],
+          "prior_treatments": ["physical_therapy", "nsaids"]
+        },
+        "service": {
+          "procedure_code": "27447",
+          "service_type": "knee_replacement",
+          "provider_npi": "5555555555",
+          "place_of_service": "hospital_outpatient"
+        },
+        "payer_rules": {
+          "payer_id": "AETNA",
+          "auto_approve_codes": [],
+          "in_network_npis": ["1111111111", "2222222222"],
+          "clinical_criteria": {
+            "required_diagnosis": ["M17.11"],
+            "required_prior_treatments": ["physical_therapy"],
+            "min_prior_treatments": 1
+          }
+        }
+      },
+      "expected_output": {
+        "auth_request_id": "AUTH-002",
+        "decision": "auto_deny",
+        "confidence_score": 1.0,
+        "decision_factors": {
+          "is_auto_approve_code": false,
+          "diagnosis_match": true,
+          "prior_treatment_met": true,
+          "provider_in_network": false
+        },
+        "denial_reason": "Provider NPI 5555555555 is not in network",
+        "escalation_reason": "",
+        "notes": ["Out of network provider"]
+      }
+    },
+    {
+      "id": "tc_003",
+      "description": "Escalate: diagnosis match but insufficient prior treatment",
+      "input": {
+        "auth_request_id": "AUTH-003",
+        "patient": {
+          "patient_id": "P003",
+          "diagnosis_codes": ["M17.12"],
+          "prior_treatments": ["physical_therapy"]
+        },
+        "service": {
+          "procedure_code": "27447",
+          "service_type": "knee_replacement",
+          "provider_npi": "1234567890",
+          "place_of_service": "hospital_inpatient"
+        },
+        "payer_rules": {
+          "payer_id": "UHC",
+          "auto_approve_codes": [],
+          "in_network_npis": ["1234567890"],
+          "clinical_criteria": {
+            "required_diagnosis": ["M17.11", "M17.12"],
+            "required_prior_treatments": ["physical_therapy", "nsaids", "corticosteroid_injection"],
+            "min_prior_treatments": 3
+          }
+        }
+      },
+      "expected_output": {
+        "auth_request_id": "AUTH-003",
+        "decision": "escalate_to_medical_review",
+        "confidence_score": 0.6,
+        "decision_factors": {
+          "is_auto_approve_code": false,
+          "diagnosis_match": true,
+          "prior_treatment_met": false,
+          "provider_in_network": true
+        },
+        "denial_reason": "",
+        "escalation_reason": "Prior treatment criteria not fully met - 1 of 3 required treatments documented",
+        "notes": ["Diagnosis criteria met", "Provider in network", "Missing required prior treatments: nsaids, corticosteroid_injection"]
+      }
+    },
+    {
+      "id": "tc_004",
+      "description": "Auto-approve via auto-approve code list",
+      "input": {
+        "auth_request_id": "AUTH-004",
+        "patient": {
+          "patient_id": "P004",
+          "diagnosis_codes": ["Z00.00"],
+          "prior_treatments": []
+        },
+        "service": {
+          "procedure_code": "99213",
+          "service_type": "office_visit",
+          "provider_npi": "9999999999",
+          "place_of_service": "office"
+        },
+        "payer_rules": {
+          "payer_id": "CIGNA",
+          "auto_approve_codes": ["99211", "99212", "99213", "99214", "99215"],
+          "in_network_npis": ["9999999999"],
+          "clinical_criteria": {
+            "required_diagnosis": [],
+            "required_prior_treatments": [],
+            "min_prior_treatments": 0
+          }
+        }
+      },
+      "expected_output": {
+        "auth_request_id": "AUTH-004",
+        "decision": "auto_approve",
+        "confidence_score": 1.0,
+        "decision_factors": {
+          "is_auto_approve_code": true,
+          "diagnosis_match": true,
+          "prior_treatment_met": true,
+          "provider_in_network": true
+        },
+        "denial_reason": "",
+        "escalation_reason": "",
+        "notes": ["Procedure code 99213 is on auto-approve list"]
+      }
+    },
+    {
+      "id": "tc_005",
+      "description": "Escalate: no matching diagnosis",
+      "input": {
+        "auth_request_id": "AUTH-005",
+        "patient": {
+          "patient_id": "P005",
+          "diagnosis_codes": ["M25.561"],
+          "prior_treatments": ["physical_therapy", "nsaids", "corticosteroid_injection"]
+        },
+        "service": {
+          "procedure_code": "27447",
+          "service_type": "knee_replacement",
+          "provider_npi": "1234567890",
+          "place_of_service": "hospital_outpatient"
+        },
+        "payer_rules": {
+          "payer_id": "BCBS",
+          "auto_approve_codes": [],
+          "in_network_npis": ["1234567890"],
+          "clinical_criteria": {
+            "required_diagnosis": ["M17.11", "M17.12"],
+            "required_prior_treatments": ["physical_therapy"],
+            "min_prior_treatments": 1
+          }
+        }
+      },
+      "expected_output": {
+        "auth_request_id": "AUTH-005",
+        "decision": "escalate_to_medical_review",
+        "confidence_score": 0.5,
+        "decision_factors": {
+          "is_auto_approve_code": false,
+          "diagnosis_match": false,
+          "prior_treatment_met": true,
+          "provider_in_network": true
+        },
+        "denial_reason": "",
+        "escalation_reason": "No matching diagnosis code found - patient has M25.561, requires one of: M17.11, M17.12",
+        "notes": ["Diagnosis does not match clinical criteria", "Prior treatment criteria met", "Provider in network"]
+      }
+    }
+  ],
+  
+  "validation_hints": {
+    "decision_priority": "auto_deny (out of network) > auto_approve (code list) > clinical criteria check",
+    "confidence_calculation": "based on how many criteria are definitively met",
+    "escalation_threshold": "if any clinical criteria partially met or unclear"
+  }
+}

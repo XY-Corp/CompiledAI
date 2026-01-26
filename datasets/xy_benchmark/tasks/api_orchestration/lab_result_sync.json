@@ -1,0 +1,512 @@
+{
+  "id": "api_001",
+  "name": "Lab Result System Sync",
+  "category": "api_orchestration",
+  "difficulty": "hard",
+  "description": "Orchestrate syncing lab results from an external lab system to an EHR, with patient matching, result normalization, and notification triggers.",
+  
+  "specification": {
+    "natural_language": "Given a batch of lab results from an external system, orchestrate the sync process: (1) match each result to a patient in the EHR using MRN or DOB+name, (2) normalize lab values to standard units, (3) determine if any results are critical and require immediate notification, (4) prepare the upsert payload for each result. Return sync summary with any failures.",
+    
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "batch_id": {"type": "string"},
+        "lab_results": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "external_id": {"type": "string"},
+              "patient_mrn": {"type": "string"},
+              "patient_name": {"type": "string"},
+              "patient_dob": {"type": "string", "format": "date"},
+              "test_code": {"type": "string"},
+              "test_name": {"type": "string"},
+              "value": {"type": "number"},
+              "unit": {"type": "string"},
+              "reference_low": {"type": "number"},
+              "reference_high": {"type": "number"},
+              "collected_at": {"type": "string", "format": "date-time"},
+              "resulted_at": {"type": "string", "format": "date-time"}
+            }
+          }
+        },
+        "ehr_patients": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "ehr_patient_id": {"type": "string"},
+              "mrn": {"type": "string"},
+              "first_name": {"type": "string"},
+              "last_name": {"type": "string"},
+              "dob": {"type": "string", "format": "date"}
+            }
+          }
+        },
+        "critical_thresholds": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "critical_low": {"type": "number"},
+              "critical_high": {"type": "number"}
+            }
+          }
+        }
+      }
+    },
+    
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "batch_id": {"type": "string"},
+        "sync_results": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "external_id": {"type": "string"},
+              "status": {"type": "string", "enum": ["matched", "unmatched", "error"]},
+              "ehr_patient_id": {"type": "string"},
+              "normalized_value": {"type": "number"},
+              "normalized_unit": {"type": "string"},
+              "is_critical": {"type": "boolean"},
+              "critical_type": {"type": "string", "enum": ["high", "low", null]},
+              "notification_required": {"type": "boolean"}
+            }
+          }
+        },
+        "summary": {
+          "type": "object",
+          "properties": {
+            "total": {"type": "integer"},
+            "matched": {"type": "integer"},
+            "unmatched": {"type": "integer"},
+            "critical_count": {"type": "integer"},
+            "notifications_triggered": {"type": "integer"}
+          }
+        }
+      }
+    }
+  },
+  
+  "test_cases": [
+    {
+      "id": "tc_001",
+      "input": {
+        "batch_id": "BATCH-2025-001",
+        "lab_results": [
+          {
+            "external_id": "LAB-001",
+            "patient_mrn": "MRN-12345",
+            "patient_name": "John Smith",
+            "patient_dob": "1985-03-15",
+            "test_code": "GLU",
+            "test_name": "Glucose",
+            "value": 450,
+            "unit": "mg/dL",
+            "reference_low": 70,
+            "reference_high": 100,
+            "collected_at": "2025-01-20T08:00:00Z",
+            "resulted_at": "2025-01-20T10:00:00Z"
+          },
+          {
+            "external_id": "LAB-002",
+            "patient_mrn": "MRN-67890",
+            "patient_name": "Jane Doe",
+            "patient_dob": "1990-07-22",
+            "test_code": "K",
+            "test_name": "Potassium",
+            "value": 4.2,
+            "unit": "mmol/L",
+            "reference_low": 3.5,
+            "reference_high": 5.0,
+            "collected_at": "2025-01-20T09:00:00Z",
+            "resulted_at": "2025-01-20T11:00:00Z"
+          },
+          {
+            "external_id": "LAB-003",
+            "patient_mrn": "MRN-UNKNOWN",
+            "patient_name": "Bob Wilson",
+            "patient_dob": "1975-12-01",
+            "test_code": "HGB",
+            "test_name": "Hemoglobin",
+            "value": 6.5,
+            "unit": "g/dL",
+            "reference_low": 12.0,
+            "reference_high": 17.5,
+            "collected_at": "2025-01-20T07:30:00Z",
+            "resulted_at": "2025-01-20T09:30:00Z"
+          }
+        ],
+        "ehr_patients": [
+          {"ehr_patient_id": "EHR-001", "mrn": "MRN-12345", "first_name": "John", "last_name": "Smith", "dob": "1985-03-15"},
+          {"ehr_patient_id": "EHR-002", "mrn": "MRN-67890", "first_name": "Jane", "last_name": "Doe", "dob": "1990-07-22"},
+          {"ehr_patient_id": "EHR-003", "mrn": "MRN-11111", "first_name": "Bob", "last_name": "Wilson", "dob": "1975-12-01"}
+        ],
+        "critical_thresholds": {
+          "GLU": {"critical_low": 50, "critical_high": 400},
+          "K": {"critical_low": 2.5, "critical_high": 6.5},
+          "HGB": {"critical_low": 7.0, "critical_high": 20.0}
+        }
+      },
+      "expected_output": {
+        "batch_id": "BATCH-2025-001",
+        "sync_results": [
+          {
+            "external_id": "LAB-001",
+            "status": "matched",
+            "ehr_patient_id": "EHR-001",
+            "normalized_value": 450,
+            "normalized_unit": "mg/dL",
+            "is_critical": true,
+            "critical_type": "high",
+            "notification_required": true
+          },
+          {
+            "external_id": "LAB-002",
+            "status": "matched",
+            "ehr_patient_id": "EHR-002",
+            "normalized_value": 4.2,
+            "normalized_unit": "mmol/L",
+            "is_critical": false,
+            "critical_type": null,
+            "notification_required": false
+          },
+          {
+            "external_id": "LAB-003",
+            "status": "matched",
+            "ehr_patient_id": "EHR-003",
+            "normalized_value": 6.5,
+            "normalized_unit": "g/dL",
+            "is_critical": true,
+            "critical_type": "low",
+            "notification_required": true
+          }
+        ],
+        "summary": {
+          "total": 3,
+          "matched": 3,
+          "unmatched": 0,
+          "critical_count": 2,
+          "notifications_triggered": 2
+        }
+      }
+    },
+    {
+      "id": "tc_002",
+      "description": "Empty batch - no lab results",
+      "input": {
+        "batch_id": "BATCH-2025-002",
+        "lab_results": [],
+        "ehr_patients": [
+          {"ehr_patient_id": "EHR-001", "mrn": "MRN-12345", "first_name": "John", "last_name": "Smith", "dob": "1985-03-15"}
+        ],
+        "critical_thresholds": {
+          "GLU": {"critical_low": 50, "critical_high": 400}
+        }
+      },
+      "expected_output": {
+        "batch_id": "BATCH-2025-002",
+        "sync_results": [],
+        "summary": {
+          "total": 0,
+          "matched": 0,
+          "unmatched": 0,
+          "critical_count": 0,
+          "notifications_triggered": 0
+        }
+      }
+    },
+    {
+      "id": "tc_003",
+      "description": "All unmatched patients - no MRN or DOB+name matches",
+      "input": {
+        "batch_id": "BATCH-2025-003",
+        "lab_results": [
+          {
+            "external_id": "LAB-010",
+            "patient_mrn": "MRN-XXXXX",
+            "patient_name": "Unknown Patient",
+            "patient_dob": "1999-01-01",
+            "test_code": "CBC",
+            "test_name": "Complete Blood Count",
+            "value": 7.5,
+            "unit": "K/uL",
+            "reference_low": 4.5,
+            "reference_high": 11.0,
+            "collected_at": "2025-01-21T08:00:00Z",
+            "resulted_at": "2025-01-21T10:00:00Z"
+          },
+          {
+            "external_id": "LAB-011",
+            "patient_mrn": "MRN-YYYYY",
+            "patient_name": "Mystery Person",
+            "patient_dob": "1988-06-15",
+            "test_code": "TSH",
+            "test_name": "Thyroid Stimulating Hormone",
+            "value": 2.5,
+            "unit": "mIU/L",
+            "reference_low": 0.4,
+            "reference_high": 4.0,
+            "collected_at": "2025-01-21T09:00:00Z",
+            "resulted_at": "2025-01-21T11:00:00Z"
+          }
+        ],
+        "ehr_patients": [
+          {"ehr_patient_id": "EHR-100", "mrn": "MRN-AAAAA", "first_name": "Alice", "last_name": "Brown", "dob": "1970-05-20"},
+          {"ehr_patient_id": "EHR-101", "mrn": "MRN-BBBBB", "first_name": "Charlie", "last_name": "Davis", "dob": "1982-09-10"}
+        ],
+        "critical_thresholds": {
+          "CBC": {"critical_low": 2.0, "critical_high": 20.0},
+          "TSH": {"critical_low": 0.1, "critical_high": 10.0}
+        }
+      },
+      "expected_output": {
+        "batch_id": "BATCH-2025-003",
+        "sync_results": [
+          {
+            "external_id": "LAB-010",
+            "status": "unmatched",
+            "ehr_patient_id": null,
+            "normalized_value": 7.5,
+            "normalized_unit": "K/uL",
+            "is_critical": false,
+            "critical_type": null,
+            "notification_required": false
+          },
+          {
+            "external_id": "LAB-011",
+            "status": "unmatched",
+            "ehr_patient_id": null,
+            "normalized_value": 2.5,
+            "normalized_unit": "mIU/L",
+            "is_critical": false,
+            "critical_type": null,
+            "notification_required": false
+          }
+        ],
+        "summary": {
+          "total": 2,
+          "matched": 0,
+          "unmatched": 2,
+          "critical_count": 0,
+          "notifications_triggered": 0
+        }
+      }
+    },
+    {
+      "id": "tc_004",
+      "description": "Boundary critical values - exactly at threshold",
+      "input": {
+        "batch_id": "BATCH-2025-004",
+        "lab_results": [
+          {
+            "external_id": "LAB-020",
+            "patient_mrn": "MRN-50001",
+            "patient_name": "Sarah Connor",
+            "patient_dob": "1980-02-28",
+            "test_code": "NA",
+            "test_name": "Sodium",
+            "value": 120,
+            "unit": "mmol/L",
+            "reference_low": 136,
+            "reference_high": 145,
+            "collected_at": "2025-01-22T08:00:00Z",
+            "resulted_at": "2025-01-22T10:00:00Z"
+          },
+          {
+            "external_id": "LAB-021",
+            "patient_mrn": "MRN-50002",
+            "patient_name": "Kyle Reese",
+            "patient_dob": "1985-05-12",
+            "test_code": "NA",
+            "test_name": "Sodium",
+            "value": 160,
+            "unit": "mmol/L",
+            "reference_low": 136,
+            "reference_high": 145,
+            "collected_at": "2025-01-22T08:30:00Z",
+            "resulted_at": "2025-01-22T10:30:00Z"
+          },
+          {
+            "external_id": "LAB-022",
+            "patient_mrn": "MRN-50003",
+            "patient_name": "Miles Dyson",
+            "patient_dob": "1975-11-20",
+            "test_code": "NA",
+            "test_name": "Sodium",
+            "value": 140,
+            "unit": "mmol/L",
+            "reference_low": 136,
+            "reference_high": 145,
+            "collected_at": "2025-01-22T09:00:00Z",
+            "resulted_at": "2025-01-22T11:00:00Z"
+          }
+        ],
+        "ehr_patients": [
+          {"ehr_patient_id": "EHR-200", "mrn": "MRN-50001", "first_name": "Sarah", "last_name": "Connor", "dob": "1980-02-28"},
+          {"ehr_patient_id": "EHR-201", "mrn": "MRN-50002", "first_name": "Kyle", "last_name": "Reese", "dob": "1985-05-12"},
+          {"ehr_patient_id": "EHR-202", "mrn": "MRN-50003", "first_name": "Miles", "last_name": "Dyson", "dob": "1975-11-20"}
+        ],
+        "critical_thresholds": {
+          "NA": {"critical_low": 120, "critical_high": 160}
+        }
+      },
+      "expected_output": {
+        "batch_id": "BATCH-2025-004",
+        "sync_results": [
+          {
+            "external_id": "LAB-020",
+            "status": "matched",
+            "ehr_patient_id": "EHR-200",
+            "normalized_value": 120,
+            "normalized_unit": "mmol/L",
+            "is_critical": false,
+            "critical_type": null,
+            "notification_required": false
+          },
+          {
+            "external_id": "LAB-021",
+            "status": "matched",
+            "ehr_patient_id": "EHR-201",
+            "normalized_value": 160,
+            "normalized_unit": "mmol/L",
+            "is_critical": false,
+            "critical_type": null,
+            "notification_required": false
+          },
+          {
+            "external_id": "LAB-022",
+            "status": "matched",
+            "ehr_patient_id": "EHR-202",
+            "normalized_value": 140,
+            "normalized_unit": "mmol/L",
+            "is_critical": false,
+            "critical_type": null,
+            "notification_required": false
+          }
+        ],
+        "summary": {
+          "total": 3,
+          "matched": 3,
+          "unmatched": 0,
+          "critical_count": 0,
+          "notifications_triggered": 0
+        }
+      }
+    },
+    {
+      "id": "tc_005",
+      "description": "DOB+name fallback matching when MRN not found",
+      "input": {
+        "batch_id": "BATCH-2025-005",
+        "lab_results": [
+          {
+            "external_id": "LAB-030",
+            "patient_mrn": "MRN-LEGACY-001",
+            "patient_name": "Emily Watson",
+            "patient_dob": "1992-04-18",
+            "test_code": "CREAT",
+            "test_name": "Creatinine",
+            "value": 3.5,
+            "unit": "mg/dL",
+            "reference_low": 0.6,
+            "reference_high": 1.2,
+            "collected_at": "2025-01-23T07:00:00Z",
+            "resulted_at": "2025-01-23T09:00:00Z"
+          },
+          {
+            "external_id": "LAB-031",
+            "patient_mrn": "MRN-LEGACY-002",
+            "patient_name": "Michael Chen",
+            "patient_dob": "1968-12-05",
+            "test_code": "BUN",
+            "test_name": "Blood Urea Nitrogen",
+            "value": 45,
+            "unit": "mg/dL",
+            "reference_low": 7,
+            "reference_high": 20,
+            "collected_at": "2025-01-23T07:30:00Z",
+            "resulted_at": "2025-01-23T09:30:00Z"
+          },
+          {
+            "external_id": "LAB-032",
+            "patient_mrn": "MRN-LEGACY-003",
+            "patient_name": "Lisa Park",
+            "patient_dob": "2001-08-25",
+            "test_code": "ALT",
+            "test_name": "Alanine Aminotransferase",
+            "value": 25,
+            "unit": "U/L",
+            "reference_low": 7,
+            "reference_high": 56,
+            "collected_at": "2025-01-23T08:00:00Z",
+            "resulted_at": "2025-01-23T10:00:00Z"
+          }
+        ],
+        "ehr_patients": [
+          {"ehr_patient_id": "EHR-300", "mrn": "MRN-NEW-001", "first_name": "Emily", "last_name": "Watson", "dob": "1992-04-18"},
+          {"ehr_patient_id": "EHR-301", "mrn": "MRN-NEW-002", "first_name": "Michael", "last_name": "Chen", "dob": "1968-12-05"},
+          {"ehr_patient_id": "EHR-302", "mrn": "MRN-NEW-003", "first_name": "Lisa", "last_name": "Park", "dob": "2001-08-25"}
+        ],
+        "critical_thresholds": {
+          "CREAT": {"critical_low": 0.3, "critical_high": 3.0},
+          "BUN": {"critical_low": 3, "critical_high": 40},
+          "ALT": {"critical_low": 5, "critical_high": 200}
+        }
+      },
+      "expected_output": {
+        "batch_id": "BATCH-2025-005",
+        "sync_results": [
+          {
+            "external_id": "LAB-030",
+            "status": "matched",
+            "ehr_patient_id": "EHR-300",
+            "normalized_value": 3.5,
+            "normalized_unit": "mg/dL",
+            "is_critical": true,
+            "critical_type": "high",
+            "notification_required": true
+          },
+          {
+            "external_id": "LAB-031",
+            "status": "matched",
+            "ehr_patient_id": "EHR-301",
+            "normalized_value": 45,
+            "normalized_unit": "mg/dL",
+            "is_critical": true,
+            "critical_type": "high",
+            "notification_required": true
+          },
+          {
+            "external_id": "LAB-032",
+            "status": "matched",
+            "ehr_patient_id": "EHR-302",
+            "normalized_value": 25,
+            "normalized_unit": "U/L",
+            "is_critical": false,
+            "critical_type": null,
+            "notification_required": false
+          }
+        ],
+        "summary": {
+          "total": 3,
+          "matched": 3,
+          "unmatched": 0,
+          "critical_count": 2,
+          "notifications_triggered": 2
+        }
+      }
+    }
+  ],
+  
+  "validation_hints": {
+    "patient_matching": "Match by MRN first, then fallback to DOB + last name",
+    "critical_check": "Value outside critical_low/critical_high triggers notification",
+    "normalization": "Keep original units in this version",
+    "boundary_values": "Values exactly at critical thresholds are NOT critical (strict inequality)"
+  }
+}

@@ -1,0 +1,196 @@
+{
+  "id": "data_003",
+  "name": "Appointment Schedule Aggregation",
+  "category": "data_transformation",
+  "difficulty": "medium",
+  "description": "Aggregate appointment data by provider and time slot to generate schedule utilization metrics.",
+  
+  "specification": {
+    "natural_language": "Given a list of appointments, aggregate by provider to calculate: total appointments, completed vs cancelled vs no-show counts, average duration, utilization rate (scheduled hours / available hours), and revenue totals. Group by provider and sort by utilization rate descending.",
+    
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "date": {"type": "string", "format": "date"},
+        "providers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "provider_id": {"type": "string"},
+              "name": {"type": "string"},
+              "available_hours": {"type": "number"}
+            }
+          }
+        },
+        "appointments": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "appointment_id": {"type": "string"},
+              "provider_id": {"type": "string"},
+              "patient_name": {"type": "string"},
+              "start_time": {"type": "string"},
+              "duration_minutes": {"type": "integer"},
+              "status": {"type": "string", "enum": ["completed", "cancelled", "no_show", "scheduled"]},
+              "charge_amount": {"type": "number"}
+            }
+          }
+        }
+      }
+    },
+    
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "date": {"type": "string"},
+        "provider_metrics": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "provider_id": {"type": "string"},
+              "provider_name": {"type": "string"},
+              "total_appointments": {"type": "integer"},
+              "completed": {"type": "integer"},
+              "cancelled": {"type": "integer"},
+              "no_show": {"type": "integer"},
+              "scheduled_hours": {"type": "number"},
+              "available_hours": {"type": "number"},
+              "utilization_rate": {"type": "number"},
+              "total_revenue": {"type": "number"},
+              "avg_duration_minutes": {"type": "number"}
+            }
+          }
+        },
+        "totals": {
+          "type": "object",
+          "properties": {
+            "total_appointments": {"type": "integer"},
+            "total_revenue": {"type": "number"},
+            "overall_utilization": {"type": "number"}
+          }
+        }
+      }
+    }
+  },
+  
+  "test_cases": [
+    {
+      "id": "tc_001",
+      "input": {
+        "date": "2025-01-20",
+        "providers": [
+          {"provider_id": "DR001", "name": "Dr. Smith", "available_hours": 8},
+          {"provider_id": "DR002", "name": "Dr. Jones", "available_hours": 8}
+        ],
+        "appointments": [
+          {"appointment_id": "A001", "provider_id": "DR001", "patient_name": "Patient A", "start_time": "09:00", "duration_minutes": 30, "status": "completed", "charge_amount": 150.00},
+          {"appointment_id": "A002", "provider_id": "DR001", "patient_name": "Patient B", "start_time": "09:30", "duration_minutes": 30, "status": "completed", "charge_amount": 150.00},
+          {"appointment_id": "A003", "provider_id": "DR001", "patient_name": "Patient C", "start_time": "10:00", "duration_minutes": 60, "status": "cancelled", "charge_amount": 0.00},
+          {"appointment_id": "A004", "provider_id": "DR002", "patient_name": "Patient D", "start_time": "09:00", "duration_minutes": 45, "status": "completed", "charge_amount": 200.00},
+          {"appointment_id": "A005", "provider_id": "DR002", "patient_name": "Patient E", "start_time": "10:00", "duration_minutes": 30, "status": "no_show", "charge_amount": 0.00}
+        ]
+      },
+      "expected_output": {
+        "date": "2025-01-20",
+        "provider_metrics": [
+          {"provider_id": "DR001", "provider_name": "Dr. Smith", "total_appointments": 3, "completed": 2, "cancelled": 1, "no_show": 0, "scheduled_hours": 2.0, "available_hours": 8, "utilization_rate": 0.25, "total_revenue": 300.00, "avg_duration_minutes": 40.0},
+          {"provider_id": "DR002", "provider_name": "Dr. Jones", "total_appointments": 2, "completed": 1, "cancelled": 0, "no_show": 1, "scheduled_hours": 1.25, "available_hours": 8, "utilization_rate": 0.16, "total_revenue": 200.00, "avg_duration_minutes": 37.5}
+        ],
+        "totals": {"total_appointments": 5, "total_revenue": 500.00, "overall_utilization": 0.20}
+      }
+    },
+    {
+      "id": "tc_002",
+      "input": {
+        "date": "2025-01-21",
+        "providers": [
+          {"provider_id": "DR003", "name": "Dr. Wilson", "available_hours": 6}
+        ],
+        "appointments": []
+      },
+      "expected_output": {
+        "date": "2025-01-21",
+        "provider_metrics": [
+          {"provider_id": "DR003", "provider_name": "Dr. Wilson", "total_appointments": 0, "completed": 0, "cancelled": 0, "no_show": 0, "scheduled_hours": 0, "available_hours": 6, "utilization_rate": 0.00, "total_revenue": 0.00, "avg_duration_minutes": 0}
+        ],
+        "totals": {"total_appointments": 0, "total_revenue": 0.00, "overall_utilization": 0.00}
+      }
+    },
+    {
+      "id": "tc_003",
+      "input": {
+        "date": "2025-01-22",
+        "providers": [
+          {"provider_id": "DR004", "name": "Dr. Brown", "available_hours": 4}
+        ],
+        "appointments": [
+          {"appointment_id": "A006", "provider_id": "DR004", "patient_name": "Patient F", "start_time": "14:00", "duration_minutes": 60, "status": "completed", "charge_amount": 300.00},
+          {"appointment_id": "A007", "provider_id": "DR004", "patient_name": "Patient G", "start_time": "15:00", "duration_minutes": 60, "status": "completed", "charge_amount": 300.00},
+          {"appointment_id": "A008", "provider_id": "DR004", "patient_name": "Patient H", "start_time": "16:00", "duration_minutes": 60, "status": "completed", "charge_amount": 300.00},
+          {"appointment_id": "A009", "provider_id": "DR004", "patient_name": "Patient I", "start_time": "17:00", "duration_minutes": 60, "status": "completed", "charge_amount": 300.00}
+        ]
+      },
+      "expected_output": {
+        "date": "2025-01-22",
+        "provider_metrics": [
+          {"provider_id": "DR004", "provider_name": "Dr. Brown", "total_appointments": 4, "completed": 4, "cancelled": 0, "no_show": 0, "scheduled_hours": 4.0, "available_hours": 4, "utilization_rate": 1.00, "total_revenue": 1200.00, "avg_duration_minutes": 60.0}
+        ],
+        "totals": {"total_appointments": 4, "total_revenue": 1200.00, "overall_utilization": 1.00}
+      }
+    },
+    {
+      "id": "tc_004",
+      "input": {
+        "date": "2025-01-23",
+        "providers": [
+          {"provider_id": "DR005", "name": "Dr. Davis", "available_hours": 8},
+          {"provider_id": "DR006", "name": "Dr. Miller", "available_hours": 4}
+        ],
+        "appointments": [
+          {"appointment_id": "A010", "provider_id": "DR005", "patient_name": "Patient J", "start_time": "08:00", "duration_minutes": 15, "status": "completed", "charge_amount": 75.00},
+          {"appointment_id": "A011", "provider_id": "DR005", "patient_name": "Patient K", "start_time": "08:15", "duration_minutes": 15, "status": "completed", "charge_amount": 75.00},
+          {"appointment_id": "A012", "provider_id": "DR006", "patient_name": "Patient L", "start_time": "13:00", "duration_minutes": 120, "status": "completed", "charge_amount": 500.00},
+          {"appointment_id": "A013", "provider_id": "DR006", "patient_name": "Patient M", "start_time": "15:00", "duration_minutes": 60, "status": "cancelled", "charge_amount": 0.00}
+        ]
+      },
+      "expected_output": {
+        "date": "2025-01-23",
+        "provider_metrics": [
+          {"provider_id": "DR006", "provider_name": "Dr. Miller", "total_appointments": 2, "completed": 1, "cancelled": 1, "no_show": 0, "scheduled_hours": 3.0, "available_hours": 4, "utilization_rate": 0.75, "total_revenue": 500.00, "avg_duration_minutes": 90.0},
+          {"provider_id": "DR005", "provider_name": "Dr. Davis", "total_appointments": 2, "completed": 2, "cancelled": 0, "no_show": 0, "scheduled_hours": 0.5, "available_hours": 8, "utilization_rate": 0.06, "total_revenue": 150.00, "avg_duration_minutes": 15.0}
+        ],
+        "totals": {"total_appointments": 4, "total_revenue": 650.00, "overall_utilization": 0.29}
+      }
+    },
+    {
+      "id": "tc_005",
+      "input": {
+        "date": "2025-01-24",
+        "providers": [
+          {"provider_id": "DR007", "name": "Dr. Taylor", "available_hours": 8}
+        ],
+        "appointments": [
+          {"appointment_id": "A014", "provider_id": "DR007", "patient_name": "Patient N", "start_time": "09:00", "duration_minutes": 30, "status": "no_show", "charge_amount": 0.00},
+          {"appointment_id": "A015", "provider_id": "DR007", "patient_name": "Patient O", "start_time": "09:30", "duration_minutes": 30, "status": "no_show", "charge_amount": 0.00},
+          {"appointment_id": "A016", "provider_id": "DR007", "patient_name": "Patient P", "start_time": "10:00", "duration_minutes": 30, "status": "cancelled", "charge_amount": 0.00}
+        ]
+      },
+      "expected_output": {
+        "date": "2025-01-24",
+        "provider_metrics": [
+          {"provider_id": "DR007", "provider_name": "Dr. Taylor", "total_appointments": 3, "completed": 0, "cancelled": 1, "no_show": 2, "scheduled_hours": 1.5, "available_hours": 8, "utilization_rate": 0.19, "total_revenue": 0.00, "avg_duration_minutes": 30.0}
+        ],
+        "totals": {"total_appointments": 3, "total_revenue": 0.00, "overall_utilization": 0.19}
+      }
+    }
+  ],
+  
+  "validation_hints": {
+    "utilization_calculation": "scheduled_hours / available_hours, round to 2 decimals",
+    "sort_order": "by utilization_rate descending",
+    "overall_utilization": "total scheduled hours / total available hours"
+  }
+}

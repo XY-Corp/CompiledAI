@@ -763,11 +763,178 @@ class AgentBenchAdapter(DatasetAdapter):
         return any((data_dir / d).exists() for d in agentbench_dirs)
 
 
+class SWEBenchAdapter(DatasetAdapter):
+    """Adapter for SWE-bench (Software Engineering Benchmark).
+    
+    SWE-bench tests real-world GitHub issue resolution:
+    - Given a codebase and issue description
+    - Agent generates a patch that resolves the issue
+    - Evaluation runs tests to verify the fix
+    
+    Variants:
+    - lite: 300 curated instances
+    - verified: 500 human-verified solvable instances  
+    - full: 2,294 instances
+    
+    Source: https://github.com/princeton-nlp/SWE-bench
+    Paper: ICLR 2024 Oral
+    """
+    
+    name = "swebench"
+    
+    VARIANTS = {
+        "lite": {"file_pattern": "swebench_lite.json", "expected_count": 300},
+        "verified": {"file_pattern": "swebench_verified.json", "expected_count": 500},
+        "full": {"file_pattern": "swebench_full.json", "expected_count": 2294},
+    }
+    
+    def load(self, path: Path, **kwargs: Any) -> Dataset:
+        """Load SWE-bench dataset.
+        
+        Args:
+            path: Path to SWE-bench dataset directory
+            variant: "lite", "verified", or "full" (default: lite)
+            max_instances: Maximum instances to load (default: None)
+            repos: List of repos to filter by (default: None = all)
+            
+        Returns:
+            Dataset with code patching tasks
+        """
+        variant = kwargs.get("variant", "lite")
+        max_instances = kwargs.get("max_instances")
+        repos_filter = kwargs.get("repos")
+        
+        dataset = Dataset(
+            name=f"SWE-bench {variant.capitalize()}",
+            description="Real-world GitHub issue resolution benchmark",
+            version="1.0",
+        )
+        
+        # Find the data file
+        data_file = None
+        for pattern in [
+            f"swebench_{variant}.json",
+            f"swe-bench_{variant}.json",
+            "test.json",
+            "data.json",
+        ]:
+            candidate = path / pattern
+            if candidate.exists():
+                data_file = candidate
+                break
+        
+        if not data_file:
+            raise ValueError(f"No SWE-bench data file found in {path}")
+        
+        with open(data_file) as f:
+            data = json.load(f)
+        
+        if not isinstance(data, list):
+            data = [data]
+        
+        # Group by repo for category organization
+        repos: dict[str, list[dict]] = {}
+        for item in data:
+            repo = item.get("repo", "unknown")
+            if repos_filter and repo not in repos_filter:
+                continue
+            if repo not in repos:
+                repos[repo] = []
+            repos[repo].append(item)
+        
+        instance_count = 0
+        for repo, items in repos.items():
+            instances: list[TaskInstance] = []
+            
+            for item in items:
+                if max_instances and instance_count >= max_instances:
+                    break
+                
+                instance_id = item.get("instance_id", f"unknown_{instance_count}")
+                problem = item.get("problem_statement", "")
+                hints = item.get("hints_text", "")
+                patch = item.get("patch", "")
+                
+                # Build input with hints if available
+                if hints and hints.strip():
+                    input_text = f"{problem}\n\n---\nHints:\n{hints}"
+                else:
+                    input_text = problem
+                
+                # Parse test lists
+                fail_to_pass = self._parse_json_list(item.get("FAIL_TO_PASS", "[]"))
+                pass_to_pass = self._parse_json_list(item.get("PASS_TO_PASS", "[]"))
+                
+                instances.append(TaskInstance(
+                    id=instance_id,
+                    input=input_text,
+                    expected_output=patch,
+                    metadata={
+                        "repo": repo,
+                        "base_commit": item.get("base_commit", ""),
+                        "version": item.get("version", ""),
+                        "fail_to_pass": fail_to_pass,
+                        "pass_to_pass": pass_to_pass,
+                        "test_patch": item.get("test_patch", ""),
+                        "environment_setup_commit": item.get("environment_setup_commit", ""),
+                    }
+                ))
+                instance_count += 1
+            
+            if instances:
+                # Determine difficulty based on patch size
+                avg_patch_len = sum(len(i.expected_output) for i in instances) / len(instances)
+                if avg_patch_len < 500:
+                    difficulty = TaskDifficulty.SIMPLE
+                elif avg_patch_len < 2000:
+                    difficulty = TaskDifficulty.MEDIUM
+                else:
+                    difficulty = TaskDifficulty.COMPLEX
+                
+                dataset.add_category(TaskCategory(
+                    name=repo.replace("/", "_"),
+                    description=f"Issues from {repo}",
+                    difficulty=difficulty,
+                    instances=instances,
+                ))
+        
+        return dataset
+    
+    def is_compatible(self, path: Path) -> bool:
+        """Check if path contains SWE-bench data."""
+        if not path.exists() or not path.is_dir():
+            return False
+        
+        # Look for SWE-bench file patterns
+        patterns = ["swebench_*.json", "swe-bench_*.json"]
+        for pattern in patterns:
+            if list(path.glob(pattern)):
+                return True
+        
+        # Check for HuggingFace-style metadata
+        if (path / "dataset_info.json").exists():
+            return True
+        
+        return False
+    
+    def _parse_json_list(self, value: str | list) -> list[str]:
+        """Parse a JSON list from string or pass through list."""
+        if isinstance(value, list):
+            return value
+        if not value:
+            return []
+        try:
+            return json.loads(value)
+        except json.JSONDecodeError:
+            return []
+
+
 # Adapter registry
 _ADAPTER_REGISTRY: dict[str, type[DatasetAdapter]] = {
     "bfcl": BFCLAdapter,
     "docile": DocILEAdapter,
     "agentbench": AgentBenchAdapter,
+    "swebench": SWEBenchAdapter,
 }
 
 

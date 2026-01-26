@@ -1,0 +1,295 @@
+{
+  "id": "doc_003",
+  "name": "Medical Form Data Extraction",
+  "category": "document_processing",
+  "difficulty": "medium",
+  "description": "Extract patient intake form data into structured format with field validation and completeness scoring.",
+  
+  "specification": {
+    "natural_language": "Parse a patient intake form containing demographics, medical history, and current medications. Validate required fields are present, normalize phone numbers to (XXX) XXX-XXXX format, and calculate a completeness score (0-100) based on filled optional fields.",
+    
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "form_id": {"type": "string"},
+        "fields": {
+          "type": "object",
+          "properties": {
+            "first_name": {"type": "string"},
+            "last_name": {"type": "string"},
+            "dob": {"type": "string"},
+            "phone": {"type": "string"},
+            "email": {"type": "string"},
+            "emergency_contact": {"type": "string"},
+            "emergency_phone": {"type": "string"},
+            "allergies": {"type": "string"},
+            "current_medications": {"type": "string"},
+            "medical_conditions": {"type": "string"},
+            "primary_care_physician": {"type": "string"},
+            "insurance_provider": {"type": "string"},
+            "policy_number": {"type": "string"}
+          }
+        }
+      }
+    },
+    
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "form_id": {"type": "string"},
+        "patient": {
+          "type": "object",
+          "properties": {
+            "first_name": {"type": "string"},
+            "last_name": {"type": "string"},
+            "dob": {"type": "string"},
+            "phone": {"type": "string"},
+            "email": {"type": "string"}
+          }
+        },
+        "emergency_contact": {
+          "type": "object",
+          "properties": {
+            "name": {"type": "string"},
+            "phone": {"type": "string"}
+          }
+        },
+        "medical_info": {
+          "type": "object",
+          "properties": {
+            "allergies": {"type": "array", "items": {"type": "string"}},
+            "medications": {"type": "array", "items": {"type": "string"}},
+            "conditions": {"type": "array", "items": {"type": "string"}},
+            "pcp": {"type": "string"}
+          }
+        },
+        "insurance": {
+          "type": "object",
+          "properties": {
+            "provider": {"type": "string"},
+            "policy_number": {"type": "string"}
+          }
+        },
+        "validation": {
+          "type": "object",
+          "properties": {
+            "is_valid": {"type": "boolean"},
+            "missing_required": {"type": "array", "items": {"type": "string"}},
+            "completeness_score": {"type": "integer"}
+          }
+        }
+      }
+    }
+  },
+  
+  "test_cases": [
+    {
+      "id": "tc_001",
+      "input": {
+        "form_id": "INTAKE-001",
+        "fields": {
+          "first_name": "John",
+          "last_name": "Smith",
+          "dob": "1985-03-15",
+          "phone": "5550101",
+          "email": "john.smith@email.com",
+          "emergency_contact": "Jane Smith",
+          "emergency_phone": "5550102",
+          "allergies": "Penicillin, Sulfa",
+          "current_medications": "Metformin 500mg, Lisinopril 10mg",
+          "medical_conditions": "Type 2 Diabetes, Hypertension",
+          "primary_care_physician": "Dr. Wilson",
+          "insurance_provider": "BlueCross",
+          "policy_number": "BC123456"
+        }
+      },
+      "expected_output": {
+        "form_id": "INTAKE-001",
+        "patient": {
+          "first_name": "John",
+          "last_name": "Smith",
+          "dob": "1985-03-15",
+          "phone": "(555) 010-1",
+          "email": "john.smith@email.com"
+        },
+        "emergency_contact": {"name": "Jane Smith", "phone": "(555) 010-2"},
+        "medical_info": {
+          "allergies": ["Penicillin", "Sulfa"],
+          "medications": ["Metformin 500mg", "Lisinopril 10mg"],
+          "conditions": ["Type 2 Diabetes", "Hypertension"],
+          "pcp": "Dr. Wilson"
+        },
+        "insurance": {"provider": "BlueCross", "policy_number": "BC123456"},
+        "validation": {"is_valid": true, "missing_required": [], "completeness_score": 100}
+      }
+    },
+    {
+      "id": "tc_002",
+      "input": {
+        "form_id": "INTAKE-002",
+        "fields": {
+          "first_name": "Jane",
+          "last_name": "Doe",
+          "dob": "1990-07-22",
+          "phone": "555-020-3333",
+          "email": "",
+          "emergency_contact": "",
+          "emergency_phone": "",
+          "allergies": "None",
+          "current_medications": "",
+          "medical_conditions": "",
+          "primary_care_physician": "",
+          "insurance_provider": "Aetna",
+          "policy_number": "AE789012"
+        }
+      },
+      "expected_output": {
+        "form_id": "INTAKE-002",
+        "patient": {
+          "first_name": "Jane",
+          "last_name": "Doe",
+          "dob": "1990-07-22",
+          "phone": "(555) 020-3333",
+          "email": ""
+        },
+        "emergency_contact": {"name": "", "phone": ""},
+        "medical_info": {
+          "allergies": [],
+          "medications": [],
+          "conditions": [],
+          "pcp": ""
+        },
+        "insurance": {"provider": "Aetna", "policy_number": "AE789012"},
+        "validation": {"is_valid": true, "missing_required": [], "completeness_score": 46}
+      }
+    },
+    {
+      "id": "tc_003",
+      "input": {
+        "form_id": "INTAKE-003",
+        "fields": {
+          "first_name": "",
+          "last_name": "Wilson",
+          "dob": "1975-12-01",
+          "phone": "",
+          "email": "wilson@test.com",
+          "emergency_contact": "Bob Wilson",
+          "emergency_phone": "5551234567",
+          "allergies": "Latex",
+          "current_medications": "Aspirin",
+          "medical_conditions": "",
+          "primary_care_physician": "Dr. Brown",
+          "insurance_provider": "",
+          "policy_number": ""
+        }
+      },
+      "expected_output": {
+        "form_id": "INTAKE-003",
+        "patient": {
+          "first_name": "",
+          "last_name": "Wilson",
+          "dob": "1975-12-01",
+          "phone": "",
+          "email": "wilson@test.com"
+        },
+        "emergency_contact": {"name": "Bob Wilson", "phone": "(555) 123-4567"},
+        "medical_info": {
+          "allergies": ["Latex"],
+          "medications": ["Aspirin"],
+          "conditions": [],
+          "pcp": "Dr. Brown"
+        },
+        "insurance": {"provider": "", "policy_number": ""},
+        "validation": {"is_valid": false, "missing_required": ["first_name", "phone"], "completeness_score": 62}
+      }
+    },
+    {
+      "id": "tc_004",
+      "input": {
+        "form_id": "INTAKE-004",
+        "fields": {
+          "first_name": "Alice",
+          "last_name": "Johnson",
+          "dob": "2000-01-15",
+          "phone": "(123) 456-7890",
+          "email": "alice.j@mail.com",
+          "emergency_contact": "Bob Johnson",
+          "emergency_phone": "(123) 456-7891",
+          "allergies": "",
+          "current_medications": "Birth control",
+          "medical_conditions": "Anxiety",
+          "primary_care_physician": "",
+          "insurance_provider": "UnitedHealth",
+          "policy_number": "UH555888"
+        }
+      },
+      "expected_output": {
+        "form_id": "INTAKE-004",
+        "patient": {
+          "first_name": "Alice",
+          "last_name": "Johnson",
+          "dob": "2000-01-15",
+          "phone": "(123) 456-7890",
+          "email": "alice.j@mail.com"
+        },
+        "emergency_contact": {"name": "Bob Johnson", "phone": "(123) 456-7891"},
+        "medical_info": {
+          "allergies": [],
+          "medications": ["Birth control"],
+          "conditions": ["Anxiety"],
+          "pcp": ""
+        },
+        "insurance": {"provider": "UnitedHealth", "policy_number": "UH555888"},
+        "validation": {"is_valid": true, "missing_required": [], "completeness_score": 85}
+      }
+    },
+    {
+      "id": "tc_005",
+      "input": {
+        "form_id": "INTAKE-005",
+        "fields": {
+          "first_name": "Robert",
+          "last_name": "Brown",
+          "dob": "1960-06-30",
+          "phone": "9998887777",
+          "email": "",
+          "emergency_contact": "",
+          "emergency_phone": "",
+          "allergies": "Codeine, Morphine, NSAIDs",
+          "current_medications": "Warfarin 5mg, Atorvastatin 20mg, Metoprolol 50mg",
+          "medical_conditions": "Atrial fibrillation, Hyperlipidemia, GERD",
+          "primary_care_physician": "Dr. Sarah Lee",
+          "insurance_provider": "Medicare",
+          "policy_number": "1EG4-TE5-MK72"
+        }
+      },
+      "expected_output": {
+        "form_id": "INTAKE-005",
+        "patient": {
+          "first_name": "Robert",
+          "last_name": "Brown",
+          "dob": "1960-06-30",
+          "phone": "(999) 888-7777",
+          "email": ""
+        },
+        "emergency_contact": {"name": "", "phone": ""},
+        "medical_info": {
+          "allergies": ["Codeine", "Morphine", "NSAIDs"],
+          "medications": ["Warfarin 5mg", "Atorvastatin 20mg", "Metoprolol 50mg"],
+          "conditions": ["Atrial fibrillation", "Hyperlipidemia", "GERD"],
+          "pcp": "Dr. Sarah Lee"
+        },
+        "insurance": {"provider": "Medicare", "policy_number": "1EG4-TE5-MK72"},
+        "validation": {"is_valid": true, "missing_required": [], "completeness_score": 77}
+      }
+    }
+  ],
+  
+  "validation_hints": {
+    "required_fields": ["first_name", "last_name", "dob", "phone"],
+    "phone_normalization": "Remove non-digits, format as (XXX) XXX-XXXX",
+    "list_splitting": "Split on comma, trim whitespace",
+    "none_handling": "'None' or 'N/A' becomes empty array",
+    "completeness_calculation": "13 total fields, score = (filled_count / 13) * 100"
+  }
+}
