@@ -109,7 +109,7 @@ def run_benchmark(args: argparse.Namespace, console: Console) -> None:
     if not dataset_path.exists():
         console.print(f"[red]Error: Dataset not found at {dataset_path}[/red]")
         console.print("\nTo download DocILE, run:")
-        console.print("[cyan]  ./scripts/download_docile.sh YOUR_TOKEN[/cyan]")
+        console.print("[cyan]  ./scripts/download_dataset_docile.sh YOUR_TOKEN annotated-trainval datasets/docile --unzip[/cyan]")
         console.print("\nTo get your token:")
         console.print("  1. Visit https://docile.rossum.ai/")
         console.print("  2. Complete the Dataset Access Request form")
@@ -137,8 +137,10 @@ def run_benchmark(args: argparse.Namespace, console: Console) -> None:
         sys.exit(1)
 
     # Build config
+    # Include task type in dataset name for clearer file naming
+    dataset_name = f"docile_{args.task_type}"
     config = BenchmarkConfig(
-        dataset_name="docile",
+        dataset_name=dataset_name,
         baseline_name=args.baseline,
         max_instances=args.max_instances,
         output_dir=Path(args.output_dir),

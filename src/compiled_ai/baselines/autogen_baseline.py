@@ -91,10 +91,23 @@ class AutoGenBaseline(BaseBaseline):
         model_client = self._get_model_client()
 
         # Build the task prompt
+        # For DocILE and similar tasks, the prompt already includes all necessary data
+        # Only add context for tasks that need it (e.g., BFCL with user_query/functions)
         prompt = task_input.prompt
         if task_input.context:
-            context_str = "\n".join(f"{k}: {v}" for k, v in task_input.context.items())
-            prompt = f"Context:\n{context_str}\n\nTask:\n{prompt}"
+            # Only add context fields that aren't already in the prompt
+            # For DocILE: document_text is already in prompt, so skip it
+            # For BFCL: user_query and functions need to be added
+            context_items = []
+            for k, v in task_input.context.items():
+                # Skip fields that are likely already in the formatted prompt
+                # (document_text, document_path, task_type for DocILE)
+                if k not in ("document_text", "document_path", "task_type"):
+                    context_items.append(f"{k}: {v}")
+            
+            if context_items:
+                context_str = "\n".join(context_items)
+                prompt = f"Context:\n{context_str}\n\nTask:\n{prompt}"
 
         # Create two agents for multi-agent coordination
         planner = AssistantAgent(
@@ -127,7 +140,18 @@ class AutoGenBaseline(BaseBaseline):
         )
 
         # Run the team
-        result = await team.run(task=prompt)
+        # Wrap in try-except to catch rate limit errors before AutoGen's internal error handling
+        try:
+            result = await team.run(task=prompt)
+        except Exception as e:
+            # Check if it's a rate limit error
+            error_str = str(e)
+            error_type = type(e).__name__
+            if "rate_limit" in error_str.lower() or "429" in error_str or "RateLimitError" in error_type:
+                # Re-raise as a simple exception that our retry logic can handle
+                raise RuntimeError(f"Rate limit error: {error_str}") from e
+            # Re-raise other errors as-is
+            raise
 
         # Extract output from the Executor's last message
         output = ""
@@ -208,8 +232,20 @@ class AutoGenBaseline(BaseBaseline):
                 )
             except Exception as e:
                 last_error = str(e)
+                error_str = str(e)
+                
+                # Handle rate limit errors with longer backoff
+                is_rate_limit = "rate_limit" in error_str.lower() or "429" in error_str or "RateLimitError" in error_str
+                
                 if attempt < self.max_retries - 1:
-                    time.sleep(self.retry_delay * (2**attempt))
+                    if is_rate_limit:
+                        # Rate limit: wait longer (60 seconds base, exponential backoff)
+                        wait_time = 60 * (2**attempt)
+                        print(f"Rate limit hit, waiting {wait_time}s before retry (attempt {attempt + 1}/{self.max_retries})...", flush=True)
+                        time.sleep(wait_time)
+                    else:
+                        # Other errors: standard exponential backoff
+                        time.sleep(self.retry_delay * (2**attempt))
 
         latency_ms = (time.perf_counter() - start_time) * 1000
         return BaselineResult(

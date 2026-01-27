@@ -150,12 +150,23 @@ class DirectLLMBaseline(BaseBaseline):
         )
 
         # Build prompt with context
+        # For DocILE and similar tasks, the prompt already includes all necessary data
+        # Only add context for tasks that need it (e.g., BFCL with user_query/functions)
         prompt = task_input.prompt
         if task_input.context:
-            context_str = "\n".join(
-                f"{k}: {v}" for k, v in task_input.context.items()
-            )
-            prompt = f"Context:\n{context_str}\n\nTask:\n{prompt}"
+            # Only add context fields that aren't already in the prompt
+            # For DocILE: document_text is already in prompt, so skip it
+            # For BFCL: user_query and functions need to be added
+            context_items = []
+            for k, v in task_input.context.items():
+                # Skip fields that are likely already in the formatted prompt
+                # (document_text, document_path, task_type for DocILE)
+                if k not in ("document_text", "document_path", "task_type"):
+                    context_items.append(f"{k}: {v}")
+            
+            if context_items:
+                context_str = "\n".join(context_items)
+                prompt = f"Context:\n{context_str}\n\nTask:\n{prompt}"
 
         # Log full prompt sent to LLM
         self._log_to_file(prompt, section="LLM PROMPT")
