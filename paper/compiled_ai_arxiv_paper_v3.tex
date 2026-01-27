@@ -180,7 +180,9 @@ LiveCodeBench & Claude Opus 4.5 & 68.3\% & --- & Nov 2025 \\
 
 Anthropic CEO Dario Amodei stated at Dreamforce 2025 that ``within Anthropic and within a number of companies that we work with,'' approximately 90\% of code is now AI-generated \citep{amodei2025dreamforce}. While this applies to select organizations rather than industry-wide, it suggests code generation is transitioning from assistance to primary production mode in leading AI-native companies.
 
-Karpathy's ``Software 2.0'' framework \citep{karpathy2017software2} characterized neural networks as an alternative programming paradigm. Sutton's ``Bitter Lesson'' \citep{sutton2019bitter} similarly observed that ``general methods that leverage computation are ultimately the most effective''---a principle our work operationalizes by front-loading LLM computation to the generation phase rather than invoking it repeatedly at runtime. Research on program-aided reasoning demonstrates that code representations improve LLM performance: PAL \citep{gao2023pal} improved mathematical reasoning, Program of Thoughts \citep{chen2023pot} improved financial reasoning, and Chain of Code \citep{li2024chainofcode} achieved 84\% on BIG-Bench Hard.
+Karpathy's ``Software 2.0'' framework \citep{karpathy2017software2} characterized neural networks as an alternative programming paradigm. Sutton's ``Bitter Lesson'' \citep{sutton2019bitter} similarly observed that ``general methods that leverage computation are ultimately the most effective''---a principle our work operationalizes by front-loading LLM computation to the generation phase rather than invoking it repeatedly at runtime. More recently, Karpathy observed that leading practitioners are converging on ``spec-driven development''---writing specifications while AI handles implementation---which he characterizes as ``the limit of imperative to declarative transition'' \citep{karpathy2026specdriven}. This trajectory aligns directly with compiled AI: specifications in, deterministic code out.
+
+Research on program-aided reasoning demonstrates that code representations improve LLM performance: PAL \citep{gao2023pal} improved mathematical reasoning, Program of Thoughts \citep{chen2023pot} improved financial reasoning, and Chain of Code \citep{li2024chainofcode} achieved 84\% on BIG-Bench Hard.
 
 \subsection{Agent Frameworks and Their Limitations}
 
@@ -883,6 +885,12 @@ Andrej Karpathy.
 \newblock Software 2.0.
 \newblock \emph{Medium}, November 2017.
 \newblock \url{https://karpathy.medium.com/software-2-0-a64152b37c35}
+
+\bibitem[Karpathy(2026)]{karpathy2026specdriven}
+Andrej Karpathy.
+\newblock Spec-driven development and the declarative transition.
+\newblock \emph{X (Twitter)}, January 26, 2026.
+\newblock \url{https://x.com/karpathy/status/2015887154132746653}
 
 \bibitem[Sutton(2019)]{sutton2019bitter}
 Richard~S. Sutton.
