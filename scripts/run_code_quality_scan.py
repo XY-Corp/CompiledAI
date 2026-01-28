@@ -38,7 +38,6 @@ class Table15Metrics:
     """Metrics for Table 15: Code quality metrics for generated artifacts."""
 
     # Security (Bandit + detect-secrets + Semgrep)
-    security_critical: int = 0
     security_high: int = 0
     security_medium: int = 0
     security_low: int = 0
@@ -73,7 +72,7 @@ class Table15Metrics:
         """Format metrics for Table 15 in the paper."""
         return {
             "Source": "Compiled AI",
-            "Security": f"{self.security_high + self.security_critical}",  # high/critical count
+            "Security": str(self.security_high * 3 + self.security_medium * 2 + self.security_low),  # weighted score
             "TypeCov": f"{self.type_coverage_percent:.0f}%",
             "LintScore": f"{self.lint_score:.1f}",
             "Complexity": f"{self.avg_complexity:.1f}",
@@ -81,33 +80,48 @@ class Table15Metrics:
         }
 
     def to_dict(self) -> dict[str, Any]:
-        """Full metrics as dictionary."""
+        """Full metrics as dictionary with expressive descriptions."""
+        # Security: weighted score (high=3, medium=2, low=1)
+        security_weighted = (
+            self.security_high * 3
+            + self.security_medium * 2
+            + self.security_low * 1
+        )
         return {
             "security": {
-                "critical": self.security_critical,
                 "high": self.security_high,
                 "medium": self.security_medium,
                 "low": self.security_low,
                 "total": self.security_total,
-                "table15_value": self.security_high + self.security_critical,
+                "weighted_score": security_weighted,
+                "table15_value": security_weighted,
+                "description": f"{self.security_total} vulnerabilities ({self.security_high} high, {self.security_medium} medium, {self.security_low} low)",
+                "tools": ["bandit", "detect-secrets", "semgrep"],
+                "scoring": "Weighted score = high×3 + medium×2 + low×1",
             },
             "type_coverage": {
                 "percent": self.type_coverage_percent,
                 "typed_functions": self.typed_functions,
                 "total_functions": self.total_functions,
                 "table15_value": f"{self.type_coverage_percent:.0f}%",
+                "description": f"{self.typed_functions}/{self.total_functions} functions have type annotations ({self.type_coverage_percent:.0f}%)",
+                "tools": ["ast (Python)"],
             },
             "lint": {
                 "errors": self.lint_errors,
                 "warnings": self.lint_warnings,
                 "score": self.lint_score,
-                "table15_value": f"{self.lint_score:.1f}",
+                "table15_value": f"{self.lint_score:.1f}/10",
+                "description": f"Lint score {self.lint_score:.1f}/10 ({self.lint_errors} errors, {self.lint_warnings} warnings)",
+                "tools": ["ruff"],
             },
             "complexity": {
                 "average": self.avg_complexity,
                 "max": self.max_complexity,
                 "functions_analyzed": self.functions_analyzed,
                 "table15_value": f"{self.avg_complexity:.1f}",
+                "description": f"Avg cyclomatic complexity {self.avg_complexity:.1f} (max: {self.max_complexity}, 1-10 is simple, 11-20 moderate, 21-50 complex, >50 untestable)",
+                "tools": ["radon"],
             },
             "tests": {
                 "passed": self.tests_passed,
@@ -115,6 +129,8 @@ class Table15Metrics:
                 "total": self.tests_total,
                 "pass_rate": self.test_pass_rate,
                 "table15_value": f"{self.test_pass_rate:.0f}%",
+                "description": f"{self.tests_passed}/{self.tests_total} workflow executions passed ({self.test_pass_rate:.0f}%)",
+                "source": "benchmark run logs",
             },
             "metadata": {
                 "files_scanned": self.files_scanned,
@@ -128,9 +144,9 @@ def run_bandit(files: list[Path]) -> dict[str, int]:
     """Run Bandit security scanner on files.
 
     Returns:
-        Dict with severity counts: critical, high, medium, low
+        Dict with severity counts: high, medium, low
     """
-    counts = {"critical": 0, "high": 0, "medium": 0, "low": 0}
+    counts = {"high": 0, "medium": 0, "low": 0}
 
     if not files:
         return counts
@@ -452,7 +468,6 @@ def get_benchmark_test_pass(logs_dir: Path, run_id: str | None = None) -> tuple[
 
 def scan_directory(
     input_dir: Path,
-    enable_semgrep: bool = True,
     logs_dir: Path | None = None,
     run_id: str | None = None,
 ) -> Table15Metrics:
@@ -460,7 +475,6 @@ def scan_directory(
 
     Args:
         input_dir: Directory containing generated code (e.g., workflows/)
-        enable_semgrep: Whether to run Semgrep (can be slow)
         logs_dir: Directory containing benchmark run logs (e.g., logs/)
         run_id: Specific benchmark run ID for TestPass, or None for latest
 
@@ -489,7 +503,6 @@ def scan_directory(
     # 1. Security: Bandit
     logger.info("Running Bandit...")
     bandit_counts = run_bandit(py_files)
-    metrics.security_critical = bandit_counts["critical"]
     metrics.security_high = bandit_counts["high"]
     metrics.security_medium = bandit_counts["medium"]
     metrics.security_low = bandit_counts["low"]
@@ -499,17 +512,15 @@ def scan_directory(
     secrets_count = run_detect_secrets(py_files)
     metrics.security_high += secrets_count  # Secrets are high severity
 
-    # 3. Security: Semgrep (optional)
-    if enable_semgrep:
-        logger.info("Running Semgrep...")
-        semgrep_counts = run_semgrep(input_dir)
-        metrics.security_high += semgrep_counts["error"]
-        metrics.security_medium += semgrep_counts["warning"]
-        metrics.security_low += semgrep_counts["info"]
+    # 3. Security: Semgrep
+    logger.info("Running Semgrep...")
+    semgrep_counts = run_semgrep(input_dir)
+    metrics.security_high += semgrep_counts["error"]
+    metrics.security_medium += semgrep_counts["warning"]
+    metrics.security_low += semgrep_counts["info"]
 
     metrics.security_total = (
-        metrics.security_critical
-        + metrics.security_high
+        metrics.security_high
         + metrics.security_medium
         + metrics.security_low
     )
@@ -583,11 +594,6 @@ def main():
         help="Specific benchmark run ID for TestPass (default: latest run)",
     )
     parser.add_argument(
-        "--no-semgrep",
-        action="store_true",
-        help="Skip Semgrep analysis (faster)",
-    )
-    parser.add_argument(
         "--verbose",
         "-v",
         action="store_true",
@@ -610,7 +616,6 @@ def main():
     logger.info(f"Scanning {args.input}...")
     metrics = scan_directory(
         input_dir=args.input,
-        enable_semgrep=not args.no_semgrep,
         logs_dir=args.logs if args.logs.exists() else None,
         run_id=args.run_id,
     )
@@ -624,20 +629,33 @@ def main():
     logger.info(f"Results written to {args.output}")
 
     # Print Table 15 format
-    print("\n" + "=" * 60)
+    print("\n" + "=" * 80)
     print("TABLE 15: Code quality metrics for generated artifacts")
-    print("=" * 60)
+    print("=" * 80)
     table15 = metrics.to_table15_format()
-    print(f"{'Source':<15} {'Security':<10} {'TypeCov':<10} {'LintScore':<10} {'Complexity':<12} {'TestPass':<10}")
-    print("-" * 60)
-    print(f"{'Compiled AI':<15} {table15['Security']:<10} {table15['TypeCov']:<10} {table15['LintScore']:<10} {table15['Complexity']:<12} {table15['TestPass']:<10}")
-    print(f"{'Human code':<15} {'0':<10} {'85%':<10} {'8.5':<10} {'8':<12} {'100%':<10}")
-    print("=" * 60)
+    print(f"{'Source':<15} {'Security':<18} {'TypeCov':<10} {'LintScore':<12} {'Complexity':<12} {'TestPass':<10}")
+    print("-" * 80)
+    print(f"{'Compiled AI':<15} {table15['Security'] + ' (weighted)':<18} {table15['TypeCov']:<10} {table15['LintScore'] + '/10':<12} {table15['Complexity']:<12} {table15['TestPass']:<10}")
+    print(f"{'Human code':<15} {'0 (weighted)':<18} {'85%':<10} {'8.5/10':<12} {'8':<12} {'100%':<10}")
+    print("=" * 80)
+
+    # Detailed descriptions
+    print("\n--- Metric Descriptions ---")
+    print(f"Security:   {results['security']['description']}")
+    print(f"            Weighted score: {results['security']['weighted_score']} ({results['security']['scoring']})")
+    print("            Scanned with Bandit (SAST), detect-secrets, and Semgrep. Lower is better.")
+    print(f"TypeCov:    {results['type_coverage']['description']}")
+    print("            Parsed each function with Python AST. A function is 'typed' if it has return annotation or any parameter annotation.")
+    print(f"LintScore:  {results['lint']['description']}")
+    print("            Score = 10 - (errors_per_file * 2) - (warnings_per_file * 0.5), clamped to [0, 10].")
+    print(f"Complexity: {results['complexity']['description']}")
+    print("            Cyclomatic complexity measures independent code paths. Computed per-function with radon, then averaged.")
+    print(f"TestPass:   {results['tests']['description']}")
+    print("            From benchmark run logs. Each workflow executes the generated activity against test inputs and validates output.")
 
     # Summary
     print(f"\nFiles scanned: {metrics.files_scanned}")
     print(f"Total lines: {metrics.total_lines}")
-    print(f"Security issues (high/critical): {metrics.security_high + metrics.security_critical}")
 
 
 if __name__ == "__main__":

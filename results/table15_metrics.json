@@ -1,36 +1,57 @@
 {
   "security": {
-    "critical": 0,
     "high": 0,
     "medium": 0,
     "low": 0,
     "total": 0,
-    "table15_value": 0
+    "weighted_score": 0,
+    "table15_value": 0,
+    "description": "0 vulnerabilities (0 high, 0 medium, 0 low)",
+    "tools": [
+      "bandit",
+      "detect-secrets",
+      "semgrep"
+    ],
+    "scoring": "Weighted score = high\u00d73 + medium\u00d72 + low\u00d71"
   },
   "type_coverage": {
     "percent": 100.0,
     "typed_functions": 496,
     "total_functions": 496,
-    "table15_value": "100%"
+    "table15_value": "100%",
+    "description": "496/496 functions have type annotations (100%)",
+    "tools": [
+      "ast (Python)"
+    ]
   },
   "lint": {
     "errors": 284,
     "warnings": 6551,
     "score": 2.2353535353535348,
-    "table15_value": "2.2"
+    "table15_value": "2.2/10",
+    "description": "Lint score 2.2/10 (284 errors, 6551 warnings)",
+    "tools": [
+      "ruff"
+    ]
   },
   "complexity": {
     "average": 26.268686868686867,
     "max": 51,
     "functions_analyzed": 495,
-    "table15_value": "26.3"
+    "table15_value": "26.3",
+    "description": "Avg cyclomatic complexity 26.3 (max: 51, 1-10 is simple, 11-20 moderate, 21-50 complex, >50 untestable)",
+    "tools": [
+      "radon"
+    ]
   },
   "tests": {
     "passed": 385,
     "failed": 15,
     "total": 400,
     "pass_rate": 96.25,
-    "table15_value": "96%"
+    "table15_value": "96%",
+    "description": "385/400 workflow executions passed (96%)",
+    "source": "benchmark run logs"
   },
   "metadata": {
     "files_scanned": 495,
