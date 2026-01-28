@@ -50,6 +50,11 @@ dependencies = [
     # Semantic search
     "sentence-transformers>=3.0.0",
     "scikit-learn>=1.5.0",
+    # Security validation
+    "transformers>=4.30.0",  # For Meta Prompt Guard model (CPU)
+    "torch>=2.0.0",          # PyTorch for transformers
+    "llm-guard>=0.3.0",      # PII scanning (Anonymize)
+    "codeshield>=1.0.0",     # Meta CodeShield for code security
 ]
 
 [dependency-groups]

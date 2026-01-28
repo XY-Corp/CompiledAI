@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Run code quality scans on generated workflows and output metrics for Table 15.
 
-This script runs all 5 code quality tools on generated code artifacts:
-- Security: Bandit + detect-secrets + Semgrep (SAST)
+This script runs all 6 code quality tools on generated code artifacts:
+- Security: Bandit + detect-secrets + Semgrep + CodeShield (SAST)
 - TypeCov: mypy type coverage
 - LintScore: ruff linting score
 - Complexity: radon cyclomatic complexity
@@ -37,7 +37,8 @@ logger = logging.getLogger(__name__)
 class Table15Metrics:
     """Metrics for Table 15: Code quality metrics for generated artifacts."""
 
-    # Security (Bandit + detect-secrets + Semgrep)
+    # Security (Bandit + detect-secrets + Semgrep + CodeShield)
+    security_critical: int = 0
     security_high: int = 0
     security_medium: int = 0
     security_low: int = 0
@@ -72,7 +73,7 @@ class Table15Metrics:
         """Format metrics for Table 15 in the paper."""
         return {
             "Source": "Compiled AI",
-            "Security": str(self.security_high * 3 + self.security_medium * 2 + self.security_low),  # weighted score
+            "Security": str(self.security_critical * 4 + self.security_high * 3 + self.security_medium * 2 + self.security_low),  # weighted score
             "TypeCov": f"{self.type_coverage_percent:.0f}%",
             "LintScore": f"{self.lint_score:.1f}",
             "Complexity": f"{self.avg_complexity:.1f}",
@@ -81,23 +82,25 @@ class Table15Metrics:
 
     def to_dict(self) -> dict[str, Any]:
         """Full metrics as dictionary with expressive descriptions."""
-        # Security: weighted score (high=3, medium=2, low=1)
+        # Security: weighted score (critical=4, high=3, medium=2, low=1)
         security_weighted = (
-            self.security_high * 3
+            self.security_critical * 4
+            + self.security_high * 3
             + self.security_medium * 2
             + self.security_low * 1
         )
         return {
             "security": {
+                "critical": self.security_critical,
                 "high": self.security_high,
                 "medium": self.security_medium,
                 "low": self.security_low,
                 "total": self.security_total,
                 "weighted_score": security_weighted,
                 "table15_value": security_weighted,
-                "description": f"{self.security_total} vulnerabilities ({self.security_high} high, {self.security_medium} medium, {self.security_low} low)",
-                "tools": ["bandit", "detect-secrets", "semgrep"],
-                "scoring": "Weighted score = high×3 + medium×2 + low×1",
+                "description": f"{self.security_total} vulnerabilities ({self.security_critical} critical, {self.security_high} high, {self.security_medium} medium, {self.security_low} low)",
+                "tools": ["bandit", "detect-secrets", "semgrep", "codeshield"],
+                "scoring": "Weighted score = critical×4 + high×3 + medium×2 + low×1",
             },
             "type_coverage": {
                 "percent": self.type_coverage_percent,
@@ -261,6 +264,45 @@ def run_semgrep(directory: Path) -> dict[str, int]:
     except Exception as e:
         logger.error(f"Semgrep scan failed: {e}")
 
+    return counts
+
+
+def run_codeshield(files: list[Path]) -> dict[str, int]:
+    """Run Meta's CodeShield on generated files.
+    
+    Returns:
+        Dict with severity counts: critical, high, medium, low
+    """
+    counts = {"critical": 0, "high": 0, "medium": 0, "low": 0}
+    
+    try:
+        from compiled_ai.validation import CodeShieldValidator
+        
+        validator = CodeShieldValidator(severity_threshold="low")
+        
+        for file_path in files:
+            try:
+                code = file_path.read_text()
+                result = validator.validate(code, language="python")
+                
+                for issue in result.details.get("issues", []):
+                    severity = issue.get("severity", "low").lower()
+                    # Map "warning" to "medium"
+                    if severity == "warning":
+                        severity = "medium"
+                    if severity in counts:
+                        counts[severity] += 1
+            except Exception as e:
+                logger.warning(f"CodeShield scan failed for {file_path}: {e}")
+                continue
+        
+        logger.info(f"CodeShield: {sum(counts.values())} issues found")
+        
+    except ImportError:
+        logger.warning("CodeShield not installed. Run: pip install codeshield")
+    except Exception as e:
+        logger.error(f"CodeShield scan failed: {e}")
+    
     return counts
 
 
@@ -522,8 +564,17 @@ def scan_directory(
     metrics.security_medium += semgrep_counts["warning"]
     metrics.security_low += semgrep_counts["info"]
 
+    # 4. Security: CodeShield (LLM-generated code validation)
+    logger.info("Running CodeShield...")
+    codeshield_counts = run_codeshield(py_files)
+    metrics.security_critical += codeshield_counts["critical"]
+    metrics.security_high += codeshield_counts["high"]
+    metrics.security_medium += codeshield_counts["medium"]
+    metrics.security_low += codeshield_counts["low"]
+
     metrics.security_total = (
-        metrics.security_high
+        metrics.security_critical
+        + metrics.security_high
         + metrics.security_medium
         + metrics.security_low
     )
@@ -646,7 +697,7 @@ def main():
     print("\n--- Metric Descriptions ---")
     print(f"Security:   {results['security']['description']}")
     print(f"            Weighted score: {results['security']['weighted_score']} ({results['security']['scoring']})")
-    print("            Scanned with Bandit (SAST), detect-secrets, and Semgrep. Lower is better.")
+    print("            Scanned with Bandit (SAST), detect-secrets, Semgrep, and CodeShield (LLM code validator). Lower is better.")
     print(f"TypeCov:    {results['type_coverage']['description']}")
     print("            Parsed each function with Python AST. A function is 'typed' if it has return annotation or any parameter annotation.")
     print(f"LintScore:  {results['lint']['description']}")
