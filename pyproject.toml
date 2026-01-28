@@ -20,6 +20,9 @@ dependencies = [
     "mypy>=1.13.0",
     "ruff>=0.8.0",
     "radon>=6.0.0",
+    # SAST tools
+    "detect-secrets>=1.4.0",
+    "semgrep>=1.50.0",
     # Workflow/Agent frameworks (for baselines)
     "langchain>=0.3.0",
     "langchain-anthropic>=0.3.0",

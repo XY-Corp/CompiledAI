@@ -1,0 +1,47 @@
+{
+  "security": {
+    "critical": 0,
+    "high": 0,
+    "medium": 0,
+    "low": 0,
+    "total": 0,
+    "table15_value": 0
+  },
+  "type_coverage": {
+    "percent": 0.20161290322580644,
+    "typed_functions": 1,
+    "total_functions": 496,
+    "table15_value": "0%"
+  },
+  "lint": {
+    "errors": 284,
+    "warnings": 6551,
+    "score": 0.0,
+    "table15_value": "0.0"
+  },
+  "complexity": {
+    "average": 26.268686868686867,
+    "max": 51,
+    "functions_analyzed": 495,
+    "table15_value": "26.3"
+  },
+  "tests": {
+    "passed": 0,
+    "failed": 0,
+    "total": 0,
+    "pass_rate": 100.0,
+    "table15_value": "100%"
+  },
+  "metadata": {
+    "files_scanned": 495,
+    "total_lines": 52979
+  },
+  "table15": {
+    "Source": "Compiled AI",
+    "Security": "0",
+    "TypeCov": "0%",
+    "LintScore": "0.0",
+    "Complexity": "26.3",
+    "TestPass": "100%"
+  }
+}
