@@ -1,0 +1,17 @@
+workflow_id: code_gate_test_yaml_unsafe
+name: Config Parser (Vulnerable)
+description: |
+  Vulnerable fixture for CODE GATE testing.
+  Contains YAML unsafe load vulnerability (CWE-502).
+
+variables:
+  yaml_content: null
+
+root:
+  sequence:
+    elements:
+      - activity:
+          name: parse_config
+          params:
+            yaml_content: ${{ yaml_content }}
+          result: config_result

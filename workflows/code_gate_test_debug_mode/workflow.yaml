@@ -1,0 +1,20 @@
+workflow_id: code_gate_test_debug_mode
+name: Flask Server (Vulnerable)
+description: Starts Flask server with debug mode - CONTAINS INTENTIONAL DEBUG VULNERABILITY
+
+variables:
+  host: "0.0.0.0"
+  port: 5000
+
+activities:
+  - name: create_debug_app
+    inputs: {}
+    output: app_result
+
+  - name: start_server
+    inputs:
+      host: ${host}
+      port: ${port}
+    output: server_result
+
+execution_pattern: sequence

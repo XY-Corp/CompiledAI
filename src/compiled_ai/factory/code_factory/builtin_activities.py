@@ -63,10 +63,10 @@ async def llm_extract(
     class ExtractedData(BaseModel):
         data: Dict
 
-    agent = Agent(model, output_type=ExtractedData)
+    agent = Agent(model, result_type=ExtractedData)
     prompt = f"Extract the following from the text: {schema_description}\\n\\nText: {text}"
     result = await agent.run(prompt)
-    return {"data": result.output.data, "status": "success"}
+    return {"data": result.data.data, "status": "success"}
 '''
 
 # Template 3: Classification
@@ -97,10 +97,10 @@ async def llm_classify(
     class Classification(BaseModel):
         category: str
 
-    agent = Agent(model, output_type=Classification)
+    agent = Agent(model, result_type=Classification)
     prompt = f"Classify this text into exactly one of these categories: {', '.join(categories)}\\n\\nText: {text}"
     result = await agent.run(prompt)
-    return {"category": result.output.category, "status": "success"}
+    return {"category": result.data.category, "status": "success"}
 '''
 
 # Template 4: Data Transformation
@@ -131,10 +131,10 @@ async def llm_transform(
     class TransformedData(BaseModel):
         result: Dict
 
-    agent = Agent(model, output_type=TransformedData)
+    agent = Agent(model, result_type=TransformedData)
     prompt = f"Transform this data according to these instructions: {transformation}\\n\\nInput data: {data}"
     result = await agent.run(prompt)
-    return {"result": result.output.result, "status": "success"}
+    return {"result": result.data.result, "status": "success"}
 '''
 
 # Template 5: HTTP Request

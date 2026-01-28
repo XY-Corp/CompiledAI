@@ -10,7 +10,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable, Optional
 
-from pydantic_ai import ModelSettings
+from pydantic_ai.settings import ModelSettings
 
 from .models import WorkflowSpec, GeneratedFiles, BFCLFunctionCallOutput
 from .agents import create_agents, create_bfcl_agent
@@ -144,6 +144,7 @@ class CodeFactory:
         enable_registry: bool = True,
         auto_register: bool = True,
         log_dir: str | None = "logs",
+        canary_token: str | None = None,
     ):
         """Initialize the Code Factory.
 
@@ -155,12 +156,14 @@ class CodeFactory:
             enable_registry: Enable template registry for activity search
             auto_register: Automatically register successful activities
             log_dir: Directory for compilation logs (None to disable file logging)
+            canary_token: Optional canary token to inject into system prompts for leakage detection
         """
         self.provider = provider
         self.model = model
         self.verbose = verbose
         self.max_regenerations = max_regenerations
         self.log_dir = Path(log_dir) if log_dir else None
+        self.canary_token = canary_token
 
         # Registry components
         self.registry = TemplateRegistry(enable_semantic=False) if enable_registry else None
@@ -427,6 +430,7 @@ class CodeFactory:
             provider=self.provider,
             model=self.model,
             registry=self.registry,
+            canary_token=self.canary_token,
         )
 
         # Track total regeneration attempts (Planner + Coder combined)
@@ -456,7 +460,7 @@ class CodeFactory:
             plan_result = await run_agent_with_retry(planner, planner_prompt)
             latency_ms = (time.perf_counter() - start_time) * 1000
 
-            result.plan = plan_result.output
+            result.plan = plan_result.data
 
             # Track metrics for planner call
             input_tokens, output_tokens = extract_usage_from_result(plan_result)
@@ -523,7 +527,7 @@ class CodeFactory:
                 code_result = await run_agent_with_retry(coder, coder_prompt)
                 latency_ms = (time.perf_counter() - start_time) * 1000
 
-                result.generated = code_result.output
+                result.generated = code_result.data
 
                 # Use YAML from Planner (Coder only generates Python activities)
                 result.generated.workflow_yaml = result.plan.workflow_yaml or ""
@@ -723,6 +727,7 @@ class CodeFactory:
             provider=self.provider,
             model=effective_model,
             registry=self.registry,
+            canary_token=self.canary_token,
         )
 
         if coder_model:
@@ -764,7 +769,7 @@ class CodeFactory:
             )
             latency_ms = (time.perf_counter() - start_time) * 1000
 
-            result.generated = code_result.output
+            result.generated = code_result.data
             result.generated.workflow_yaml = workflow_yaml  # Use template YAML
             result.regeneration_count = total_regeneration_count
 
@@ -1729,7 +1734,7 @@ Please fix the issues and regenerate valid YAML.
             metrics.record(input_tokens, output_tokens, latency_ms)
 
             # Extract output
-            output: BFCLFunctionCallOutput = agent_result.output
+            output: BFCLFunctionCallOutput = agent_result.data
 
             result.success = True
             result.function_name = output.function_name

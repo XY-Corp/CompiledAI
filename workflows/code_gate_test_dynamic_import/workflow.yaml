@@ -1,0 +1,27 @@
+workflow_id: code_gate_test_dynamic_import
+name: Dynamic Module Loader (Vulnerable)
+description: Loads modules dynamically from user input - CONTAINS INTENTIONAL VULNERABILITY
+
+variables:
+  module_name: null
+  function_name: null
+  plugin_path: null
+
+activities:
+  - name: load_module
+    inputs:
+      module_name: ${module_name}
+    output: load_result
+
+  - name: import_and_call
+    inputs:
+      module_name: ${module_name}
+      function_name: ${function_name}
+    output: call_result
+
+  - name: load_plugin
+    inputs:
+      plugin_path: ${plugin_path}
+    output: plugin_result
+
+execution_pattern: sequence

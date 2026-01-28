@@ -1,0 +1,19 @@
+workflow_id: code_gate_test_jwt_no_verify
+name: JWT Decoder (Vulnerable)
+description: Decodes JWT tokens without verification - CONTAINS INTENTIONAL VULNERABILITY
+
+variables:
+  token: null
+
+activities:
+  - name: decode_jwt_token
+    inputs:
+      token: ${token}
+    output: decoded_token
+
+  - name: parse_jwt_claims
+    inputs:
+      token: ${token}
+    output: parsed_claims
+
+execution_pattern: sequence

@@ -3,6 +3,7 @@
 from .base import DatasetInstance, DatasetConverter
 from .xy_converter import XYConverter
 from .bfcl_converter import BFCLConverter
+from .security_fixture_converter import SecurityFixtureConverter
 from .runner import run_benchmark, run_benchmark_with_baseline_name, BenchmarkResult, InstanceResult
 
 __all__ = [
@@ -10,6 +11,7 @@ __all__ = [
     "DatasetConverter",
     "XYConverter",
     "BFCLConverter",
+    "SecurityFixtureConverter",
     "run_benchmark",
     "run_benchmark_with_baseline_name",
     "BenchmarkResult",
