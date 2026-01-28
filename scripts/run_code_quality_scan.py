@@ -205,13 +205,16 @@ def run_detect_secrets(files: list[Path]) -> int:
                     secrets_count += len(findings)
 
         except subprocess.TimeoutExpired:
+            logger.warning(f"Timeout scanning {file_path}")
             continue
-        except json.JSONDecodeError:
+        except json.JSONDecodeError as e:
+            logger.warning(f"Failed to parse detect-secrets output for {file_path}: {e}")
             continue
         except FileNotFoundError:
             logger.error("detect-secrets not installed. Run: pip install detect-secrets")
             break
-        except Exception:
+        except Exception as e:
+            logger.warning(f"Error scanning {file_path}: {e}")
             continue
 
     logger.info(f"detect-secrets: {secrets_count} secrets found")
