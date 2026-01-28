@@ -8,16 +8,16 @@
     "table15_value": 0
   },
   "type_coverage": {
-    "percent": 0.20161290322580644,
-    "typed_functions": 1,
+    "percent": 100.0,
+    "typed_functions": 496,
     "total_functions": 496,
-    "table15_value": "0%"
+    "table15_value": "100%"
   },
   "lint": {
     "errors": 284,
     "warnings": 6551,
-    "score": 0.0,
-    "table15_value": "0.0"
+    "score": 2.2353535353535348,
+    "table15_value": "2.2"
   },
   "complexity": {
     "average": 26.268686868686867,
@@ -26,11 +26,11 @@
     "table15_value": "26.3"
   },
   "tests": {
-    "passed": 0,
-    "failed": 0,
-    "total": 0,
-    "pass_rate": 100.0,
-    "table15_value": "100%"
+    "passed": 385,
+    "failed": 15,
+    "total": 400,
+    "pass_rate": 96.25,
+    "table15_value": "96%"
   },
   "metadata": {
     "files_scanned": 495,
@@ -39,9 +39,9 @@
   "table15": {
     "Source": "Compiled AI",
     "Security": "0",
-    "TypeCov": "0%",
-    "LintScore": "0.0",
+    "TypeCov": "100%",
+    "LintScore": "2.2",
     "Complexity": "26.3",
-    "TestPass": "100%"
+    "TestPass": "96%"
   }
 }

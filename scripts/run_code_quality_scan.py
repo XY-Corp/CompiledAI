@@ -24,6 +24,7 @@ import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
+import ast
 
 logging.basicConfig(
     level=logging.INFO,
@@ -247,46 +248,40 @@ def run_semgrep(directory: Path) -> dict[str, int]:
 def run_mypy(files: list[Path]) -> tuple[float, int, int]:
     """Run mypy for type coverage.
 
+    Uses AST parsing to accurately count functions with type annotations.
+
     Returns:
         Tuple of (coverage_percent, typed_functions, total_functions)
     """
+
     typed = 0
     total = 0
 
-    try:
-        # Run mypy with coverage report
-        file_args = [str(f) for f in files[:100]]  # Limit to avoid timeout
-        result = subprocess.run(
-            ["mypy", "--ignore-missing-imports", "--no-error-summary"] + file_args,
-            capture_output=True,
-            text=True,
-            timeout=300,
-        )
+    # Count functions with type annotations using AST
+    for file_path in files:
+        try:
+            content = file_path.read_text()
+            tree = ast.parse(content)
 
-        # Count lines with type annotations vs total
-        for file_path in files:
-            try:
-                content = file_path.read_text()
-                lines = content.split("\n")
-                for line in lines:
-                    if "def " in line or "async def " in line:
-                        total += 1
-                        if "->" in line or ": " in line:
-                            typed += 1
-            except Exception:
-                continue
+            for node in ast.walk(tree):
+                if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                    total += 1
+                    has_return_annotation = node.returns is not None
+                    has_param_annotations = any(
+                        arg.annotation is not None for arg in node.args.args
+                    )
+                    if has_return_annotation or has_param_annotations:
+                        typed += 1
+        except SyntaxError:
+            # Skip files that can't be parsed
+            continue
+        except Exception:
+            continue
 
-        coverage = (typed / total * 100) if total > 0 else 0.0
-        logger.info(f"mypy: {coverage:.1f}% type coverage ({typed}/{total} functions)")
+    coverage = (typed / total * 100) if total > 0 else 0.0
+    logger.info(f"mypy: {coverage:.1f}% type coverage ({typed}/{total} functions)")
 
-    except subprocess.TimeoutExpired:
-        logger.warning("mypy scan timed out")
-    except FileNotFoundError:
-        logger.error("mypy not installed. Run: pip install mypy")
-    except Exception as e:
-        logger.error(f"mypy scan failed: {e}")
-
-    return (typed / total * 100) if total > 0 else 0.0, typed, total
+    return coverage, typed, total
 
 
 def run_ruff(files: list[Path]) -> tuple[int, int, float]:
@@ -316,12 +311,13 @@ def run_ruff(files: list[Path]) -> tuple[int, int, float]:
                 else:
                     warnings += 1
 
-        # Calculate score: start at 10, subtract 0.1 per error, 0.05 per warning
+        # Calculate score: based on issues per file (like pylint scoring)
+        # Score = 10 - (errors_per_file * 2) - (warnings_per_file * 0.5)
         total_files = len(files)
         if total_files > 0:
-            issues_per_file = (errors + warnings) / total_files
-            score = max(0.0, 10.0 - (errors * 0.1) - (warnings * 0.05))
-            # Normalize to reasonable range
+            errors_per_file = errors / total_files
+            warnings_per_file = warnings / total_files
+            score = 10.0 - (errors_per_file * 2) - (warnings_per_file * 0.5)
             score = max(0.0, min(10.0, score))
         else:
             score = 10.0
@@ -388,66 +384,85 @@ def run_radon(files: list[Path]) -> tuple[float, float, int]:
     return avg, max_cc, len(complexities)
 
 
-def run_pytest(test_dir: Path) -> tuple[int, int, int, float]:
-    """Run pytest on test directory.
+def get_benchmark_test_pass(logs_dir: Path, run_id: str | None = None) -> tuple[int, int, int, float]:
+    """Get TestPass from benchmark run logs.
+
+    Args:
+        logs_dir: Directory containing benchmark run logs (e.g., logs/)
+        run_id: Specific run ID to use, or None for latest run
 
     Returns:
         Tuple of (passed, failed, total, pass_rate)
     """
     passed = 0
     failed = 0
+    total = 0
+    pass_rate = 0.0
 
     try:
-        result = subprocess.run(
-            ["pytest", str(test_dir), "--tb=no", "-q"],
-            capture_output=True,
-            text=True,
-            timeout=300,
+        # Find all run directories
+        run_dirs = sorted(
+            [d for d in logs_dir.iterdir() if d.is_dir() and d.name.startswith("run_")],
+            key=lambda x: x.name,
+            reverse=True,  # Latest first
         )
 
-        # Parse pytest output for pass/fail counts
-        output = result.stdout + result.stderr
-        for line in output.split("\n"):
-            if "passed" in line:
-                import re
-                match = re.search(r"(\d+) passed", line)
-                if match:
-                    passed = int(match.group(1))
-            if "failed" in line:
-                import re
-                match = re.search(r"(\d+) failed", line)
-                if match:
-                    failed = int(match.group(1))
+        if not run_dirs:
+            logger.warning(f"No benchmark runs found in {logs_dir}")
+            return passed, failed, total, pass_rate
 
-        total = passed + failed
-        pass_rate = (passed / total * 100) if total > 0 else 100.0
+        # Find the target run
+        target_run = None
+        if run_id:
+            # Look for specific run
+            for run_dir in run_dirs:
+                if run_id in run_dir.name:
+                    target_run = run_dir
+                    break
+            if not target_run:
+                logger.warning(f"Run {run_id} not found, using latest")
+                target_run = run_dirs[0]
+        else:
+            # Use latest run
+            target_run = run_dirs[0]
 
-        logger.info(f"pytest: {passed}/{total} passed ({pass_rate:.0f}%)")
+        # Read summary.json
+        summary_file = target_run / "summary.json"
+        if not summary_file.exists():
+            logger.warning(f"No summary.json in {target_run}")
+            return passed, failed, total, pass_rate
 
-    except subprocess.TimeoutExpired:
-        logger.warning("pytest timed out")
-        pass_rate = 0.0
-    except FileNotFoundError:
-        logger.error("pytest not installed. Run: pip install pytest")
-        pass_rate = 100.0
+        with open(summary_file) as f:
+            summary = json.load(f)
+
+        total = summary.get("total_instances", 0)
+        passed = summary.get("successful_instances", 0)
+        failed = summary.get("failed_instances", 0)
+        pass_rate = summary.get("success_rate", 0.0) * 100  # Convert to percentage
+
+        logger.info(
+            f"Benchmark run {target_run.name}: {passed}/{total} passed ({pass_rate:.1f}%)"
+        )
+
     except Exception as e:
-        logger.error(f"pytest failed: {e}")
-        pass_rate = 100.0
+        logger.error(f"Failed to read benchmark logs: {e}")
 
-    return passed, failed, passed + failed, pass_rate
+    return passed, failed, total, pass_rate
 
 
 def scan_directory(
     input_dir: Path,
     enable_semgrep: bool = True,
-    test_dir: Path | None = None,
+    logs_dir: Path | None = None,
+    run_id: str | None = None,
 ) -> Table15Metrics:
     """Scan a directory and collect all metrics for Table 15.
 
     Args:
         input_dir: Directory containing generated code (e.g., workflows/)
         enable_semgrep: Whether to run Semgrep (can be slow)
-        test_dir: Directory containing tests (e.g., tests/)
+        logs_dir: Directory containing benchmark run logs (e.g., logs/)
+        run_id: Specific benchmark run ID for TestPass, or None for latest
 
     Returns:
         Table15Metrics with all collected data
@@ -520,17 +535,17 @@ def scan_directory(
     metrics.max_complexity = max_cc
     metrics.functions_analyzed = func_count
 
-    # 7. TestPass: pytest (if test directory provided)
-    if test_dir and test_dir.exists():
-        logger.info("Running pytest...")
-        passed, failed, total, rate = run_pytest(test_dir)
+    # 7. TestPass: from benchmark run logs
+    if logs_dir and logs_dir.exists():
+        logger.info("Getting TestPass from benchmark logs...")
+        passed, failed, total, rate = get_benchmark_test_pass(logs_dir, run_id)
         metrics.tests_passed = passed
         metrics.tests_failed = failed
         metrics.tests_total = total
         metrics.test_pass_rate = rate
     else:
-        logger.info("Skipping pytest (no test directory)")
-        metrics.test_pass_rate = 100.0  # Default if no tests
+        logger.info("Skipping TestPass (no logs directory)")
+        metrics.test_pass_rate = 0.0  # No data available
 
     return metrics
 
@@ -554,11 +569,18 @@ def main():
         help="Output JSON file (default: results/table15_metrics.json)",
     )
     parser.add_argument(
-        "--tests",
-        "-t",
+        "--logs",
+        "-l",
         type=Path,
-        default=Path("tests"),
-        help="Test directory for pytest (default: tests/)",
+        default=Path("logs"),
+        help="Logs directory containing benchmark runs (default: logs/)",
+    )
+    parser.add_argument(
+        "--run-id",
+        "-r",
+        type=str,
+        default=None,
+        help="Specific benchmark run ID for TestPass (default: latest run)",
     )
     parser.add_argument(
         "--no-semgrep",
@@ -589,7 +611,8 @@ def main():
     metrics = scan_directory(
         input_dir=args.input,
         enable_semgrep=not args.no_semgrep,
-        test_dir=args.tests if args.tests.exists() else None,
+        logs_dir=args.logs if args.logs.exists() else None,
+        run_id=args.run_id,
     )
 
     # Output results
