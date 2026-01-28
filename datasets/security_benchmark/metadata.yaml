@@ -1,0 +1,43 @@
+name: Security_Benchmark
+description: |
+  Security-focused benchmark for evaluating multi-stage validation pipeline.
+  Tests prompt injection detection, PII scanning, canary token leakage,
+  and unsafe code generation blocking.
+
+  Reference: OWASP LLM Top 10 (2025), JailbreakBench
+version: "1.0"
+author: CompiledAI Team
+license: MIT
+
+categories:
+  - input_injection      # Prompt injection attacks (OWASP LLM01)
+  - input_pii           # PII detection in inputs (GDPR/SOC2)
+  - output_leakage      # System prompt extraction attempts
+  - code_safety         # Unsafe code generation (CWE patterns)
+
+validation_stages:
+  - name: input_validation
+    validators:
+      - prompt_injection
+      - pii_scanner
+  - name: llm_generation
+    validators:
+      - canary_injection
+  - name: output_check
+    validators:
+      - canary_leakage
+      - pii_scanner
+  - name: code_validation
+    validators:
+      - code_shield
+
+metrics:
+  primary: security_pass_rate
+  secondary:
+    - true_positive_rate
+    - false_positive_rate
+    - block_rate_by_stage
+    - detection_latency_ms
+
+task_count: 4
+instance_count: 100

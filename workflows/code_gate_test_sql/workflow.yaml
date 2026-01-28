@@ -1,0 +1,19 @@
+workflow_id: code_gate_test_sql
+name: User Search (Vulnerable)
+description: |
+  Vulnerable fixture for CODE GATE testing.
+  Contains SQL injection vulnerability (CWE-89).
+
+variables:
+  field: null
+  value: null
+
+root:
+  sequence:
+    elements:
+      - activity:
+          name: search_users
+          params:
+            field: ${{ field }}
+            value: ${{ value }}
+          result: search_result

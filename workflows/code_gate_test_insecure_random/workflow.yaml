@@ -1,0 +1,17 @@
+workflow_id: code_gate_test_insecure_random
+name: Token Generator (Vulnerable)
+description: |
+  Vulnerable fixture for CODE GATE testing.
+  Contains insecure random vulnerability (CWE-330).
+
+variables:
+  token_length: 32
+
+root:
+  sequence:
+    elements:
+      - activity:
+          name: generate_session_token
+          params:
+            length: ${{ token_length }}
+          result: token_result

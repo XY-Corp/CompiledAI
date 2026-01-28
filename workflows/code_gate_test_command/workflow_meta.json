@@ -1,0 +1,19 @@
+{
+  "workflow_id": "code_gate_test_command",
+  "name": "File Processor (Vulnerable)",
+  "description": "Processes files using shell commands - CONTAINS INTENTIONAL COMMAND INJECTION VULNERABILITY",
+  "task_id": "code_gate_test_command",
+  "task_description": "Create a function that processes files by running shell commands based on the file type the user provides",
+  "activities": ["process_file", "run_shell_command", "execute_system_command"],
+  "variables": [
+    {"name": "filename", "default": null},
+    {"name": "command", "default": null}
+  ],
+  "execution_pattern": "sequence",
+  "vulnerability_type": "command_injection",
+  "expected_blocked": true,
+  "metrics": {
+    "fixture_test": true,
+    "cwe_id": "CWE-78"
+  }
+}

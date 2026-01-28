@@ -26,6 +26,7 @@ from ..factory.code_factory import (
 from ..factory.code_factory.activity_registry import ActivityRegistry
 from ..factory.code_factory.visualizer import visualize_workflow
 from ..utils.llm_client import TokenTracker
+from ..validation import PromptInjectionValidator, PIIScanner, CodeShieldValidator, CanaryManager
 
 console = Console()
 
@@ -63,6 +64,8 @@ class CodeFactoryBaseline(BaseBaseline):
         function_call_model: str | None = None,
         function_call_temperature: float | None = 0.0,
         function_call_max_tokens: int | None = 8192,
+        enable_security: bool = True,
+        enable_output_gate: bool = False,
     ) -> None:
         """Initialize the Code Factory baseline.
 
@@ -81,6 +84,8 @@ class CodeFactoryBaseline(BaseBaseline):
             function_call_model: Model to use for function-call template mode (e.g., "claude-3-5-haiku-20241022" for faster/cheaper)
             function_call_temperature: Temperature for function-call mode (default: 0.0 for deterministic)
             function_call_max_tokens: Max output tokens for function-call mode (default: 8192)
+            enable_security: Enable security validation gates (INPUT GATE + CODE GATE)
+            enable_output_gate: Enable OUTPUT GATE for system prompt leakage detection (uses CanaryManager)
         """
         self.provider = provider
         self.model = model or self._default_model(provider)
@@ -108,6 +113,27 @@ class CodeFactoryBaseline(BaseBaseline):
 
         # NEW: Activity accuracy registry
         self.activity_registry = ActivityRegistry()
+
+        # NEW: Security validation gates
+        self.enable_security = enable_security
+        if enable_security:
+            self._input_validators = [
+                PromptInjectionValidator(),
+                PIIScanner(),
+            ]
+            self._code_validators = [
+                CodeShieldValidator(severity_threshold="warning"),
+            ]
+        else:
+            self._input_validators = []
+            self._code_validators = []
+
+        # NEW: OUTPUT GATE for system prompt leakage detection
+        self.enable_output_gate = enable_output_gate
+        self._canary_manager: CanaryManager | None = None
+        self._current_canary_token: str | None = None
+        if enable_output_gate:
+            self._canary_manager = CanaryManager(prefix="CANARY_CF")
 
         # Create LLM client for activity execution
         from ..utils.llm_client import create_client, LLMConfig
@@ -137,6 +163,142 @@ class CodeFactoryBaseline(BaseBaseline):
             "gemini": "gemini-2.0-flash",
         }
         return defaults.get(provider, "claude-opus-4-5-20251101")
+
+    def _check_input_gate(self, content: str) -> tuple[bool, dict[str, Any]]:
+        """Check INPUT GATE: Run prompt injection and PII validators on input.
+
+        Args:
+            content: The input prompt/content to validate
+
+        Returns:
+            Tuple of (is_blocked, gate_result_dict)
+        """
+        if not self.enable_security or not self._input_validators:
+            return False, {}
+
+        gate_result = {
+            "gate": "input",
+            "validators_run": [],
+            "threats_detected": [],
+        }
+
+        for validator in self._input_validators:
+            validator_name = validator.__class__.__name__
+            try:
+                result = validator.validate(content)
+                gate_result["validators_run"].append(validator_name)
+
+                if result.is_threat:
+                    gate_result["threats_detected"].append({
+                        "validator": validator_name,
+                        "score": result.score,
+                        "details": result.details,
+                    })
+
+                    if self.verbose:
+                        console.print(
+                            f"[red]🛡️ INPUT GATE BLOCKED by {validator_name}[/red]\n"
+                            f"  Score: {result.score:.2f}\n"
+                            f"  Details: {result.details}"
+                        )
+
+                    gate_result["blocked"] = True
+                    gate_result["blocked_by"] = validator_name
+                    return True, gate_result
+
+            except Exception as e:
+                if self.verbose:
+                    console.print(f"[yellow]⚠️ Validator {validator_name} error: {e}[/yellow]")
+                gate_result["validators_run"].append(f"{validator_name} (error)")
+
+        gate_result["blocked"] = False
+        return False, gate_result
+
+    def _check_code_gate(self, code: str) -> tuple[bool, dict[str, Any]]:
+        """Check CODE GATE: Run security validators on generated code.
+
+        Args:
+            code: The generated Python code (activities.py content)
+
+        Returns:
+            Tuple of (is_blocked, gate_result_dict)
+        """
+        if not self.enable_security or not self._code_validators:
+            return False, {}
+
+        gate_result = {
+            "gate": "code",
+            "validators_run": [],
+            "issues_detected": [],
+        }
+
+        for validator in self._code_validators:
+            validator_name = validator.__class__.__name__
+            try:
+                result = validator.validate(code)
+                gate_result["validators_run"].append(validator_name)
+
+                if result.is_threat:
+                    issues = result.details.get("issues", [])
+                    gate_result["issues_detected"].extend(issues)
+
+                    if self.verbose:
+                        console.print(
+                            f"[red]🛡️ CODE GATE BLOCKED by {validator_name}[/red]\n"
+                            f"  Issues: {len(issues)}\n"
+                            f"  Details: {issues[:3]}..."  # Show first 3
+                        )
+
+                    gate_result["blocked"] = True
+                    gate_result["blocked_by"] = validator_name
+                    gate_result["total_issues"] = len(issues)
+                    return True, gate_result
+
+            except Exception as e:
+                if self.verbose:
+                    console.print(f"[yellow]⚠️ Code validator {validator_name} error: {e}[/yellow]")
+                gate_result["validators_run"].append(f"{validator_name} (error)")
+
+        gate_result["blocked"] = False
+        return False, gate_result
+
+    def _check_output_gate(self, output: str, session_id: str) -> tuple[bool, dict[str, Any]]:
+        """Check OUTPUT GATE: Detect system prompt leakage via canary tokens.
+
+        Args:
+            output: The LLM output/response to check for canary leakage
+            session_id: Session identifier for canary token lookup
+
+        Returns:
+            Tuple of (is_leaked, gate_result_dict)
+        """
+        if not self.enable_output_gate or not self._canary_manager:
+            return False, {}
+
+        gate_result = {
+            "gate": "output",
+            "validator": "canary_manager",
+        }
+
+        # Check for canary leakage
+        leakage_result = self._canary_manager.check_leakage(output, session_id)
+
+        if leakage_result.leaked:
+            if self.verbose:
+                console.print(
+                    f"[red]🛡️ OUTPUT GATE BLOCKED - System prompt leaked![/red]\n"
+                    f"  Canary token found at position: {leakage_result.match_position}"
+                )
+
+            gate_result["blocked"] = True
+            gate_result["leaked"] = True
+            gate_result["match_position"] = leakage_result.match_position
+            gate_result["reason"] = "System prompt leaked - canary token detected in output"
+            return True, gate_result
+
+        gate_result["blocked"] = False
+        gate_result["leaked"] = False
+        return False, gate_result
 
     def run(self, task_input: TaskInput) -> BaselineResult:
         """Execute Code Factory baseline on a single task.
@@ -234,6 +396,24 @@ class CodeFactoryBaseline(BaseBaseline):
         # Separate timing tracking for generation vs execution
         generation_time_ms: float | None = None
         execution_time_ms: float | None = None
+
+        # SECURITY: INPUT GATE - Check before any processing
+        if self.enable_security:
+            input_blocked, input_gate_result = self._check_input_gate(task_input.prompt)
+            if input_blocked:
+                return BaselineResult(
+                    task_id=task_input.task_id,
+                    output=json.dumps({
+                        "blocked": True,
+                        **input_gate_result,
+                    }),
+                    success=True,  # Security gate worked correctly
+                    error=None,
+                    latency_ms=(time.perf_counter() - start_time) * 1000,
+                    input_tokens=0,
+                    output_tokens=0,
+                    llm_calls=0,
+                )
 
         try:
             # NEW: Extract task signature for classification
@@ -349,6 +529,29 @@ class CodeFactoryBaseline(BaseBaseline):
 
             total_latency_ms = (time.perf_counter() - start_time) * 1000
 
+            # SECURITY: OUTPUT GATE - Check for system prompt leakage
+            if self.enable_output_gate and exec_result.get("output"):
+                output_leaked, output_gate_result = self._check_output_gate(
+                    output=exec_result.get("output", ""),
+                    session_id=task_input.task_id,
+                )
+                if output_leaked:
+                    return BaselineResult(
+                        task_id=task_input.task_id,
+                        output=json.dumps({
+                            "blocked": True,
+                            **output_gate_result,
+                        }),
+                        success=True,  # Security gate worked correctly
+                        error=None,
+                        latency_ms=total_latency_ms,
+                        input_tokens=0,
+                        output_tokens=0,
+                        llm_calls=0,
+                        generation_time_ms=generation_time_ms,
+                        execution_time_ms=execution_time_ms,
+                    )
+
             # Update execution latency in metrics
             if not needs_compilation and exec_result.get("success"):
                 self.metrics_tracker.update_execution_latency(
@@ -462,6 +665,14 @@ class CodeFactoryBaseline(BaseBaseline):
                 )
             )
 
+        # Generate canary token for OUTPUT GATE if enabled
+        canary_token: str | None = None
+        if self.enable_output_gate and self._canary_manager:
+            canary_token = self._canary_manager.generate(session_id=task_input.task_id)
+            self._current_canary_token = canary_token
+            if self.verbose:
+                console.print(f"[cyan]🔐 OUTPUT GATE: Canary token injected for leakage detection[/cyan]")
+
         # Initialize factory with registry
         factory = CodeFactory(
             provider=self.provider,
@@ -471,6 +682,7 @@ class CodeFactoryBaseline(BaseBaseline):
             enable_registry=self.enable_registry,
             auto_register=self.auto_register,
             log_dir=self.log_dir,
+            canary_token=canary_token,
         )
 
         # Generate workflow from task prompt with context information
@@ -599,6 +811,31 @@ class CodeFactoryBaseline(BaseBaseline):
         # Track compilation tokens
         if result.metrics:
             self._compilation_tokens = result.metrics.total_tokens
+
+        if result.success:
+            # SECURITY: CODE GATE - Check generated code before saving
+            if self.enable_security and result.activities_code:
+                code_blocked, code_gate_result = self._check_code_gate(result.activities_code)
+                if code_blocked:
+                    result.success = False
+                    result.validation_errors = result.validation_errors or []
+                    result.validation_errors.append(
+                        f"CODE GATE blocked: {code_gate_result.get('blocked_by', 'unknown')} "
+                        f"found {code_gate_result.get('total_issues', 0)} security issues"
+                    )
+                    # Store gate result for metrics
+                    result._code_gate_result = code_gate_result
+                    if self.verbose:
+                        console.print(
+                            Panel(
+                                f"[red]🛡️ CODE GATE BLOCKED[/red]\n"
+                                f"Validator: {code_gate_result.get('blocked_by')}\n"
+                                f"Issues: {code_gate_result.get('total_issues', 0)}",
+                                title="❌ [bold red]Security Validation Failed[/bold red]",
+                                border_style="red",
+                            )
+                        )
+                    # Fall through to the else block for failure handling
 
         if result.success:
             self._compiled = result

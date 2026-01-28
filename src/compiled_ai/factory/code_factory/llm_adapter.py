@@ -8,7 +8,7 @@ from dataclasses import dataclass, field
 from typing import Literal
 
 # PydanticAI model imports
-from pydantic_ai import ModelSettings
+from pydantic_ai.settings import ModelSettings
 from pydantic_ai.models.anthropic import AnthropicModel
 from pydantic_ai.models.openai import OpenAIModel
 from pydantic_ai.models.gemini import GeminiModel

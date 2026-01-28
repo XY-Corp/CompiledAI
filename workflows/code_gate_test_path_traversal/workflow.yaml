@@ -1,0 +1,17 @@
+workflow_id: code_gate_test_path_traversal
+name: File Reader (Vulnerable)
+description: |
+  Vulnerable fixture for CODE GATE testing.
+  Contains path traversal vulnerability (CWE-22).
+
+variables:
+  filename: null
+
+root:
+  sequence:
+    elements:
+      - activity:
+          name: read_file
+          params:
+            filename: ${{ filename }}
+          result: file_content
