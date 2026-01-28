@@ -1,18 +1,20 @@
 {
   "security": {
+    "critical": 0,
     "high": 0,
     "medium": 0,
     "low": 0,
     "total": 0,
     "weighted_score": 0,
     "table15_value": 0,
-    "description": "0 vulnerabilities (0 high, 0 medium, 0 low)",
+    "description": "0 vulnerabilities (0 critical, 0 high, 0 medium, 0 low)",
     "tools": [
       "bandit",
       "detect-secrets",
-      "semgrep"
+      "semgrep",
+      "codeshield"
     ],
-    "scoring": "Weighted score = high\u00d73 + medium\u00d72 + low\u00d71"
+    "scoring": "Weighted score = critical\u00d74 + high\u00d73 + medium\u00d72 + low\u00d71"
   },
   "type_coverage": {
     "percent": 100.0,
