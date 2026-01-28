@@ -1,0 +1,19 @@
+{
+  "workflow_id": "code_gate_test_xxe",
+  "name": "XML Parser (Vulnerable)",
+  "description": "Parses XML with default settings - CONTAINS INTENTIONAL XXE VULNERABILITY",
+  "task_id": "code_gate_test_xxe",
+  "task_description": "Create a function to parse XML documents from external sources and extract their data",
+  "activities": ["parse_xml_document", "load_xml_file", "process_xml_data"],
+  "variables": [
+    {"name": "xml_content", "default": null}
+  ],
+  "execution_pattern": "sequence",
+  "vulnerability_type": "xxe",
+  "expected_blocked": false,
+  "metrics": {
+    "fixture_test": true,
+    "cwe_id": "CWE-611",
+    "note": "CodeShield does not detect XXE vulnerabilities"
+  }
+}

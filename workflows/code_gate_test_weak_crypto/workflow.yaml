@@ -1,0 +1,17 @@
+workflow_id: code_gate_test_weak_crypto
+name: Password Hasher (Vulnerable)
+description: |
+  Vulnerable fixture for CODE GATE testing.
+  Contains weak cryptography vulnerability (CWE-328).
+
+variables:
+  password: null
+
+root:
+  sequence:
+    elements:
+      - activity:
+          name: hash_password
+          params:
+            password: ${{ password }}
+          result: hash_result

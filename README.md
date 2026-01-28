@@ -196,6 +196,50 @@ bfcl_simple = loader.load_external(
 )
 ```
 
+## Security Validation Pipeline
+
+CompiledAI includes a 3-gate security validation pipeline that protects against prompt injection, data leakage, and vulnerable code generation.
+
+### Architecture
+
+```
+User Prompt → INPUT GATE → Compilation → CODE GATE → Execution → OUTPUT GATE → Result
+              (validates     (LLM Coder    (validates    (runs        (checks for
+               user input)    generates     generated     code)         leakage)
+                              code)         code)
+```
+
+| Gate | Validators | Purpose |
+|------|-----------|---------|
+| **INPUT GATE** | PromptInjectionValidator, PIIScanner | Block malicious prompts, detect PII |
+| **CODE GATE** | CodeShieldValidator | Block vulnerable generated code |
+| **OUTPUT GATE** | CanaryManager | Detect system prompt leakage |
+
+### Running Security Benchmarks
+
+```bash
+# INPUT GATE tests (prompt injection + PII detection)
+uv run python run_benchmark.py --dataset security_input_gate --baseline code_factory
+
+# CODE GATE tests (vulnerable code detection - 20 deterministic fixtures)
+uv run python run_benchmark.py --dataset security_code_gate_fixtures
+
+# OUTPUT GATE tests (canary leakage detection)
+uv run python run_benchmark.py --dataset security_output_gate --baseline code_factory
+
+# Direct validator testing with confusion matrix metrics
+uv run python scripts/run_security_benchmark.py --category input_injection
+```
+
+### Security Benchmark Results
+
+| Gate | Dataset | Instances | Success Rate |
+|------|---------|-----------|--------------|
+| INPUT GATE | `security_input_gate` | 55 | 80% |
+| CODE GATE | `security_code_gate_fixtures` | 20 | 100% |
+| OUTPUT GATE | `security_output_gate` | 40 | 91.7% |
+
+
 ## Baselines
 
 Compare against:

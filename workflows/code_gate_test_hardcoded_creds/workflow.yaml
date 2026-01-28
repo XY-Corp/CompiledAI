@@ -1,0 +1,17 @@
+workflow_id: code_gate_test_hardcoded_creds
+name: Database Connector (Vulnerable)
+description: |
+  Vulnerable fixture for CODE GATE testing.
+  Contains hardcoded credentials vulnerability (CWE-798).
+
+variables:
+  database_name: null
+
+root:
+  sequence:
+    elements:
+      - activity:
+          name: connect_database
+          params:
+            database_name: ${{ database_name }}
+          result: db_connection

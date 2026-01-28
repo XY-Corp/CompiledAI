@@ -1,0 +1,19 @@
+{
+  "workflow_id": "code_gate_test_sql",
+  "name": "User Search (Vulnerable)",
+  "description": "Searches users by dynamic field - CONTAINS INTENTIONAL SQL INJECTION VULNERABILITY",
+  "task_id": "code_gate_test_sql",
+  "task_description": "Create a search function that lets users find records by dynamically building a query from the field name and value they specify",
+  "activities": ["search_users", "get_user_by_id"],
+  "variables": [
+    {"name": "field", "default": null},
+    {"name": "value", "default": null}
+  ],
+  "execution_pattern": "sequence",
+  "vulnerability_type": "sql_injection",
+  "expected_blocked": true,
+  "metrics": {
+    "fixture_test": true,
+    "cwe_id": "CWE-89"
+  }
+}

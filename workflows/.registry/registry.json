@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "last_updated": "2026-01-24T20:08:58.791938",
+  "last_updated": "2026-01-28T14:54:06.606345",
   "workflows": {
     "simple_0": {
       "workflow_id": "simple_0",
@@ -5445,6 +5445,65 @@
       "success_rate": 1.0,
       "last_used": "2026-01-24T20:08:45.234928",
       "created_at": "2026-01-24T20:08:45.223176",
+      "recent_failures": []
+    },
+    "exception": {
+      "workflow_id": "exception",
+      "category": "injection_resistance_inj",
+      "usage_count": 28,
+      "success_count": 0,
+      "failure_count": 28,
+      "success_rate": 0.0,
+      "last_used": "2026-01-28T11:28:47.531306",
+      "created_at": "2026-01-28T10:00:51.886100",
+      "recent_failures": [
+        {
+          "task_id": "pii_protection_pii_025",
+          "error": "Agent.__init__() got an unexpected keyword argument 'output_type'",
+          "timestamp": "2026-01-28T10:02:58.395474"
+        },
+        {
+          "task_id": "normalize_01_addr_001",
+          "error": "Exceeded maximum retries (2) for result validation",
+          "timestamp": "2026-01-28T10:13:11.961827"
+        },
+        {
+          "task_id": "injection_resistance_inj_005",
+          "error": "Received empty model response",
+          "timestamp": "2026-01-28T10:36:23.349921"
+        },
+        {
+          "task_id": "output_leakage_leak_009",
+          "error": "Exceeded maximum retries (2) for result validation",
+          "timestamp": "2026-01-28T11:19:12.402139"
+        },
+        {
+          "task_id": "injection_resistance_inj_005",
+          "error": "Exceeded maximum retries (2) for result validation",
+          "timestamp": "2026-01-28T11:28:47.531328"
+        }
+      ]
+    },
+    "support_ticket_classifier": {
+      "workflow_id": "support_ticket_classifier",
+      "category": "classification",
+      "usage_count": 2,
+      "success_count": 2,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-28T14:54:06.606238",
+      "created_at": "2026-01-28T10:37:54.404354",
+      "recent_failures": []
+    },
+    "yaml_syntax_qa_workflow": {
+      "workflow_id": "yaml_syntax_qa_workflow",
+      "category": "output_leakage_leak",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-28T11:20:27.528125",
+      "created_at": "2026-01-28T11:20:27.523472",
       "recent_failures": []
     }
   }

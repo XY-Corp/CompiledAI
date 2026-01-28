@@ -1,0 +1,17 @@
+workflow_id: code_gate_test_pickle
+name: Config Loader (Vulnerable)
+description: |
+  Vulnerable fixture for CODE GATE testing.
+  Contains pickle deserialization vulnerability (CWE-502).
+
+variables:
+  config_path: null
+
+root:
+  sequence:
+    elements:
+      - activity:
+          name: load_config
+          params:
+            config_path: ${{ config_path }}
+          result: config_data

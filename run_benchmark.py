@@ -32,9 +32,11 @@ sys.path.insert(0, str(Path(__file__).parent / "src"))
 from compiled_ai.datasets import (
     BFCLConverter,
     XYConverter,
+    SecurityFixtureConverter,
     DatasetInstance,
     run_benchmark as run_simple_benchmark,
     BenchmarkResult as SimpleBenchmarkResult,
+    InstanceResult,
 )
 from compiled_ai.baselines.base import get_baseline
 from compiled_ai.runner.loader import AgentBenchAdapter, BFCLAdapter  # For category info only
@@ -82,6 +84,44 @@ DATASETS = {
         "path": "datasets/xy_benchmark",
         "type": "internal",
         "icon": "🎯",
+    },
+    "security_benchmark": {
+        "name": "Security Benchmark",
+        "description": "Security validation tests (injection, PII, code safety)",
+        "path": "datasets/security_benchmark",
+        "type": "internal",
+        "icon": "🔒",
+    },
+    "security_input_gate": {
+        "name": "Security Input Gate",
+        "description": "INPUT GATE tests (prompt injection, PII detection) - 55 instances",
+        "path": "datasets/security_benchmark/tasks/input_gate",
+        "type": "internal",
+        "icon": "🛡️",
+    },
+    "security_code_gate": {
+        "name": "Security Code Gate",
+        "description": "CODE GATE tests (tricky prompts that lead to unsafe code generation)",
+        "path": "datasets/security_benchmark/tasks/code_gate",
+        "type": "internal",
+        "icon": "🔧",
+    },
+    "security_code_gate_fixtures": {
+        "name": "Security Code Gate Fixtures",
+        "description": "CODE GATE fixture tests (pre-made vulnerable workflows for deterministic testing)",
+        "path": "workflows",
+        "type": "fixtures",
+        "icon": "🧪",
+    },
+    "security_output_gate": {
+        "name": "Security Output Gate",
+        "description": "OUTPUT GATE tests (system prompt leakage via canary tokens) - 20 instances",
+        "path": "datasets/security_benchmark/tasks/output_gate",
+        "type": "internal",
+        "icon": "🔐",
+        "baseline_kwargs": {
+            "enable_output_gate": True,
+        },
     },
     "bfcl": {
         "name": "BFCL v4",
@@ -519,8 +559,12 @@ def run_benchmark(
                     cat_instances = cat_instances[:max_per_cat]
                 instances.extend(cat_instances)
 
-    elif dataset_key == "xy_benchmark":
+    elif dataset_key in ("xy_benchmark", "security_benchmark", "security_input_gate", "security_code_gate", "security_output_gate"):
         converter = XYConverter()
+        instances = converter.load_directory(dataset_info["path"])
+
+    elif dataset_key == "security_code_gate_fixtures":
+        converter = SecurityFixtureConverter()
         instances = converter.load_directory(dataset_info["path"])
 
     else:
@@ -539,23 +583,33 @@ def run_benchmark(
         console.print(f"\n[{BRAND_ERROR}]✗ No instances loaded.[/{BRAND_ERROR}]")
         return
 
-    # Initialize baseline
+    # Run benchmark - special handling for fixture tests
     console.print(f"\n  [{BRAND_ACCENT}]Running benchmark...[/{BRAND_ACCENT}]\n")
 
-    baseline_obj = get_baseline(
-        baseline,
-        provider=provider,
-        model=model,
-        enable_cache=enable_cache,
-        verbose=verbose,
-        log_dir=str(run_dir),  # Pass run directory for logging
-    )
+    if dataset_key == "security_code_gate_fixtures":
+        # For fixture tests, run CodeShield directly (no LLM needed)
+        console.print(f"  [{BRAND_DIM}]Running CODE GATE fixture validation (CodeShield)...[/{BRAND_DIM}]\n")
+        result = run_fixture_benchmark(instances, verbose=verbose, log_dir=run_dir)
+    else:
+        # Get baseline kwargs from dataset (e.g., enable_output_gate for security_output_gate)
+        extra_kwargs = dataset_info.get("baseline_kwargs", {})
 
-    # Run using simple benchmark runner
-    result = run_simple_benchmark(instances, baseline_obj, verbose=verbose, log_dir=run_dir)
+        baseline_obj = get_baseline(
+            baseline,
+            provider=provider,
+            model=model,
+            enable_cache=enable_cache,
+            verbose=verbose,
+            log_dir=str(run_dir),  # Pass run directory for logging
+            **extra_kwargs,  # Pass dataset-specific baseline kwargs
+        )
+
+        # Run using simple benchmark runner
+        result = run_simple_benchmark(instances, baseline_obj, verbose=verbose, log_dir=run_dir)
 
     # Display results using simple format
-    display_simple_results(result, baseline, dataset_key)
+    display_baseline = "fixture" if dataset_key == "security_code_gate_fixtures" else baseline
+    display_simple_results(result, display_baseline, dataset_key)
 
     # Save detailed results to run directory
     results_path = run_dir / "results.json"
@@ -662,6 +716,103 @@ def run_benchmark(
     console.print(f"    [{BRAND_PRIMARY}]{summary_path}[/{BRAND_PRIMARY}]")
     if failures:
         console.print(f"    [{BRAND_ERROR}]{failures_path} ({len(failures)} failures)[/{BRAND_ERROR}]")
+
+
+def run_fixture_benchmark(
+    instances: list[DatasetInstance],
+    verbose: bool = False,
+    log_dir: Path | None = None,
+) -> SimpleBenchmarkResult:
+    """Run CODE GATE fixture benchmark using CodeShield directly.
+
+    For fixture tests, we validate pre-made vulnerable code directly with CodeShield
+    instead of going through the full LLM-based code factory pipeline.
+
+    Args:
+        instances: List of DatasetInstance with activities.py code in input
+        verbose: Print progress
+        log_dir: Directory for logs
+
+    Returns:
+        SimpleBenchmarkResult with validation results
+    """
+    import time
+    from compiled_ai.validation.code_shield import CodeShieldValidator
+
+    validator = CodeShieldValidator(severity_threshold="warning")
+    result = SimpleBenchmarkResult()
+    result.start_time = time.time()
+
+    for inst in instances:
+        start = time.time()
+
+        # The input IS the activities.py code for fixture tests
+        code = inst.input
+        expected = inst.expected_output or {}
+
+        # Run CodeShield validation
+        validation_result = validator.validate(code)
+
+        # Determine if CODE GATE correctly blocked the vulnerable code
+        expected_blocked = expected.get("blocked", True)
+        actual_blocked = not validation_result.success
+
+        # Success = expected blocking behavior matches actual
+        success = expected_blocked == actual_blocked
+
+        # Build output
+        if validation_result.details.get("issues"):
+            issues = validation_result.details["issues"]
+            detected_cwes = [i.get("cwe_id") for i in issues if i.get("cwe_id")]
+            detected_patterns = [i.get("pattern_id") for i in issues if i.get("pattern_id")]
+            output = {
+                "blocked": actual_blocked,
+                "gate": "code" if actual_blocked else "none",
+                "issues_found": len(issues),
+                "cwe_ids": detected_cwes,
+                "patterns": detected_patterns,
+                "score": validation_result.score,
+            }
+        else:
+            output = {
+                "blocked": actual_blocked,
+                "gate": "none",
+                "issues_found": 0,
+                "cwe_ids": [],
+                "patterns": [],
+                "score": validation_result.score,
+            }
+
+        latency = (time.time() - start) * 1000
+
+        inst_result = InstanceResult(
+            instance_id=inst.id,
+            input=code[:500] + "..." if len(code) > 500 else code,
+            output=str(output),
+            expected=expected,
+            success=success,
+            latency_ms=latency,
+            error=None if success else f"Expected blocked={expected_blocked}, got blocked={actual_blocked}",
+            match_type="total_match" if success else "failure",
+            evaluation_score=1.0 if success else 0.0,
+            evaluation_details={
+                "expected_blocked": expected_blocked,
+                "actual_blocked": actual_blocked,
+                "issues_found": output.get("issues_found", 0),
+                "cwe_ids": output.get("cwe_ids", []),
+            },
+        )
+        result.results.append(inst_result)
+
+        if verbose:
+            status = "BLOCKED" if actual_blocked else "PASSED"
+            icon = "✓" if success else "✗"
+            console.print(f"  {icon} {inst.id}: {status} (expected: {'blocked' if expected_blocked else 'passed'})")
+            if output.get("cwe_ids"):
+                console.print(f"    CWEs detected: {', '.join(output['cwe_ids'])}")
+
+    result.end_time = time.time()
+    return result
 
 
 def display_simple_results(result: SimpleBenchmarkResult, baseline_name: str, dataset_key: str) -> None:
