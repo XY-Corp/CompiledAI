@@ -667,9 +667,9 @@ Category & Description & Instances \\
 Input Injection & Prompt injection attacks (including encoded payloads) & 30 \\
 Input PII & Sensitive data patterns (email, SSN, phone) & 25 \\
 Output Leakage & System prompt extraction attempts & 40 \\
-Code Safety & Vulnerable code fixtures (CWE patterns) & 20 \\
+Code Safety & Vulnerable code fixtures (20 vulnerable + 20 benign) & 40 \\
 \midrule
-\textbf{Total} & & \textbf{115} \\
+\textbf{Total} & & \textbf{135} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -780,12 +780,12 @@ Compiled AI achieves 96\% task completion across both evaluation categories (480
 \centering
 \caption{Code quality metrics for generated artifacts}
 \label{tab:quality-results}
-\begin{tabular}{lrrrrr}
+\begin{tabular}{lrrrr}
 \toprule
-Source & Security & TypeCov & LintScore & Complexity & TestPass \\
+Source & TypeCov & LintScore & Complexity & TestPass \\
 \midrule
-Compiled AI & \placeholder{X} & \placeholder{X}\% & \placeholder{X} & \placeholder{X} & \placeholder{X}\% \\
-Human code & 0 & 85\% & 8.5 & 8 & 100\% \\
+Compiled AI & 99\% & 2.5 & 23.8 & 96\% \\
+Human code & 85\% & 8.5 & 8 & 100\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -839,18 +839,25 @@ We evaluate the three-gate security architecture (Section~\ref{sec:security-arch
 \centering
 \caption{Security validation pipeline effectiveness}
 \label{tab:security-results}
-\begin{tabular}{lrr}
+\begin{tabular}{lrrrrr}
 \toprule
-Gate & Test Instances & Block Rate \\
+Gate & Category & Instances & Recall & Precision & Accuracy \\
 \midrule
-Input Gate & 55 & 80\% \\
-Code Gate & 20 & 100\% \\
-Output Gate & 40 & 91.7\% \\
+Input Gate & Injection & 30 & 95.8\% & 100\% & 96.7\% \\
+Input Gate & PII & 25 & 40.0\% & 100\% & 52.0\% \\
+Code Gate & Code Safety & 40 & 75.0\% & 100\% & 87.5\% \\
+Output Gate & Leakage & 40 & 12.5\% & 60.0\% & 42.5\% \\
+\midrule
+\textbf{Overall} & & \textbf{135} & \textbf{55.7\%} & \textbf{96.1\%} & \textbf{69.6\%} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-The Input Gate achieves 80\% detection rate on prompt injection attacks, with false negatives primarily from heavily obfuscated payloads. The Code Gate achieves 100\% detection on target vulnerability patterns (eval, exec, SQL injection, pickle, command injection, subprocess shell=True, weak cryptography). The Output Gate blocks 91.7\% of system prompt extraction attempts.
+\paragraph{Input Gate.} The PromptInjectionValidator achieves 95.8\% recall on adversarial prompts with 100\% precision, missing only 1 of 24 attacks (a heavily obfuscated hypothetical jailbreak). The PIIScanner shows 40\% recall on sensitive data patterns, detecting common formats (email, SSN, credit card, phone) but missing specialized identifiers (driver's license, passport, medical records).
+
+\paragraph{Code Gate.} The CodeShieldValidator, using off-the-shelf static analysis tools (Bandit, detect-secrets, Semgrep p/python, CodeShield), achieves 75\% recall on vulnerable code patterns. It correctly identifies 15 of 20 vulnerable fixtures covering common CWEs (SQL injection, command injection, eval/exec, pickle deserialization, hardcoded secrets, weak cryptography, subprocess shell=True) with 100\% precision (zero false positives on 20 benign workflows). The 5 missed vulnerabilities represent patterns not covered by standard rulesets: dynamic import (CWE-94), path traversal (CWE-22), regex DoS (CWE-1333), server-side template injection (CWE-1336), and open redirect (CWE-601).
+
+\paragraph{Output Gate.} The CanaryManager shows 12.5\% recall on system prompt extraction attempts. Low recall reflects the simulation-based testing methodology---the benchmark tests canary detection capability rather than full LLM response generation. In production deployment, canary tokens would be injected into actual system prompts and checked in real LLM outputs.
 
 % ============================================================================
 \section{Discussion}
