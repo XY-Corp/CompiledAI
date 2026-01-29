@@ -51,7 +51,7 @@
 \begin{abstract}
 % ============================================================================
 
-We study \emph{compiled AI}, a paradigm in which large language models generate executable code artifacts during a compilation phase, after which workflows execute deterministically without further model invocation. By constraining generation to narrow business-logic functions embedded in validated templates, compiled AI trades runtime flexibility for predictability, auditability, and cost efficiency, while retaining the ability to improve artifacts through observed execution patterns.
+We study \emph{compiled AI}, a paradigm in which large language models generate executable code artifacts during a compilation phase, after which workflows execute deterministically without further model invocation. By constraining generation to narrow business-logic functions embedded in validated templates, compiled AI trades runtime flexibility for predictability, auditability, and cost efficiency---while retaining the ability to improve artifacts through observed execution patterns.
 
 We introduce (i) a system architecture for constrained LLM-based code generation, (ii) a four-stage generation-and-validation pipeline that converts probabilistic model output into production-ready code artifacts, and (iii) an evaluation framework that measures operational metrics including token amortization, determinism, reliability, validation effectiveness, and cost. In preliminary evaluation on function-calling tasks (n=499 across two BFCL categories), compiled AI achieves 96\% task completion with zero execution tokens, breaking even with runtime inference at approximately 21 transactions and reducing token consumption by 47$\times$ at 1,000 transactions.
 
@@ -66,9 +66,9 @@ Large language models (LLMs) are increasingly deployed to automate enterprise wo
 
 Empirical studies and industrial deployments have highlighted persistent reliability challenges in runtime agent systems, particularly in multi-step business workflows where success rates degrade due to specification ambiguity, inter-agent coordination failures, and stochastic model outputs \citep{cemri2025multiagent, atil2024nondeterminism}. These limitations pose obstacles to deployment in enterprise environments, where determinism, auditability, and cost predictability are often strict requirements.
 
-This paper investigates an alternative design point: \emph{compiled AI}, a paradigm in which LLMs generate executable code artifacts during a one-time compilation phase, after which workflows execute deterministically without further model inference. The key observation motivating this work is that many enterprise workflows require intelligence to \emph{design} but not to \emph{execute} repeatedly. Once business logic is specified and validated, repeated execution can be handled by conventional software infrastructure, with full observability that enables targeted refinement of the compiled artifacts over time.
+This paper investigates an alternative design point: \emph{compiled AI}, a paradigm in which LLMs generate executable code artifacts during a one-time compilation phase, after which workflows execute deterministically without further model inference. The key observation motivating this work is that many enterprise workflows require intelligence to \emph{design} but not to \emph{execute} repeatedly. Once business logic is specified and validated, repeated execution can be handled by conventional software infrastructure---with full observability that enables targeted refinement of the compiled artifacts over time.
 
-Compiled AI represents a trade-off between flexibility and determinism. Rather than interpreting natural language or reasoning at runtime, an LLM is constrained to generate narrow business-logic functions within pre-validated templates. These generated artifacts are subjected to a multi-stage validation pipeline (security analysis, syntactic verification, execution testing, and output accuracy checks) before deployment. After validation, workflows execute as static code with predictable latency, zero stochasticity, and near-zero marginal inference cost.
+Compiled AI represents a trade-off between flexibility and determinism. Rather than interpreting natural language or reasoning at runtime, an LLM is constrained to generate narrow business-logic functions within pre-validated templates. These generated artifacts are subjected to a multi-stage validation pipeline—including security analysis, syntactic verification, execution testing, and output accuracy checks—before deployment. After validation, workflows execute as static code with predictable latency, zero stochasticity, and near-zero marginal inference cost.
 
 \begin{figure}[ht]
 \centering
@@ -141,7 +141,7 @@ This paper makes three contributions:
     \item We define an evaluation framework that measures the operational viability of LLM-based workflow systems using metrics for token amortization, determinism, reliability, validation effectiveness, and cost (Section~\ref{sec:framework}).
 \end{itemize}
 
-Our goal is not to replace runtime inference in all settings, but to provide a principled basis for identifying regimes (such as well-specified, high-volume workflows) where compilation yields operational advantages.
+Our goal is not to replace runtime inference in all settings, but to provide a principled basis for identifying regimes—such as well-specified, high-volume workflows—where compilation yields operational advantages.
 
 % ============================================================================
 \section{Related Work}
@@ -149,17 +149,17 @@ Our goal is not to replace runtime inference in all settings, but to provide a p
 % ============================================================================
 
 \paragraph{Novelty and Scope.}
-Prior work on LLM-based agents, program-aided reasoning, and workflow synthesis has focused primarily on model capability: whether systems can generate or reason over programs. In contrast, this work treats production viability as a first-class concern. Our contributions are not a new code generation algorithm per se, but a systems-oriented study of how probabilistic LLM outputs can be converted into deterministic, auditable execution artifacts. To our knowledge, this is the first systematic evaluation of LLM-based workflow automation using operational and economic metrics such as token amortization, execution determinism, validation convergence, and cost at scale.
+Prior work on LLM-based agents, program-aided reasoning, and workflow synthesis has focused primarily on model capability—whether systems can generate or reason over programs. In contrast, this work treats production viability as a first-class concern. Our contributions are not a new code generation algorithm per se, but a systems-oriented study of how probabilistic LLM outputs can be converted into deterministic, auditable execution artifacts. To our knowledge, this is the first systematic evaluation of LLM-based workflow automation using operational and economic metrics such as token amortization, execution determinism, validation convergence, and cost at scale.
 
 \subsection{The Reliability Crisis in LLM Agents}
 
-Recent empirical studies reveal a fundamental reliability problem in multi-agent LLM systems. \citet{cemri2025multiagent} analyzed 1,600+ annotated traces across seven major frameworks (MetaGPT, ChatDev, AutoGen), finding that \textbf{79\% of failures stem from specification and coordination issues}, not infrastructure limitations. Their Multi-Agent System Failure Taxonomy (MAST) identifies specification failures (41.8\%) and inter-agent coordination failures (36.9\%) as dominant failure modes, with infrastructure problems accounting for only 16\% of breakdowns.
+Recent empirical studies reveal a fundamental reliability problem in multi-agent LLM systems. \citet{cemri2025multiagent} analyzed 1,600+ annotated traces across seven major frameworks (MetaGPT, ChatDev, AutoGen), finding that \textbf{79\% of failures stem from specification and coordination issues}—not infrastructure limitations. Their Multi-Agent System Failure Taxonomy (MAST) identifies specification failures (41.8\%) and inter-agent coordination failures (36.9\%) as dominant failure modes, with infrastructure problems accounting for only 16\% of breakdowns.
 
 Production deployments confirm this pattern. Salesforce's CRMArena-Pro benchmark shows success rates degrading from 58\% (single-turn) to \textbf{35\% in multi-turn interactions} \citep{salesforce2025agents}. \citet{pan2025measuring} surveyed 306 practitioners across 26 domains and found that 68\% limit agents to $\leq$10 autonomous steps before requiring human intervention, with 74\% depending primarily on human evaluation rather than automated metrics. Reliability was cited as the primary deployment challenge.
 
-Critically, non-determinism persists even with temperature=0. \citet{ouyang2023nondeterminism} demonstrated 18-75\% output variance in code generation tasks due to architectural factors including Mixture-of-Experts routing and floating-point variance, fundamentally undermining reproducibility in interpreted AI approaches. \citet{atil2024nondeterminism} found accuracy varies up to 15\% across runs at temperature=0, with the gap between best and worst possible performance reaching 70\%.
+Critically, non-determinism persists even with temperature=0. \citet{ouyang2023nondeterminism} demonstrated 18-75\% output variance in code generation tasks due to architectural factors including Mixture-of-Experts routing and floating-point variance—fundamentally undermining reproducibility in interpreted AI approaches. \citet{atil2024nondeterminism} found accuracy varies up to 15\% across runs at temperature=0, with the gap between best and worst possible performance reaching 70\%.
 
-These findings motivate our core architectural choice: removing the LLM from the execution loop entirely, confining model invocation to a one-time compilation phase where variance can be detected and corrected before deployment.
+These findings motivate our core architectural choice: removing the LLM from the execution loop if possible, confining model invocation to a one-time compilation phase where variance can be detected and corrected before deployment.
 
 \subsection{Benchmark Saturation and Contamination}
 
@@ -186,37 +186,37 @@ BigCodeBench & GPT-4o & 60.0\% & --- & 2024 \\
 \end{tabular}
 \end{table}
 
-``The SWE-Bench Illusion'' \citep{shi2025swebenchillusion} provides striking evidence that models achieve 76\% accuracy on path identification from issue text alone, with performance dropping to \textbf{53\% on repositories outside SWE-Bench}, suggesting memorization rather than generalization. When SWE-Bench Pro introduced contamination-resistant benchmarks with GPL-licensed repositories, top model performance collapsed from 70\%+ to \textbf{$\sim$23\%}.
+``The SWE-Bench Illusion'' \citep{shi2025swebenchillusion} provides striking evidence that models achieve 76\% accuracy on path identification from issue text alone, with performance dropping to \textbf{53\% on repositories outside SWE-Bench}—suggesting memorization rather than generalization. When SWE-Bench Pro introduced contamination-resistant benchmarks with GPL-licensed repositories, top model performance collapsed from 70\%+ to \textbf{$\sim$23\%}.
 
-The synthetic-to-real gap is severe: models achieving 84-89\% on synthetic benchmarks attain only \textbf{25-34\% on real-world class-level tasks} \citep{rao2025synthetic}. Perhaps most striking, the METR developer productivity study found that developers \emph{perceived} 20\% productivity gains while objective measurements showed \textbf{19\% slower} task completion \citep{metr2025productivity}, directly contradicting adoption narratives.
+The synthetic-to-real gap is severe: models achieving 84-89\% on synthetic benchmarks attain only \textbf{25-34\% on real-world class-level tasks} \citep{rao2025synthetic}. Perhaps most striking, the METR developer productivity study found that developers \emph{perceived} 20\% productivity gains while objective measurements showed \textbf{19\% slower} task completion \citep{metr2025productivity}—directly contradicting adoption narratives.
 
-These findings suggest that capability benchmarks alone are insufficient for evaluating production systems. Our evaluation framework (Section~\ref{sec:framework}) therefore emphasizes operational metrics (token amortization, execution determinism, and validation convergence) over generation accuracy alone.
+These findings suggest that capability benchmarks alone are insufficient for evaluating production systems. Our evaluation framework (Section~\ref{sec:framework}) therefore emphasizes operational metrics—token amortization, execution determinism, and validation convergence—over generation accuracy alone.
 
 \subsection{Constrained Generation and Formal Verification}
 
 Structured generation techniques offer a path toward reliable outputs. SynCode \citep{ugare2024syncode} achieves \textbf{96\% reduction in syntax errors} through grammar-constrained decoding using offline-constructed DFA mask stores. Type-constrained decoding \citep{mundler2025typeconstrained} reduces compilation errors by $>$50\% while improving functional correctness. XGrammar \citep{dong2024xgrammar} demonstrates production-viable performance with up to 100$\times$ speedup over existing constrained decoding approaches.
 
-Formal verification pipelines show promise for critical systems. Astrogator \citep{councilman2025astrogator} verifies correct code in 83\% of cases and identifies incorrect code in 92\% using a Formal Query Language for intent specification. The Guaranteed Safe AI framework \citep{dalrymple2024guaranteed} provides theoretical foundations for verification without requiring interpretability by combining world models, safety specifications, and formal verifiers.
+Formal verification pipelines show promise for critical systems. Astrogator \citep{councilman2025astrogator} verifies correct code in 83\% of cases and identifies incorrect code in 92\% using a Formal Query Language for intent specification. The Guaranteed Safe AI framework \citep{dalrymple2024guaranteed} provides theoretical foundations for verification without requiring interpretability—combining world models, safety specifications, and formal verifiers.
 
 However, fundamental limitations remain: \citet{xu2024hallucination} demonstrate that structural hallucinations cannot be eliminated by larger training sets alone, positioning constrained decoding as complementary rather than complete. Our approach combines constrained generation with multi-stage validation, treating the pipeline as a whole rather than relying on any single technique.
 
-For healthcare specifically, \citet{neupane2025hipaa} present a framework for HIPAA-compliant agentic AI systems, integrating attribute-based access control with PHI sanitization pipelines, an approach our template-based architecture can encode as compliance-by-construction.
+For healthcare specifically, \citet{neupane2025hipaa} present a framework for HIPAA-compliant agentic AI systems, integrating attribute-based access control with PHI sanitization pipelines—an approach our template-based architecture can encode as compliance-by-construction.
 
 \subsection{The Bitter Lesson and Its Limits}
 
-Sutton's ``Bitter Lesson'' \citep{sutton2019bitter} argues that general methods leveraging computation ultimately win over hand-crafted approaches. Code Llama's results support this: a 7B code-specialized model outperforms Llama 2 70B on HumanEval/MBPP \citep{roziere2023codellama}. Karpathy's ``Software 2.0'' thesis \citep{karpathy2017software2} characterized neural networks as an alternative programming paradigm. More recently, Karpathy observed that leading practitioners are converging on ``spec-driven development'' (writing specifications while AI handles implementation), which he characterizes as ``the limit of imperative to declarative transition'' \citep{karpathy2026specdriven}. This trajectory aligns directly with compiled AI: specifications in, deterministic code out.
+Sutton's ``Bitter Lesson'' \citep{sutton2019bitter} argues that general methods leveraging computation ultimately win over hand-crafted approaches. Code Llama's results support this—a 7B code-specialized model outperforms Llama 2 70B on HumanEval/MBPP \citep{roziere2023codellama}. Karpathy's ``Software 2.0'' thesis \citep{karpathy2017software2} similarly characterized neural networks as an alternative programming paradigm.
 
-However, recent work questions whether scale alone is sufficient. The critical constraint may be data, not compute: scaling laws show $C \sim D^2$ (compute scales quadratically with data), but high-quality training data is finite (approximately 10T curated tokens), ``and there is no second Internet'' \citep{chakrabarti2025bitter}. Purpose-built hybrid systems can outperform pure neural approaches: Stockfish demonstrates this in chess, and HRM (27M parameters) beats o3-mini-high on ARC-AGI-1 \citep{breunig2025bitter}.
+However, recent work questions whether scale alone is sufficient. The critical constraint may be data, not compute: scaling laws show $C \sim D^2$ (compute scales quadratically with data), but high-quality training data is finite—approximately 10T curated tokens, ``and there is no second Internet'' \citep{chakrabarti2025bitter}. Purpose-built hybrid systems can outperform pure neural approaches: Stockfish demonstrates this in chess, and HRM (27M parameters) beats o3-mini-high on ARC-AGI-1 \citep{breunig2025bitter}.
 
-Our work operationalizes a hybrid insight: LLMs excel at \emph{understanding intent} but struggle with \emph{reliable execution}. By treating the LLM as a compiler and front-loading computation to the generation phase, we leverage model capability for design while relying on conventional software for deterministic execution.
+Our work operationalizes a hybrid insight: LLMs excel at \emph{understanding intent} but struggle with \emph{reliable execution}. By treating the LLM as a compiler—front-loading computation to the generation phase—we leverage model capability for design while relying on conventional software for deterministic execution.
 
 \subsection{The Compilation Paradigm}
 
-The most directly relevant work validates compilation as a distinct paradigm. DSPy \citep{khattab2023dspy} \textbf{compiles declarative LLM calls into optimized pipelines}, achieving 25-65\% improvement over prompt engineering. Remarkably, small 770M-parameter models compiled with DSPy compete with GPT-3.5 on several tasks, demonstrating that optimization can be amortized across executions.
+The most directly relevant work validates compilation as a distinct paradigm. DSPy \citep{khattab2023dspy} \textbf{compiles declarative LLM calls into optimized pipelines}, achieving 25-65\% improvement over prompt engineering. Remarkably, small 770M-parameter models compiled with DSPy compete with GPT-3.5 on several tasks—demonstrating that optimization can be amortized across executions.
 
-LLM+P \citep{liu2023llmp} embodies our paradigm precisely: \textbf{LLMs translate natural language to PDDL, then classical planners produce optimal solutions}. LLMs alone fail to produce even feasible plans, but the hybrid approach succeeds: the LLM handles understanding, the deterministic solver handles reasoning. This architectural pattern (neural understanding plus symbolic execution) underlies our approach.
+LLM+P \citep{liu2023llmp} embodies our paradigm precisely: \textbf{LLMs translate natural language to PDDL, then classical planners produce optimal solutions}. LLMs alone fail to produce even feasible plans, but the hybrid approach succeeds—the LLM handles understanding, the deterministic solver handles reasoning. This architectural pattern—neural understanding plus symbolic execution—underlies our approach.
 
-Token economics favor compilation. Language Agent Tree Search (LATS) achieves state-of-the-art results but costs 10-50$\times$ one-shot tokens \citep{zhou2024lats}. For repeated execution, compiled workflows amortize this cost: $O(\text{compilation}) + O(N \times 0)$ versus $O(N \times \text{one-shot})$ for interpreted approaches. MetaGPT's Standard Operating Procedures \citep{hong2024metagpt} are essentially compiled workflows: deterministic procedures that reduce cascading hallucinations by constraining agent behavior.
+Token economics favor compilation. Language Agent Tree Search (LATS) achieves state-of-the-art results but costs 10-50$\times$ one-shot tokens \citep{zhou2024lats}. For repeated execution, compiled workflows amortize this cost: $O(\text{compilation}) + O(N \times 0)$ versus $O(N \times \text{one-shot})$ for interpreted approaches. MetaGPT's Standard Operating Procedures \citep{hong2024metagpt} are essentially compiled workflows—deterministic procedures that reduce cascading hallucinations by constraining agent behavior.
 
 WorkflowLLM \citep{fan2024workflowllm} validates that workflows can be learned one-shot with zero-shot transfer to unseen APIs, constructing WorkflowBench with 106,763 samples covering 1,503 APIs. FlowMind \citep{zeng2024flowmind} generates workflows that prevent runtime hallucinations via structured intermediate representations. AlphaCodium \citep{ridnik2024alphacodium} demonstrates ``flow engineering'' over prompt engineering: structured multi-stage flows with verification improve GPT-4 accuracy from 19\% to 44\%.
 
@@ -229,7 +229,7 @@ Durable execution engines provide the reliability infrastructure our compiled ar
     \item Replit: scaled to millions of concurrent environments
 \end{itemize}
 
-Our work combines LLM code generation with durable execution, generating Temporal activities rather than invoking models at runtime, marrying the design capability of LLMs with the execution reliability of battle-tested workflow infrastructure.
+Our work combines LLM code generation with durable execution, generating Temporal activities rather than invoking models at runtime—marrying the design capability of LLMs with the execution reliability of battle-tested workflow infrastructure.
 
 % ============================================================================
 \section{System Architecture}
@@ -244,7 +244,7 @@ Our system implements four principles:
 
 \textbf{Principle 2: Compilation over Interpretation.} Generated code is validated, tested, and deployed as static artifacts. Runtime behavior is deterministic. The LLM exits the execution loop.
 
-\textbf{Principle 3: Validation as Requirement.} Every artifact passes a four-stage pipeline before deployment, possible precisely because we generate code rather than interpret configurations.
+\textbf{Principle 3: Validation as Requirement.} Every artifact passes a four-stage pipeline before deployment—possible precisely because we generate code rather than interpret configurations.
 
 \textbf{Principle 4: Compliance by Construction.} Regulatory constraints (HIPAA, PCI-DSS, SOC 2) are encoded in templates and prompt blocks, ensuring generated code inherits compliance properties.
 
@@ -265,8 +265,8 @@ Our system implements four principles:
 % Input
 \node[box, fill=yellow!20] (yaml) {YAML\\Spec};
 
-% Orchestrator
-\node[box, fill=orange!20, right=of yaml] (config) {Orch.};
+% Config Agent
+\node[box, fill=orange!20, right=of yaml] (config) {Config\\Agent};
 
 % Libraries (stacked vertically)
 \node[library, above=0.8cm of config] (templates) {Templates};
@@ -320,23 +320,23 @@ Our system implements four principles:
 
 \end{tikzpicture}
 }%
-\caption{The code foundry architecture. Business intent (YAML) enters the fab; validated Temporal activities emerge. Dashed red arrows show the regeneration loop on validation failure. The LLM runs once at generation time, not at transaction time.}
+\caption{The code foundry architecture. Business intent (YAML) enters the fab; validated Temporal activities emerge. Dashed red arrows show the regeneration loop on validation failure. The LLM runs once at generation time—not at transaction time.}
 \label{fig:architecture}
 \end{figure}
 
-\textbf{Orchestrator.} Receives YAML specifications and orchestrates generation: selecting templates, modules, and compliance constraints.
+\textbf{Config Agent.} Receives YAML specifications and orchestrates generation: selecting templates, modules, and compliance constraints.
 
-\textbf{Template Library.} Pre-built, tested code patterns for common workflow types:
+\textbf{Template Library.} Pre-built, tested code templates:
 \begin{itemize}
-    \item Synchronous request-response handlers
-    \item Streaming and chunked data processors
-    \item Input validators with fallback logic
-    \item Batch processors with checkpointing
+    \item \texttt{SimpleAgent}: Synchronous request-response
+    \item \texttt{StreamingAgent}: Chunked data processing
+    \item \texttt{ValidatorAgent}: Input validation with fallback
+    \item \texttt{BatchAgent}: Bulk processing with checkpointing
 \end{itemize}
 
-\textbf{Module Library.} Reusable functional capabilities: database access with connection pooling, HTTP clients with retry logic, notification delivery across channels.
+\textbf{Module Library.} Functional capabilities: \texttt{DatabaseModule} (connection pooling), \texttt{HTTPModule} (API calls with retries), \texttt{NotificationModule} (delivery channels).
 
-\textbf{Prompt Blocks.} Reusable prompt fragments encoding domain constraints (e.g., HIPAA data handling, PCI-DSS compliance rules).
+\textbf{Prompt Blocks.} Reusable prompt fragments encoding domain constraints (HIPAA handling, PCI-DSS rules).
 
 \subsection{Generation Process}
 
@@ -384,7 +384,7 @@ Constraints on bounded invocations:
     \item Human escalation for low-confidence cases
 \end{itemize}
 
-Because bounded invocations address narrow, well-defined subtasks rather than open-ended reasoning, they require less context and produce more predictable outputs than equivalent calls in fully agentic systems, a second-order efficiency gain beyond token amortization.
+Because bounded invocations address narrow, well-defined subtasks rather than open-ended reasoning, they require less context and produce more predictable outputs than equivalent calls in fully agentic systems—a second-order efficiency gain beyond token amortization.
 
 % ============================================================================
 \section{Evaluation Framework for Compiled AI}
@@ -531,7 +531,7 @@ Metric & Definition \\
 \end{tabular}
 \end{table}
 
-This data is novel; no published work reports validation pipeline effectiveness for LLM-generated production code.
+This data is novel—no published work reports validation pipeline effectiveness for LLM-generated production code.
 
 \subsection{Cost Metrics}
 
@@ -683,7 +683,7 @@ Compiled AI & 0 & 100\% & 100\% \\
 \end{tabular}
 \end{table}
 
-Compiled AI exhibits perfect reproducibility: identical inputs produce identical outputs with zero variance. Runtime inference shows 95\% reproducibility due to model variance even at temperature=0, consistent with findings from \citet{atil2024nondeterminism}. Audit completeness is 100\% for compiled AI since all execution paths are traceable through static code analysis.
+Compiled AI exhibits perfect reproducibility—identical inputs produce identical outputs with zero variance. Runtime inference shows 95\% reproducibility due to model variance even at temperature=0, consistent with findings from \citet{atil2024nondeterminism}. Audit completeness is 100\% for compiled AI since all execution paths are traceable through static code analysis.
 
 \subsection{Reliability}
 
@@ -703,25 +703,26 @@ BFCL Exec Simple (Execution) & 99 & 95 & 95.9\% \\
 \end{tabular}
 \end{table}
 
-Compiled AI achieves 96\% task completion across both evaluation categories (480/499 tasks). Performance is consistent between AST-based evaluation (96.2\%) and executable evaluation (95.9\%), demonstrating that compiled workflows correctly extract parameters with sufficient precision for actual function execution. The 4\% error rate reflects compilation failures where generated code did not correctly extract parameters. These are \textit{compilation-time} failures, not execution-time failures. Once successfully compiled, workflows execute with 100\% reliability.
+Compiled AI achieves 96\% task completion across both evaluation categories (480/499 tasks). Performance is consistent between AST-based evaluation (96.2\%) and executable evaluation (95.9\%), demonstrating that compiled workflows correctly extract parameters with sufficient precision for actual function execution. The 4\% error rate reflects compilation failures where generated code did not correctly extract parameters—these are \textit{compilation-time} failures, not execution-time failures. Once successfully compiled, workflows execute with 100\% reliability.
 
 \subsection{Code Quality}
 
 \begin{table}[ht]
 \centering
-\caption{Code quality metrics for generated artifacts (496 functions, 52,979 lines). Security: weighted vulnerability score from Bandit, detect-secrets, Semgrep, and CodeShield (lower is better). TypeCov: functions with type annotations. LintScore: Ruff linting score (10 = perfect, higher is better). Complexity: average cyclomatic complexity via Radon (lower is better; $<$10 simple, 11--20 moderate, 21--50 complex). TestPass: workflow execution success rate.}
+\caption{Code quality metrics for generated artifacts. Industry baselines from empirical studies: type coverage from Python ecosystem survey \citep{pythontypecoverage2024}, test coverage from LaunchDarkly study of 47 projects \citep{launchdarkly2019}, complexity thresholds from McCabe/NIST guidelines \citep{mccabe1976}.}
 \label{tab:quality-results}
 \begin{tabular}{lrrrrr}
 \toprule
-Source & Security$\downarrow$ & TypeCov$\uparrow$ & LintScore$\uparrow$ & Complexity$\downarrow$ & TestPass$\uparrow$ \\
+Source & Security & TypeCov & TestCov & Complexity & Churn \\
 \midrule
-Compiled AI & 0 & 100\% & 2.2/10 & 26.3 & 96\% \\
-Industry baseline & --- & 35\% & 8.5/10$^*$ & $<$10 & --- \\
+Compiled AI & \placeholder{X} & \placeholder{X}\% & \placeholder{X}\% & \placeholder{X} & 0\%$^\dagger$ \\
+Industry baseline & --- & 35\% & 74--80\% & $<$10 & 5.5\% \\
+AI-assisted (2024) & 45\% fail & --- & --- & --- & 7.9\% \\
 \bottomrule
 \end{tabular}
 \begin{flushleft}
-\scriptsize{$\uparrow$higher is better, $\downarrow$lower is better. $^*$Estimated from well-maintained open-source projects.\\
-Type coverage from Python ecosystem survey \citep{pythontypecoverage2024}. Complexity thresholds from McCabe/NIST \citep{mccabe1976}.}
+\scriptsize{$^\dagger$Compiled artifacts are static; churn occurs only via explicit regeneration.\\
+Security failure rate from Veracode 2025 GenAI Report \citep{veracode2025genai}. Churn data from GitClear 2025 study of 211M lines \citep{gitclear2025}.}
 \end{flushleft}
 \end{table}
 
@@ -745,7 +746,7 @@ Overall (all stages) & 96\% \\
 \end{tabular}
 \end{table}
 
-\noindent\textit{Note:} The 96\% accuracy rate (480/499 tasks across both categories) reflects cases where generated code executed successfully but produced outputs that did not match expected function calls. These failures occur at compilation time and can be detected before deployment, unlike runtime inference errors. Function-call-specific templates and simplified prompts improved first-pass rates from approximately 80\% in earlier development versions.
+\noindent\textit{Note:} The 96\% accuracy rate (480/499 tasks across both categories) reflects cases where generated code executed successfully but produced outputs that did not match expected function calls. These failures occur at compilation time and can be detected before deployment—unlike runtime inference errors. Function-call-specific templates and simplified prompts improved first-pass rates from approximately 80\% in earlier development versions.
 
 \subsection{Cost Analysis}
 
@@ -795,9 +796,9 @@ Runtime approaches remain appropriate for:
 
 \subsection{The Constraint Advantage}
 
-Constraining generation improves reliability. By limiting LLM output to narrow functions within tested templates, we bound the space of possible errors. The model cannot hallucinate incorrect API calls or database schemas; these come from pre-tested templates.
+Constraining generation improves reliability. By limiting LLM output to narrow functions within tested templates, we bound the space of possible errors. The model cannot hallucinate incorrect API calls or database schemas—these come from pre-tested templates.
 
-This trades flexibility for reliability: appropriate for enterprise deployments where predictability matters more than generality. Moreover, deterministic execution yields full observability: when accuracy degrades, we can identify precisely which code segment underperformed and trigger targeted regeneration rather than debugging opaque model reasoning. This positions compiled AI not as a one-shot generation process, but as an \emph{evolutionary system}: deterministic execution with adaptive improvement, where production metrics continuously inform artifact refinement.
+This trades flexibility for reliability: appropriate for enterprise deployments where predictability matters more than generality. Moreover, deterministic execution yields full observability—when accuracy degrades, we can identify precisely which code segment underperformed and trigger targeted regeneration rather than debugging opaque model reasoning. This positions compiled AI not as a one-shot generation process, but as an \emph{evolutionary system}—deterministic execution with adaptive improvement, where production metrics continuously inform artifact refinement.
 
 \subsection{Relationship to Existing Benchmarks}
 
@@ -808,14 +809,14 @@ Our evaluation framework complements existing benchmarks:
     \item \textbf{Our framework}: Measures production viability (token economics, consistency, reliability)
 \end{itemize}
 
-We argue that capability benchmarks alone are insufficient; production deployment requires the operational metrics we define.
+We argue that capability benchmarks alone are insufficient—production deployment requires the operational metrics we define.
 
 % ============================================================================
 \section{Limitations}
 \label{sec:limitations}
 % ============================================================================
 
-\textbf{Specification quality.} Our approach assumes users can accurately specify workflows. The ``specification problem'' remains fundamental; iterative refinement is often necessary.
+\textbf{Specification quality.} Our approach assumes users can accurately specify workflows. The ``specification problem'' remains fundamental—iterative refinement is often necessary.
 
 \textbf{Bounded applicability.} Not all workflows reduce to deterministic code. Tasks requiring genuine creativity or adaptation to novel situations may require runtime inference.
 
@@ -838,9 +839,9 @@ We studied compiled AI as a systems design point for LLM-based workflow automati
     \item An evaluation framework measuring operational metrics: token amortization, determinism, reliability, validation effectiveness, and cost
 \end{enumerate}
 
-Preliminary evaluation on function-calling benchmarks (n=499 across two BFCL categories) demonstrates the core trade-off: compiled AI incurs substantial upfront cost ($\sim$11,000 tokens, 29 seconds) but achieves zero-cost execution with 100\% determinism for successfully compiled workflows. Break-even occurs at approximately 21 transactions; at 1,000 transactions, token consumption is reduced by 47$\times$. Execution latency improves from 3.4 seconds to 3.4 milliseconds (a 1,000$\times$ speedup). The 96\% compilation success rate, consistent across both AST-based and executable evaluation, demonstrates the viability of LLM-based code generation for production workflows, with failures detectable before deployment.
+Preliminary evaluation on function-calling benchmarks (n=499 across two BFCL categories) demonstrates the core trade-off: compiled AI incurs substantial upfront cost ($\sim$11,000 tokens, 29 seconds) but achieves zero-cost execution with 100\% determinism for successfully compiled workflows. Break-even occurs at approximately 21 transactions; at 1,000 transactions, token consumption is reduced by 47$\times$. Execution latency improves from 3.4 seconds to 3.4 milliseconds—a 1,000$\times$ speedup. The 96\% compilation success rate—consistent across both AST-based and executable evaluation—demonstrates the viability of LLM-based code generation for production workflows, with failures detectable before deployment.
 
-The approach trades flexibility for determinism, cost efficiency, and auditability, properties relevant for enterprise deployment in well-specified, high-volume workflow regimes. We release our evaluation framework and benchmark suite to enable systematic comparison of compiled and runtime AI approaches.
+The approach trades flexibility for determinism, cost efficiency, and auditability—properties relevant for enterprise deployment in well-specified, high-volume workflow regimes. We release our evaluation framework and benchmark suite to enable systematic comparison of compiled and runtime AI approaches.
 
 \paragraph{Future Work.}
 \begin{itemize}
@@ -943,12 +944,6 @@ Andrej Karpathy.
 \newblock Software 2.0.
 \newblock \emph{Medium}, November 2017.
 \newblock \url{https://karpathy.medium.com/software-2-0-a64152b37c35}
-
-\bibitem[Karpathy(2026)]{karpathy2026specdriven}
-Andrej Karpathy.
-\newblock Spec-driven development and the declarative transition.
-\newblock \emph{X (Twitter)}, January 2026.
-\newblock \url{https://x.com/karpathy/status/1883601522500329783}
 
 \bibitem[Khattab et al.(2023)]{khattab2023dspy}
 Omar Khattab et al.
@@ -1061,11 +1056,6 @@ Qingyun Wu, Gagan Bansal, Jieyu Zhang, Yiran Wu, Beibin Li, Erkang Zhu, Li Jiang
 Yucheng Xu et al.
 \newblock Benchmark Data Contamination of Large Language Models: A Survey.
 \newblock \emph{arXiv:2406.04244}, June 2024.
-
-\bibitem[Xu et al.(2024)Xu, Jain, and Kankanhalli]{xu2024hallucination}
-Ziwei Xu, Sanjay Jain, and Mohan Kankanhalli.
-\newblock Hallucination is Inevitable: An Innate Limitation of Large Language Models.
-\newblock \emph{arXiv preprint arXiv:2401.11817}, 2024.
 
 \bibitem[Yang et al.(2023)]{yang2023rethinking}
 Yichen Yang et al.
