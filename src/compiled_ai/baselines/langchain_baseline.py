@@ -12,81 +12,6 @@ from .base import BaseBaseline, BaselineResult, TaskInput, register_baseline
 load_dotenv()
 
 
-import re
-
-
-def sanitize_tool_name(name: str) -> str:
-    """Sanitize function name to match Anthropic's pattern: ^[a-zA-Z0-9_-]{1,128}$"""
-    # Replace dots and other invalid chars with underscores
-    sanitized = re.sub(r'[^a-zA-Z0-9_-]', '_', name)
-    # Truncate to 128 chars
-    return sanitized[:128]
-
-
-def fix_json_schema(schema: dict) -> dict:
-    """Fix common JSON Schema issues in BFCL function definitions.
-    
-    BFCL uses non-standard types that Anthropic's API rejects:
-    - "dict" -> "object"
-    - "float" -> "number"
-    - "list" -> "array"
-    """
-    if not isinstance(schema, dict):
-        return schema
-    
-    result = {}
-    for key, value in schema.items():
-        if key == "type":
-            # Fix non-standard types
-            type_mapping = {
-                "dict": "object",
-                "float": "number",
-                "list": "array",
-                "int": "integer",
-            }
-            result[key] = type_mapping.get(value, value)
-        elif isinstance(value, dict):
-            result[key] = fix_json_schema(value)
-        elif isinstance(value, list):
-            result[key] = [fix_json_schema(item) if isinstance(item, dict) else item for item in value]
-        else:
-            result[key] = value
-    return result
-
-
-def convert_bfcl_to_langchain_tools(functions: list[dict]) -> tuple[list[dict], dict[str, str]]:
-    """Convert BFCL function definitions to LangChain tool format.
-    
-    BFCL format uses "dict" for type, LangChain/OpenAI uses "object".
-    Also sanitizes function names and fixes schema issues for API compatibility.
-    
-    Returns:
-        (tools, name_mapping): tools list and mapping from sanitized -> original names
-    """
-    tools = []
-    name_mapping = {}  # sanitized_name -> original_name
-    
-    for func in functions:
-        original_name = func["name"]
-        sanitized_name = sanitize_tool_name(original_name)
-        name_mapping[sanitized_name] = original_name
-        
-        # Fix and convert parameters
-        params = func.get("parameters", {})
-        params = fix_json_schema(params)
-        
-        tool = {
-            "type": "function",
-            "function": {
-                "name": sanitized_name,
-                "description": func.get("description", ""),
-                "parameters": params,
-            }
-        }
-        tools.append(tool)
-    return tools, name_mapping
-
-
 @register_baseline("langchain")
 class LangChainBaseline(BaseBaseline):
     """LangChain baseline with native tool calling.
@@ -157,16 +82,13 @@ class LangChainBaseline(BaseBaseline):
 
         start_time = time.perf_counter()
 
-        # Check if we have function definitions in context (BFCL tasks)
-        functions_str = task_input.context.get("functions", "")
-        functions = []
-        if functions_str:
-            try:
-                functions = json.loads(functions_str)
-            except json.JSONDecodeError:
-                pass
+        # Generic: look for tools/context provided by dataset converters/adapters
+        tools = task_input.context.get("tools") or []
+        tool_name_mapping: dict[str, str] = task_input.context.get(
+            "tool_name_mapping", {}
+        )
 
-        # Build the user message
+        # Build the user message (fallback to prompt if no explicit user_query)
         user_query = task_input.context.get("user_query", task_input.prompt)
         
         messages = []
@@ -178,18 +100,19 @@ class LangChainBaseline(BaseBaseline):
         last_error: str | None = None
         for attempt in range(self.max_retries):
             try:
-                # If we have functions, use tool calling
-                if functions:
-                    tools, name_mapping = convert_bfcl_to_langchain_tools(functions)
+                # If we have tools, use tool calling
+                if tools:
                     llm_with_tools = self.llm.bind_tools(tools)
                     response = llm_with_tools.invoke(messages)
                     
                     # Extract tool calls from response
                     if response.tool_calls:
-                        # Format as BFCL expected output
+                        # Format as generic function call output
                         tool_call = response.tool_calls[0]
                         # Map sanitized name back to original
-                        original_name = name_mapping.get(tool_call["name"], tool_call["name"])
+                        original_name = tool_name_mapping.get(
+                            tool_call["name"], tool_call["name"]
+                        )
                         output = json.dumps({
                             "name": original_name,
                             "arguments": tool_call["args"]

@@ -8,6 +8,7 @@ from typing import Any
 from .dataset import Dataset, Task, TaskCategory, TaskDifficulty, TaskInstance
 from .standardized import StandardizedDataset
 from .transformers import get_transformer, transform_dataset
+from ..datasets.bfcl_tools import build_tools_from_functions
 
 
 class DatasetAdapter(ABC):
@@ -137,9 +138,13 @@ class BFCLAdapter(DatasetAdapter):
                                     # List of strings
                                     question = question[0] if question else ""
 
-                            # Format functions as JSON string for prompt
+                            # Raw function definitions from BFCL
                             functions = data.get("function", [])
+                            # Format functions as JSON string for prompt template
                             functions_str = json.dumps(functions, indent=2)
+
+                            # Pre-build tools for LLM tool-calling baselines in a dataset-specific layer
+                            tools, name_mapping = build_tools_from_functions(functions)
 
                             # Get ground truth from map or inline
                             instance_id = data.get("id", f"{category}_{i}")
@@ -158,8 +163,12 @@ class BFCLAdapter(DatasetAdapter):
                                 TaskInstance(
                                     instance_id=instance_id,
                                     input_data={
+                                        # Prompt template fields
                                         "user_query": question,
                                         "functions": functions_str,
+                                        # Dataset-agnostic tool definitions for baselines
+                                        "tools": tools,
+                                        "tool_name_mapping": name_mapping,
                                     },
                                     expected_output=expected_output,
                                     metadata={
