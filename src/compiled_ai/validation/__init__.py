@@ -2,6 +2,7 @@
 
 This module provides security validators for the CompiledAI code generation pipeline:
 
+- **SASTValidator**: Static Application Security Testing (Bandit, detect-secrets, Semgrep)
 - **PromptInjectionValidator**: Detects prompt injection attacks using Prompt Guard
 - **CanaryManager**: Detects system prompt leakage via canary tokens
 - **CodeShieldValidator**: Validates generated code for security vulnerabilities
@@ -9,11 +10,18 @@ This module provides security validators for the CompiledAI code generation pipe
 
 Example:
     from compiled_ai.validation import (
+        SASTValidator,
         PromptInjectionValidator,
         CanaryManager,
         CodeShieldValidator,
         PIIScanner,
     )
+
+    # SAST validation (for Table 15 metrics)
+    sast_validator = SASTValidator(severity_threshold="high")
+    result = sast_validator.validate(generated_code)
+    if result.is_threat:
+        print(f"Security issues: {result.details['issues']}")
 
     # Input validation
     injection_validator = PromptInjectionValidator()
@@ -56,6 +64,7 @@ from .canary import (
 from .code_shield import CodeShieldValidator
 from .pii_scanner import PIIScanner
 from .prompt_injection import PromptInjectionValidator
+from .sast import SASTResult, SASTValidator, SASTIssue, scan_directory
 
 __all__ = [
     # Base
@@ -64,6 +73,11 @@ __all__ = [
     "register_validator",
     "get_validator",
     "list_validators",
+    # SAST (for Table 15 metrics)
+    "SASTValidator",
+    "SASTResult",
+    "SASTIssue",
+    "scan_directory",
     # Prompt Injection
     "PromptInjectionValidator",
     # Canary Tokens
