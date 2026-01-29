@@ -282,7 +282,9 @@ def run_leakage_tests(
         test_id = instance["id"]
         test_name = instance["name"]
         user_request = instance["input"]["user_request"]
-        expected_no_leak = not instance["expected_output"]["canary_leaked"]
+        # Dataset uses "blocked" field - if blocked, no leak expected
+        expected_blocked = instance["expected_output"].get("blocked", False)
+        expected_no_leak = expected_blocked  # blocked means no leak
         attack_type = instance.get("attack_type", "unknown")
 
         session_id = f"test_session_{i}"
@@ -366,10 +368,14 @@ def run_code_tests(
     instances: list[dict[str, Any]],
     max_instances: int | None = None,
 ) -> CategoryResult:
-    """Run code safety tests."""
+    """Run code safety tests on workflow files.
+    
+    Tests the enhanced CodeShieldValidator (Bandit + detect-secrets + Semgrep + CodeShield)
+    on actual workflow files referenced in the dataset.
+    """
     from compiled_ai.validation import CodeShieldValidator
 
-    validator = CodeShieldValidator(severity_threshold="warning")
+    validator = CodeShieldValidator(severity_threshold="low")
     results: list[TestResult] = []
     latencies: list[float] = []
 
@@ -380,52 +386,60 @@ def run_code_tests(
     for instance in test_instances:
         test_id = instance["id"]
         test_name = instance["name"]
-        code_request = instance["input"]["code_request"]
+        file_path = instance["input"]["file_path"]
         expected_unsafe = instance["expected_output"]["unsafe_code_detected"]
 
-        # Extract actual code from the request
-        # Format is typically "Description: code_here"
-        if ":" in code_request:
-            code = code_request.split(":", 1)[1].strip()
-        else:
-            code = code_request
+        try:
+            # Read code from workflow file
+            full_path = PROJECT_ROOT / file_path
+            if not full_path.exists():
+                logger.error(f"File not found: {full_path}")
+                continue
+                
+            code = full_path.read_text()
 
-        start = time.perf_counter()
-        result = validator.validate(code)
-        latency_ms = (time.perf_counter() - start) * 1000
-        latencies.append(latency_ms)
+            start = time.perf_counter()
+            result = validator.validate(code)
+            latency_ms = (time.perf_counter() - start) * 1000
+            latencies.append(latency_ms)
 
-        actual_unsafe = result.is_threat
-        correct = actual_unsafe == expected_unsafe
+            actual_unsafe = not result.success  # success=False means issues found
+            correct = actual_unsafe == expected_unsafe
 
-        # Update confusion matrix
-        if expected_unsafe and actual_unsafe:
-            tp += 1
-        elif not expected_unsafe and not actual_unsafe:
-            tn += 1
-        elif not expected_unsafe and actual_unsafe:
-            fp += 1
-        else:
-            fn += 1
+            # Update confusion matrix
+            if expected_unsafe and actual_unsafe:
+                tp += 1  # Correctly detected vulnerable code
+            elif not expected_unsafe and not actual_unsafe:
+                tn += 1  # Correctly identified as safe
+            elif not expected_unsafe and actual_unsafe:
+                fp += 1  # False positive
+            else:
+                fn += 1  # Missed vulnerability
 
-        results.append(
-            TestResult(
-                test_id=test_id,
-                test_name=test_name,
-                expected=expected_unsafe,
-                actual=actual_unsafe,
-                correct=correct,
-                latency_ms=latency_ms,
-                details={
-                    "issues_count": result.details.get("total_issues", 0),
-                    "blocking_issues": result.details.get("blocking_issues", 0),
-                    "expected_cwe": instance["expected_output"].get("cwe_id"),
-                },
+            results.append(
+                TestResult(
+                    test_id=test_id,
+                    test_name=test_name,
+                    expected=expected_unsafe,
+                    actual=actual_unsafe,
+                    correct=correct,
+                    latency_ms=latency_ms,
+                    details={
+                        "file": str(file_path),
+                        "total_issues": result.details.get("total_issues", 0),
+                        "severity_counts": result.details.get("severity_counts", {}),
+                        "tools_with_findings": result.details.get("tools_with_findings", []),
+                        "expected_cwe": instance["expected_output"].get("cwe_id"),
+                    },
+                )
             )
-        )
 
-        status = "[OK]" if correct else "[FAIL]"
-        logger.info(f"  {status} {test_id}: {test_name}")
+            status = "[OK]" if correct else "[FAIL]"
+            logger.info(f"  {status} {test_id}: {test_name}")
+
+        except Exception as e:
+            logger.error(f"Error processing {file_path}: {e}")
+            continue
 
     return CategoryResult(
         category="code_safety",
@@ -452,6 +466,12 @@ def print_results(category_results: dict[str, CategoryResult]) -> None:
         total_correct += result.true_positive + result.true_negative
         total_tests += result.total
 
+        # Format latency - use μs for very small values, ms otherwise
+        if result.avg_latency_ms < 1.0:
+            latency_str = f"{result.avg_latency_ms * 1000:.1f}μs avg"
+        else:
+            latency_str = f"{result.avg_latency_ms:.1f}ms avg"
+
         print(f"\n{category.upper()}")
         print("-" * 40)
         print(f"  Total:     {result.total}")
@@ -462,7 +482,7 @@ def print_results(category_results: dict[str, CategoryResult]) -> None:
         print(f"  Accuracy:  {result.accuracy:.1%}")
         print(f"  Precision: {result.precision:.1%}")
         print(f"  Recall:    {result.recall:.1%}")
-        print(f"  Latency:   {result.avg_latency_ms:.1f}ms avg")
+        print(f"  Latency:   {latency_str}")
 
     overall_accuracy = total_correct / total_tests if total_tests > 0 else 0
     print("\n" + "=" * 70)
@@ -575,6 +595,7 @@ def main() -> int:
 
     category_results: dict[str, CategoryResult] = {}
 
+    # Run standard dataset-based benchmark
     categories = (
         [args.category]
         if args.category
