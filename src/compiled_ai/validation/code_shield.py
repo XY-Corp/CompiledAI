@@ -173,9 +173,7 @@ class CodeShieldValidator(Validator):
     def _run_semgrep(self, file_path: Path) -> list[dict[str, Any]]:
         """Run Semgrep with Python security rules on a file.
 
-        Uses both standard p/python rules and custom rules for additional
-        vulnerability patterns (dynamic import, path traversal, regex DoS,
-        template injection, open redirect).
+        Uses standard p/python rules only (off-the-shelf).
 
         Args:
             file_path: Path to the file to scan
@@ -185,11 +183,8 @@ class CodeShieldValidator(Validator):
         """
         issues: list[dict[str, Any]] = []
 
-        # Custom rules file path (relative to this module)
-        custom_rules = Path(__file__).parent / "semgrep_rules.yaml"
-
         try:
-            # Build semgrep command with both standard and custom rules
+            # Build semgrep command with standard rules only
             cmd = [
                 "semgrep",
                 "--config=p/python",
@@ -197,9 +192,6 @@ class CodeShieldValidator(Validator):
                 "--quiet",
                 str(file_path),
             ]
-            # Add custom rules if they exist
-            if custom_rules.exists():
-                cmd.insert(2, f"--config={custom_rules}")
 
             result = subprocess.run(
                 cmd,
