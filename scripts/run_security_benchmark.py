@@ -466,6 +466,12 @@ def print_results(category_results: dict[str, CategoryResult]) -> None:
         total_correct += result.true_positive + result.true_negative
         total_tests += result.total
 
+        # Format latency - use μs for very small values, ms otherwise
+        if result.avg_latency_ms < 1.0:
+            latency_str = f"{result.avg_latency_ms * 1000:.1f}μs avg"
+        else:
+            latency_str = f"{result.avg_latency_ms:.1f}ms avg"
+
         print(f"\n{category.upper()}")
         print("-" * 40)
         print(f"  Total:     {result.total}")
@@ -476,7 +482,7 @@ def print_results(category_results: dict[str, CategoryResult]) -> None:
         print(f"  Accuracy:  {result.accuracy:.1%}")
         print(f"  Precision: {result.precision:.1%}")
         print(f"  Recall:    {result.recall:.1%}")
-        print(f"  Latency:   {result.avg_latency_ms:.1f}ms avg")
+        print(f"  Latency:   {latency_str}")
 
     overall_accuracy = total_correct / total_tests if total_tests > 0 else 0
     print("\n" + "=" * 70)
