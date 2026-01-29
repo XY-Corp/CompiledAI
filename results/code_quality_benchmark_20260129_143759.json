@@ -1,0 +1,52 @@
+{
+  "type_coverage": {
+    "percent": 99.45454545454545,
+    "typed_functions": 547,
+    "total_functions": 550,
+    "table15_value": "99%",
+    "description": "547/550 functions have type annotations (99%)",
+    "tools": [
+      "ast (Python)"
+    ]
+  },
+  "lint": {
+    "errors": 285,
+    "warnings": 6560,
+    "score": 2.524271844660194,
+    "table15_value": "2.5/10",
+    "description": "Lint score 2.5/10 (285 errors, 6560 warnings)",
+    "tools": [
+      "ruff"
+    ]
+  },
+  "complexity": {
+    "average": 23.78870673952641,
+    "max": 51,
+    "functions_analyzed": 549,
+    "table15_value": "23.8",
+    "description": "Avg cyclomatic complexity 23.8 (max: 51, 1-10 is simple, 11-20 moderate, 21-50 complex, >50 untestable)",
+    "tools": [
+      "radon"
+    ]
+  },
+  "tests": {
+    "passed": 385,
+    "failed": 15,
+    "total": 400,
+    "pass_rate": 96.25,
+    "table15_value": "96%",
+    "description": "385/400 workflow executions passed (96%)",
+    "source": "benchmark run logs"
+  },
+  "metadata": {
+    "files_scanned": 515,
+    "total_lines": 53969
+  },
+  "table15": {
+    "Source": "Compiled AI",
+    "TypeCov": "99%",
+    "LintScore": "2.5",
+    "Complexity": "23.8",
+    "TestPass": "96%"
+  }
+}

@@ -1,27 +1,28 @@
 #!/usr/bin/env python3
-"""Run code quality scans on generated workflows and output metrics for Table 15.
+"""Run code quality scans for Table 15 metrics.
 
-This script runs all 6 code quality tools on generated code artifacts:
-- Security: Bandit + detect-secrets + Semgrep + CodeShield (SAST)
-- TypeCov: mypy type coverage
-- LintScore: ruff linting score
-- Complexity: radon cyclomatic complexity
-- TestPass: pytest test pass rate
+This script analyzes generated Python code for:
+- Type coverage (mypy)
+- Lint score (ruff)
+- Cyclomatic complexity (radon)
+- Test pass rate (from benchmark logs)
 
 Usage:
-    python scripts/run_code_quality_scan.py --input workflows/ --output results/table15_metrics.json
-    python scripts/run_code_quality_scan.py --input workflows/ --no-semgrep  # Skip Semgrep (faster)
+    uv run python scripts/run_code_quality_scan.py --input workflows/ --run-id run_20260124_113316
+    uv run python scripts/run_code_quality_scan.py --input workflows/ --output results/
 
 Output:
-    JSON file with aggregated metrics for Table 15 of the paper.
+    Timestamped JSON file: results/code_quality_benchmark_YYYYMMDD_HHMMSS.json
 """
 
 import argparse
 import json
 import logging
+import re
 import subprocess
 import sys
 from dataclasses import dataclass, field
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 import ast
@@ -37,14 +38,7 @@ logger = logging.getLogger(__name__)
 class Table15Metrics:
     """Metrics for Table 15: Code quality metrics for generated artifacts."""
 
-    # Security (Bandit + detect-secrets + Semgrep + CodeShield)
-    security_critical: int = 0
-    security_high: int = 0
-    security_medium: int = 0
-    security_low: int = 0
-    security_total: int = 0
-
-    # TypeCov (mypy)
+    # TypeCov (AST parsing)
     type_coverage_percent: float = 0.0
     typed_functions: int = 0
     total_functions: int = 0
@@ -59,7 +53,7 @@ class Table15Metrics:
     max_complexity: float = 0.0
     functions_analyzed: int = 0
 
-    # TestPass (pytest) - for the test suite, not generated code
+    # TestPass - from benchmark run logs
     tests_passed: int = 0
     tests_failed: int = 0
     tests_total: int = 0
@@ -73,7 +67,6 @@ class Table15Metrics:
         """Format metrics for Table 15 in the paper."""
         return {
             "Source": "Compiled AI",
-            "Security": str(self.security_critical * 4 + self.security_high * 3 + self.security_medium * 2 + self.security_low),  # weighted score
             "TypeCov": f"{self.type_coverage_percent:.0f}%",
             "LintScore": f"{self.lint_score:.1f}",
             "Complexity": f"{self.avg_complexity:.1f}",
@@ -82,26 +75,7 @@ class Table15Metrics:
 
     def to_dict(self) -> dict[str, Any]:
         """Full metrics as dictionary with expressive descriptions."""
-        # Security: weighted score (critical=4, high=3, medium=2, low=1)
-        security_weighted = (
-            self.security_critical * 4
-            + self.security_high * 3
-            + self.security_medium * 2
-            + self.security_low * 1
-        )
         return {
-            "security": {
-                "critical": self.security_critical,
-                "high": self.security_high,
-                "medium": self.security_medium,
-                "low": self.security_low,
-                "total": self.security_total,
-                "weighted_score": security_weighted,
-                "table15_value": security_weighted,
-                "description": f"{self.security_total} vulnerabilities ({self.security_critical} critical, {self.security_high} high, {self.security_medium} medium, {self.security_low} low)",
-                "tools": ["bandit", "detect-secrets", "semgrep", "codeshield"],
-                "scoring": "Weighted score = critical×4 + high×3 + medium×2 + low×1",
-            },
             "type_coverage": {
                 "percent": self.type_coverage_percent,
                 "typed_functions": self.typed_functions,
@@ -141,169 +115,6 @@ class Table15Metrics:
             },
             "table15": self.to_table15_format(),
         }
-
-
-def run_bandit(files: list[Path]) -> dict[str, int]:
-    """Run Bandit security scanner on files.
-
-    Returns:
-        Dict with severity counts: high, medium, low
-    """
-    counts = {"high": 0, "medium": 0, "low": 0}
-
-    if not files:
-        return counts
-
-    try:
-        # Run bandit on all files at once
-        file_args = [str(f) for f in files]
-        result = subprocess.run(
-            ["bandit", "-f", "json", "-q", "-r"] + file_args,
-            capture_output=True,
-            text=True,
-            timeout=300,
-        )
-
-        if result.stdout:
-            data = json.loads(result.stdout)
-            for finding in data.get("results", []):
-                severity = finding.get("issue_severity", "LOW").lower()
-                if severity in counts:
-                    counts[severity] += 1
-
-        logger.info(f"Bandit: {sum(counts.values())} issues found")
-
-    except subprocess.TimeoutExpired:
-        logger.warning("Bandit scan timed out")
-    except json.JSONDecodeError as e:
-        logger.warning(f"Failed to parse Bandit output: {e}")
-    except FileNotFoundError:
-        logger.error("Bandit not installed. Run: pip install bandit")
-    except Exception as e:
-        logger.error(f"Bandit scan failed: {e}")
-
-    return counts
-
-
-def run_detect_secrets(files: list[Path]) -> int:
-    """Run detect-secrets on files.
-
-    Returns:
-        Count of secrets found (all treated as high severity)
-    """
-    secrets_count = 0
-
-    for file_path in files:
-        try:
-            result = subprocess.run(
-                ["detect-secrets", "scan", str(file_path)],
-                capture_output=True,
-                text=True,
-                timeout=60,
-            )
-
-            if result.stdout:
-                data = json.loads(result.stdout)
-                for findings in data.get("results", {}).values():
-                    secrets_count += len(findings)
-
-        except subprocess.TimeoutExpired:
-            logger.warning(f"Timeout scanning {file_path}")
-            continue
-        except json.JSONDecodeError as e:
-            logger.warning(f"Failed to parse detect-secrets output for {file_path}: {e}")
-            continue
-        except FileNotFoundError:
-            logger.error("detect-secrets not installed. Run: pip install detect-secrets")
-            break
-        except Exception as e:
-            logger.warning(f"Error scanning {file_path}: {e}")
-            continue
-
-    logger.info(f"detect-secrets: {secrets_count} secrets found")
-    return secrets_count
-
-
-def run_semgrep(directory: Path) -> dict[str, int]:
-    """Run Semgrep with Python security rules.
-
-    Returns:
-        Dict with severity counts
-    """
-    counts = {"error": 0, "warning": 0, "info": 0}
-
-    try:
-        result = subprocess.run(
-            [
-                "semgrep",
-                "--config=p/python",
-                "--json",
-                "--quiet",
-                str(directory),
-            ],
-            capture_output=True,
-            text=True,
-            timeout=600,  # Semgrep can be slow
-        )
-
-        if result.stdout:
-            data = json.loads(result.stdout)
-            for finding in data.get("results", []):
-                severity = finding.get("extra", {}).get("severity", "WARNING").lower()
-                if severity in counts:
-                    counts[severity] += 1
-
-        logger.info(f"Semgrep: {sum(counts.values())} issues found")
-
-    except subprocess.TimeoutExpired:
-        logger.warning("Semgrep scan timed out")
-    except json.JSONDecodeError as e:
-        logger.warning(f"Failed to parse Semgrep output: {e}")
-    except FileNotFoundError:
-        logger.error("Semgrep not installed. Run: pip install semgrep")
-    except Exception as e:
-        logger.error(f"Semgrep scan failed: {e}")
-
-    return counts
-
-
-def run_codeshield(files: list[Path]) -> dict[str, int]:
-    """Run Meta's CodeShield on generated files.
-    
-    Returns:
-        Dict with severity counts: critical, high, medium, low
-    """
-    counts = {"critical": 0, "high": 0, "medium": 0, "low": 0}
-    
-    try:
-        from compiled_ai.validation import CodeShieldValidator
-        
-        validator = CodeShieldValidator(severity_threshold="low")
-        
-        for file_path in files:
-            try:
-                code = file_path.read_text()
-                result = validator.validate(code, language="python")
-                
-                for issue in result.details.get("issues", []):
-                    severity = issue.get("severity", "low").lower()
-                    # Map "warning" to "medium"
-                    if severity == "warning":
-                        severity = "medium"
-                    if severity in counts:
-                        counts[severity] += 1
-            except Exception as e:
-                logger.warning(f"CodeShield scan failed for {file_path}: {e}")
-                continue
-        
-        logger.info(f"CodeShield: {sum(counts.values())} issues found")
-        
-    except ImportError:
-        logger.warning("CodeShield not installed. Run: pip install codeshield")
-    except Exception as e:
-        logger.error(f"CodeShield scan failed: {e}")
-    
-    return counts
 
 
 def run_mypy(files: list[Path]) -> tuple[float, int, int]:
@@ -545,62 +356,28 @@ def scan_directory(
         except Exception:
             pass
 
-    # 1. Security: Bandit
-    logger.info("Running Bandit...")
-    bandit_counts = run_bandit(py_files)
-    metrics.security_high = bandit_counts["high"]
-    metrics.security_medium = bandit_counts["medium"]
-    metrics.security_low = bandit_counts["low"]
-
-    # 2. Security: detect-secrets
-    logger.info("Running detect-secrets...")
-    secrets_count = run_detect_secrets(py_files)
-    metrics.security_high += secrets_count  # Secrets are high severity
-
-    # 3. Security: Semgrep
-    logger.info("Running Semgrep...")
-    semgrep_counts = run_semgrep(input_dir)
-    metrics.security_high += semgrep_counts["error"]
-    metrics.security_medium += semgrep_counts["warning"]
-    metrics.security_low += semgrep_counts["info"]
-
-    # 4. Security: CodeShield (LLM-generated code validation)
-    logger.info("Running CodeShield...")
-    codeshield_counts = run_codeshield(py_files)
-    metrics.security_critical += codeshield_counts["critical"]
-    metrics.security_high += codeshield_counts["high"]
-    metrics.security_medium += codeshield_counts["medium"]
-    metrics.security_low += codeshield_counts["low"]
-
-    metrics.security_total = (
-        metrics.security_critical
-        + metrics.security_high
-        + metrics.security_medium
-        + metrics.security_low
-    )
-
-    # 4. TypeCov: mypy
+    # 1. TypeCov: mypy
     logger.info("Running mypy...")
     coverage, typed, total = run_mypy(py_files)
     metrics.type_coverage_percent = coverage
     metrics.typed_functions = typed
     metrics.total_functions = total
 
-    # 5. LintScore: ruff
+    # 2. LintScore: ruff
     logger.info("Running ruff...")
     errors, warnings, score = run_ruff(py_files)
     metrics.lint_errors = errors
     metrics.lint_warnings = warnings
     metrics.lint_score = score
 
-    # 6. Complexity: radon
+    # 3. Complexity: radon
     logger.info("Running radon...")
     avg_cc, max_cc, func_count = run_radon(py_files)
     metrics.avg_complexity = avg_cc
     metrics.max_complexity = max_cc
     metrics.functions_analyzed = func_count
 
-    # 7. TestPass: from benchmark run logs
+    # 4. TestPass: from benchmark run logs
     if logs_dir and logs_dir.exists():
         logger.info("Getting TestPass from benchmark logs...")
         passed, failed, total, rate = get_benchmark_test_pass(logs_dir, run_id)
@@ -629,9 +406,9 @@ def main():
     parser.add_argument(
         "--output",
         "-o",
-        type=Path,
-        default=Path("results/table15_metrics.json"),
-        help="Output JSON file (default: results/table15_metrics.json)",
+        type=str,
+        default="results",
+        help="Output directory (default: results/)",
     )
     parser.add_argument(
         "--logs",
@@ -663,8 +440,12 @@ def main():
         logger.error(f"Input directory not found: {args.input}")
         sys.exit(1)
 
-    # Create output directory
-    args.output.parent.mkdir(parents=True, exist_ok=True)
+    # Create output directory and generate timestamped filename
+    output_dir = Path(args.output)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    output_file = output_dir / f"code_quality_benchmark_{timestamp}.json"
 
     # Run scans
     logger.info(f"Scanning {args.input}...")
@@ -678,26 +459,23 @@ def main():
     results = metrics.to_dict()
 
     # Write JSON
-    with open(args.output, "w") as f:
+    with open(output_file, "w") as f:
         json.dump(results, f, indent=2)
-    logger.info(f"Results written to {args.output}")
+    logger.info(f"Results written to {output_file}")
 
     # Print Table 15 format
     print("\n" + "=" * 80)
     print("TABLE 15: Code quality metrics for generated artifacts")
     print("=" * 80)
     table15 = metrics.to_table15_format()
-    print(f"{'Source':<15} {'Security':<18} {'TypeCov':<10} {'LintScore':<12} {'Complexity':<12} {'TestPass':<10}")
+    print(f"{'Source':<15} {'TypeCov':<10} {'LintScore':<12} {'Complexity':<12} {'TestPass':<10}")
     print("-" * 80)
-    print(f"{'Compiled AI':<15} {table15['Security'] + ' (weighted)':<18} {table15['TypeCov']:<10} {table15['LintScore'] + '/10':<12} {table15['Complexity']:<12} {table15['TestPass']:<10}")
-    print(f"{'Human code':<15} {'0 (weighted)':<18} {'85%':<10} {'8.5/10':<12} {'8':<12} {'100%':<10}")
+    print(f"{'Compiled AI':<15} {table15['TypeCov']:<10} {table15['LintScore'] + '/10':<12} {table15['Complexity']:<12} {table15['TestPass']:<10}")
+    print(f"{'Human code':<15} {'85%':<10} {'8.5/10':<12} {'8':<12} {'100%':<10}")
     print("=" * 80)
 
     # Detailed descriptions
     print("\n--- Metric Descriptions ---")
-    print(f"Security:   {results['security']['description']}")
-    print(f"            Weighted score: {results['security']['weighted_score']} ({results['security']['scoring']})")
-    print("            Scanned with Bandit (SAST), detect-secrets, Semgrep, and CodeShield (LLM code validator). Lower is better.")
     print(f"TypeCov:    {results['type_coverage']['description']}")
     print("            Parsed each function with Python AST. A function is 'typed' if it has return annotation or any parameter annotation.")
     print(f"LintScore:  {results['lint']['description']}")
