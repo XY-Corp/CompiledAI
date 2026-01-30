@@ -171,7 +171,7 @@ python scripts/download_bfcl.py
 python scripts/download_agentbench.py
 
 # Download DocILE (requires token from https://docile.rossum.ai/)
-./scripts/download_docile.sh YOUR_TOKEN
+./scripts/download_dataset_docile.sh YOUR_TOKEN annotated-trainval datasets/docile --unzip
 ```
 
 ### Load Datasets

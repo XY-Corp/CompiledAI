@@ -11,6 +11,8 @@ from .base import (
 )
 from .direct_llm import DirectLLMBaseline
 from .code_factory import CodeFactoryBaseline
+from .langchain_baseline import LangChainBaseline
+from .autogen_baseline import AutoGenBaseline
 
 __all__ = [
     "BaseBaseline",
@@ -19,6 +21,8 @@ __all__ = [
     "TaskOutput",
     "DirectLLMBaseline",
     "CodeFactoryBaseline",
+    "LangChainBaseline",
+    "AutoGenBaseline",
     "get_baseline",
     "list_baselines",
     "register_baseline",

@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
-"""Run the AgentBench dataset with the Direct LLM baseline.
+"""Run the DocILE dataset with various baselines.
 
-AgentBench evaluates agent capabilities across 8 environments:
-OS, DB, KG, ALFWorld, WebShop, Mind2Web, Avalon, and LTP.
+DocILE (Document Information Localization and Extraction) evaluates
+document extraction capabilities on business documents (invoices, receipts).
 
 Usage:
-    python scripts/run_agentbench_benchmark.py --provider anthropic
-    python scripts/run_agentbench_benchmark.py --provider gemini --environments os db
-    python scripts/run_agentbench_benchmark.py --provider anthropic --split dev --max-per-env 10
+    python scripts/run_docile_benchmark.py --provider anthropic
+    python scripts/run_docile_benchmark.py --provider gemini --task-type kile
+    python scripts/run_docile_benchmark.py --provider anthropic --max-documents 50
+    python scripts/run_docile_benchmark.py --baseline langchain --task-type kile
 """
 
 import argparse
@@ -21,18 +22,13 @@ from rich.table import Table
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from compiled_ai.runner import BenchmarkConfig, BenchmarkRunner, DatasetLoader
-from compiled_ai.runner.loader import AgentBenchAdapter
 from compiled_ai.baselines import list_baselines
-
-
-# Available AgentBench environments
-AGENTBENCH_ENVIRONMENTS = list(AgentBenchAdapter.ENVIRONMENTS.keys())
 
 
 def parse_args() -> argparse.Namespace:
     """Parse command line arguments."""
     parser = argparse.ArgumentParser(
-        description="Run AgentBench with various baselines"
+        description="Run DocILE with various baselines"
     )
     parser.add_argument(
         "--baseline",
@@ -53,23 +49,22 @@ def parse_args() -> argparse.Namespace:
         help="Model name (default: provider's default)",
     )
     parser.add_argument(
-        "--environments",
-        nargs="+",
-        choices=AGENTBENCH_ENVIRONMENTS,
-        default=None,
-        help=f"Environments to run (default: all). Choices: {', '.join(AGENTBENCH_ENVIRONMENTS)}",
+        "--task-type",
+        choices=["kile", "lir"],
+        default="kile",
+        help="Task type: 'kile' for key info extraction, 'lir' for line items (default: kile)",
     )
     parser.add_argument(
         "--split",
-        choices=["dev", "test"],
-        default="dev",
-        help="Dataset split to use (default: dev)",
+        choices=["train", "val", "test"],
+        default=None,
+        help="Dataset split to use (default: all available)",
     )
     parser.add_argument(
-        "--max-per-env",
+        "--max-documents",
         type=int,
         default=None,
-        help="Maximum instances per environment",
+        help="Maximum documents to process",
     )
     parser.add_argument(
         "--max-instances",
@@ -91,68 +86,46 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--dataset-path",
         type=str,
-        default="datasets/agentbench",
-        help="Path to AgentBench dataset (default: datasets/agentbench)",
-    )
-    parser.add_argument(
-        "--list-environments",
-        action="store_true",
-        help="List available environments and exit",
+        default="datasets/docile",
+        help="Path to DocILE dataset (default: datasets/docile)",
     )
     return parser.parse_args()
 
 
-def list_environments(console: Console) -> None:
-    """List all available AgentBench environments."""
-    table = Table(title="AgentBench Environments")
-    table.add_column("Environment", style="cyan")
-    table.add_column("Name", style="green")
-    table.add_column("Difficulty", style="magenta")
-    table.add_column("Docker Required", justify="center")
-
-    for env_id, config in AgentBenchAdapter.ENVIRONMENTS.items():
-        docker_status = "[yellow]Yes[/yellow]" if config["requires_docker"] else "[green]No[/green]"
-        table.add_row(
-            env_id,
-            config["name"],
-            config["difficulty"],
-            docker_status,
-        )
-
-    console.print(table)
-    console.print("\n[dim]Note: Some environments require Docker for full execution.[/dim]")
-
-
 def run_benchmark(args: argparse.Namespace, console: Console) -> None:
     """Run the benchmark with given arguments."""
-    console.print("\n[bold blue]AgentBench Benchmark Runner[/bold blue]")
+    console.print("\n[bold blue]DocILE Benchmark Runner[/bold blue]")
     console.print(f"Baseline: [cyan]{args.baseline}[/cyan]")
     console.print(f"Provider: [cyan]{args.provider}[/cyan]")
     if args.model:
         console.print(f"Model: [cyan]{args.model}[/cyan]")
-    console.print(f"Split: [cyan]{args.split}[/cyan]")
-    if args.environments:
-        console.print(f"Environments: [cyan]{', '.join(args.environments)}[/cyan]")
+    console.print(f"Task Type: [cyan]{args.task_type.upper()}[/cyan]")
+    if args.split:
+        console.print(f"Split: [cyan]{args.split}[/cyan]")
     console.print()
 
     # Check if dataset exists
     dataset_path = Path(args.dataset_path)
     if not dataset_path.exists():
         console.print(f"[red]Error: Dataset not found at {dataset_path}[/red]")
-        console.print("\nTo download AgentBench, run:")
-        console.print("[cyan]  python scripts/download_agentbench.py[/cyan]")
+        console.print("\nTo download DocILE, run:")
+        console.print("[cyan]  ./scripts/download_dataset_docile.sh YOUR_TOKEN annotated-trainval datasets/docile --unzip[/cyan]")
+        console.print("\nTo get your token:")
+        console.print("  1. Visit https://docile.rossum.ai/")
+        console.print("  2. Complete the Dataset Access Request form")
+        console.print("  3. Receive your token via email")
         sys.exit(1)
 
     # Load dataset with adapter options
     loader = DatasetLoader("datasets")
-    console.print("[yellow]Loading AgentBench dataset...[/yellow]")
+    console.print("[yellow]Loading DocILE dataset...[/yellow]")
 
     dataset = loader.load_external(
-        "agentbench",
+        "docile",
         dataset_path,
-        environments=args.environments,
+        task_type=args.task_type,
         split=args.split,
-        max_per_env=args.max_per_env,
+        max_documents=args.max_documents,
     )
 
     # Show dataset summary
@@ -160,23 +133,14 @@ def run_benchmark(args: argparse.Namespace, console: Console) -> None:
     console.print(f"Loaded [cyan]{len(dataset.tasks)}[/cyan] tasks with [cyan]{total_instances}[/cyan] instances")
 
     if not dataset.tasks:
-        console.print("[red]No tasks loaded. Check dataset path and environments.[/red]")
-        console.print("\n[dim]Note: AgentBench data may need to be organized or some environments may not have data.[/dim]")
+        console.print("[red]No tasks loaded. Check dataset path and task type.[/red]")
         sys.exit(1)
 
-    # Check for Docker-required environments
-    if args.environments:
-        docker_envs = [
-            env for env in args.environments
-            if AgentBenchAdapter.ENVIRONMENTS.get(env, {}).get("requires_docker", False)
-        ]
-        if docker_envs:
-            console.print(f"\n[yellow]Warning: Environments requiring Docker for full execution: {', '.join(docker_envs)}[/yellow]")
-            console.print("[dim]Benchmark will run but may have limited evaluation accuracy.[/dim]\n")
-
     # Build config
+    # Include task type in dataset name for clearer file naming
+    dataset_name = f"docile_{args.task_type}"
     config = BenchmarkConfig(
-        dataset_name="agentbench",
+        dataset_name=dataset_name,
         baseline_name=args.baseline,
         max_instances=args.max_instances,
         output_dir=Path(args.output_dir),
@@ -202,24 +166,20 @@ def run_benchmark(args: argparse.Namespace, console: Console) -> None:
     console.print()
 
     # Task-level results table
-    table = Table(title="AgentBench Task Results")
-    table.add_column("Environment", style="cyan")
-    table.add_column("Name", style="green")
+    table = Table(title="DocILE Task Results")
+    table.add_column("Task", style="cyan")
+    table.add_column("Type", style="green")
     table.add_column("Difficulty", style="magenta")
     table.add_column("Success Rate", justify="right")
     table.add_column("Avg Latency (ms)", justify="right")
     table.add_column("Instances", justify="right")
 
     for tr in result.task_results:
-        # Extract environment from task_id (agentbench_os -> os)
-        env_id = tr.task.task_id.replace("agentbench_", "")
-        env_config = AgentBenchAdapter.ENVIRONMENTS.get(env_id, {})
-
         success_style = "green" if tr.success_rate >= 0.8 else "yellow" if tr.success_rate >= 0.5 else "red"
         table.add_row(
-            env_id,
-            env_config.get("name", env_id),
-            env_config.get("difficulty", ""),
+            tr.task.name,
+            args.task_type.upper(),
+            tr.task.difficulty.value,
             f"[{success_style}]{tr.success_rate:.1%}[/{success_style}]",
             f"{tr.avg_latency_ms:.0f}",
             str(len(tr.results)),
@@ -248,10 +208,6 @@ def main() -> None:
     """Main entry point."""
     console = Console()
     args = parse_args()
-
-    if args.list_environments:
-        list_environments(console)
-        return
 
     try:
         run_benchmark(args, console)

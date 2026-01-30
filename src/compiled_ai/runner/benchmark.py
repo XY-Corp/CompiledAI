@@ -381,6 +381,8 @@ class BenchmarkRunner:
             "fuzzy_match": "fuzzy_match",
             "json_match": "json_match",
             "ast_match": "ast_match",
+            "bfcl_function_call": "bfcl_function_call",
+            "llm": "llm",
             "schema": "schema",
             "milestone": "fuzzy_match",  # Fallback for AgentBench
         }

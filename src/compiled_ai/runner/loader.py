@@ -8,6 +8,7 @@ from typing import Any
 from .dataset import Dataset, Task, TaskCategory, TaskDifficulty, TaskInstance
 from .standardized import StandardizedDataset
 from .transformers import get_transformer, transform_dataset
+from ..datasets.bfcl_tools import build_tools_from_functions
 
 
 class DatasetAdapter(ABC):
@@ -142,9 +143,13 @@ class BFCLAdapter(DatasetAdapter):
                                     # List of strings
                                     question = question[0] if question else ""
 
-                            # Format functions as JSON string for prompt
+                            # Raw function definitions from BFCL
                             functions = data.get("function", [])
+                            # Format functions as JSON string for prompt template
                             functions_str = json.dumps(functions, indent=2)
+
+                            # Pre-build tools for LLM tool-calling baselines in a dataset-specific layer
+                            tools, name_mapping = build_tools_from_functions(functions)
 
                             # Get ground truth from map or inline
                             instance_id = data.get("id", f"{category}_{i}")
@@ -163,8 +168,12 @@ class BFCLAdapter(DatasetAdapter):
                                 TaskInstance(
                                     instance_id=instance_id,
                                     input_data={
+                                        # Prompt template fields
                                         "user_query": question,
                                         "functions": functions_str,
+                                        # Dataset-agnostic tool definitions for baselines
+                                        "tools": tools,
+                                        "tool_name_mapping": name_mapping,
                                     },
                                     expected_output=expected_output,
                                     metadata={
@@ -192,7 +201,7 @@ class BFCLAdapter(DatasetAdapter):
                         "'name' and 'arguments' keys."
                     ),
                     instances=instances,
-                    evaluation_type="ast_match",
+                    evaluation_type="llm",
                     tags=["function_calling", "bfcl", category],
                     source="bfcl_v4",
                 )
@@ -352,6 +361,39 @@ class DocILEAdapter(DatasetAdapter):
         "currency",
     ]
 
+    # Mapping from DocILE field names to standard KILE field names
+    DOCILE_TO_KILE_FIELD_MAP = {
+        # Document ID
+        "document_id": "document_id",
+        # Vendor fields
+        "vendor_name": "vendor_name",
+        "vendor_address": "vendor_address",
+        # Customer fields (DocILE uses billing/shipping variants)
+        "customer_name": "customer_name",
+        "customer_billing_name": "customer_name",
+        "customer_shipping_name": "customer_name",
+        "customer_address": "customer_address",
+        "customer_billing_address": "customer_address",
+        "customer_shipping_address": "customer_address",
+        # Invoice fields
+        "invoice_id": "invoice_id",
+        "invoice_number": "invoice_id",
+        "date_issue": "invoice_date",
+        "invoice_date": "invoice_date",
+        "date_due": "due_date",
+        "due_date": "due_date",
+        # Amount fields
+        "amount_total_gross": "total_amount",
+        "total_amount": "total_amount",
+        "amount_due": "total_amount",  # Often same as total
+        "tax_amount": "tax_amount",
+        "tax": "tax_amount",
+        # Currency
+        "currency": "currency",
+        "currency_code": "currency",
+        "currency_code_amount_due": "currency",
+    }
+
     def load(self, path: Path, **kwargs: Any) -> Dataset:
         """Load DocILE dataset.
 
@@ -376,15 +418,17 @@ class DocILEAdapter(DatasetAdapter):
 
         instances: list[TaskInstance] = []
 
-        # DocILE has directory structure: annotated-trainval/[doc_id]/annotation.json
-        doc_dirs = self._find_document_dirs(path, split)
+        # DocILE has flat structure: annotations/[doc_id].json, ocr/[doc_id].json, pdfs/[doc_id].pdf
+        # Plus train.json, val.json, trainval.json for splits
+        doc_ids = self._find_document_ids(path, split)
 
-        for i, doc_dir in enumerate(doc_dirs):
+        for i, doc_id in enumerate(doc_ids):
             if max_documents and len(instances) >= max_documents:
                 break
 
-            annotation_file = doc_dir / "annotation.json"
-            ocr_file = doc_dir / "ocr.json"
+            annotation_file = path / "annotations" / f"{doc_id}.json"
+            ocr_file = path / "ocr" / f"{doc_id}.json"
+            pdf_file = path / "pdfs" / f"{doc_id}.pdf"
 
             if not annotation_file.exists():
                 continue
@@ -397,13 +441,8 @@ class DocILEAdapter(DatasetAdapter):
             if ocr_file.exists():
                 with open(ocr_file) as f:
                     ocr_data = json.load(f)
-                    # Extract text from OCR results
-                    if isinstance(ocr_data, dict):
-                        ocr_text = ocr_data.get("text", "")
-                    elif isinstance(ocr_data, list):
-                        ocr_text = " ".join(
-                            item.get("text", "") for item in ocr_data if isinstance(item, dict)
-                        )
+                    # Extract text from OCR results (nested structure: pages -> blocks -> lines -> words)
+                    ocr_text = self._extract_ocr_text(ocr_data)
 
             # Extract fields based on task type
             if task_type == "kile":
@@ -413,15 +452,15 @@ class DocILEAdapter(DatasetAdapter):
 
             instances.append(
                 TaskInstance(
-                    instance_id=doc_dir.name,
+                    instance_id=doc_id,
                     input_data={
                         "document_text": ocr_text,
-                        "document_path": str(doc_dir / "document.pdf"),
+                        "document_path": str(pdf_file) if pdf_file.exists() else "",
                         "task_type": task_type,
                     },
                     expected_output=expected,
                     metadata={
-                        "has_pdf": (doc_dir / "document.pdf").exists(),
+                        "has_pdf": pdf_file.exists(),
                         "has_ocr": ocr_file.exists(),
                     },
                 )
@@ -438,11 +477,17 @@ class DocILEAdapter(DatasetAdapter):
                 prompt_template=(
                     "Extract structured information from this document:\n\n"
                     "{document_text}\n\n"
-                    f"{'Extract key fields: ' + ', '.join(self.KILE_FIELDS) if task_type == 'kile' else 'Extract all line items with description, quantity, unit_price, and amount.'}\n"
-                    "Return as JSON."
+                    + (
+                        f"Extract the following key fields as JSON: {', '.join(self.KILE_FIELDS)}\n"
+                        "Return a JSON object with these exact field names. If a field is not found in the document, omit it from the output."
+                        if task_type == "kile"
+                        else "Extract all line items from tables in this document.\n"
+                        "Return a JSON array where each line item is an object with fields: description, quantity, unit_price, amount.\n"
+                        'Example format: [{{"description": "Item name", "quantity": "5", "unit_price": "$10.00", "amount": "$50.00"}}, ...]'
+                    )
                 ),
                 instances=instances,
-                evaluation_type="schema",
+                evaluation_type="llm",
                 tags=["document", "extraction", "docile", task_type],
                 source="docile",
             )
@@ -450,64 +495,176 @@ class DocILEAdapter(DatasetAdapter):
 
         return dataset
 
-    def _find_document_dirs(self, path: Path, split: str | None) -> list[Path]:
-        """Find document directories in DocILE structure."""
-        doc_dirs = []
+    def _find_document_ids(self, path: Path, split: str | None) -> list[str]:
+        """Find document IDs in DocILE structure."""
+        doc_ids = []
 
-        # Check for annotated-trainval directory
-        trainval_dir = path / "annotated-trainval"
-        test_dir = path / "test"
+        # Check for split JSON files (train.json, val.json, trainval.json)
+        if split == "train":
+            split_file = path / "train.json"
+        elif split == "val":
+            split_file = path / "val.json"
+        elif split == "test":
+            split_file = path / "test.json"
+        else:
+            # Default: use trainval.json if available, otherwise scan all annotations
+            split_file = path / "trainval.json"
 
-        if split in (None, "train", "val") and trainval_dir.exists():
-            for doc_dir in trainval_dir.iterdir():
-                if doc_dir.is_dir() and (doc_dir / "annotation.json").exists():
-                    doc_dirs.append(doc_dir)
+        if split_file.exists():
+            with open(split_file) as f:
+                doc_ids = json.load(f)
+                if not isinstance(doc_ids, list):
+                    doc_ids = []
+        else:
+            # Fallback: scan annotations directory
+            annotations_dir = path / "annotations"
+            if annotations_dir.exists():
+                for annotation_file in annotations_dir.glob("*.json"):
+                    doc_id = annotation_file.stem
+                    doc_ids.append(doc_id)
 
-        if split in (None, "test") and test_dir.exists():
-            for doc_dir in test_dir.iterdir():
-                if doc_dir.is_dir() and (doc_dir / "annotation.json").exists():
-                    doc_dirs.append(doc_dir)
-
-        # Fallback: check path directly for annotation files
-        if not doc_dirs:
-            for doc_dir in path.iterdir():
-                if doc_dir.is_dir() and (doc_dir / "annotation.json").exists():
-                    doc_dirs.append(doc_dir)
-
-        return sorted(doc_dirs)
+        return sorted(doc_ids)
 
     def _extract_kile_fields(self, annotation: dict) -> dict:
-        """Extract key information fields from annotation."""
-        fields = {}
-        field_instances = annotation.get("field_instances", annotation.get("fields", []))
+        """Extract key information fields from annotation and normalize to KILE field names."""
+        raw_fields = {}
+        # DocILE uses "field_extractions" array with "fieldtype" and "text"
+        field_extractions = annotation.get("field_extractions", [])
 
-        if isinstance(field_instances, list):
-            for field in field_instances:
-                field_type = field.get("field_type", field.get("type", ""))
+        if isinstance(field_extractions, list):
+            for field in field_extractions:
+                field_type = field.get("fieldtype", field.get("field_type", ""))
                 value = field.get("text", field.get("value", ""))
                 if field_type:
-                    fields[field_type] = value
-        elif isinstance(field_instances, dict):
-            fields = field_instances
+                    # Handle multiple values for same field type (take first or concatenate)
+                    if field_type in raw_fields:
+                        # If already exists, concatenate with newline
+                        raw_fields[field_type] = f"{raw_fields[field_type]}\n{value}"
+                    else:
+                        raw_fields[field_type] = value
 
-        return fields
+        # Map DocILE field names to standard KILE field names
+        normalized_fields = {}
+        for docile_field, value in raw_fields.items():
+            kile_field = self.DOCILE_TO_KILE_FIELD_MAP.get(docile_field)
+            if kile_field:
+                # Handle multiple values for same field
+                if kile_field in normalized_fields:
+                    # For duplicates, prefer the longest/most complete value
+                    # or take first if similar length
+                    existing = normalized_fields[kile_field]
+                    # If values are very similar (likely duplicates), take the cleaner one
+                    if value.strip().lower() in existing.strip().lower() or existing.strip().lower() in value.strip().lower():
+                        normalized_fields[kile_field] = max([existing, value], key=len)
+                    else:
+                        # Different values - take first (or could concatenate with separator)
+                        normalized_fields[kile_field] = existing
+                else:
+                    # Clean up value: remove extra whitespace, handle newlines
+                    cleaned = value.strip()
+                    # If value has multiple lines that are duplicates, deduplicate
+                    lines = cleaned.split('\n')
+                    unique_lines = []
+                    seen = set()
+                    for line in lines:
+                        line_clean = line.strip()
+                        if line_clean and line_clean.lower() not in seen:
+                            unique_lines.append(line_clean)
+                            seen.add(line_clean.lower())
+                    if len(unique_lines) == 1:
+                        normalized_fields[kile_field] = unique_lines[0]
+                    elif len(unique_lines) > 1:
+                        # Multiple unique lines - join with newline
+                        normalized_fields[kile_field] = '\n'.join(unique_lines)
+                    else:
+                        normalized_fields[kile_field] = cleaned
+
+        return normalized_fields
 
     def _extract_line_items(self, annotation: dict) -> list[dict]:
-        """Extract line items from annotation."""
-        line_items = annotation.get("line_items", annotation.get("table_data", []))
-        return line_items if isinstance(line_items, list) else []
+        """Extract line items from annotation and group by line_item_id."""
+        # DocILE uses "line_item_extractions" - each extraction has a fieldtype and line_item_id
+        line_item_extractions = annotation.get("line_item_extractions", annotation.get("line_items", []))
+        
+        if not isinstance(line_item_extractions, list):
+            return []
+        
+        # Group extractions by line_item_id
+        items_by_id: dict[int, dict[str, Any]] = {}
+        
+        for extraction in line_item_extractions:
+            item_id = extraction.get("line_item_id")
+            if item_id is None:
+                continue
+            
+            fieldtype = extraction.get("fieldtype", "")
+            text = extraction.get("text", "")
+            
+            if item_id not in items_by_id:
+                items_by_id[item_id] = {}
+            
+            # Map DocILE fieldtypes to standard names
+            field_mapping = {
+                "line_item_description": "description",
+                "line_item_quantity": "quantity",
+                "line_item_unit_price": "unit_price",
+                "line_item_unit_price_gross": "unit_price",
+                "line_item_amount": "amount",
+                "line_item_amount_gross": "amount",
+            }
+            
+            standard_field = field_mapping.get(fieldtype, fieldtype.replace("line_item_", ""))
+            items_by_id[item_id][standard_field] = text
+        
+        # Convert to list of line items, sorted by ID
+        result = []
+        for item_id in sorted(items_by_id.keys()):
+            item = items_by_id[item_id]
+            # Only include items that have at least a description
+            if item.get("description"):
+                result.append(item)
+        
+        return result
+
+    def _extract_ocr_text(self, ocr_data: dict) -> str:
+        """Extract text from OCR JSON structure."""
+        text_parts = []
+        
+        if isinstance(ocr_data, dict):
+            pages = ocr_data.get("pages", [])
+            for page in pages:
+                blocks = page.get("blocks", [])
+                for block in blocks:
+                    lines = block.get("lines", [])
+                    for line in lines:
+                        words = line.get("words", [])
+                        line_text = " ".join(word.get("value", "") for word in words if isinstance(word, dict))
+                        if line_text:
+                            text_parts.append(line_text)
+        
+        return "\n".join(text_parts)
 
     def is_compatible(self, path: Path) -> bool:
         """Check for DocILE directory structure."""
-        # Check for annotated-trainval directory with document subdirs
+        # Check for flat structure: annotations/, ocr/, pdfs/ directories
+        annotations_dir = path / "annotations"
+        if annotations_dir.exists() and annotations_dir.is_dir():
+            # Check if it has JSON files
+            if any(annotations_dir.glob("*.json")):
+                return True
+        
+        # Check for split JSON files
+        if (path / "train.json").exists() or (path / "val.json").exists() or (path / "trainval.json").exists():
+            return True
+
+        # Fallback: check for old nested structure
         trainval_dir = path / "annotated-trainval"
         if trainval_dir.exists():
             for doc_dir in trainval_dir.iterdir():
                 if doc_dir.is_dir() and (doc_dir / "annotation.json").exists():
                     return True
 
-        # Fallback check for direct annotation files
-        return (path / "annotations.json").exists() or (path / "test.json").exists()
+        return False
 
 
 class AgentBenchAdapter(DatasetAdapter):

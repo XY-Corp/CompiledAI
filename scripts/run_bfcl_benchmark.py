@@ -23,6 +23,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from compiled_ai.runner import BenchmarkConfig, BenchmarkRunner, DatasetLoader
 from compiled_ai.runner.loader import BFCLAdapter
+from compiled_ai.baselines import list_baselines
 
 
 # Available BFCL categories
@@ -32,13 +33,13 @@ BFCL_CATEGORIES = list(BFCLAdapter.CATEGORIES.keys())
 def parse_args() -> argparse.Namespace:
     """Parse command line arguments."""
     parser = argparse.ArgumentParser(
-        description="Run BFCL v4 with Direct LLM or Code Factory baseline"
+        description="Run BFCL v4 with various baselines"
     )
     parser.add_argument(
         "--baseline",
-        choices=["direct_llm", "code_factory"],
+        choices=list_baselines(),
         default="direct_llm",
-        help="Baseline to use (default: direct_llm)",
+        help=f"Baseline to run (default: direct_llm, available: {list_baselines()})",
     )
     parser.add_argument(
         "--provider",
