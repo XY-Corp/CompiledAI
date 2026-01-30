@@ -51,7 +51,7 @@
 \begin{abstract}
 % ============================================================================
 
-We study \emph{compiled AI}, a paradigm in which large language models generate executable code artifacts during a compilation phase, after which workflows execute deterministically without further model invocation. By constraining generation to narrow business-logic functions embedded in validated templates, compiled AI trades runtime flexibility for predictability, auditability, and cost efficiency, while retaining the ability to improve artifacts through observed execution patterns.
+We study \emph{compiled AI}, a paradigm in which large language models generate executable code artifacts during a compilation phase, after which workflows execute deterministically without further model invocation. By constraining generation to narrow business-logic functions embedded in validated templates, compiled AI trades runtime flexibility for predictability, auditability, cost efficiency, and reduced security exposure, while retaining the ability to improve artifacts through observed execution patterns.
 
 We introduce (i) a system architecture for constrained LLM-based code generation, (ii) a four-stage generation-and-validation pipeline that converts probabilistic model output into production-ready code artifacts, and (iii) an evaluation framework that measures operational metrics including token amortization, determinism, reliability, security, and cost. In preliminary evaluation on function-calling tasks (n=500 across two BFCL categories), compiled AI achieves 96\% task completion with zero execution tokens, breaking even with runtime inference at approximately 9 transactions and reducing token consumption by 107$\times$ at 1,000 transactions. Security evaluation across 135 test cases demonstrates 96.7\% accuracy on prompt injection detection and 87.5\% on static code safety analysis with zero false positives.
 
@@ -386,6 +386,41 @@ Constraints on bounded invocations:
 
 Because bounded invocations address narrow, well-defined subtasks rather than open-ended reasoning, they require less context and produce more predictable outputs than equivalent calls in fully agentic systems, a second-order efficiency gain beyond token amortization.
 
+\subsection{Security Architecture}
+\label{sec:security-arch}
+
+Beyond validation for correctness, we implement a three-gate security pipeline protecting against LLM-specific vulnerabilities identified in OWASP LLM Top 10 (2025).
+
+\begin{verbatim}
+User Prompt -> Input Gate -> Compilation -> Code Gate -> Execution -> Output Gate -> Result
+\end{verbatim}
+
+\textbf{Input Gate} validates user prompts before compilation.
+\begin{itemize}
+    \item \textit{PromptInjectionValidator}: Fine-tuned DeBERTa-v3 model (184M parameters) detecting prompt injection and jailbreak attempts, with encoding detection for obfuscated payloads.
+    \item \textit{PIIScanner}: Presidio-based detection for sensitive data patterns.
+\end{itemize}
+
+\textbf{Code Gate} validates LLM-generated code before execution.
+\begin{itemize}
+    \item \textit{CodeShieldValidator}: Static analysis detecting insecure patterns (CWE-94, CWE-89, CWE-502, CWE-78, CWE-328).
+\end{itemize}
+
+\textbf{Output Gate} validates execution results.
+\begin{itemize}
+    \item \textit{CanaryManager}: Cryptographic tokens injected into system prompts to detect leakage.
+\end{itemize}
+
+\paragraph{Dual LLM Pattern.} We implement a variant of the Dual LLM pattern separating privileged and quarantined model instances.
+\begin{itemize}
+    \item \textit{Planner Agent}: Privileged LLM accepting validated input, designing workflow structure.
+    \item \textit{Coder Agent}: Isolated component generating code from structured specifications.
+\end{itemize}
+
+A software Controller mediates between agents, enforcing that untrusted content passes through validation gates before reaching the Planner.
+
+\paragraph{Reduced Attack Surface.} Compiled AI dramatically reduces LLM invocations. Runtime systems require LLM calls for every task; multi-agent architectures invoke 8 to 15 calls per task. Compiled AI requires LLM calls only at compile time, with zero invocations during execution. Once compiled, workflows execute as deterministic code immune to prompt-based attacks.
+
 % ============================================================================
 \section{Evaluation Framework for Compiled AI}
 \label{sec:framework}
@@ -532,6 +567,28 @@ Metric & Definition \\
 \end{table}
 
 This data is novel; no published work reports validation pipeline effectiveness for LLM-generated production code.
+
+\subsection{Security Metrics}
+
+LLM-based systems face unique security threats requiring specialized evaluation.
+
+\begin{table}[ht]
+\centering
+\caption{Security metrics}
+\label{tab:security-metrics}
+\begin{tabular}{p{3.5cm}p{5cm}p{3.5cm}}
+\toprule
+Metric & Definition & Target \\
+\midrule
+\metric{BlockRate} & \% of malicious inputs rejected by validation gate & $> 90\%$ \\
+\metric{DetectionRate} & \% of vulnerabilities or sensitive data identified & $> 95\%$ \\
+\metric{FalsePositiveRate} & \% of legitimate inputs incorrectly blocked & $< 5\%$ \\
+\metric{LeakageRate} & \% of system prompts extractable via adversarial queries & 0\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+These metrics evaluate the three-gate security architecture (Section~\ref{sec:security-arch}) against OWASP LLM Top 10 threats.
 
 \subsection{Cost Metrics}
 
@@ -851,6 +908,7 @@ Our approach is well-suited for workflows that are:
     \item \textbf{Well-specified}: Business logic expressible in structured specifications
     \item \textbf{Compliance-sensitive}: Auditability and determinism are requirements
     \item \textbf{Latency-sensitive}: Runtime inference latency is unacceptable
+    \item \textbf{Security-conscious}: Fewer LLM invocations reduce exposure to prompt injection attacks
 \end{itemize}
 
 Healthcare administrative workflows exemplify these requirements. \citet{qiu2024healthcare} identify administrative workflow automation as a candidate application for LLM-based systems, while regulatory frameworks increasingly emphasize auditability \citep{fda2025}.
@@ -911,7 +969,7 @@ We studied compiled AI as a systems design point for LLM-based workflow automati
 
 Preliminary evaluation on function-calling benchmarks (n=500 across two BFCL categories) demonstrates the core trade-off: compiled AI incurs substantial upfront cost ($\sim$9,600 tokens, 22 seconds) but achieves zero-cost execution with 100\% determinism for successfully compiled workflows. Break-even occurs at approximately 9 transactions; at 1,000 transactions, token consumption is reduced by 107$\times$. Execution latency improves from 4.7 seconds to 4.5 milliseconds (a 1,000$\times$ speedup). The 96\% compilation success rate, consistent across both AST-based and executable evaluation, demonstrates the viability of LLM-based code generation for production workflows, with failures detectable before deployment. Security evaluation across 135 test cases shows 96.7\% accuracy on prompt injection detection and 87.5\% on static code safety analysis, both with zero false positives, validating the security properties required for enterprise deployment.
 
-The approach trades flexibility for determinism, cost efficiency, and auditability, properties relevant for enterprise deployment in well-specified, high-volume workflow regimes. We release our evaluation framework and benchmark suite to enable systematic comparison of compiled and runtime AI approaches.
+The approach trades flexibility for determinism, cost efficiency, auditability, and reduced attack surface, properties relevant for enterprise deployment in well-specified, high-volume workflow regimes. We release our evaluation framework and benchmark suite to enable systematic comparison of compiled and runtime AI approaches.
 
 \paragraph{Future Work.}
 \begin{itemize}
