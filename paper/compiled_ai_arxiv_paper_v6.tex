@@ -73,8 +73,8 @@ Compiled AI represents a trade-off between flexibility and determinism. Rather t
 \begin{figure}[ht]
 \centering
 \begin{tikzpicture}[scale=1.1]
-    % Axes (extended right for labels, down for Compiled label)
-    \draw[->] (0,-0.5) -- (0,6) node[above] {\small Total Tokens};
+    % Axes
+    \draw[->] (0,0) -- (0,6) node[above] {\small Total Tokens};
     \draw[->] (0,0) -- (10.5,0) node[right] {\small Transactions ($n$)};
 
     % Grid lines (light)
@@ -94,19 +94,19 @@ Compiled AI represents a trade-off between flexibility and determinism. Rather t
 
     % AutoGen line (805 tokens/tx) - at n=1000: 805K = 4.025 units
     \draw[thick, purple!70] (0,0) -- (9.5,4.025);
-    \node[purple!70, right, font=\scriptsize] at (9.5, 4.4) {AutoGen (805/tx)};
+    \node[purple!70, right, font=\scriptsize] at (9.5, 4.6) {AutoGen (805/tx)};
 
     % LangChain line (740 tokens/tx) - at n=1000: 740K = 3.70 units
     \draw[thick, orange!70] (0,0) -- (9.5,3.70);
-    \node[orange!70, right, font=\scriptsize] at (9.5, 3.45) {LangChain (740/tx)};
+    \node[orange!70, right, font=\scriptsize] at (9.5, 3.2) {LangChain (740/tx)};
 
     % Direct LLM line (552 tokens/tx) - at n=1000: 552K = 2.76 units
     \draw[thick, red!70] (0,0) -- (9.5,2.76);
-    \node[red!70, right, font=\scriptsize] at (9.5, 2.5) {Direct LLM (552/tx)};
+    \node[red!70, right, font=\scriptsize] at (9.5, 1.8) {Direct LLM (552/tx)};
 
     % Compiled AI line (flat at 9.6K tokens = 0.048 units on y-axis)
     \draw[thick, blue!70] (0,0.048) -- (9.5,0.048);
-    \node[blue!70, right, font=\scriptsize] at (9.5, -0.2) {Compiled (9.6K)};
+    \node[blue!70, right, font=\scriptsize] at (9.5, 0.4) {Compiled (9.6K)};
 
     % Generation cost annotation
     \draw[<->, gray] (-0.5,0) -- (-0.5,0.048);
