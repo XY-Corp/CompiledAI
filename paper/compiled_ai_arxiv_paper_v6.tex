@@ -129,7 +129,7 @@ Compiled AI represents a trade-off between flexibility and determinism. Rather t
     \fill[red!70] (9.5,5.15) circle (1.5pt); % n=1000: 1.03M tokens
 
 \end{tikzpicture}
-\caption{Token consumption comparison: runtime inference vs. compiled AI (BFCL function-calling benchmark, n=500). Runtime inference consumes 1,030 tokens per transaction. Compiled AI incurs a one-time $\sim$9,600 token generation cost, then executes deterministically at zero marginal token cost. Break-even occurs at $n^*\approx9$ transactions; at 1,000 transactions, compiled AI reduces token consumption by 107$\times$.}
+\caption{Token consumption comparison: runtime inference vs. compiled AI (BFCL function-calling benchmark, n=400). Direct LLM inference consumes 552 tokens per transaction; agent frameworks like LangChain (740) and AutoGen (805) add overhead. Compiled AI incurs a one-time $\sim$9,600 token generation cost, then executes deterministically at zero marginal token cost. Break-even occurs at $n^*\approx17$ transactions; at 1,000 transactions, compiled AI reduces token consumption by 57$\times$.}
 \label{fig:economics}
 \end{figure}
 
@@ -692,19 +692,21 @@ For preliminary evaluation, we compare two approaches:
 
 \begin{table}[ht]
 \centering
-\caption{Token consumption comparison (BFCL evaluation, n=500)}
+\caption{Token consumption comparison (BFCL evaluation, n=400)}
 \label{tab:token-results}
 \begin{tabular}{lrrrrr}
 \toprule
 Method & GenTokens & RuntimeTokens/tx & Total@1K & BreakEven & CompressionRatio \\
 \midrule
-Direct LLM & 0 & 1,030 & 1,030,000 & --- & --- \\
-Compiled AI & 9,600 & 0 & 9,600 & $\sim$9 tx & $\sim$9.6:1 \\
+Direct LLM & 0 & 552 & 552,000 & --- & --- \\
+LangChain & 0 & 740 & 740,000 & --- & 0.75$\times$ \\
+AutoGen & 0 & 805 & 805,000 & --- & 0.69$\times$ \\
+Compiled AI & 9,600 & 0 & 9,600 & $\sim$17 tx & $\sim$57$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-Break-even occurs at approximately 9 transactions ($n^* = 9{,}600 / 1{,}030 \approx 9$). At 100 transactions, compiled AI uses 9.6K tokens versus 103K for direct LLM (10.7$\times$ reduction). At 1,000 transactions, compiled AI exhibits a 107$\times$ reduction in total token consumption (9.6K vs 1.03M tokens). The compression ratio of approximately 9.6:1 reflects the ratio of prompt tokens to generated lines of code.
+Break-even occurs at approximately 17 transactions ($n^* = 9{,}600 / 552 \approx 17$). At 100 transactions, compiled AI uses 9.6K tokens versus 55.2K for direct LLM (5.75$\times$ reduction). At 1,000 transactions, compiled AI exhibits a 57$\times$ reduction in total token consumption (9.6K vs 552K tokens). Notably, agent frameworks like LangChain and AutoGen consume 34--46\% more tokens than direct LLM calls due to orchestration overhead, making compiled AI even more advantageous compared to agentic approaches.
 
 \subsection{Latency}
 
@@ -967,7 +969,7 @@ We studied compiled AI as a systems design point for LLM-based workflow automati
     \item An evaluation framework measuring operational metrics: token amortization, determinism, reliability, validation effectiveness, and cost
 \end{enumerate}
 
-Preliminary evaluation on function-calling benchmarks (n=500 across two BFCL categories) demonstrates the core trade-off: compiled AI incurs substantial upfront cost ($\sim$9,600 tokens, 22 seconds) but achieves zero-cost execution with 100\% determinism for successfully compiled workflows. Break-even occurs at approximately 9 transactions; at 1,000 transactions, token consumption is reduced by 107$\times$. Execution latency improves from 4.7 seconds to 4.5 milliseconds (a 1,000$\times$ speedup). The 96\% compilation success rate, consistent across both AST-based and executable evaluation, demonstrates the viability of LLM-based code generation for production workflows, with failures detectable before deployment. Security evaluation across 135 test cases shows 96.7\% accuracy on prompt injection detection and 87.5\% on static code safety analysis, both with zero false positives, validating the security properties required for enterprise deployment.
+Preliminary evaluation on function-calling benchmarks (n=400 across BFCL categories) demonstrates the core trade-off: compiled AI incurs substantial upfront cost ($\sim$9,600 tokens, 22 seconds) but achieves zero-cost execution with 100\% determinism for successfully compiled workflows. Break-even occurs at approximately 17 transactions; at 1,000 transactions, token consumption is reduced by 57$\times$ compared to direct LLM inference. Agent frameworks like LangChain and AutoGen consume 34--46\% more tokens than direct LLM due to orchestration overhead, further favoring compiled approaches. Execution latency improves from 4.7 seconds to 4.5 milliseconds (a 1,000$\times$ speedup). The 96\% compilation success rate, consistent across both AST-based and executable evaluation, demonstrates the viability of LLM-based code generation for production workflows, with failures detectable before deployment. Security evaluation across 135 test cases shows 96.7\% accuracy on prompt injection detection and 87.5\% on static code safety analysis, both with zero false positives, validating the security properties required for enterprise deployment.
 
 The approach trades flexibility for determinism, cost efficiency, auditability, and reduced attack surface, properties relevant for enterprise deployment in well-specified, high-volume workflow regimes. We release our evaluation framework and benchmark suite to enable systematic comparison of compiled and runtime AI approaches.
 
