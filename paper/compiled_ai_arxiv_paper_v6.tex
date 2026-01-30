@@ -72,9 +72,9 @@ Compiled AI represents a trade-off between flexibility and determinism. Rather t
 
 \begin{figure}[ht]
 \centering
-\begin{tikzpicture}[scale=0.9]
+\begin{tikzpicture}[scale=1.1]
     % Axes
-    \draw[->] (0,0) -- (10,0) node[right] {\small Transactions ($n$)};
+    \draw[->] (0,0) -- (10.5,0) node[right] {\small Transactions ($n$)};
     \draw[->] (0,0) -- (0,6) node[above] {\small Total Tokens};
 
     % Grid lines (light)
@@ -92,44 +92,56 @@ Compiled AI represents a trade-off between flexibility and determinism. Rather t
     \node[left, font=\scriptsize] at (0,4) {800K};
     \node[left, font=\scriptsize] at (0,5) {1.0M};
 
-    % Runtime inference line (linear growth: 552 tokens/tx)
-    % At n=1000, runtime = 552K tokens = 2.76 units on y-axis (1M = 5 units)
+    % AutoGen line (805 tokens/tx) - at n=1000: 805K = 4.025 units
+    \draw[thick, purple!70] (0,0) -- (9.5,4.025);
+    \node[purple!70, right, font=\scriptsize] at (9.5, 4.025) {AutoGen (805/tx)};
+
+    % LangChain line (740 tokens/tx) - at n=1000: 740K = 3.70 units
+    \draw[thick, orange!70] (0,0) -- (9.5,3.70);
+    \node[orange!70, right, font=\scriptsize] at (9.5, 3.70) {LangChain (740/tx)};
+
+    % Direct LLM line (552 tokens/tx) - at n=1000: 552K = 2.76 units
     \draw[thick, red!70] (0,0) -- (9.5,2.76);
-    \node[red!70, right] at (9.5, 2.76) {\small Runtime (552/tx)};
+    \node[red!70, right, font=\scriptsize] at (9.5, 2.76) {Direct LLM (552/tx)};
 
     % Compiled AI line (flat at 9.6K tokens = 0.048 units on y-axis)
     \draw[thick, blue!70] (0,0.048) -- (9.5,0.048);
-    \node[blue!70, right] at (9.5, 0.048) {\small Compiled (9.6K)};
+    \node[blue!70, right, font=\scriptsize] at (9.5, 0.048) {Compiled (9.6K)};
 
     % Generation cost annotation
     \draw[<->, gray] (-0.5,0) -- (-0.5,0.048);
-    \node[gray, left, font=\scriptsize, align=right] at (-0.5,0.024) {9.6K\\gen cost};
+    \node[gray, left, font=\scriptsize, align=right] at (-0.5,0.024) {9.6K\\gen};
 
     % Break-even point at n*=17 (x=0.16 on scale where 9.5=1000)
-    % x position: 17/1000 * 9.5 = 0.16
     \draw[dashed, gray] (0.16,0) -- (0.16,0.048);
     \node[below, font=\scriptsize] at (0.16,-0.1) {$n^*\!=\!17$};
     \fill[black] (0.16,0.048) circle (2pt);
-    \node[above, font=\scriptsize] at (0.45,0.2) {Break-even};
+    \node[above, font=\scriptsize] at (0.5,0.15) {Break-even};
 
-    % Savings region
+    % Savings region (use lightest baseline - Direct LLM)
     \fill[green!10] (0.16,0.048) -- (9.5,0.048) -- (9.5,2.76) -- (0.16,0.048);
-    \node[green!50!black, font=\scriptsize] at (6,1.2) {57$\times$ savings};
-    \node[green!50!black, font=\scriptsize] at (6,0.8) {at $n$=1000};
+    \node[green!50!black, font=\scriptsize] at (5,1.0) {57--84$\times$ savings};
+    \node[green!50!black, font=\scriptsize] at (5,0.6) {at $n$=1000};
 
     % X-axis labels (actual transaction counts)
     \node[below, font=\scriptsize] at (0.95,0) {100};
     \node[below, font=\scriptsize] at (4.75,0) {500};
     \node[below, font=\scriptsize] at (9.5,0) {1000};
 
-    % Data points for runtime (actual measurements, scale: 1 unit = 200K)
-    \fill[red!70] (0.095,0.0276) circle (1.5pt); % n=10: 5.52K tokens
-    \fill[red!70] (0.19,0.0552) circle (1.5pt); % n=20: 11.04K tokens
+    % Data points for Direct LLM
     \fill[red!70] (0.95,0.276) circle (1.5pt); % n=100: 55.2K tokens
     \fill[red!70] (9.5,2.76) circle (1.5pt); % n=1000: 552K tokens
+    
+    % Data points for LangChain
+    \fill[orange!70] (0.95,0.37) circle (1.5pt); % n=100: 74K tokens
+    \fill[orange!70] (9.5,3.70) circle (1.5pt); % n=1000: 740K tokens
+    
+    % Data points for AutoGen
+    \fill[purple!70] (0.95,0.4025) circle (1.5pt); % n=100: 80.5K tokens
+    \fill[purple!70] (9.5,4.025) circle (1.5pt); % n=1000: 805K tokens
 
 \end{tikzpicture}
-\caption{Token consumption comparison: runtime inference vs. compiled AI (BFCL function-calling benchmark, n=400). Direct LLM inference consumes 552 tokens per transaction; agent frameworks like LangChain (740) and AutoGen (805) add overhead. Compiled AI incurs a one-time $\sim$9,600 token generation cost, then executes deterministically at zero marginal token cost. Break-even occurs at $n^*\approx17$ transactions; at 1,000 transactions, compiled AI reduces token consumption by 57$\times$.}
+\caption{Token consumption comparison across baselines (BFCL benchmark, n=400). Direct LLM consumes 552 tokens/tx; agent frameworks add overhead---LangChain (740/tx, +34\%) and AutoGen (805/tx, +46\%). Compiled AI incurs a one-time 9,600 token generation cost, then executes at zero marginal cost. Break-even vs Direct LLM at $n^*\approx17$ transactions; at 1,000 transactions, compiled AI reduces consumption by 57$\times$ vs Direct LLM and 84$\times$ vs AutoGen.}
 \label{fig:economics}
 \end{figure}
 
