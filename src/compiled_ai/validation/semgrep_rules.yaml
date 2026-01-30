@@ -1,0 +1,66 @@
+rules:
+  # CWE-94: Dynamic Import / Code Injection
+  - id: dangerous-dynamic-import
+    patterns:
+      - pattern-either:
+          - pattern: __import__(...)
+          - pattern: importlib.import_module(...)
+          - pattern: importlib.util.spec_from_file_location(...)
+    message: "Dynamic import with potentially user-controlled input can lead to code injection (CWE-94)"
+    languages: [python]
+    severity: WARNING
+    metadata:
+      cwe: "CWE-94"
+      category: security
+
+  # CWE-22: Path Traversal - only flag string concatenation patterns
+  - id: path-traversal-concat
+    pattern: $BASE + "/" + $USER_INPUT
+    message: "String concatenation for file path may allow path traversal (CWE-22)"
+    languages: [python]
+    severity: WARNING
+    metadata:
+      cwe: "CWE-22"
+      category: security
+
+  # CWE-1333: Regex DoS - flag patterns with nested quantifiers like ([a-z]+)+
+  - id: regex-dos-nested-quantifiers
+    pattern-regex: "r['\"].*\\(\\[[^\\]]+\\]\\+\\)\\+.*['\"]"
+    message: "Regex with nested quantifiers can cause catastrophic backtracking (CWE-1333)"
+    languages: [python]
+    severity: WARNING
+    metadata:
+      cwe: "CWE-1333"
+      category: security
+
+  # CWE-1336: Server-Side Template Injection - Jinja2 Template() constructor
+  - id: jinja2-template-injection
+    pattern: Template($X)
+    message: "Jinja2 Template with variable input - potential SSTI if user-controlled (CWE-1336)"
+    languages: [python]
+    severity: WARNING
+    metadata:
+      cwe: "CWE-1336"
+      category: security
+
+  # CWE-601: Open Redirect - Flask redirect with request args
+  - id: flask-open-redirect-args
+    patterns:
+      - pattern-either:
+          - pattern: redirect(request.args.get(...))
+          - pattern: redirect(request.args[...])
+    message: "Flask redirect with user-controlled URL allows open redirect attacks (CWE-601)"
+    languages: [python]
+    severity: WARNING
+    metadata:
+      cwe: "CWE-601"
+      category: security
+
+  - id: flask-redirect-variable
+    pattern: redirect($VAR)
+    message: "Flask redirect with variable - potential open redirect if user-controlled (CWE-601)"
+    languages: [python]
+    severity: INFO
+    metadata:
+      cwe: "CWE-601"
+      category: security
