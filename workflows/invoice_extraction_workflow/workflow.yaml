@@ -1,0 +1,15 @@
+workflow_id: invoice_extraction_workflow
+name: Invoice Field Extraction
+description: |
+  Extracts structured invoice fields from unstructured document text, including vendor information, customer details, invoice ID, dates, and amounts.
+variables:
+  prompt: null
+  task_type: null
+root:
+  sequence:
+    elements:
+      - activity:
+          name: extract_invoice_fields
+          params:
+            document_text: ${{ prompt }}
+          result: extracted_invoice

@@ -28,8 +28,31 @@ def get_results_path() -> Path:
     return Path(__file__).parent.parent.parent / "results"
 
 def get_results_files() -> list[Path]:
-    """Get the list of results files."""
-    return list(get_results_path().glob("*.json"))
+    """Get the most recent file from each category (autogen_xy_benchmark, langchain_xy_benchmark, direct_llm_xy_benchmark)."""
+    files = list(get_results_path().glob("*.json"))
+    
+    # Group files by category (everything before the last underscore)
+    category_files: dict[str, list[Path]] = {}
+    for file in files:
+        # Split from the right to get the part before the last underscore
+        if "_" not in file.stem:
+            continue  # Skip files that don't match the expected pattern
+        
+        # Category is everything before the last underscore (timestamp is after the last underscore)
+        category = file.stem.rsplit("_", 1)[0]
+        if category not in category_files:
+            category_files[category] = []
+        category_files[category].append(file)
+    
+    # Get the most recent file from each category
+    result_files = []
+    for category, category_file_list in category_files.items():
+        # Sort by timestamp (last part of filename) in descending order
+        category_file_list.sort(key=lambda x: x.stem.split("_")[-1], reverse=True)
+        if category_file_list:
+            result_files.append(category_file_list[0])
+    
+    return result_files
 
 def load_result_file(result_file: Path) -> dict:
     """Load a result file into a BigQuery table."""

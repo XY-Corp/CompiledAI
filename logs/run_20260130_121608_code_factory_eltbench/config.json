@@ -1,0 +1,12 @@
+{
+  "timestamp": "20260130_121608",
+  "baseline": "code_factory",
+  "dataset": "eltbench",
+  "provider": "anthropic",
+  "model": null,
+  "max_instances": 1,
+  "max_tasks": null,
+  "enable_cache": false,
+  "verbose": true,
+  "dataset_kwargs": {}
+}

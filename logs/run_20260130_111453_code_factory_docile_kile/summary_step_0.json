@@ -1,0 +1,21 @@
+{
+  "step": 0,
+  "completed": 1,
+  "success_count": 1,
+  "success_rate": 1.0,
+  "elapsed_seconds": 83.57434606552124,
+  "total_tokens": 25012,
+  "compilation_tokens": 23811,
+  "execution_tokens": 1201,
+  "instances": [
+    {
+      "instance_id": "00134dd365a24343b35b78c6_kile",
+      "success": true,
+      "latency_ms": 79635.01220900798,
+      "generation_time_ms": 75123.36312496336,
+      "execution_time_ms": 4511.133040999994,
+      "tokens": 23811,
+      "match_type": "content_match"
+    }
+  ]
+}

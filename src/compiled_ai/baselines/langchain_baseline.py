@@ -1,5 +1,6 @@
-"""LangChain Baseline: Standard LangChain usage for comparison."""
+"""LangChain Baseline: LangChain with native tool calling for comparison."""
 
+import json
 import os
 import time
 from typing import Any
@@ -13,13 +14,13 @@ load_dotenv()
 
 @register_baseline("langchain")
 class LangChainBaseline(BaseBaseline):
-    """LangChain baseline - standard LangChain invoke.
+    """LangChain baseline with native tool calling.
 
-    Fair comparison showing LangChain framework overhead vs raw API calls.
-    Uses same approach as DirectLLM but through LangChain abstractions.
+    Uses LangChain's bind_tools() for proper function calling comparison.
+    This represents realistic LangChain usage for function calling tasks.
     """
 
-    description = "LangChain standard invoke"
+    description = "LangChain with native tool calling"
 
     def __init__(
         self,
@@ -39,10 +40,10 @@ class LangChainBaseline(BaseBaseline):
 
     def _default_model(self, provider: str) -> str:
         defaults = {
-            "anthropic": "claude-sonnet-4-20250514",
+            "anthropic": "claude-opus-4-5-20251101",
             "openai": "gpt-4o",
         }
-        return defaults.get(provider, "claude-sonnet-4-20250514")
+        return defaults.get(provider, "claude-opus-4-5-20251101")
 
     @property
     def llm(self) -> Any:
@@ -81,28 +82,57 @@ class LangChainBaseline(BaseBaseline):
 
         start_time = time.perf_counter()
 
-        # Build prompt (same as DirectLLM)
-        prompt = task_input.prompt
-        if task_input.context:
-            context_str = "\n".join(f"{k}: {v}" for k, v in task_input.context.items())
-            prompt = f"Context:\n{context_str}\n\nTask:\n{prompt}"
+        # Generic: look for tools/context provided by dataset converters/adapters
+        tools = task_input.context.get("tools") or []
+        tool_name_mapping: dict[str, str] = task_input.context.get(
+            "tool_name_mapping", {}
+        )
 
+        # Build the user message (fallback to prompt if no explicit user_query)
+        user_query = task_input.context.get("user_query", task_input.prompt)
+        
         messages = []
         if self.system_prompt:
             messages.append(SystemMessage(content=self.system_prompt))
-        messages.append(HumanMessage(content=prompt))
+        messages.append(HumanMessage(content=user_query))
 
         # Retry logic
         last_error: str | None = None
         for attempt in range(self.max_retries):
             try:
-                response = self.llm.invoke(messages)
-                latency_ms = (time.perf_counter() - start_time) * 1000
+                # If we have tools, use tool calling
+                if tools:
+                    llm_with_tools = self.llm.bind_tools(tools)
+                    response = llm_with_tools.invoke(messages)
+                    
+                    # Extract tool calls from response
+                    if response.tool_calls:
+                        # Format as generic function call output
+                        tool_call = response.tool_calls[0]
+                        # Map sanitized name back to original
+                        original_name = tool_name_mapping.get(
+                            tool_call["name"], tool_call["name"]
+                        )
+                        output = json.dumps({
+                            "name": original_name,
+                            "arguments": tool_call["args"]
+                        })
+                    else:
+                        # Model didn't make a tool call, use content
+                        output = response.content
+                else:
+                    # No functions - standard invoke
+                    response = self.llm.invoke(messages)
+                    output = response.content
 
+                latency_ms = (time.perf_counter() - start_time) * 1000
                 usage = response.usage_metadata or {}
+                
+                print(f"LangChain: {usage.get('input_tokens', 0)} in / {usage.get('output_tokens', 0)} out - {latency_ms:.0f}ms", flush=True)
+                
                 return BaselineResult(
                     task_id=task_input.task_id,
-                    output=response.content,
+                    output=output,
                     success=True,
                     latency_ms=latency_ms,
                     input_tokens=usage.get("input_tokens", 0),

@@ -1,0 +1,18 @@
+{
+  "success_rate": 1.0,
+  "duration_seconds": 365.57867312431335,
+  "total_instances": 5,
+  "successful_instances": 5,
+  "failed_instances": 0,
+  "token_breakdown": {
+    "compilation_input": 125695,
+    "compilation_output": 20980,
+    "compilation_total": 146675,
+    "execution_input": 6112,
+    "execution_output": 878,
+    "execution_total": 6990,
+    "total": 153665
+  },
+  "compilations": 5,
+  "cache_hits": 0
+}

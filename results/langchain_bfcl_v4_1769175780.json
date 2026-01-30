@@ -1,0 +1,377 @@
+{
+  "config": {
+    "dataset": "bfcl_v4",
+    "baseline": "langchain"
+  },
+  "summary": {
+    "duration_seconds": 16.327949047088623,
+    "overall_success_rate": 1.0,
+    "total_tasks": 1,
+    "total_instances": 5
+  },
+  "tasks": [
+    {
+      "task_id": "bfcl_simple",
+      "name": "BFCL Simple",
+      "category": "function_calling",
+      "difficulty": "simple",
+      "success_rate": 1.0,
+      "avg_latency_ms": 3255.0635248073377,
+      "instance_count": 5
+    }
+  ],
+  "metrics": {
+    "metadata": {
+      "benchmark_id": "20260123_144244",
+      "timestamp": "2026-01-23T14:42:44.297368",
+      "task_name": "",
+      "method": "",
+      "model": "",
+      "notes": ""
+    },
+    "results": [
+      {
+        "name": "p50_latency",
+        "value": 2246.2223329930566,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-23T14:43:00.624880"
+      },
+      {
+        "name": "p90_latency",
+        "value": 5303.638158191461,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-23T14:43:00.624895"
+      },
+      {
+        "name": "p95_latency",
+        "value": 6208.247516595292,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-23T14:43:00.624905"
+      },
+      {
+        "name": "p99_latency",
+        "value": 6931.935003318358,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-23T14:43:00.624910"
+      },
+      {
+        "name": "jitter",
+        "value": 4685.712670325302,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-23T14:43:00.624919"
+      },
+      {
+        "name": "mean_latency",
+        "value": 3255.0635248073377,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-23T14:43:00.625099"
+      },
+      {
+        "name": "stdev_latency",
+        "value": 2163.8549482547523,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-23T14:43:00.625184"
+      },
+      {
+        "name": "min_latency",
+        "value": 2132.3055830434896,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-23T14:43:00.625189"
+      },
+      {
+        "name": "max_latency",
+        "value": 7112.856874999125,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-23T14:43:00.625192"
+      },
+      {
+        "name": "cold_start",
+        "value": 0.0,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-23T14:43:00.625195"
+      },
+      {
+        "name": "measurement_count",
+        "value": 5,
+        "unit": "count",
+        "category": "latency",
+        "timestamp": "2026-01-23T14:43:00.625206"
+      },
+      {
+        "name": "ttft",
+        "value": 0.0,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-23T14:43:00.625209"
+      },
+      {
+        "name": "ttft_p99",
+        "value": 0.0,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-23T14:43:00.625212"
+      },
+      {
+        "name": "tpot",
+        "value": 0.0,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-23T14:43:00.625214"
+      },
+      {
+        "name": "tpot_p99",
+        "value": 0.0,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-23T14:43:00.625217"
+      },
+      {
+        "name": "has_sufficient_samples",
+        "value": false,
+        "unit": "bool",
+        "category": "latency",
+        "timestamp": "2026-01-23T14:43:00.625220"
+      },
+      {
+        "name": "rating",
+        "value": "excellent",
+        "unit": "category",
+        "category": "latency",
+        "timestamp": "2026-01-23T14:43:00.625235"
+      },
+      {
+        "name": "gen_tokens",
+        "value": 3596,
+        "unit": "tokens",
+        "category": "token_efficiency",
+        "timestamp": "2026-01-23T14:43:00.625258"
+      },
+      {
+        "name": "prompt_tokens",
+        "value": 0,
+        "unit": "tokens",
+        "category": "token_efficiency",
+        "timestamp": "2026-01-23T14:43:00.625260"
+      },
+      {
+        "name": "output_code_tokens",
+        "value": 0,
+        "unit": "tokens",
+        "category": "token_efficiency",
+        "timestamp": "2026-01-23T14:43:00.625263"
+      },
+      {
+        "name": "runtime_tokens_per_tx",
+        "value": 719.2,
+        "unit": "tokens/tx",
+        "category": "token_efficiency",
+        "timestamp": "2026-01-23T14:43:00.625265"
+      },
+      {
+        "name": "generated_loc",
+        "value": 0,
+        "unit": "lines",
+        "category": "token_efficiency",
+        "timestamp": "2026-01-23T14:43:00.625268"
+      },
+      {
+        "name": "compression_ratio",
+        "value": 0.0,
+        "unit": "ratio",
+        "category": "token_efficiency",
+        "timestamp": "2026-01-23T14:43:00.625273"
+      },
+      {
+        "name": "loc_per_token",
+        "value": 0.0,
+        "unit": "loc/token",
+        "category": "token_efficiency",
+        "timestamp": "2026-01-23T14:43:00.625276"
+      },
+      {
+        "name": "token_amortization_factor",
+        "value": 3.596,
+        "unit": "tokens/exec",
+        "category": "token_efficiency",
+        "timestamp": "2026-01-23T14:43:00.625279"
+      },
+      {
+        "name": "is_competitive",
+        "value": false,
+        "unit": "bool",
+        "category": "token_efficiency",
+        "timestamp": "2026-01-23T14:43:00.625283"
+      },
+      {
+        "name": "is_excellent",
+        "value": false,
+        "unit": "bool",
+        "category": "token_efficiency",
+        "timestamp": "2026-01-23T14:43:00.625286"
+      },
+      {
+        "name": "success_rate",
+        "value": 1.0,
+        "unit": "ratio",
+        "category": "reliability",
+        "timestamp": "2026-01-23T14:43:00.625293"
+      },
+      {
+        "name": "total_llm_calls",
+        "value": 5,
+        "unit": "count",
+        "category": "cost",
+        "timestamp": "2026-01-23T14:43:00.625296"
+      }
+    ]
+  },
+  "logs": [
+    {
+      "task_id": "bfcl_simple",
+      "instances": [
+        {
+          "instance_id": "simple_0",
+          "prompt": "You have access to the following functions:\n\n[\n  {\n    \"name\": \"calculate_triangle_area\",\n    \"description\": \"Calculate the area of a triangle given its base and height.\",\n    \"parameters\": {\n      \"type\": \"dict\",\n      \"properties\": {\n        \"base\": {\n          \"type\": \"integer\",\n          \"description\": \"The base of the triangle.\"\n        },\n        \"height\": {\n          \"type\": \"integer\",\n          \"description\": \"The height of the triangle.\"\n        },\n        \"unit\": {\n          \"type\": \"string\",\n          \"description\": \"The unit of measure (defaults to 'units' if not specified)\"\n        }\n      },\n      \"required\": [\n        \"base\",\n        \"height\"\n      ]\n    }\n  }\n]\n\nUser query: Find the area of a triangle with a base of 10 units and height of 5 units.\n\nGenerate the appropriate function call as JSON with 'name' and 'arguments' keys.",
+          "output": "{\"name\": \"calculate_triangle_area\", \"arguments\": {\"base\": 10, \"height\": 5, \"unit\": \"units\"}}",
+          "expected_output": {
+            "calculate_triangle_area": {
+              "base": 10,
+              "height": 5,
+              "unit": "units"
+            }
+          },
+          "success": true,
+          "error": null,
+          "latency_ms": 7112.856874999125,
+          "input_tokens": 648,
+          "output_tokens": 89,
+          "evaluation_score": 1.0,
+          "evaluation_details": {
+            "function_name": "calculate_triangle_area",
+            "arguments": {
+              "matched": 3,
+              "total": 3,
+              "missing": [],
+              "mismatched": []
+            }
+          }
+        },
+        {
+          "instance_id": "simple_1",
+          "prompt": "You have access to the following functions:\n\n[\n  {\n    \"name\": \"math.factorial\",\n    \"description\": \"Calculate the factorial of a given number.\",\n    \"parameters\": {\n      \"type\": \"dict\",\n      \"properties\": {\n        \"number\": {\n          \"type\": \"integer\",\n          \"description\": \"The number for which factorial needs to be calculated.\"\n        }\n      },\n      \"required\": [\n        \"number\"\n      ]\n    }\n  }\n]\n\nUser query: Calculate the factorial of 5 using math functions.\n\nGenerate the appropriate function call as JSON with 'name' and 'arguments' keys.",
+          "output": "{\"name\": \"math.factorial\", \"arguments\": {\"number\": 5}}",
+          "expected_output": {
+            "math.factorial": {
+              "number": 5
+            }
+          },
+          "success": true,
+          "error": null,
+          "latency_ms": 2132.3055830434896,
+          "input_tokens": 583,
+          "output_tokens": 53,
+          "evaluation_score": 1.0,
+          "evaluation_details": {
+            "function_name": "math.factorial",
+            "arguments": {
+              "matched": 1,
+              "total": 1,
+              "missing": [],
+              "mismatched": []
+            }
+          }
+        },
+        {
+          "instance_id": "simple_2",
+          "prompt": "You have access to the following functions:\n\n[\n  {\n    \"name\": \"math.hypot\",\n    \"description\": \"Calculate the Euclidean norm, sqrt(sum(squares)), the length of the vector from the origin to point (x, y) which is the hypotenuse of the right triangle.\",\n    \"parameters\": {\n      \"type\": \"dict\",\n      \"properties\": {\n        \"x\": {\n          \"type\": \"integer\",\n          \"description\": \"The x-coordinate value.\"\n        },\n        \"y\": {\n          \"type\": \"integer\",\n          \"description\": \"The y-coordinate value.\"\n        },\n        \"z\": {\n          \"type\": \"integer\",\n          \"description\": \"Optional. The z-coordinate value. Default is 0.\"\n        }\n      },\n      \"required\": [\n        \"x\",\n        \"y\"\n      ]\n    }\n  }\n]\n\nUser query: Calculate the hypotenuse of a right triangle given the lengths of the other two sides as 4 and 5.\n\nGenerate the appropriate function call as JSON with 'name' and 'arguments' keys.",
+          "output": "{\"name\": \"math.hypot\", \"arguments\": {\"x\": 4, \"y\": 5}}",
+          "expected_output": {
+            "math.hypot": {
+              "x": 4,
+              "y": 5
+            }
+          },
+          "success": true,
+          "error": null,
+          "latency_ms": 2246.2223329930566,
+          "input_tokens": 678,
+          "output_tokens": 71,
+          "evaluation_score": 1.0,
+          "evaluation_details": {
+            "function_name": "math.hypot",
+            "arguments": {
+              "matched": 2,
+              "total": 2,
+              "missing": [],
+              "mismatched": []
+            }
+          }
+        },
+        {
+          "instance_id": "simple_3",
+          "prompt": "You have access to the following functions:\n\n[\n  {\n    \"name\": \"algebra.quadratic_roots\",\n    \"description\": \"Find the roots of a quadratic equation ax^2 + bx + c = 0.\",\n    \"parameters\": {\n      \"type\": \"dict\",\n      \"properties\": {\n        \"a\": {\n          \"type\": \"integer\",\n          \"description\": \"Coefficient of x^2.\"\n        },\n        \"b\": {\n          \"type\": \"integer\",\n          \"description\": \"Coefficient of x.\"\n        },\n        \"c\": {\n          \"type\": \"integer\",\n          \"description\": \"Constant term.\"\n        }\n      },\n      \"required\": [\n        \"a\",\n        \"b\",\n        \"c\"\n      ]\n    }\n  }\n]\n\nUser query: Find the roots of a quadratic equation with coefficients a=1, b=-3, c=2.\n\nGenerate the appropriate function call as JSON with 'name' and 'arguments' keys.",
+          "output": "{\"name\": \"algebra.quadratic_roots\", \"arguments\": {\"a\": 1, \"b\": -3, \"c\": 2}}",
+          "expected_output": {
+            "algebra.quadratic_roots": {
+              "a": 1,
+              "b": -3,
+              "c": 2
+            }
+          },
+          "success": true,
+          "error": null,
+          "latency_ms": 2589.810082979966,
+          "input_tokens": 651,
+          "output_tokens": 91,
+          "evaluation_score": 1.0,
+          "evaluation_details": {
+            "function_name": "algebra.quadratic_roots",
+            "arguments": {
+              "matched": 3,
+              "total": 3,
+              "missing": [],
+              "mismatched": []
+            }
+          }
+        },
+        {
+          "instance_id": "simple_4",
+          "prompt": "You have access to the following functions:\n\n[\n  {\n    \"name\": \"solve_quadratic_equation\",\n    \"description\": \"Function solves the quadratic equation and returns its roots.\",\n    \"parameters\": {\n      \"type\": \"dict\",\n      \"properties\": {\n        \"a\": {\n          \"type\": \"integer\",\n          \"description\": \"Coefficient of x squared\"\n        },\n        \"b\": {\n          \"type\": \"integer\",\n          \"description\": \"Coefficient of x\"\n        },\n        \"c\": {\n          \"type\": \"integer\",\n          \"description\": \"Constant term in the quadratic equation.\"\n        }\n      },\n      \"required\": [\n        \"a\",\n        \"b\",\n        \"c\"\n      ]\n    }\n  }\n]\n\nUser query: Solve a quadratic equation where a=2, b=6, and c=5\n\nGenerate the appropriate function call as JSON with 'name' and 'arguments' keys.",
+          "output": "{\"name\": \"solve_quadratic_equation\", \"arguments\": {\"a\": 2, \"b\": 6, \"c\": 5}}",
+          "expected_output": {
+            "solve_quadratic_equation": {
+              "a": 2,
+              "b": 6,
+              "c": 5
+            }
+          },
+          "success": true,
+          "error": null,
+          "latency_ms": 2194.1227500210516,
+          "input_tokens": 642,
+          "output_tokens": 90,
+          "evaluation_score": 1.0,
+          "evaluation_details": {
+            "function_name": "solve_quadratic_equation",
+            "arguments": {
+              "matched": 3,
+              "total": 3,
+              "missing": [],
+              "mismatched": []
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

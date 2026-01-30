@@ -1,0 +1,26 @@
+{
+  "workflow_id": "invoice_extraction_workflow",
+  "name": "Invoice Field Extraction",
+  "description": "Extracts structured invoice fields from unstructured document text, including vendor information, customer details, invoice ID, dates, and amounts.",
+  "task_id": "0039ed9f32974a90afb4f8f2_kile",
+  "task_description": "{\"document_text\": \"KHBM FM\\nPINES BROADCASTING, INC.\\n279 MIDWAY ROUTE\\nMONTICELLO ,AR 71655\\nINVOICE Account #: 478\\nInvoice #: 20N0023494\\nStandard Broadcast Period: 10/26/2020 - 11/29/2020\\nEDDIE CHEATHAM FOR AR STATE SENATE\\nLINDA NAPPER\\nAR\\nProduct Name: EDDIE CHEATHAM FOR AR STA\\nScript: 4783A (:30)\\nRate\\nDate\\nTime\\nRate\\nDate\\nTime\\nDate\\nTime\\nRate\\n30-Oct-20 7:30:40 PM\\n30-Oct-20 8:50:00 PM\\n30-Oct-20 10:22:00 PM\\nCut Total: 8\\n30-Oct-20 8:01:20 PM\\n30-Oct-20 9:11:20 PM\\n30-Oct-20 11:56:50 PM\\nGross Total: $0.00\\n30-Oct-20 8:25:40 PM\\n30-Oct-20 9:35:40 PM\\nCUT:4783A 8 SPOT( (S) AT A RATE OF $0.00 = $0.00\\nNet Total: $0.00\\nAll times are-guaranteed to have run within 15 minutes of times indicated.\\nSubscribedand sworn. to before me on this 4th day of November, 2020\\nZ\\nPublic/)\\nARASAS\\nRLS\\nStation Official\\nRAE LYNN MACON\\nJIMMY SLEDGE OEMCIEEGE\\nG54\\nSAA JIMMY SLELGE\\nNo. 12370700\\nBPADLEY COINTY 12-3 2020\\nMy CorimksesEapires)\\nKGPQ P.\\n(printed by Rae Lynn (Rae Lynn) at\\nPM on\", \"task_type\": \"kile\"}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `task_type` (str) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, task_type\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"fields\": {\n    \"document_id\": \"string - extracted field\",\n    \"vendor_name\": \"string - extracted field\",\n    \"vendor_address\": \"string - extracted field\",\n    \"customer_name\": \"string - extracted field\",\n    \"customer_address\": \"string - extracted field\",\n    \"invoice_id\": \"string - extracted field\",\n    \"invoice_date\": \"string - extracted field\",\n    \"due_date\": \"string - extracted field\",\n    \"total_amount\": \"string - extracted field\",\n    \"tax_amount\": \"string - extracted field\",\n    \"currency\": \"string - extracted field\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "activities": [
+    "extract_invoice_fields"
+  ],
+  "variables": [
+    {
+      "name": "prompt",
+      "default": null
+    },
+    {
+      "name": "task_type",
+      "default": null
+    }
+  ],
+  "execution_pattern": "sequence",
+  "reasoning": "This task requires extracting structured invoice fields from unstructured document text. The document contains various pieces of information scattered throughout (vendor name, address, customer info, invoice number, dates, amounts) without a consistent format that can be parsed with regex. \n\nI chose to use an LLM-based extraction approach (inspired by llm_extract) because:\n1. The document text is semi-structured/unstructured - fields like addresses span multiple lines, dates appear in different formats, and amounts may be in various locations\n2. The document contains OCR-style text with irregular spacing and formatting\n3. Field values need semantic understanding to identify (e.g., distinguishing vendor vs customer address)\n4. Some fields may not be explicitly labeled and require context inference (e.g., currency is implied, due_date may not be present)\n\nThe workflow uses a single activity that takes the raw document text (passed via the prompt variable) and extracts all required fields into a structured dictionary with the exact field names specified in the output format.",
+  "metrics": {
+    "total_tokens": 31690,
+    "regeneration_count": 0
+  }
+}

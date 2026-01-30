@@ -1,0 +1,38 @@
+{
+  "activity_name": "extract_invoice_data",
+  "description": "Extracts structured invoice data from document text using LLM. Parses vendor name/address, customer name/address, invoice ID, dates, amounts, and currency from unstructured document text.",
+  "task_id": "002e3cf97973428f905671b3_kile",
+  "task_description": "{\"document_text\": \"UMI PUBLICATIONS, INC.\\nP.O.BOX 30036 (28230)\\n1135 NORTH TRYON ST.\\nCHARLOTTE, NC 28206\\no E.\\nDocument Number: 096084\\nDocument Date: 12/09/99\\nPage: 1\\nship. MR: RICK HABEGGER\\nSME/RJR;\\nMR RICH HABEGGER\\nSME/RJR\\n401N: MAIN ST. 13TH FLOOR\\nWINSTON-SALEM, NC 27102\\nTo\\n401 N: MAIN' ST.. 13TH FLOOR\\nWINSTON-SALEM, NC 27102\\nCueti.D\\nP:0. Number,. ::\\nP:0.\\\"Date. :: 12/07/99.\\nJob/Order. No.:.\\nSalespersony.\\nUnit\\nRut\\nship Via.:.\\nShip. pate: 12/07/99.\\nueDate.: 12/19/99\\narms\\n: NET 10 DAYS\\nOrdered\\nShipped\\nPrice\\n250000:0900\\nNet,\\n250000, :00\\n1.00: :\\n1:00:\\nMATERIALS CHARGE'FOR NAS\\u00c7AR.:2000\\nCOMMEMORATIVE BOOK: LAND: NASCAR 2000.\\nMINIA ABOOK PREMIUM\\\"\\nAccepted.By\\nAccepted BY/RJR/SME:\\nName\\nTREASIREA\\nTitle:\\n12.9199\\nDat\\u00e9\\nName\\nGitle\\nDate\\nREs.\\nSubtotal:\\nTax,\\na\\n250000.00\\n0.00:\\n250000.00\\n20'd\\n63LOVLEVOL 'ON X4J\\nSNOIJWOI78Ad IWA Wd 90:90 AHI 66-60-0.\", \"task_type\": \"kile\"}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `task_type` (str) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, task_type\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"fields\": {\n    \"document_id\": \"string - extracted field\",\n    \"vendor_name\": \"string - extracted field\",\n    \"vendor_address\": \"string - extracted field\",\n    \"customer_name\": \"string - extracted field\",\n    \"customer_address\": \"string - extracted field\",\n    \"invoice_id\": \"string - extracted field\",\n    \"invoice_date\": \"string - extracted field\",\n    \"due_date\": \"string - extracted field\",\n    \"total_amount\": \"string - extracted field\",\n    \"tax_amount\": \"string - extracted field\",\n    \"currency\": \"string - extracted field\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "inputs": [
+    {
+      "name": "document_text",
+      "type": "str",
+      "description": "The raw document text containing invoice information including vendor details, customer details, document numbers, dates, amounts, and other invoice fields to be extracted",
+      "required": true
+    }
+  ],
+  "output": {
+    "type": "dict",
+    "description": "Returns extracted invoice data with fields: document_id (the document/invoice number), vendor_name (company name of the vendor), vendor_address (full vendor address), customer_name (name of the customer/recipient), customer_address (full customer address), invoice_id (same as document number), invoice_date (date of the invoice), due_date (payment due date), total_amount (total invoice amount as string), tax_amount (tax amount as string), currency (currency code like USD)",
+    "fields": {
+      "document_id": "str",
+      "vendor_name": "str",
+      "vendor_address": "str",
+      "customer_name": "str",
+      "customer_address": "str",
+      "invoice_id": "str",
+      "invoice_date": "str",
+      "due_date": "str",
+      "total_amount": "str",
+      "tax_amount": "str",
+      "currency": "str"
+    }
+  },
+  "reference_activity": "llm_extract",
+  "workflow_spec": {
+    "workflow_id": "kile_invoice_extraction",
+    "name": "KILE Invoice Document Extraction",
+    "description": "Extracts structured invoice data from document text including vendor information, customer information, invoice details, and amounts.",
+    "execution_pattern": "sequence"
+  }
+}

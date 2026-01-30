@@ -46,10 +46,10 @@ class AutoGenBaseline(BaseBaseline):
 
     def _default_model(self, provider: str) -> str:
         defaults = {
-            "anthropic": "claude-sonnet-4-20250514",
+            "anthropic": "claude-opus-4-5-20251101",
             "openai": "gpt-4o",
         }
-        return defaults.get(provider, "claude-sonnet-4-20250514")
+        return defaults.get(provider, "claude-opus-4-5-20251101")
 
     def _get_model_client(self) -> Any:
         """Get the appropriate AutoGen model client."""
@@ -91,10 +91,20 @@ class AutoGenBaseline(BaseBaseline):
         model_client = self._get_model_client()
 
         # Build the task prompt
+        # Only add context fields that aren't already in the prompt (generic check)
         prompt = task_input.prompt
         if task_input.context:
-            context_str = "\n".join(f"{k}: {v}" for k, v in task_input.context.items())
-            prompt = f"Context:\n{context_str}\n\nTask:\n{prompt}"
+            context_items = []
+            for k, v in task_input.context.items():
+                # Skip fields whose values are already in the prompt (prevents duplication)
+                # This is dataset-agnostic - works for any dataset
+                value_str = str(v)
+                if value_str and value_str not in prompt:
+                    context_items.append(f"{k}: {v}")
+            
+            if context_items:
+                context_str = "\n".join(context_items)
+                prompt = f"Context:\n{context_str}\n\nTask:\n{prompt}"
 
         # Create two agents for multi-agent coordination
         planner = AssistantAgent(
@@ -127,7 +137,18 @@ class AutoGenBaseline(BaseBaseline):
         )
 
         # Run the team
-        result = await team.run(task=prompt)
+        # Wrap in try-except to catch rate limit errors before AutoGen's internal error handling
+        try:
+            result = await team.run(task=prompt)
+        except Exception as e:
+            # Check if it's a rate limit error
+            error_str = str(e)
+            error_type = type(e).__name__
+            if "rate_limit" in error_str.lower() or "429" in error_str or "RateLimitError" in error_type:
+                # Re-raise as a simple exception that our retry logic can handle
+                raise RuntimeError(f"Rate limit error: {error_str}") from e
+            # Re-raise other errors as-is
+            raise
 
         # Extract output from the Executor's last message
         output = ""
@@ -152,10 +173,28 @@ class AutoGenBaseline(BaseBaseline):
         # Count LLM calls (each message from an agent = 1 LLM call)
         llm_calls = sum(1 for msg in result.messages if hasattr(msg, "source") and msg.source in ["Planner", "Executor"])
 
-        # Token tracking - AutoGen doesn't expose this directly in basic usage
-        # We estimate based on message lengths (rough approximation)
+        # Token tracking - AutoGen doesn't expose this directly
+        # Estimate tokens from message content (~4 chars per token)
         input_tokens = 0
         output_tokens = 0
+        
+        for msg in result.messages:
+            content = msg.content if hasattr(msg, "content") else str(msg)
+            if not content:
+                continue
+            # Rough estimate: ~4 characters per token
+            estimated_tokens = len(content) // 4
+            
+            source = getattr(msg, "source", None)
+            if source in ["Planner", "Executor"]:
+                # Agent output = output tokens
+                output_tokens += estimated_tokens
+            else:
+                # User/system message = input tokens
+                input_tokens += estimated_tokens
+        
+        # Add system prompt tokens to input (rough estimate for each agent)
+        input_tokens += 100 * llm_calls  # ~100 tokens per system prompt
 
         return output, input_tokens, output_tokens, llm_calls
 
@@ -178,6 +217,7 @@ class AutoGenBaseline(BaseBaseline):
                 self._total_output_tokens += output_tokens
                 self._total_calls += llm_calls
 
+                print(f"AutoGen: ~{input_tokens} in / ~{output_tokens} out ({llm_calls} calls) - {latency_ms:.0f}ms", flush=True)
                 return BaselineResult(
                     task_id=task_input.task_id,
                     output=output,
@@ -189,8 +229,20 @@ class AutoGenBaseline(BaseBaseline):
                 )
             except Exception as e:
                 last_error = str(e)
+                error_str = str(e)
+                
+                # Handle rate limit errors with longer backoff
+                is_rate_limit = "rate_limit" in error_str.lower() or "429" in error_str or "RateLimitError" in error_str
+                
                 if attempt < self.max_retries - 1:
-                    time.sleep(self.retry_delay * (2**attempt))
+                    if is_rate_limit:
+                        # Rate limit: wait longer (60 seconds base, exponential backoff)
+                        wait_time = 60 * (2**attempt)
+                        print(f"Rate limit hit, waiting {wait_time}s before retry (attempt {attempt + 1}/{self.max_retries})...", flush=True)
+                        time.sleep(wait_time)
+                    else:
+                        # Other errors: standard exponential backoff
+                        time.sleep(self.retry_delay * (2**attempt))
 
         latency_ms = (time.perf_counter() - start_time) * 1000
         return BaselineResult(

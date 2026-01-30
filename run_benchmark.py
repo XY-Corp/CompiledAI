@@ -38,6 +38,8 @@ from compiled_ai.datasets import (
     BenchmarkResult as SimpleBenchmarkResult,
     InstanceResult,
 )
+from compiled_ai.datasets.docile_converter import DocILEConverter
+from compiled_ai.datasets.eltbench_converter import ELTBenchConverter
 from compiled_ai.baselines.base import get_baseline
 from compiled_ai.runner.loader import AgentBenchAdapter, BFCLAdapter  # For category info only
 
@@ -140,6 +142,35 @@ DATASETS = {
         "adapter": "agentbench",
         "environments": list(AgentBenchAdapter.ENVIRONMENTS.keys()),
         "icon": "🤖",
+    },
+    "docile_kile": {
+        "name": "DocILE KILE",
+        "description": "Document key information extraction (invoice headers)",
+        "path": "datasets/benchmarks/DocILE",
+        "type": "external",
+        "task_type": "kile",
+        "icon": "📄",
+        "baseline_kwargs": {
+            "enable_security": False,  # Disable INPUT GATE - OCR text triggers false positives
+        },
+    },
+    "docile_lir": {
+        "name": "DocILE LIR",
+        "description": "Document line item recognition (invoice tables)",
+        "path": "datasets/benchmarks/DocILE",
+        "type": "external",
+        "task_type": "lir",
+        "icon": "📋",
+        "baseline_kwargs": {
+            "enable_security": False,  # Disable INPUT GATE - OCR text triggers false positives
+        },
+    },
+    "eltbench": {
+        "name": "ELT-Bench",
+        "description": "ELT pipeline SQL generation (100 tasks)",
+        "path": "datasets/benchmarks/ELT-Bench",
+        "type": "external",
+        "icon": "🔄",
     },
 }
 
@@ -567,6 +598,20 @@ def run_benchmark(
         converter = SecurityFixtureConverter()
         instances = converter.load_directory(dataset_info["path"])
 
+    elif dataset_key in ("docile_kile", "docile_lir"):
+        converter = DocILEConverter()
+        task_type = dataset_info.get("task_type", "kile")
+        split = dataset_kwargs.get("split")
+        instances = converter.load_directory(
+            dataset_info["path"],
+            task_type=task_type,
+            split=split,
+        )
+
+    elif dataset_key == "eltbench":
+        converter = ELTBenchConverter(dataset_info["path"])
+        instances = converter.load_all(max_tasks=max_instances)
+
     else:
         console.print(f" [{BRAND_ERROR}]✗[/{BRAND_ERROR}]")
         console.print(f"\n[{BRAND_ERROR}]Dataset '{dataset_key}' not yet supported with new converters.[/{BRAND_ERROR}]")
@@ -716,6 +761,73 @@ def run_benchmark(
     console.print(f"    [{BRAND_PRIMARY}]{summary_path}[/{BRAND_PRIMARY}]")
     if failures:
         console.print(f"    [{BRAND_ERROR}]{failures_path} ({len(failures)} failures)[/{BRAND_ERROR}]")
+
+    # Also save to results/ folder for consistency with other benchmarks
+    import time
+    results_folder = Path("results")
+    results_folder.mkdir(exist_ok=True)
+    timestamp = int(time.time())
+    canonical_results_path = results_folder / f"{baseline}_{dataset_key}_{timestamp}.json"
+
+    latencies = [r.latency_ms for r in result.results if r.latency_ms]
+    p50_latency = sorted(latencies)[len(latencies) // 2] if latencies else 0
+    p90_latency = sorted(latencies)[int(len(latencies) * 0.9)] if latencies else 0
+
+    canonical_results = {
+        "config": {
+            "dataset": dataset_key,
+            "baseline": baseline,
+            "provider": provider,
+            "max_instances": max_instances,
+        },
+        "summary": {
+            "duration_seconds": result.duration_seconds,
+            "overall_success_rate": result.success_rate,
+            "total_instances": len(result.results),
+            "successful_instances": sum(1 for r in result.results if r.success),
+            "failed_instances": sum(1 for r in result.results if not r.success),
+        },
+        "metrics": {
+            "p50_latency_ms": p50_latency,
+            "p90_latency_ms": p90_latency,
+        },
+        "instances": [
+            {
+                "id": r.instance_id,
+                "success": r.success,
+                "latency_ms": r.latency_ms,
+                "generation_time_ms": r.generation_time_ms,
+                "execution_time_ms": r.execution_time_ms,
+                "error": r.error,
+            }
+            for r in result.results
+        ],
+    }
+
+    # Add token breakdown and latency breakdown for code_factory
+    if baseline == "code_factory":
+        canonical_results["token_breakdown"] = summary_data.get("token_breakdown", {})
+        canonical_results["summary"]["compilations"] = summary_data.get("compilations", 0)
+        canonical_results["summary"]["cache_hits"] = summary_data.get("cache_hits", 0)
+
+        # Add latency breakdown (generation vs execution)
+        gen_times = [r.generation_time_ms for r in result.results if r.generation_time_ms]
+        exec_times = [r.execution_time_ms for r in result.results if r.execution_time_ms]
+
+        if gen_times:
+            canonical_results["metrics"]["p50_generation_ms"] = sorted(gen_times)[len(gen_times) // 2]
+            canonical_results["metrics"]["p90_generation_ms"] = sorted(gen_times)[int(len(gen_times) * 0.9)]
+            canonical_results["metrics"]["avg_generation_ms"] = sum(gen_times) / len(gen_times)
+
+        if exec_times:
+            canonical_results["metrics"]["p50_execution_ms"] = sorted(exec_times)[len(exec_times) // 2]
+            canonical_results["metrics"]["p90_execution_ms"] = sorted(exec_times)[int(len(exec_times) * 0.9)]
+            canonical_results["metrics"]["avg_execution_ms"] = sum(exec_times) / len(exec_times)
+
+    with open(canonical_results_path, "w") as f:
+        json.dump(canonical_results, f, indent=2)
+
+    console.print(f"    [{BRAND_PRIMARY}]{canonical_results_path}[/{BRAND_PRIMARY}]")
 
 
 def run_fixture_benchmark(
@@ -1207,9 +1319,9 @@ Examples:
     )
     parser.add_argument(
         "--split",
-        choices=["dev", "test"],
-        default="dev",
-        help="AgentBench split (default: dev)",
+        choices=["dev", "test", "train", "val"],
+        default=None,
+        help="Dataset split: dev/test for AgentBench, train/val for DocILE",
     )
     parser.add_argument(
         "--max-per-env",
