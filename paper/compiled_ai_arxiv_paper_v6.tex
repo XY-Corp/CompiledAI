@@ -801,6 +801,33 @@ Compiled AI & \$55 & \$500 & \$555 & 1$\times$ \\
 
 \noindent\textit{Cost calculation:} Direct LLM consumes 500 tokens per transaction (300 input + 200 output), totaling 500M tokens at 1M transactions. Compiled AI incurs a one-time compilation cost of $\sim$11K tokens per workflow type; assuming 100 unique workflow types, total compilation cost is $\sim$1.1M tokens. Execution cost is zero (deterministic code). Infrastructure cost assumes equivalent compute for workflow execution.
 
+\subsection{External Benchmark Comparison}
+
+To contextualize compiled AI against established agent frameworks, we evaluate on DocILE \citep{docile2023}, a document information extraction benchmark with two task types: Key Information Extraction (KILE) and Line Item Recognition (LIR). We compare three runtime baselines---Direct LLM prompting, LangChain with native tool calling, and AutoGen multi-agent orchestration---all using Claude Opus 4.5 with LLM-based semantic evaluation.
+
+\begin{table}[ht]
+\centering
+\caption{DocILE benchmark results (100 documents per task). All baselines use Claude Opus 4.5 with LLM semantic evaluation.}
+\label{tab:docile-results}
+\begin{tabular}{llrrr}
+\toprule
+Task & Baseline & Success & Tokens/inst & Latency (s) \\
+\midrule
+\multirow{3}{*}{KILE} & Direct LLM & 100.0\% & 1,048 & 6.3 \\
+ & LangChain & 100.0\% & 1,047 & 6.2 \\
+ & AutoGen & 97.0\% & 1,106 & 13.3 \\
+\midrule
+\multirow{3}{*}{LIR} & Direct LLM & 91.0\% & 1,159 & 7.6 \\
+ & LangChain & 93.0\% & 1,220 & 7.3 \\
+ & AutoGen & 89.0\% & 1,068 & 13.1 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Key observations: (1) Direct LLM and LangChain achieve comparable performance on both tasks, with LangChain's native tool calling providing no significant advantage over simple prompting. (2) AutoGen's multi-agent coordination incurs 2$\times$ latency overhead while achieving slightly lower success rates, consistent with findings from \citet{cemri2025multiagent} on coordination failures in multi-agent systems. (3) Token consumption is similar across baselines ($\sim$1,000--1,200 tokens/instance), representing the per-transaction cost that compiled AI eliminates after the initial generation phase.
+
+These results reinforce the compiled AI value proposition: for well-specified extraction tasks, runtime agent frameworks provide no accuracy benefit over direct prompting while incurring per-transaction inference costs. Compiled AI eliminates these costs entirely after break-even.
+
 % ============================================================================
 \section{Discussion}
 \label{sec:discussion}
@@ -946,6 +973,11 @@ David Dalrymple, Joar Skalse, Yoshua Bengio, Stuart Russell, Max Tegmark, Sanjit
 Yixin Dong et al.
 \newblock XGrammar: Flexible and Efficient Structured Generation Engine for Large Language Models.
 \newblock \emph{arXiv:2411.15100}, November 2024.
+
+\bibitem[DocILE(2023)]{docile2023}
+\v{S}tef\'anik et al.
+\newblock DocILE Benchmark for Document Information Localization and Extraction.
+\newblock In \emph{ICDAR}, 2023.
 
 \bibitem[Fan et al.(2024)]{fan2024workflowllm}
 Shuheng Fan et al.
