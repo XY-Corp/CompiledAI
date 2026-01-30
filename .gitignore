@@ -203,7 +203,5 @@ datasets/docile/
 # Keep internal benchmark tracked
 !datasets/xy_benchmark/
 
-# Benchmark results
-results/
 # GCP Cred File
 google_cred_key.json

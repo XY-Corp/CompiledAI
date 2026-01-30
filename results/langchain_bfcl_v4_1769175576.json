@@ -1,0 +1,291 @@
+{
+  "config": {
+    "dataset": "bfcl_v4",
+    "baseline": "langchain"
+  },
+  "summary": {
+    "duration_seconds": 13.291916847229004,
+    "overall_success_rate": 0.5,
+    "total_tasks": 1,
+    "total_instances": 2
+  },
+  "tasks": [
+    {
+      "task_id": "bfcl_simple",
+      "name": "BFCL Simple",
+      "category": "function_calling",
+      "difficulty": "simple",
+      "success_rate": 0.5,
+      "avg_latency_ms": 9723.836834018584,
+      "instance_count": 2
+    }
+  ],
+  "metrics": {
+    "metadata": {
+      "benchmark_id": "20260123_143923",
+      "timestamp": "2026-01-23T14:39:23.228734",
+      "task_name": "",
+      "method": "",
+      "model": "",
+      "notes": ""
+    },
+    "results": [
+      {
+        "name": "p50_latency",
+        "value": 9723.836834018584,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-23T14:39:36.520305"
+      },
+      {
+        "name": "p90_latency",
+        "value": 9723.836834018584,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-23T14:39:36.520321"
+      },
+      {
+        "name": "p95_latency",
+        "value": 9723.836834018584,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-23T14:39:36.520330"
+      },
+      {
+        "name": "p99_latency",
+        "value": 9723.836834018584,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-23T14:39:36.520335"
+      },
+      {
+        "name": "jitter",
+        "value": 0.0,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-23T14:39:36.520344"
+      },
+      {
+        "name": "mean_latency",
+        "value": 9723.836834018584,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-23T14:39:36.520496"
+      },
+      {
+        "name": "stdev_latency",
+        "value": 0.0,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-23T14:39:36.520504"
+      },
+      {
+        "name": "min_latency",
+        "value": 9723.836834018584,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-23T14:39:36.520508"
+      },
+      {
+        "name": "max_latency",
+        "value": 9723.836834018584,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-23T14:39:36.520512"
+      },
+      {
+        "name": "cold_start",
+        "value": 0.0,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-23T14:39:36.520514"
+      },
+      {
+        "name": "measurement_count",
+        "value": 1,
+        "unit": "count",
+        "category": "latency",
+        "timestamp": "2026-01-23T14:39:36.520520"
+      },
+      {
+        "name": "ttft",
+        "value": 0.0,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-23T14:39:36.520524"
+      },
+      {
+        "name": "ttft_p99",
+        "value": 0.0,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-23T14:39:36.520526"
+      },
+      {
+        "name": "tpot",
+        "value": 0.0,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-23T14:39:36.520529"
+      },
+      {
+        "name": "tpot_p99",
+        "value": 0.0,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-23T14:39:36.520531"
+      },
+      {
+        "name": "has_sufficient_samples",
+        "value": false,
+        "unit": "bool",
+        "category": "latency",
+        "timestamp": "2026-01-23T14:39:36.520535"
+      },
+      {
+        "name": "rating",
+        "value": "excellent",
+        "unit": "category",
+        "category": "latency",
+        "timestamp": "2026-01-23T14:39:36.520556"
+      },
+      {
+        "name": "gen_tokens",
+        "value": 737,
+        "unit": "tokens",
+        "category": "token_efficiency",
+        "timestamp": "2026-01-23T14:39:36.520579"
+      },
+      {
+        "name": "prompt_tokens",
+        "value": 0,
+        "unit": "tokens",
+        "category": "token_efficiency",
+        "timestamp": "2026-01-23T14:39:36.520581"
+      },
+      {
+        "name": "output_code_tokens",
+        "value": 0,
+        "unit": "tokens",
+        "category": "token_efficiency",
+        "timestamp": "2026-01-23T14:39:36.520584"
+      },
+      {
+        "name": "runtime_tokens_per_tx",
+        "value": 368.5,
+        "unit": "tokens/tx",
+        "category": "token_efficiency",
+        "timestamp": "2026-01-23T14:39:36.520586"
+      },
+      {
+        "name": "generated_loc",
+        "value": 0,
+        "unit": "lines",
+        "category": "token_efficiency",
+        "timestamp": "2026-01-23T14:39:36.520589"
+      },
+      {
+        "name": "compression_ratio",
+        "value": 0.0,
+        "unit": "ratio",
+        "category": "token_efficiency",
+        "timestamp": "2026-01-23T14:39:36.520594"
+      },
+      {
+        "name": "loc_per_token",
+        "value": 0.0,
+        "unit": "loc/token",
+        "category": "token_efficiency",
+        "timestamp": "2026-01-23T14:39:36.520598"
+      },
+      {
+        "name": "token_amortization_factor",
+        "value": 0.737,
+        "unit": "tokens/exec",
+        "category": "token_efficiency",
+        "timestamp": "2026-01-23T14:39:36.520600"
+      },
+      {
+        "name": "is_competitive",
+        "value": false,
+        "unit": "bool",
+        "category": "token_efficiency",
+        "timestamp": "2026-01-23T14:39:36.520604"
+      },
+      {
+        "name": "is_excellent",
+        "value": false,
+        "unit": "bool",
+        "category": "token_efficiency",
+        "timestamp": "2026-01-23T14:39:36.520608"
+      },
+      {
+        "name": "success_rate",
+        "value": 0.5,
+        "unit": "ratio",
+        "category": "reliability",
+        "timestamp": "2026-01-23T14:39:36.520614"
+      },
+      {
+        "name": "total_llm_calls",
+        "value": 4,
+        "unit": "count",
+        "category": "cost",
+        "timestamp": "2026-01-23T14:39:36.520617"
+      }
+    ]
+  },
+  "logs": [
+    {
+      "task_id": "bfcl_simple",
+      "instances": [
+        {
+          "instance_id": "simple_0",
+          "prompt": "You have access to the following functions:\n\n[\n  {\n    \"name\": \"calculate_triangle_area\",\n    \"description\": \"Calculate the area of a triangle given its base and height.\",\n    \"parameters\": {\n      \"type\": \"dict\",\n      \"properties\": {\n        \"base\": {\n          \"type\": \"integer\",\n          \"description\": \"The base of the triangle.\"\n        },\n        \"height\": {\n          \"type\": \"integer\",\n          \"description\": \"The height of the triangle.\"\n        },\n        \"unit\": {\n          \"type\": \"string\",\n          \"description\": \"The unit of measure (defaults to 'units' if not specified)\"\n        }\n      },\n      \"required\": [\n        \"base\",\n        \"height\"\n      ]\n    }\n  }\n]\n\nUser query: Find the area of a triangle with a base of 10 units and height of 5 units.\n\nGenerate the appropriate function call as JSON with 'name' and 'arguments' keys.",
+          "output": "{\"name\": \"calculate_triangle_area\", \"arguments\": {\"base\": 10, \"height\": 5, \"unit\": \"units\"}}",
+          "expected_output": {
+            "calculate_triangle_area": {
+              "base": 10,
+              "height": 5,
+              "unit": "units"
+            }
+          },
+          "success": true,
+          "error": null,
+          "latency_ms": 9723.836834018584,
+          "input_tokens": 648,
+          "output_tokens": 89,
+          "evaluation_score": 1.0,
+          "evaluation_details": {
+            "function_name": "calculate_triangle_area",
+            "arguments": {
+              "matched": 3,
+              "total": 3,
+              "missing": [],
+              "mismatched": []
+            }
+          }
+        },
+        {
+          "instance_id": "simple_1",
+          "prompt": "You have access to the following functions:\n\n[\n  {\n    \"name\": \"math.factorial\",\n    \"description\": \"Calculate the factorial of a given number.\",\n    \"parameters\": {\n      \"type\": \"dict\",\n      \"properties\": {\n        \"number\": {\n          \"type\": \"integer\",\n          \"description\": \"The number for which factorial needs to be calculated.\"\n        }\n      },\n      \"required\": [\n        \"number\"\n      ]\n    }\n  }\n]\n\nUser query: Calculate the factorial of 5 using math functions.\n\nGenerate the appropriate function call as JSON with 'name' and 'arguments' keys.",
+          "output": "",
+          "expected_output": {
+            "math.factorial": {
+              "number": 5
+            }
+          },
+          "success": false,
+          "error": "Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': \"tools.0.custom.name: String should match pattern '^[a-zA-Z0-9_-]{1,128}$'\"}, 'request_id': 'req_011CXQQMJDXotiAhVFhv3FSm'}",
+          "latency_ms": 3495.492624992039,
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "evaluation_score": 0.0,
+          "evaluation_details": {
+            "raw_output": ""
+          }
+        }
+      ]
+    }
+  ]
+}

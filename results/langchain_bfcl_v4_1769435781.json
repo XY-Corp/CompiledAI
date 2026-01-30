@@ -1,0 +1,1108 @@
+{
+  "config": {
+    "dataset": "bfcl_v4",
+    "baseline": "langchain"
+  },
+  "summary": {
+    "duration_seconds": 139.98777604103088,
+    "overall_success_rate": 1.0,
+    "total_tasks": 1,
+    "total_instances": 30
+  },
+  "tasks": [
+    {
+      "task_id": "bfcl_simple",
+      "name": "BFCL Simple",
+      "category": "function_calling",
+      "difficulty": "simple",
+      "success_rate": 1.0,
+      "avg_latency_ms": 2345.4734402378867,
+      "instance_count": 30
+    }
+  ],
+  "metrics": {
+    "metadata": {
+      "benchmark_id": "20260126_145401",
+      "timestamp": "2026-01-26T14:54:01.505492",
+      "task_name": "",
+      "method": "",
+      "model": "",
+      "notes": ""
+    },
+    "results": [
+      {
+        "name": "p50_latency",
+        "value": 2243.093958008103,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-26T14:56:21.492112"
+      },
+      {
+        "name": "p90_latency",
+        "value": 2517.8328710899227,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-26T14:56:21.492176"
+      },
+      {
+        "name": "p95_latency",
+        "value": 2720.9256810718216,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-26T14:56:21.492193"
+      },
+      {
+        "name": "p99_latency",
+        "value": 3949.6046810835846,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-26T14:56:21.492209"
+      },
+      {
+        "name": "jitter",
+        "value": 1706.5107230754816,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-26T14:56:21.492234"
+      },
+      {
+        "name": "mean_latency",
+        "value": 2345.4734402378867,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-26T14:56:21.492810"
+      },
+      {
+        "name": "stdev_latency",
+        "value": 441.1432839173133,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-26T14:56:21.492970"
+      },
+      {
+        "name": "min_latency",
+        "value": 2008.2047920441255,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-26T14:56:21.492991"
+      },
+      {
+        "name": "max_latency",
+        "value": 4447.514792031143,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-26T14:56:21.492996"
+      },
+      {
+        "name": "cold_start",
+        "value": 0.0,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-26T14:56:21.492999"
+      },
+      {
+        "name": "measurement_count",
+        "value": 30,
+        "unit": "count",
+        "category": "latency",
+        "timestamp": "2026-01-26T14:56:21.493027"
+      },
+      {
+        "name": "ttft",
+        "value": 0.0,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-26T14:56:21.493032"
+      },
+      {
+        "name": "ttft_p99",
+        "value": 0.0,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-26T14:56:21.493035"
+      },
+      {
+        "name": "tpot",
+        "value": 0.0,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-26T14:56:21.493037"
+      },
+      {
+        "name": "tpot_p99",
+        "value": 0.0,
+        "unit": "ms",
+        "category": "latency",
+        "timestamp": "2026-01-26T14:56:21.493040"
+      },
+      {
+        "name": "has_sufficient_samples",
+        "value": false,
+        "unit": "bool",
+        "category": "latency",
+        "timestamp": "2026-01-26T14:56:21.493043"
+      },
+      {
+        "name": "rating",
+        "value": "excellent",
+        "unit": "category",
+        "category": "latency",
+        "timestamp": "2026-01-26T14:56:21.493086"
+      },
+      {
+        "name": "gen_tokens",
+        "value": 21759,
+        "unit": "tokens",
+        "category": "token_efficiency",
+        "timestamp": "2026-01-26T14:56:21.493142"
+      },
+      {
+        "name": "prompt_tokens",
+        "value": 0,
+        "unit": "tokens",
+        "category": "token_efficiency",
+        "timestamp": "2026-01-26T14:56:21.493145"
+      },
+      {
+        "name": "output_code_tokens",
+        "value": 0,
+        "unit": "tokens",
+        "category": "token_efficiency",
+        "timestamp": "2026-01-26T14:56:21.493147"
+      },
+      {
+        "name": "runtime_tokens_per_tx",
+        "value": 725.3,
+        "unit": "tokens/tx",
+        "category": "token_efficiency",
+        "timestamp": "2026-01-26T14:56:21.493150"
+      },
+      {
+        "name": "generated_loc",
+        "value": 0,
+        "unit": "lines",
+        "category": "token_efficiency",
+        "timestamp": "2026-01-26T14:56:21.493157"
+      },
+      {
+        "name": "compression_ratio",
+        "value": 0.0,
+        "unit": "ratio",
+        "category": "token_efficiency",
+        "timestamp": "2026-01-26T14:56:21.493178"
+      },
+      {
+        "name": "loc_per_token",
+        "value": 0.0,
+        "unit": "loc/token",
+        "category": "token_efficiency",
+        "timestamp": "2026-01-26T14:56:21.493182"
+      },
+      {
+        "name": "token_amortization_factor",
+        "value": 21.759,
+        "unit": "tokens/exec",
+        "category": "token_efficiency",
+        "timestamp": "2026-01-26T14:56:21.493186"
+      },
+      {
+        "name": "is_competitive",
+        "value": false,
+        "unit": "bool",
+        "category": "token_efficiency",
+        "timestamp": "2026-01-26T14:56:21.493190"
+      },
+      {
+        "name": "is_excellent",
+        "value": false,
+        "unit": "bool",
+        "category": "token_efficiency",
+        "timestamp": "2026-01-26T14:56:21.493201"
+      },
+      {
+        "name": "success_rate",
+        "value": 1.0,
+        "unit": "ratio",
+        "category": "reliability",
+        "timestamp": "2026-01-26T14:56:21.493213"
+      },
+      {
+        "name": "total_llm_calls",
+        "value": 30,
+        "unit": "count",
+        "category": "cost",
+        "timestamp": "2026-01-26T14:56:21.493220"
+      }
+    ]
+  },
+  "logs": [
+    {
+      "task_id": "bfcl_simple",
+      "instances": [
+        {
+          "instance_id": "simple_0",
+          "prompt": "You have access to the following functions:\n\n[\n  {\n    \"name\": \"calculate_triangle_area\",\n    \"description\": \"Calculate the area of a triangle given its base and height.\",\n    \"parameters\": {\n      \"type\": \"dict\",\n      \"properties\": {\n        \"base\": {\n          \"type\": \"integer\",\n          \"description\": \"The base of the triangle.\"\n        },\n        \"height\": {\n          \"type\": \"integer\",\n          \"description\": \"The height of the triangle.\"\n        },\n        \"unit\": {\n          \"type\": \"string\",\n          \"description\": \"The unit of measure (defaults to 'units' if not specified)\"\n        }\n      },\n      \"required\": [\n        \"base\",\n        \"height\"\n      ]\n    }\n  }\n]\n\nUser query: Find the area of a triangle with a base of 10 units and height of 5 units.\n\nGenerate the appropriate function call as JSON with 'name' and 'arguments' keys.",
+          "output": "{\"name\": \"calculate_triangle_area\", \"arguments\": {\"base\": 10, \"height\": 5, \"unit\": \"units\"}}",
+          "expected_output": {
+            "calculate_triangle_area": {
+              "base": 10,
+              "height": 5,
+              "unit": "units"
+            }
+          },
+          "success": true,
+          "error": null,
+          "latency_ms": 4447.514792031143,
+          "input_tokens": 648,
+          "output_tokens": 89,
+          "evaluation_score": 0.8,
+          "evaluation_details": {
+            "match_type": "content_match",
+            "format_correct": false,
+            "content_correct": true,
+            "field_matches": {
+              "base": true,
+              "height": true,
+              "unit": true
+            },
+            "explanation": "Content values match the expected output, but the structure differs with additional 'name' and 'arguments' wrapper fields"
+          }
+        },
+        {
+          "instance_id": "simple_1",
+          "prompt": "You have access to the following functions:\n\n[\n  {\n    \"name\": \"math.factorial\",\n    \"description\": \"Calculate the factorial of a given number.\",\n    \"parameters\": {\n      \"type\": \"dict\",\n      \"properties\": {\n        \"number\": {\n          \"type\": \"integer\",\n          \"description\": \"The number for which factorial needs to be calculated.\"\n        }\n      },\n      \"required\": [\n        \"number\"\n      ]\n    }\n  }\n]\n\nUser query: Calculate the factorial of 5 using math functions.\n\nGenerate the appropriate function call as JSON with 'name' and 'arguments' keys.",
+          "output": "{\"name\": \"math.factorial\", \"arguments\": {\"number\": 5}}",
+          "expected_output": {
+            "math.factorial": {
+              "number": 5
+            }
+          },
+          "success": true,
+          "error": null,
+          "latency_ms": 2398.2702500070445,
+          "input_tokens": 583,
+          "output_tokens": 53,
+          "evaluation_score": 0.8,
+          "evaluation_details": {
+            "match_type": "content_match",
+            "format_correct": false,
+            "content_correct": true,
+            "field_matches": {
+              "name": false,
+              "arguments.number": true
+            },
+            "explanation": "Values match, but structure differs. Actual output has 'name' and 'arguments' fields instead of direct function key. The number value (5) is correct."
+          }
+        },
+        {
+          "instance_id": "simple_2",
+          "prompt": "You have access to the following functions:\n\n[\n  {\n    \"name\": \"math.hypot\",\n    \"description\": \"Calculate the Euclidean norm, sqrt(sum(squares)), the length of the vector from the origin to point (x, y) which is the hypotenuse of the right triangle.\",\n    \"parameters\": {\n      \"type\": \"dict\",\n      \"properties\": {\n        \"x\": {\n          \"type\": \"integer\",\n          \"description\": \"The x-coordinate value.\"\n        },\n        \"y\": {\n          \"type\": \"integer\",\n          \"description\": \"The y-coordinate value.\"\n        },\n        \"z\": {\n          \"type\": \"integer\",\n          \"description\": \"Optional. The z-coordinate value. Default is 0.\"\n        }\n      },\n      \"required\": [\n        \"x\",\n        \"y\"\n      ]\n    }\n  }\n]\n\nUser query: Calculate the hypotenuse of a right triangle given the lengths of the other two sides as 4 and 5.\n\nGenerate the appropriate function call as JSON with 'name' and 'arguments' keys.",
+          "output": "{\"name\": \"math.hypot\", \"arguments\": {\"x\": 4, \"y\": 5}}",
+          "expected_output": {
+            "math.hypot": {
+              "x": 4,
+              "y": 5
+            }
+          },
+          "success": true,
+          "error": null,
+          "latency_ms": 2440.515875001438,
+          "input_tokens": 678,
+          "output_tokens": 71,
+          "evaluation_score": 0.8,
+          "evaluation_details": {
+            "match_type": "content_match",
+            "format_correct": false,
+            "content_correct": true,
+            "field_matches": {
+              "name": false,
+              "arguments": true,
+              "x": true,
+              "y": true
+            },
+            "explanation": "Content values match, but structure differs with added 'name' field and 'arguments' wrapper"
+          }
+        },
+        {
+          "instance_id": "simple_3",
+          "prompt": "You have access to the following functions:\n\n[\n  {\n    \"name\": \"algebra.quadratic_roots\",\n    \"description\": \"Find the roots of a quadratic equation ax^2 + bx + c = 0.\",\n    \"parameters\": {\n      \"type\": \"dict\",\n      \"properties\": {\n        \"a\": {\n          \"type\": \"integer\",\n          \"description\": \"Coefficient of x^2.\"\n        },\n        \"b\": {\n          \"type\": \"integer\",\n          \"description\": \"Coefficient of x.\"\n        },\n        \"c\": {\n          \"type\": \"integer\",\n          \"description\": \"Constant term.\"\n        }\n      },\n      \"required\": [\n        \"a\",\n        \"b\",\n        \"c\"\n      ]\n    }\n  }\n]\n\nUser query: Find the roots of a quadratic equation with coefficients a=1, b=-3, c=2.\n\nGenerate the appropriate function call as JSON with 'name' and 'arguments' keys.",
+          "output": "{\"name\": \"algebra.quadratic_roots\", \"arguments\": {\"a\": 1, \"b\": -3, \"c\": 2}}",
+          "expected_output": {
+            "algebra.quadratic_roots": {
+              "a": 1,
+              "b": -3,
+              "c": 2
+            }
+          },
+          "success": true,
+          "error": null,
+          "latency_ms": 2237.155332986731,
+          "input_tokens": 651,
+          "output_tokens": 91,
+          "evaluation_score": 0.8,
+          "evaluation_details": {
+            "match_type": "content_match",
+            "format_correct": false,
+            "content_correct": true,
+            "field_matches": {
+              "algebra.quadratic_roots": false,
+              "name": false,
+              "arguments": false,
+              "a": true,
+              "b": true,
+              "c": true
+            },
+            "explanation": "Content values match exactly, but structure differs with added 'name' and 'arguments' keys instead of direct key mapping"
+          }
+        },
+        {
+          "instance_id": "simple_4",
+          "prompt": "You have access to the following functions:\n\n[\n  {\n    \"name\": \"solve_quadratic_equation\",\n    \"description\": \"Function solves the quadratic equation and returns its roots.\",\n    \"parameters\": {\n      \"type\": \"dict\",\n      \"properties\": {\n        \"a\": {\n          \"type\": \"integer\",\n          \"description\": \"Coefficient of x squared\"\n        },\n        \"b\": {\n          \"type\": \"integer\",\n          \"description\": \"Coefficient of x\"\n        },\n        \"c\": {\n          \"type\": \"integer\",\n          \"description\": \"Constant term in the quadratic equation.\"\n        }\n      },\n      \"required\": [\n        \"a\",\n        \"b\",\n        \"c\"\n      ]\n    }\n  }\n]\n\nUser query: Solve a quadratic equation where a=2, b=6, and c=5\n\nGenerate the appropriate function call as JSON with 'name' and 'arguments' keys.",
+          "output": "{\"name\": \"solve_quadratic_equation\", \"arguments\": {\"a\": 2, \"b\": 6, \"c\": 5}}",
+          "expected_output": {
+            "solve_quadratic_equation": {
+              "a": 2,
+              "b": 6,
+              "c": 5
+            }
+          },
+          "success": true,
+          "error": null,
+          "latency_ms": 2496.5785419917665,
+          "input_tokens": 642,
+          "output_tokens": 90,
+          "evaluation_score": 0.8,
+          "evaluation_details": {
+            "match_type": "content_match",
+            "format_correct": false,
+            "content_correct": true,
+            "field_matches": {
+              "solve_quadratic_equation": false,
+              "name": false,
+              "arguments": false,
+              "a": true,
+              "b": true,
+              "c": true
+            },
+            "explanation": "Content values match exactly, but output structure differs from expected with additional 'name' and 'arguments' wrapper fields"
+          }
+        },
+        {
+          "instance_id": "simple_5",
+          "prompt": "You have access to the following functions:\n\n[\n  {\n    \"name\": \"solve_quadratic\",\n    \"description\": \"Solve a quadratic equation given coefficients a, b, and c. If optional 'root_type' is 'real', the function will only return real roots. If not specified, function may return complex roots.\",\n    \"parameters\": {\n      \"type\": \"dict\",\n      \"properties\": {\n        \"a\": {\n          \"type\": \"integer\",\n          \"description\": \"The coefficient of the squared term in the quadratic equation.\"\n        },\n        \"b\": {\n          \"type\": \"integer\",\n          \"description\": \"The coefficient of the linear term in the quadratic equation.\"\n        },\n        \"c\": {\n          \"type\": \"integer\",\n          \"description\": \"The constant term in the quadratic equation.\"\n        },\n        \"root_type\": {\n          \"type\": \"string\",\n          \"description\": \"The type of roots to return: 'real' for real roots, 'all' for both real and complex roots. Default value is 'real'.\"\n        }\n      },\n      \"required\": [\n        \"a\",\n        \"b\",\n        \"c\"\n      ]\n    }\n  }\n]\n\nUser query: Find all the roots of a quadratic equation given coefficients a = 3, b = -11, and c = -4.\n\nGenerate the appropriate function call as JSON with 'name' and 'arguments' keys.",
+          "output": "{\"name\": \"solve_quadratic\", \"arguments\": {\"a\": 3, \"b\": -11, \"c\": -4}}",
+          "expected_output": {
+            "solve_quadratic": {
+              "a": 3,
+              "b": -11,
+              "c": -4,
+              "root_type": "all"
+            }
+          },
+          "success": true,
+          "error": null,
+          "latency_ms": 2452.402666967828,
+          "input_tokens": 747,
+          "output_tokens": 120,
+          "evaluation_score": 0.8,
+          "evaluation_details": {
+            "match_type": "content_match",
+            "format_correct": false,
+            "content_correct": true,
+            "field_matches": {
+              "solve_quadratic": true,
+              "a": true,
+              "b": true,
+              "c": true,
+              "root_type": false
+            },
+            "explanation": "Content values match for a, b, c. Structure differs with 'name' and 'arguments' instead of direct keys. Missing 'root_type' field."
+          }
+        },
+        {
+          "instance_id": "simple_6",
+          "prompt": "You have access to the following functions:\n\n[\n  {\n    \"name\": \"solve_quadratic\",\n    \"description\": \"Find the roots of a quadratic equation. Returns both roots.\",\n    \"parameters\": {\n      \"type\": \"dict\",\n      \"properties\": {\n        \"a\": {\n          \"type\": \"integer\",\n          \"description\": \"Coefficient of x\\u00b2.\"\n        },\n        \"b\": {\n          \"type\": \"integer\",\n          \"description\": \"Coefficient of x.\"\n        },\n        \"c\": {\n          \"type\": \"integer\",\n          \"description\": \"Constant term.\"\n        }\n      },\n      \"required\": [\n        \"a\",\n        \"b\",\n        \"c\"\n      ]\n    }\n  }\n]\n\nUser query: What are the roots of the quadratic equation where a=2, b=5 and c=3 ?\n\nGenerate the appropriate function call as JSON with 'name' and 'arguments' keys.",
+          "output": "{\"name\": \"solve_quadratic\", \"arguments\": {\"a\": 2, \"b\": 5, \"c\": 3}}",
+          "expected_output": {
+            "solve_quadratic": {
+              "a": 2,
+              "b": 5,
+              "c": 3
+            }
+          },
+          "success": true,
+          "error": null,
+          "latency_ms": 2476.5273749944754,
+          "input_tokens": 645,
+          "output_tokens": 88,
+          "evaluation_score": 0.8,
+          "evaluation_details": {
+            "match_type": "content_match",
+            "format_correct": false,
+            "content_correct": true,
+            "field_matches": {
+              "solve_quadratic/name": false,
+              "a": true,
+              "b": true,
+              "c": true
+            },
+            "explanation": "Content values match, but structure is different. Actual output has 'name' and 'arguments' fields instead of direct key mapping."
+          }
+        },
+        {
+          "instance_id": "simple_7",
+          "prompt": "You have access to the following functions:\n\n[\n  {\n    \"name\": \"calculate_circumference\",\n    \"description\": \"Calculates the circumference of a circle with a given radius.\",\n    \"parameters\": {\n      \"type\": \"dict\",\n      \"properties\": {\n        \"radius\": {\n          \"type\": \"integer\",\n          \"description\": \"The radius of the circle in the unit given.\"\n        },\n        \"unit\": {\n          \"type\": \"string\",\n          \"description\": \"The unit of measurement for the radius. Default is 'cm'.\"\n        }\n      },\n      \"required\": [\n        \"radius\"\n      ]\n    }\n  }\n]\n\nUser query: What is the circumference of a circle with a radius of 4 inches?\n\nGenerate the appropriate function call as JSON with 'name' and 'arguments' keys.",
+          "output": "{\"name\": \"calculate_circumference\", \"arguments\": {\"radius\": 4, \"unit\": \"inches\"}}",
+          "expected_output": {
+            "calculate_circumference": {
+              "radius": 4,
+              "unit": "inches"
+            }
+          },
+          "success": true,
+          "error": null,
+          "latency_ms": 2481.524000002537,
+          "input_tokens": 625,
+          "output_tokens": 71,
+          "evaluation_score": 0.8,
+          "evaluation_details": {
+            "match_type": "content_match",
+            "format_correct": false,
+            "content_correct": true,
+            "field_matches": {
+              "radius": true,
+              "unit": true
+            },
+            "explanation": "Content values match, but structure differs with added 'name' and 'arguments' keys in actual output"
+          }
+        },
+        {
+          "instance_id": "simple_8",
+          "prompt": "You have access to the following functions:\n\n[\n  {\n    \"name\": \"geometry.area_circle\",\n    \"description\": \"Calculate the area of a circle given the radius.\",\n    \"parameters\": {\n      \"type\": \"dict\",\n      \"properties\": {\n        \"radius\": {\n          \"type\": \"integer\",\n          \"description\": \"The radius of the circle.\"\n        },\n        \"units\": {\n          \"type\": \"string\",\n          \"description\": \"The units in which the radius is measured (defaults to 'meters').\"\n        }\n      },\n      \"required\": [\n        \"radius\"\n      ]\n    }\n  }\n]\n\nUser query: What's the area of a circle with a radius of 10?\n\nGenerate the appropriate function call as JSON with 'name' and 'arguments' keys.",
+          "output": "{\"name\": \"geometry.area_circle\", \"arguments\": {\"radius\": 10}}",
+          "expected_output": {
+            "geometry.area_circle": {
+              "radius": 10,
+              "units": "meters"
+            }
+          },
+          "success": true,
+          "error": null,
+          "latency_ms": 2052.836875023786,
+          "input_tokens": 616,
+          "output_tokens": 55,
+          "evaluation_score": 0.8,
+          "evaluation_details": {
+            "match_type": "content_match",
+            "format_correct": false,
+            "content_correct": true,
+            "field_matches": {
+              "name": false,
+              "arguments.radius": true,
+              "units": false
+            },
+            "explanation": "Content partially matches (radius value correct), but structure differs. Missing 'units' field, extra 'name' and 'arguments' fields, and different key names."
+          }
+        },
+        {
+          "instance_id": "simple_9",
+          "prompt": "You have access to the following functions:\n\n[\n  {\n    \"name\": \"geometry.calculate_area_circle\",\n    \"description\": \"Calculate the area of a circle given its radius.\",\n    \"parameters\": {\n      \"type\": \"dict\",\n      \"properties\": {\n        \"radius\": {\n          \"type\": \"integer\",\n          \"description\": \"The radius of the circle.\"\n        },\n        \"unit\": {\n          \"type\": \"string\",\n          \"description\": \"The measurement unit of the radius (optional parameter, default is 'units').\"\n        }\n      },\n      \"required\": [\n        \"radius\"\n      ]\n    }\n  }\n]\n\nUser query: Calculate the area of a circle with a radius of 5 units.\n\nGenerate the appropriate function call as JSON with 'name' and 'arguments' keys.",
+          "output": "{\"name\": \"geometry.calculate_area_circle\", \"arguments\": {\"radius\": 5}}",
+          "expected_output": {
+            "geometry.calculate_area_circle": {
+              "radius": 5,
+              "unit": "units"
+            }
+          },
+          "success": true,
+          "error": null,
+          "latency_ms": 2008.2047920441255,
+          "input_tokens": 620,
+          "output_tokens": 57,
+          "evaluation_score": 0.8,
+          "evaluation_details": {
+            "match_type": "content_match",
+            "format_correct": false,
+            "content_correct": true,
+            "field_matches": {
+              "radius": true,
+              "name": false,
+              "arguments": false,
+              "unit": false
+            },
+            "explanation": "Output contains correct radius value, but has different structure with 'name' and 'arguments' keys instead of direct key access. Unit field is missing in actual output."
+          }
+        },
+        {
+          "instance_id": "simple_10",
+          "prompt": "You have access to the following functions:\n\n[\n  {\n    \"name\": \"calculate_area\",\n    \"description\": \"Calculate the area of a right-angled triangle given the lengths of its base and height.\",\n    \"parameters\": {\n      \"type\": \"dict\",\n      \"properties\": {\n        \"base\": {\n          \"type\": \"integer\",\n          \"description\": \"The length of the base of the right-angled triangle.\"\n        },\n        \"height\": {\n          \"type\": \"integer\",\n          \"description\": \"The height of the right-angled triangle.\"\n        },\n        \"unit\": {\n          \"type\": \"string\",\n          \"description\": \"The unit of measure used. Defaults to 'cm'.\"\n        }\n      },\n      \"required\": [\n        \"base\",\n        \"height\"\n      ]\n    }\n  }\n]\n\nUser query: Calculate the area of a right-angled triangle given the lengths of its base and height as 6cm and 10cm.\n\nGenerate the appropriate function call as JSON with 'name' and 'arguments' keys.",
+          "output": "{\"name\": \"calculate_area\", \"arguments\": {\"base\": 6, \"height\": 10, \"unit\": \"cm\"}}",
+          "expected_output": {
+            "calculate_area": {
+              "base": 6,
+              "height": 10,
+              "unit": "cm"
+            }
+          },
+          "success": true,
+          "error": null,
+          "latency_ms": 2269.6999589679763,
+          "input_tokens": 668,
+          "output_tokens": 87,
+          "evaluation_score": 0.8,
+          "evaluation_details": {
+            "match_type": "content_match",
+            "format_correct": false,
+            "content_correct": true,
+            "field_matches": {
+              "calculate_area": true,
+              "base": true,
+              "height": true,
+              "unit": true
+            },
+            "explanation": "Content is correct but structure differs. Actual output uses 'name' and 'arguments' keys instead of direct nesting."
+          }
+        },
+        {
+          "instance_id": "simple_11",
+          "prompt": "You have access to the following functions:\n\n[\n  {\n    \"name\": \"calculate_triangle_area\",\n    \"description\": \"Calculate the area of a triangle using its base and height.\",\n    \"parameters\": {\n      \"type\": \"dict\",\n      \"properties\": {\n        \"base\": {\n          \"type\": \"integer\",\n          \"description\": \"The length of the base of the triangle.\"\n        },\n        \"height\": {\n          \"type\": \"integer\",\n          \"description\": \"The height of the triangle from the base.\"\n        }\n      },\n      \"required\": [\n        \"base\",\n        \"height\"\n      ]\n    }\n  }\n]\n\nUser query: What is the area of a triangle with base of 10 units and height of 5 units?\n\nGenerate the appropriate function call as JSON with 'name' and 'arguments' keys.",
+          "output": "{\"name\": \"calculate_triangle_area\", \"arguments\": {\"base\": 10, \"height\": 5}}",
+          "expected_output": {
+            "calculate_triangle_area": {
+              "base": 10,
+              "height": 5
+            }
+          },
+          "success": true,
+          "error": null,
+          "latency_ms": 2230.7719999807887,
+          "input_tokens": 625,
+          "output_tokens": 72,
+          "evaluation_score": 0.8,
+          "evaluation_details": {
+            "match_type": "content_match",
+            "format_correct": false,
+            "content_correct": true,
+            "field_matches": {
+              "base": true,
+              "height": true
+            },
+            "explanation": "Content values are correct, but output structure differs from expected. Actual output has 'name' and 'arguments' keys instead of direct method name key."
+          }
+        },
+        {
+          "instance_id": "simple_12",
+          "prompt": "You have access to the following functions:\n\n[\n  {\n    \"name\": \"geometry.circumference\",\n    \"description\": \"Calculate the circumference of a circle given the radius.\",\n    \"parameters\": {\n      \"type\": \"dict\",\n      \"properties\": {\n        \"radius\": {\n          \"type\": \"integer\",\n          \"description\": \"The radius of the circle.\"\n        },\n        \"units\": {\n          \"type\": \"string\",\n          \"description\": \"Units for the output circumference measurement. Default is 'cm'.\"\n        }\n      },\n      \"required\": [\n        \"radius\"\n      ]\n    }\n  }\n]\n\nUser query: Calculate the circumference of a circle with radius 3\n\nGenerate the appropriate function call as JSON with 'name' and 'arguments' keys.",
+          "output": "{\"name\": \"geometry.circumference\", \"arguments\": {\"radius\": 3}}",
+          "expected_output": {
+            "geometry.circumference": {
+              "radius": 3,
+              "units": "cm"
+            }
+          },
+          "success": true,
+          "error": null,
+          "latency_ms": 2065.554125001654,
+          "input_tokens": 612,
+          "output_tokens": 54,
+          "evaluation_score": 0.8,
+          "evaluation_details": {
+            "match_type": "content_match",
+            "format_correct": false,
+            "content_correct": true,
+            "field_matches": {
+              "radius": true,
+              "units": false,
+              "name": false
+            },
+            "explanation": "Content partially matches (radius value is correct), but structure differs with different keys and extra 'name' field. Units field is missing in actual output."
+          }
+        },
+        {
+          "instance_id": "simple_13",
+          "prompt": "You have access to the following functions:\n\n[\n  {\n    \"name\": \"calculate_area_under_curve\",\n    \"description\": \"Calculate the area under a mathematical function within a given interval.\",\n    \"parameters\": {\n      \"type\": \"dict\",\n      \"properties\": {\n        \"function\": {\n          \"type\": \"string\",\n          \"description\": \"The mathematical function as a string.\"\n        },\n        \"interval\": {\n          \"type\": \"array\",\n          \"items\": {\n            \"type\": \"float\"\n          },\n          \"description\": \"An array that defines the interval to calculate the area under the curve from the start to the end point.\"\n        },\n        \"method\": {\n          \"type\": \"string\",\n          \"description\": \"The numerical method to approximate the area under the curve. The default value is 'trapezoidal'.\"\n        }\n      },\n      \"required\": [\n        \"function\",\n        \"interval\"\n      ]\n    }\n  }\n]\n\nUser query: Calculate the area under the curve y=x^2 from x=1 to x=3.\n\nGenerate the appropriate function call as JSON with 'name' and 'arguments' keys.",
+          "output": "{\"name\": \"calculate_area_under_curve\", \"arguments\": {\"function\": \"x^2\", \"interval\": [1, 3]}}",
+          "expected_output": {
+            "calculate_area_under_curve": {
+              "function": "x**2",
+              "interval": [
+                1.0,
+                3.0
+              ]
+            }
+          },
+          "success": true,
+          "error": null,
+          "latency_ms": 2189.9817080120556,
+          "input_tokens": 684,
+          "output_tokens": 81,
+          "evaluation_score": 0.8,
+          "evaluation_details": {
+            "match_type": "content_match",
+            "format_correct": false,
+            "content_correct": true,
+            "field_matches": {
+              "function": true,
+              "interval": true
+            },
+            "explanation": "Content is equivalent (x**2 = x^2, 1.0 = 1, 3.0 = 3), but structure differs with 'name' and 'arguments' keys instead of direct keys"
+          }
+        },
+        {
+          "instance_id": "simple_14",
+          "prompt": "You have access to the following functions:\n\n[\n  {\n    \"name\": \"calculate_derivative\",\n    \"description\": \"Calculate the derivative of a polynomial function.\",\n    \"parameters\": {\n      \"type\": \"dict\",\n      \"properties\": {\n        \"function\": {\n          \"type\": \"string\",\n          \"description\": \"The polynomial function.\"\n        },\n        \"x_value\": {\n          \"type\": \"float\",\n          \"description\": \"The x-value at which the derivative is calculated. Optional, default to 0.00.\"\n        }\n      },\n      \"required\": [\n        \"function\"\n      ]\n    }\n  }\n]\n\nUser query: Calculate the derivative of the function 3x^2 + 2x - 1.\n\nGenerate the appropriate function call as JSON with 'name' and 'arguments' keys.",
+          "output": "{\"name\": \"calculate_derivative\", \"arguments\": {\"function\": \"3x^2 + 2x - 1\"}}",
+          "expected_output": {
+            "calculate_derivative": {
+              "function": "3x**2 + 2x - 1"
+            }
+          },
+          "success": true,
+          "error": null,
+          "latency_ms": 2059.6786250243895,
+          "input_tokens": 622,
+          "output_tokens": 64,
+          "evaluation_score": 0.8,
+          "evaluation_details": {
+            "match_type": "content_match",
+            "format_correct": false,
+            "content_correct": true,
+            "field_matches": {
+              "function": true
+            },
+            "explanation": "Function content is equivalent (3x^2 vs 3x**2), but output structure differs. Expected single 'calculate_derivative' key, actual output has separate 'name' and 'arguments' keys."
+          }
+        },
+        {
+          "instance_id": "simple_15",
+          "prompt": "You have access to the following functions:\n\n[\n  {\n    \"name\": \"integrate\",\n    \"description\": \"Calculate the area under a curve for a specified function between two x values.\",\n    \"parameters\": {\n      \"type\": \"dict\",\n      \"properties\": {\n        \"function\": {\n          \"type\": \"string\",\n          \"description\": \"The function to integrate, represented as a string. For example, 'x^3'\"\n        },\n        \"start_x\": {\n          \"type\": \"integer\",\n          \"description\": \"The starting x-value to integrate over.\"\n        },\n        \"end_x\": {\n          \"type\": \"integer\",\n          \"description\": \"The ending x-value to integrate over.\"\n        },\n        \"method\": {\n          \"type\": \"string\",\n          \"description\": \"The method of numerical integration to use. Choices are 'trapezoid' or 'simpson'. Default is 'trapezoid'.\"\n        }\n      },\n      \"required\": [\n        \"function\",\n        \"start_x\",\n        \"end_x\"\n      ]\n    }\n  }\n]\n\nUser query: Calculate the area under the curve from x = -2 to x = 3 for the function y = x^3 using simpson method.\n\nGenerate the appropriate function call as JSON with 'name' and 'arguments' keys.",
+          "output": "{\"name\": \"integrate\", \"arguments\": {\"function\": \"x^3\", \"start_x\": -2, \"end_x\": 3, \"method\": \"simpson\"}}",
+          "expected_output": {
+            "integrate": {
+              "function": "x**3",
+              "start_x": -2,
+              "end_x": 3,
+              "method": "simpson"
+            }
+          },
+          "success": true,
+          "error": null,
+          "latency_ms": 2709.1218329733238,
+          "input_tokens": 723,
+          "output_tokens": 109,
+          "evaluation_score": 0.8,
+          "evaluation_details": {
+            "match_type": "content_match",
+            "format_correct": false,
+            "content_correct": true,
+            "field_matches": {
+              "function": true,
+              "start_x": true,
+              "end_x": true,
+              "method": true
+            },
+            "explanation": "Content matches but structure differs. 'name' replaces top-level key, 'arguments' wrapper added. Function uses '^' instead of '**' but semantically equivalent."
+          }
+        },
+        {
+          "instance_id": "simple_16",
+          "prompt": "You have access to the following functions:\n\n[\n  {\n    \"name\": \"calculus.derivative\",\n    \"description\": \"Compute the derivative of a function at a specific value.\",\n    \"parameters\": {\n      \"type\": \"dict\",\n      \"properties\": {\n        \"function\": {\n          \"type\": \"string\",\n          \"description\": \"The function to calculate the derivative of.\"\n        },\n        \"value\": {\n          \"type\": \"integer\",\n          \"description\": \"The value where the derivative needs to be calculated at.\"\n        },\n        \"function_variable\": {\n          \"type\": \"string\",\n          \"description\": \"The variable present in the function, for instance x or y, etc. Default is 'x'.\"\n        }\n      },\n      \"required\": [\n        \"function\",\n        \"value\"\n      ]\n    }\n  }\n]\n\nUser query: Calculate the derivative of the function 2x^2 at x = 1.\n\nGenerate the appropriate function call as JSON with 'name' and 'arguments' keys.",
+          "output": "{\"name\": \"calculus.derivative\", \"arguments\": {\"function\": \"2x^2\", \"function_variable\": \"x\", \"value\": 1}}",
+          "expected_output": {
+            "calculus.derivative": {
+              "function": "2x**2",
+              "value": 1,
+              "function_variable": "x"
+            }
+          },
+          "success": true,
+          "error": null,
+          "latency_ms": 2730.5833749705926,
+          "input_tokens": 659,
+          "output_tokens": 93,
+          "evaluation_score": 0.8,
+          "evaluation_details": {
+            "match_type": "content_match",
+            "format_correct": false,
+            "content_correct": true,
+            "field_matches": {
+              "function": true,
+              "function_variable": true,
+              "value": true
+            },
+            "explanation": "Output has different structure (uses 'name' and 'arguments' instead of direct keys), but all values are semantically equivalent. Function uses ^ instead of ** for exponentiation, but this is considered a minor formatting difference."
+          }
+        },
+        {
+          "instance_id": "simple_17",
+          "prompt": "You have access to the following functions:\n\n[\n  {\n    \"name\": \"get_prime_factors\",\n    \"description\": \"Function to retrieve prime factors of a number.\",\n    \"parameters\": {\n      \"type\": \"dict\",\n      \"properties\": {\n        \"number\": {\n          \"type\": \"integer\",\n          \"description\": \"Number for which prime factors need to be calculated\"\n        },\n        \"formatted\": {\n          \"type\": \"boolean\",\n          \"description\": \"Return formatted string if true, array if false. Default is true.\"\n        }\n      },\n      \"required\": [\n        \"number\",\n        \"formatted\"\n      ]\n    }\n  }\n]\n\nUser query: Find the prime factors of 450\n\nGenerate the appropriate function call as JSON with 'name' and 'arguments' keys.",
+          "output": "{\"name\": \"get_prime_factors\", \"arguments\": {\"number\": 450, \"formatted\": true}}",
+          "expected_output": {
+            "get_prime_factors": {
+              "number": 450,
+              "formatted": true
+            }
+          },
+          "success": true,
+          "error": null,
+          "latency_ms": 2097.7631250279956,
+          "input_tokens": 613,
+          "output_tokens": 72,
+          "evaluation_score": 0.8,
+          "evaluation_details": {
+            "match_type": "content_match",
+            "format_correct": false,
+            "content_correct": true,
+            "field_matches": {
+              "number": true,
+              "formatted": true
+            },
+            "explanation": "Content values match, but structure is different. Actual output has 'name' and 'arguments' keys instead of direct keys."
+          }
+        },
+        {
+          "instance_id": "simple_18",
+          "prompt": "You have access to the following functions:\n\n[\n  {\n    \"name\": \"number_analysis.prime_factors\",\n    \"description\": \"Compute the prime factors of a number.\",\n    \"parameters\": {\n      \"type\": \"dict\",\n      \"properties\": {\n        \"number\": {\n          \"type\": \"integer\",\n          \"description\": \"The number to be factored.\"\n        }\n      },\n      \"required\": [\n        \"number\"\n      ]\n    }\n  }\n]\n\nUser query: Find the prime factors of the number 123456.\n\nGenerate the appropriate function call as JSON with 'name' and 'arguments' keys.",
+          "output": "{\"name\": \"number_analysis.prime_factors\", \"arguments\": {\"number\": 123456}}",
+          "expected_output": {
+            "number_analysis.prime_factors": {
+              "number": 123456
+            }
+          },
+          "success": true,
+          "error": null,
+          "latency_ms": 2097.2146250423975,
+          "input_tokens": 585,
+          "output_tokens": 58,
+          "evaluation_score": 0.8,
+          "evaluation_details": {
+            "match_type": "content_match",
+            "format_correct": false,
+            "content_correct": true,
+            "field_matches": {
+              "number": true,
+              "name": false,
+              "arguments": false
+            },
+            "explanation": "Actual output contains additional fields 'name' and 'arguments', but the number value is correct. Differs from expected structure but maintains core content."
+          }
+        },
+        {
+          "instance_id": "simple_19",
+          "prompt": "You have access to the following functions:\n\n[\n  {\n    \"name\": \"math.gcd\",\n    \"description\": \"Compute the greatest common divisor of two numbers\",\n    \"parameters\": {\n      \"type\": \"dict\",\n      \"properties\": {\n        \"num1\": {\n          \"type\": \"integer\",\n          \"description\": \"The first number.\"\n        },\n        \"num2\": {\n          \"type\": \"integer\",\n          \"description\": \"The second number.\"\n        }\n      },\n      \"required\": [\n        \"num1\",\n        \"num2\"\n      ]\n    }\n  }\n]\n\nUser query: Calculate the greatest common divisor of two numbers: 40 and 50\n\nGenerate the appropriate function call as JSON with 'name' and 'arguments' keys.",
+          "output": "{\"name\": \"math.gcd\", \"arguments\": {\"num1\": 40, \"num2\": 50}}",
+          "expected_output": {
+            "math.gcd": {
+              "num1": 40,
+              "num2": 50
+            }
+          },
+          "success": true,
+          "error": null,
+          "latency_ms": 2073.121583031025,
+          "input_tokens": 611,
+          "output_tokens": 73,
+          "evaluation_score": 0.8,
+          "evaluation_details": {
+            "match_type": "content_match",
+            "format_correct": false,
+            "content_correct": true,
+            "field_matches": {
+              "name": false,
+              "arguments": true,
+              "num1": true,
+              "num2": true
+            },
+            "explanation": "Actual output has different top-level structure with 'name' and 'arguments' fields instead of direct method mapping, but the method and argument values are semantically equivalent"
+          }
+        },
+        {
+          "instance_id": "simple_20",
+          "prompt": "You have access to the following functions:\n\n[\n  {\n    \"name\": \"math.hcf\",\n    \"description\": \"Calculate the highest common factor of two numbers.\",\n    \"parameters\": {\n      \"type\": \"dict\",\n      \"properties\": {\n        \"number1\": {\n          \"type\": \"integer\",\n          \"description\": \"First number.\"\n        },\n        \"number2\": {\n          \"type\": \"integer\",\n          \"description\": \"Second number.\"\n        }\n      },\n      \"required\": [\n        \"number1\",\n        \"number2\"\n      ]\n    }\n  }\n]\n\nUser query: Find the highest common factor of 36 and 24.\n\nGenerate the appropriate function call as JSON with 'name' and 'arguments' keys.",
+          "output": "{\"name\": \"math.hcf\", \"arguments\": {\"number1\": 36, \"number2\": 24}}",
+          "expected_output": {
+            "math.hcf": {
+              "number1": 36,
+              "number2": 24
+            }
+          },
+          "success": true,
+          "error": null,
+          "latency_ms": 2227.7041249908507,
+          "input_tokens": 605,
+          "output_tokens": 74,
+          "evaluation_score": 0.8,
+          "evaluation_details": {
+            "match_type": "content_match",
+            "format_correct": false,
+            "content_correct": true,
+            "field_matches": {
+              "number1": true,
+              "number2": true
+            },
+            "explanation": "Content values match, but output structure differs from expected with added 'name' and 'arguments' keys instead of direct object structure"
+          }
+        },
+        {
+          "instance_id": "simple_21",
+          "prompt": "You have access to the following functions:\n\n[\n  {\n    \"name\": \"number_theory.gcd\",\n    \"description\": \"Compute the greatest common divisor of two given integers.\",\n    \"parameters\": {\n      \"type\": \"dict\",\n      \"properties\": {\n        \"number1\": {\n          \"type\": \"integer\",\n          \"description\": \"The first integer.\"\n        },\n        \"number2\": {\n          \"type\": \"integer\",\n          \"description\": \"The second integer.\"\n        }\n      },\n      \"required\": [\n        \"number1\",\n        \"number2\"\n      ]\n    }\n  }\n]\n\nUser query: Find the Greatest Common Divisor (GCD) of two numbers, say 36 and 48.\n\nGenerate the appropriate function call as JSON with 'name' and 'arguments' keys.",
+          "output": "{\"name\": \"number_theory.gcd\", \"arguments\": {\"number1\": 36, \"number2\": 48}}",
+          "expected_output": {
+            "number_theory.gcd": {
+              "number1": 36,
+              "number2": 48
+            }
+          },
+          "success": true,
+          "error": null,
+          "latency_ms": 2286.45058296388,
+          "input_tokens": 621,
+          "output_tokens": 103,
+          "evaluation_score": 0.8,
+          "evaluation_details": {
+            "match_type": "content_match",
+            "format_correct": false,
+            "content_correct": true,
+            "field_matches": {
+              "name": false,
+              "arguments": true,
+              "number1": true,
+              "number2": true
+            },
+            "explanation": "Content values match, but structure is different. Actual output has 'name' and 'arguments' keys instead of direct top-level keys. The numeric values for number1 and number2 are identical."
+          }
+        },
+        {
+          "instance_id": "simple_22",
+          "prompt": "You have access to the following functions:\n\n[\n  {\n    \"name\": \"math.gcd\",\n    \"description\": \"Calculate the greatest common divisor (gcd) of the two integers.\",\n    \"parameters\": {\n      \"type\": \"dict\",\n      \"properties\": {\n        \"num1\": {\n          \"type\": \"integer\",\n          \"description\": \"The first number.\"\n        },\n        \"num2\": {\n          \"type\": \"integer\",\n          \"description\": \"The second number.\"\n        }\n      },\n      \"required\": [\n        \"num1\",\n        \"num2\"\n      ]\n    }\n  }\n]\n\nUser query: Calculate the greatest common divisor of two given numbers, for example 12 and 15.\n\nGenerate the appropriate function call as JSON with 'name' and 'arguments' keys.",
+          "output": "{\"name\": \"math.gcd\", \"arguments\": {\"num1\": 12, \"num2\": 15}}",
+          "expected_output": {
+            "math.gcd": {
+              "num1": 12,
+              "num2": 15
+            }
+          },
+          "success": true,
+          "error": null,
+          "latency_ms": 2249.032583029475,
+          "input_tokens": 619,
+          "output_tokens": 97,
+          "evaluation_score": 0.8,
+          "evaluation_details": {
+            "match_type": "content_match",
+            "format_correct": false,
+            "content_correct": true,
+            "field_matches": {
+              "math.gcd": false,
+              "name": true,
+              "arguments": true,
+              "num1": true,
+              "num2": true
+            },
+            "explanation": "The content values match correctly, but the structure is different. Actual output has 'name' and 'arguments' fields instead of direct key matching the function name."
+          }
+        },
+        {
+          "instance_id": "simple_23",
+          "prompt": "You have access to the following functions:\n\n[\n  {\n    \"name\": \"prime_factorize\",\n    \"description\": \"Calculate the prime factorization of a given integer.\",\n    \"parameters\": {\n      \"type\": \"dict\",\n      \"properties\": {\n        \"number\": {\n          \"type\": \"integer\",\n          \"description\": \"The number for which to calculate the prime factorization.\"\n        },\n        \"return_type\": {\n          \"type\": \"string\",\n          \"description\": \"Determines the format of the returned prime factorization. Can be 'list' for a list of all prime factors or 'dictionary' for a count of each prime factor. Default is 'list'.\"\n        }\n      },\n      \"required\": [\n        \"number\"\n      ]\n    }\n  }\n]\n\nUser query: What is the prime factorization of the number 60? Return them in the form of dictionary\n\nGenerate the appropriate function call as JSON with 'name' and 'arguments' keys.",
+          "output": "{\"name\": \"prime_factorize\", \"arguments\": {\"number\": 60, \"return_type\": \"dictionary\"}}",
+          "expected_output": {
+            "prime_factorize": {
+              "number": 60,
+              "return_type": "dictionary"
+            }
+          },
+          "success": true,
+          "error": null,
+          "latency_ms": 2276.825040986296,
+          "input_tokens": 660,
+          "output_tokens": 74,
+          "evaluation_score": 0.8,
+          "evaluation_details": {
+            "match_type": "content_match",
+            "format_correct": false,
+            "content_correct": true,
+            "field_matches": {
+              "number": true,
+              "return_type": true
+            },
+            "explanation": "Content matches expected values, but structure is different. Added 'name' field and nested 'arguments' instead of direct keys."
+          }
+        },
+        {
+          "instance_id": "simple_24",
+          "prompt": "You have access to the following functions:\n\n[\n  {\n    \"name\": \"math.gcd\",\n    \"description\": \"Calculate the greatest common divisor of two integers.\",\n    \"parameters\": {\n      \"type\": \"dict\",\n      \"properties\": {\n        \"num1\": {\n          \"type\": \"integer\",\n          \"description\": \"First number.\"\n        },\n        \"num2\": {\n          \"type\": \"integer\",\n          \"description\": \"Second number.\"\n        }\n      },\n      \"required\": [\n        \"num1\",\n        \"num2\"\n      ]\n    }\n  }\n]\n\nUser query: Find the greatest common divisor (GCD) of 12 and 18\n\nGenerate the appropriate function call as JSON with 'name' and 'arguments' keys.",
+          "output": "{\"name\": \"math.gcd\", \"arguments\": {\"num1\": 12, \"num2\": 18}}",
+          "expected_output": {
+            "math.gcd": {
+              "num1": 12,
+              "num2": 18
+            }
+          },
+          "success": true,
+          "error": null,
+          "latency_ms": 2116.0521249985322,
+          "input_tokens": 609,
+          "output_tokens": 73,
+          "evaluation_score": 0.8,
+          "evaluation_details": {
+            "match_type": "content_match",
+            "format_correct": false,
+            "content_correct": true,
+            "field_matches": {
+              "math.gcd": false,
+              "name": true,
+              "arguments": true,
+              "num1": true,
+              "num2": true
+            },
+            "explanation": "Content is semantically equivalent, but structure differs. Expected simple key 'math.gcd', but got 'name' and 'arguments' keys instead."
+          }
+        },
+        {
+          "instance_id": "simple_25",
+          "prompt": "You have access to the following functions:\n\n[\n  {\n    \"name\": \"calculate_final_velocity\",\n    \"description\": \"Calculate the final velocity of a free falling object given the height it's dropped from, the initial velocity and acceleration due to gravity. Ignore air resistance.\",\n    \"parameters\": {\n      \"type\": \"dict\",\n      \"properties\": {\n        \"height\": {\n          \"type\": \"integer\",\n          \"description\": \"The height the object is dropped from, in meters.\"\n        },\n        \"initial_velocity\": {\n          \"type\": \"integer\",\n          \"description\": \"The initial velocity of the object in m/s. Default is zero.\"\n        },\n        \"gravity\": {\n          \"type\": \"float\",\n          \"description\": \"Acceleration due to gravity. Default value is 9.81 m/s^2, earth's gravity.\"\n        }\n      },\n      \"required\": [\n        \"height\"\n      ]\n    }\n  }\n]\n\nUser query: Calculate the final velocity of an object falling from a 150 meter building, assuming initial velocity is zero.\n\nGenerate the appropriate function call as JSON with 'name' and 'arguments' keys.",
+          "output": "{\"name\": \"calculate_final_velocity\", \"arguments\": {\"height\": 150, \"initial_velocity\": 0}}",
+          "expected_output": {
+            "calculate_final_velocity": {
+              "height": 150,
+              "initial_velocity": 0,
+              "gravity": 9.81
+            }
+          },
+          "success": true,
+          "error": null,
+          "latency_ms": 2042.2798750223592,
+          "input_tokens": 689,
+          "output_tokens": 74,
+          "evaluation_score": 0.8,
+          "evaluation_details": {
+            "match_type": "content_match",
+            "format_correct": false,
+            "content_correct": true,
+            "field_matches": {
+              "height": true,
+              "initial_velocity": true,
+              "gravity": false
+            },
+            "explanation": "Output has correct height and initial_velocity values, but differs in structure. Gravity field is missing from actual output. Top-level keys differ between expected and actual outputs."
+          }
+        },
+        {
+          "instance_id": "simple_26",
+          "prompt": "You have access to the following functions:\n\n[\n  {\n    \"name\": \"calculate_velocity\",\n    \"description\": \"Calculate the velocity for a certain distance travelled within a specific duration.\",\n    \"parameters\": {\n      \"type\": \"dict\",\n      \"properties\": {\n        \"distance\": {\n          \"type\": \"integer\",\n          \"description\": \"The distance travelled by the object, typically in kilometers.\"\n        },\n        \"duration\": {\n          \"type\": \"integer\",\n          \"description\": \"The duration of the journey, typically in hours.\"\n        },\n        \"unit\": {\n          \"type\": \"string\",\n          \"description\": \"Optional parameter. The unit to return the velocity in. If not provided, the default is km/h.\"\n        }\n      },\n      \"required\": [\n        \"distance\",\n        \"duration\"\n      ]\n    }\n  }\n]\n\nUser query: Calculate the velocity of a car that travels a distance of 50 kilometers for a duration of 2 hours?\n\nGenerate the appropriate function call as JSON with 'name' and 'arguments' keys.",
+          "output": "{\"name\": \"calculate_velocity\", \"arguments\": {\"distance\": 50, \"duration\": 2}}",
+          "expected_output": {
+            "calculate_velocity": {
+              "distance": 50,
+              "duration": 2
+            }
+          },
+          "success": true,
+          "error": null,
+          "latency_ms": 2423.0632500257343,
+          "input_tokens": 665,
+          "output_tokens": 70,
+          "evaluation_score": 0.8,
+          "evaluation_details": {
+            "match_type": "content_match",
+            "format_correct": false,
+            "content_correct": true,
+            "field_matches": {
+              "distance": true,
+              "duration": true
+            },
+            "explanation": "Content values match, but output structure differs from expected (has 'name' and 'arguments' keys instead of direct key mapping)"
+          }
+        },
+        {
+          "instance_id": "simple_27",
+          "prompt": "You have access to the following functions:\n\n[\n  {\n    \"name\": \"final_velocity\",\n    \"description\": \"Calculate the final velocity of an object given its initial velocity, acceleration, and time.\",\n    \"parameters\": {\n      \"type\": \"dict\",\n      \"properties\": {\n        \"initial_velocity\": {\n          \"type\": \"integer\",\n          \"description\": \"The initial velocity of the object in meters/second.\"\n        },\n        \"acceleration\": {\n          \"type\": \"integer\",\n          \"description\": \"The acceleration of the object in meters/second^2.\"\n        },\n        \"time\": {\n          \"type\": \"integer\",\n          \"description\": \"The time over which the acceleration is applied in seconds.\"\n        }\n      },\n      \"required\": [\n        \"initial_velocity\",\n        \"acceleration\",\n        \"time\"\n      ]\n    }\n  }\n]\n\nUser query: Calculate the final velocity of a vehicle after accelerating at 2 meters/second^2 for a duration of 5 seconds, starting from a speed of 10 meters/second.\n\nGenerate the appropriate function call as JSON with 'name' and 'arguments' keys.",
+          "output": "{\"name\": \"final_velocity\", \"arguments\": {\"initial_velocity\": 10, \"acceleration\": 2, \"time\": 5}}",
+          "expected_output": {
+            "final_velocity": {
+              "initial_velocity": 10,
+              "acceleration": 2,
+              "time": 5
+            }
+          },
+          "success": true,
+          "error": null,
+          "latency_ms": 2140.3803750290535,
+          "input_tokens": 684,
+          "output_tokens": 89,
+          "evaluation_score": 0.8,
+          "evaluation_details": {
+            "match_type": "content_match",
+            "format_correct": false,
+            "content_correct": true,
+            "field_matches": {
+              "initial_velocity": true,
+              "acceleration": true,
+              "time": true
+            },
+            "explanation": "Content values match correctly, but structure differs with extra 'name' field and 'arguments' wrapper"
+          }
+        },
+        {
+          "instance_id": "simple_28",
+          "prompt": "You have access to the following functions:\n\n[\n  {\n    \"name\": \"calculate_displacement\",\n    \"description\": \"Calculates the displacement of an object in motion given initial velocity, time, and acceleration.\",\n    \"parameters\": {\n      \"type\": \"dict\",\n      \"properties\": {\n        \"initial_velocity\": {\n          \"type\": \"integer\",\n          \"description\": \"The initial velocity of the object in m/s.\"\n        },\n        \"time\": {\n          \"type\": \"integer\",\n          \"description\": \"The time in seconds that the object has been in motion.\"\n        },\n        \"acceleration\": {\n          \"type\": \"float\",\n          \"description\": \"The acceleration of the object in m/s^2.\",\n          \"default\": 0\n        }\n      },\n      \"required\": [\n        \"initial_velocity\",\n        \"time\"\n      ]\n    }\n  }\n]\n\nUser query: Calculate the displacement of a car given the initial velocity of 10 and acceleeration of 9.8 within 5 seconds.\n\nGenerate the appropriate function call as JSON with 'name' and 'arguments' keys.",
+          "output": "{\"name\": \"calculate_displacement\", \"arguments\": {\"initial_velocity\": 10, \"time\": 5, \"acceleration\": 9.8}}",
+          "expected_output": {
+            "calculate_displacement": {
+              "initial_velocity": 10,
+              "time": 5,
+              "acceleration": 9.8
+            }
+          },
+          "success": true,
+          "error": null,
+          "latency_ms": 2398.448708001524,
+          "input_tokens": 679,
+          "output_tokens": 91,
+          "evaluation_score": 0.8,
+          "evaluation_details": {
+            "match_type": "content_match",
+            "format_correct": false,
+            "content_correct": true,
+            "field_matches": {
+              "initial_velocity": true,
+              "time": true,
+              "acceleration": true
+            },
+            "explanation": "Content values match exactly, but structure differs with 'name' and 'arguments' wrapper in actual output"
+          }
+        },
+        {
+          "instance_id": "simple_29",
+          "prompt": "You have access to the following functions:\n\n[\n  {\n    \"name\": \"calculate_final_speed\",\n    \"description\": \"Calculate the final speed of an object in free fall after a certain time, neglecting air resistance. The acceleration due to gravity is considered as -9.81 m/s^2\",\n    \"parameters\": {\n      \"type\": \"dict\",\n      \"properties\": {\n        \"initial_speed\": {\n          \"type\": \"integer\",\n          \"description\": \"The initial speed of the object in m/s. Default is 0 for an object at rest.\"\n        },\n        \"time\": {\n          \"type\": \"integer\",\n          \"description\": \"The time in seconds for which the object is in free fall.\"\n        },\n        \"gravity\": {\n          \"type\": \"float\",\n          \"description\": \"The acceleration due to gravity. Default is -9.81 m/s^2.\"\n        }\n      },\n      \"required\": [\n        \"time\"\n      ]\n    }\n  }\n]\n\nUser query: What is the final speed of an object dropped from rest after falling for 5 seconds if we neglect air resistance?\n\nGenerate the appropriate function call as JSON with 'name' and 'arguments' keys.",
+          "output": "{\"name\": \"calculate_final_speed\", \"arguments\": {\"time\": 5, \"initial_speed\": 0}}",
+          "expected_output": {
+            "calculate_final_speed": {
+              "initial_speed": 0,
+              "time": 5,
+              "gravity": -9.81
+            }
+          },
+          "success": true,
+          "error": null,
+          "latency_ms": 2188.9450830058195,
+          "input_tokens": 704,
+          "output_tokens": 74,
+          "evaluation_score": 0.8,
+          "evaluation_details": {
+            "match_type": "content_match",
+            "format_correct": false,
+            "content_correct": true,
+            "field_matches": {
+              "initial_speed": true,
+              "time": true,
+              "gravity": false
+            },
+            "explanation": "Content values are correct, but structure differs. Actual output uses 'name' and 'arguments' keys instead of direct mapping. Gravity field is missing from actual output."
+          }
+        }
+      ]
+    }
+  ]
+}
