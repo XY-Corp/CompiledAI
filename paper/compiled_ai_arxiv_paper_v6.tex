@@ -53,7 +53,7 @@
 
 We study \emph{compiled AI}, a paradigm in which large language models generate executable code artifacts during a compilation phase, after which workflows execute deterministically without further model invocation. By constraining generation to narrow business-logic functions embedded in validated templates, compiled AI trades runtime flexibility for predictability, auditability, cost efficiency, and reduced security exposure, while retaining the ability to improve artifacts through observed execution patterns.
 
-We introduce (i) a system architecture for constrained LLM-based code generation, (ii) a four-stage generation-and-validation pipeline that converts probabilistic model output into production-ready code artifacts, and (iii) an evaluation framework that measures operational metrics including token amortization, determinism, reliability, security, and cost. In preliminary evaluation on function-calling tasks (n=500 across two BFCL categories), compiled AI achieves 96\% task completion with zero execution tokens, breaking even with runtime inference at approximately 9 transactions and reducing token consumption by 107$\times$ at 1,000 transactions. Security evaluation across 135 test cases demonstrates 96.7\% accuracy on prompt injection detection and 87.5\% on static code safety analysis with zero false positives.
+We introduce (i) a system architecture for constrained LLM-based code generation, (ii) a four-stage generation-and-validation pipeline that converts probabilistic model output into production-ready code artifacts, and (iii) an evaluation framework that measures operational metrics including token amortization, determinism, reliability, security, and cost. In preliminary evaluation on function-calling tasks (n=400 across BFCL categories), compiled AI achieves 96\% task completion with zero execution tokens, breaking even with runtime inference at approximately 17 transactions and reducing token consumption by 57$\times$ at 1,000 transactions. Agent frameworks like LangChain and AutoGen consume 34--46\% more tokens than direct LLM, further favoring compiled approaches. Security evaluation across 135 test cases demonstrates 96.7\% accuracy on prompt injection detection and 87.5\% on static code safety analysis with zero false positives.
 
 \end{abstract}
 
@@ -92,10 +92,10 @@ Compiled AI represents a trade-off between flexibility and determinism. Rather t
     \node[left, font=\scriptsize] at (0,4) {800K};
     \node[left, font=\scriptsize] at (0,5) {1.0M};
 
-    % Runtime inference line (linear growth: 1,030 tokens/tx)
-    % At n=1000, runtime = 1.03M tokens = 5.15 units on y-axis (1M = 5 units)
-    \draw[thick, red!70] (0,0) -- (9.5,5.15);
-    \node[red!70, right] at (9.5, 5.15) {\small Runtime (1,030/tx)};
+    % Runtime inference line (linear growth: 552 tokens/tx)
+    % At n=1000, runtime = 552K tokens = 2.76 units on y-axis (1M = 5 units)
+    \draw[thick, red!70] (0,0) -- (9.5,2.76);
+    \node[red!70, right] at (9.5, 2.76) {\small Runtime (552/tx)};
 
     % Compiled AI line (flat at 9.6K tokens = 0.048 units on y-axis)
     \draw[thick, blue!70] (0,0.048) -- (9.5,0.048);
@@ -105,17 +105,17 @@ Compiled AI represents a trade-off between flexibility and determinism. Rather t
     \draw[<->, gray] (-0.5,0) -- (-0.5,0.048);
     \node[gray, left, font=\scriptsize, align=right] at (-0.5,0.024) {9.6K\\gen cost};
 
-    % Break-even point at n*=9 (x=0.086 on scale where 9.5=1000)
-    % x position: 9/1000 * 9.5 = 0.086
-    \draw[dashed, gray] (0.086,0) -- (0.086,0.048);
-    \node[below, font=\scriptsize] at (0.086,-0.1) {$n^*\!=\!9$};
-    \fill[black] (0.086,0.048) circle (2pt);
-    \node[above, font=\scriptsize] at (0.35,0.2) {Break-even};
+    % Break-even point at n*=17 (x=0.16 on scale where 9.5=1000)
+    % x position: 17/1000 * 9.5 = 0.16
+    \draw[dashed, gray] (0.16,0) -- (0.16,0.048);
+    \node[below, font=\scriptsize] at (0.16,-0.1) {$n^*\!=\!17$};
+    \fill[black] (0.16,0.048) circle (2pt);
+    \node[above, font=\scriptsize] at (0.45,0.2) {Break-even};
 
     % Savings region
-    \fill[green!10] (0.086,0.048) -- (9.5,0.048) -- (9.5,5.15) -- (0.086,0.048);
-    \node[green!50!black, font=\scriptsize] at (6,2.4) {107$\times$ savings};
-    \node[green!50!black, font=\scriptsize] at (6,2.0) {at $n$=1000};
+    \fill[green!10] (0.16,0.048) -- (9.5,0.048) -- (9.5,2.76) -- (0.16,0.048);
+    \node[green!50!black, font=\scriptsize] at (6,1.2) {57$\times$ savings};
+    \node[green!50!black, font=\scriptsize] at (6,0.8) {at $n$=1000};
 
     % X-axis labels (actual transaction counts)
     \node[below, font=\scriptsize] at (0.95,0) {100};
@@ -123,10 +123,10 @@ Compiled AI represents a trade-off between flexibility and determinism. Rather t
     \node[below, font=\scriptsize] at (9.5,0) {1000};
 
     % Data points for runtime (actual measurements, scale: 1 unit = 200K)
-    \fill[red!70] (0.095,0.0515) circle (1.5pt); % n=10: 10.3K tokens
-    \fill[red!70] (0.19,0.103) circle (1.5pt); % n=20: 20.6K tokens
-    \fill[red!70] (0.95,0.515) circle (1.5pt); % n=100: 103K tokens
-    \fill[red!70] (9.5,5.15) circle (1.5pt); % n=1000: 1.03M tokens
+    \fill[red!70] (0.095,0.0276) circle (1.5pt); % n=10: 5.52K tokens
+    \fill[red!70] (0.19,0.0552) circle (1.5pt); % n=20: 11.04K tokens
+    \fill[red!70] (0.95,0.276) circle (1.5pt); % n=100: 55.2K tokens
+    \fill[red!70] (9.5,2.76) circle (1.5pt); % n=1000: 552K tokens
 
 \end{tikzpicture}
 \caption{Token consumption comparison: runtime inference vs. compiled AI (BFCL function-calling benchmark, n=400). Direct LLM inference consumes 552 tokens per transaction; agent frameworks like LangChain (740) and AutoGen (805) add overhead. Compiled AI incurs a one-time $\sim$9,600 token generation cost, then executes deterministically at zero marginal token cost. Break-even occurs at $n^*\approx17$ transactions; at 1,000 transactions, compiled AI reduces token consumption by 57$\times$.}
@@ -712,7 +712,7 @@ Break-even occurs at approximately 17 transactions ($n^* = 9{,}600 / 552 \approx
 
 \begin{table}[ht]
 \centering
-\caption{Latency distribution (milliseconds, BFCL evaluation, n=500)}
+\caption{Latency distribution (milliseconds, BFCL evaluation, n=400)}
 \label{tab:latency-results}
 \begin{tabular}{lrrrr}
 \toprule
@@ -866,7 +866,7 @@ Compiled AI & \$55 & \$500 & \$555 & 1$\times$ \\
 \end{tabular}
 \end{table}
 
-\noindent\textit{Cost calculation:} Direct LLM consumes 1,030 tokens per transaction (620 input + 410 output), totaling 1.03B tokens at 1M transactions. Compiled AI incurs a one-time compilation cost of $\sim$9.6K tokens per workflow type; assuming 100 unique workflow types, total compilation cost is $\sim$960K tokens. Execution cost is zero (deterministic code). Infrastructure cost assumes equivalent compute for workflow execution.
+\noindent\textit{Cost calculation:} Direct LLM consumes 552 tokens per transaction, totaling 552M tokens at 1M transactions. Agent frameworks like LangChain (740/tx) and AutoGen (805/tx) would consume 740M--805M tokens respectively. Compiled AI incurs a one-time compilation cost of $\sim$9.6K tokens per workflow type; assuming 100 unique workflow types, total compilation cost is $\sim$960K tokens. Execution cost is zero (deterministic code). Infrastructure cost assumes equivalent compute for workflow execution.
 
 \subsection{External Benchmark Comparison}
 
