@@ -665,10 +665,12 @@ BFCL v4 & Function-calling from NL queries & 400 & AST matching \\
 
 \subsection{Baselines}
 
-For preliminary evaluation, we compare two approaches:
+For preliminary evaluation, we compare four approaches:
 
 \begin{enumerate}
     \item \textbf{Direct LLM (Claude Opus 4.5)}: Task description with function definitions sent to LLM per transaction. The model returns a JSON function call.
+    \item \textbf{LangChain Agent}: LangChain framework with tool-calling interface wrapping the same LLM. Adds orchestration overhead for agent-style execution.
+    \item \textbf{AutoGen Agent}: Microsoft AutoGen multi-agent framework configured for function-calling tasks. Includes conversation management overhead.
     \item \textbf{Compiled AI (Code Factory)}: Single-activity workflow generated from task specification. LLM invoked once at compilation; execution is deterministic code.
 \end{enumerate}
 
@@ -717,13 +719,15 @@ Break-even occurs at approximately 17 transactions ($n^* = 9{,}600 / 552 \approx
 \toprule
 Method & P50 & P99 & Jitter & ColdStart \\
 \midrule
-Direct LLM & 4,700 & 6,500 & 1,800 & N/A \\
+Direct LLM & 2,004 & 3,127 & 1,123 & N/A \\
+LangChain & 2,317 & 3,220 & 903 & N/A \\
+AutoGen & 6,034 & 7,432 & 1,398 & N/A \\
 Compiled AI & 4.5 & 15 & 10.5 & 22,000 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-Compiled AI execution latency is 1,000$\times$ faster than runtime inference (4.5ms vs 4,700ms), with near-zero jitter (10.5ms vs 1,800ms). The trade-off is a 22-second cold start for compilation. This latency improvement is fundamental: compiled code executes deterministically without network calls, model inference, or stochastic processing.
+Compiled AI execution latency is 450$\times$ faster than direct LLM inference (4.5ms vs 2,004ms), with near-zero jitter (10.5ms vs 1,123ms). AutoGen exhibits 3$\times$ higher latency than direct LLM due to multi-agent orchestration overhead. The trade-off is a 22-second cold start for compilation. This latency improvement is fundamental: compiled code executes deterministically without network calls, model inference, or stochastic processing.
 
 \subsection{Consistency}
 
@@ -736,6 +740,8 @@ Compiled AI execution latency is 1,000$\times$ faster than runtime inference (4.
 Method & OutputVariance ($H$) & Reproducibility & AuditCompleteness \\
 \midrule
 Direct LLM & $>$0 (varies) & 95\% & N/A \\
+LangChain & $>$0 (varies) & 95\% & N/A \\
+AutoGen & $>$0 (varies) & 95\% & N/A \\
 Compiled AI & 0 & 100\% & 100\% \\
 \bottomrule
 \end{tabular}
@@ -753,15 +759,12 @@ Compiled AI exhibits perfect reproducibility: identical inputs produce identical
 \toprule
 Category & Instances & Success & Rate \\
 \midrule
-BFCL Simple (AST) & 400 & 385 & 96.2\% \\
-BFCL Exec Simple (Execution) & 100 & 95 & 95.0\% \\
-\midrule
-\textbf{Combined} & \textbf{500} & \textbf{480} & \textbf{96.0\%} \\
+BFCL v4 (AST evaluation) & 400 & 384 & 96.0\% \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-Compiled AI achieves 96\% task completion across both evaluation categories (480/500 tasks). Performance is consistent between AST-based evaluation (96.2\%) and executable evaluation (95.9\%), demonstrating that compiled workflows correctly extract parameters with sufficient precision for actual function execution. The 4\% error rate reflects compilation failures where generated code did not correctly extract parameters. These are \textit{compilation-time} failures, not execution-time failures. Once successfully compiled, workflows execute with 100\% reliability.
+Compiled AI achieves 96\% task completion (384/400 tasks). This demonstrates that compiled workflows correctly extract parameters with sufficient precision for actual function execution. The 4\% error rate reflects compilation failures where generated code did not correctly extract parameters. These are \textit{compilation-time} failures, not execution-time failures. Once successfully compiled, workflows execute with 100\% reliability.
 
 \subsection{Code Quality}
 
@@ -847,7 +850,7 @@ Overall (all stages) & 96\% \\
 \end{tabular}
 \end{table}
 
-\noindent\textit{Note:} The 96\% accuracy rate (480/500 tasks across both categories) reflects cases where generated code executed successfully but produced outputs that did not match expected function calls. These failures occur at compilation time and can be detected before deployment, unlike runtime inference errors. Function-call-specific templates and simplified prompts improved first-pass rates from approximately 80\% in earlier development versions.
+\noindent\textit{Note:} The 96\% accuracy rate (384/400 tasks) reflects cases where generated code executed successfully but produced outputs that did not match expected function calls. These failures occur at compilation time and can be detected before deployment, unlike runtime inference errors. Function-call-specific templates and simplified prompts improved first-pass rates from approximately 80\% in earlier development versions.
 
 \subsection{Cost Analysis}
 
@@ -859,7 +862,9 @@ Overall (all stages) & 96\% \\
 \toprule
 Method & Inference & Infrastructure & Total TCO & CostRatio \\
 \midrule
-Direct LLM & \$40,170 & \$500 & \$40,670 & 73$\times$ \\
+Direct LLM & \$21,500 & \$500 & \$22,000 & 40$\times$ \\
+LangChain & \$28,900 & \$500 & \$29,400 & 53$\times$ \\
+AutoGen & \$31,400 & \$500 & \$31,900 & 57$\times$ \\
 Compiled AI & \$55 & \$500 & \$555 & 1$\times$ \\
 \bottomrule
 \end{tabular}
@@ -949,7 +954,7 @@ We argue that capability benchmarks alone are insufficient; production deploymen
 
 \textbf{Bounded applicability.} Not all workflows reduce to deterministic code. Tasks requiring genuine creativity or adaptation to novel situations may require runtime inference.
 
-\textbf{Generation failures.} Despite validation, some specifications fail to produce working code. In preliminary evaluation, 4\% of compilations (20/500) failed to produce accurate outputs, though all generated syntactically valid, executable code.
+\textbf{Generation failures.} Despite validation, some specifications fail to produce working code. In preliminary evaluation, 4\% of compilations (16/400) failed to produce accurate outputs, though all generated syntactically valid, executable code.
 
 \textbf{Model dependence.} Generated code quality depends on the underlying LLM. Model updates may change behavior, requiring re-validation.
 
