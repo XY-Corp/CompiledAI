@@ -1,0 +1,12 @@
+{
+  "timestamp": "20260130_104640",
+  "baseline": "code_factory",
+  "dataset": "docile_kile",
+  "provider": "anthropic",
+  "model": null,
+  "max_instances": 20,
+  "max_tasks": null,
+  "enable_cache": false,
+  "verbose": false,
+  "dataset_kwargs": {}
+}

@@ -5,6 +5,7 @@ from .xy_converter import XYConverter
 from .bfcl_converter import BFCLConverter
 from .security_fixture_converter import SecurityFixtureConverter
 from .docile_converter import DocILEConverter
+from .eltbench_converter import ELTBenchConverter
 from .runner import run_benchmark, run_benchmark_with_baseline_name, BenchmarkResult, InstanceResult
 
 __all__ = [
@@ -14,6 +15,7 @@ __all__ = [
     "BFCLConverter",
     "SecurityFixtureConverter",
     "DocILEConverter",
+    "ELTBenchConverter",
     "run_benchmark",
     "run_benchmark_with_baseline_name",
     "BenchmarkResult",

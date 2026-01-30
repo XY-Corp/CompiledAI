@@ -28,11 +28,11 @@ async def llm_classify(
     class Classification(BaseModel):
         category: str
 
-    agent = Agent(model, result_type=Classification)
+    agent = Agent(model, output_type=Classification)
     prompt = f"Classify this text into exactly one of these categories: {', '.join(categories)}\n\nText: {text}"
     result = await agent.run(prompt)
 
     return {
-        "category": result.data.category,
+        "category": result.output.category,
         "status": "success"
     }

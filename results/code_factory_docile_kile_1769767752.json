@@ -1,0 +1,50 @@
+{
+  "config": {
+    "dataset": "docile_kile",
+    "baseline": "code_factory",
+    "provider": "anthropic",
+    "max_instances": 3
+  },
+  "summary": {
+    "duration_seconds": 15.888572931289673,
+    "overall_success_rate": 0.0,
+    "total_instances": 3,
+    "successful_instances": 0,
+    "failed_instances": 3,
+    "compilations": 0,
+    "cache_hits": 3
+  },
+  "metrics": {
+    "p50_latency_ms": 647.9903750005178,
+    "p90_latency_ms": 7141.203167033382
+  },
+  "instances": [
+    {
+      "id": "00134dd365a24343b35b78c6_kile",
+      "success": false,
+      "latency_ms": 7141.203167033382,
+      "error": "Unknown keyword arguments: `result_type`"
+    },
+    {
+      "id": "00136a27c7774c1e8dc6b2f2_kile",
+      "success": false,
+      "latency_ms": 647.9903750005178,
+      "error": "Unknown keyword arguments: `result_type`"
+    },
+    {
+      "id": "002e3cf97973428f905671b3_kile",
+      "success": false,
+      "latency_ms": 560.5250420048833,
+      "error": "Unknown keyword arguments: `result_type`"
+    }
+  ],
+  "token_breakdown": {
+    "compilation_input": 0,
+    "compilation_output": 0,
+    "compilation_total": 0,
+    "execution_input": 0,
+    "execution_output": 0,
+    "execution_total": 0,
+    "total": 0
+  }
+}

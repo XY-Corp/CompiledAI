@@ -95,6 +95,7 @@ class DynamicModuleLoader:
             ("pandas", "pd"),
             ("httpx", None),
             ("pydantic", None),
+            ("pydantic_ai", None),
             ("yaml", None),
             ("jsonschema", None),
         ]

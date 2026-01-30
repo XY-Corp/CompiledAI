@@ -1,0 +1,38 @@
+{
+  "activity_name": "extract_invoice_fields",
+  "description": "Extract structured invoice fields from document text. Uses LLM to parse unstructured billing memorandum text and extract key invoice fields including vendor info, customer info, invoice metadata, and financial amounts.",
+  "task_id": "003cc91637994b7d9566ac41_kile",
+  "task_description": "{\"document_text\": \"IN AGCOUNT WITH\\nSixth Floor\\n1001 Pennsylvania Ave., N.W.\\nWashington, D.C. 20004\\nPOWELL, GOLDSTEIN, FRAZER dy MURPHY LLP\\nTAXPAYER'S L.D. NO. 58-0391492\\nHAWAII TOBACCO FEE ARBITRATION\\nBILLING MEMORANDUM\\nFor Harry Huge, Esq.\\nSeptember 24, 1999\\nDescription\\nNumber of\\nHours\\n81.80\\nHourly\\nRate\\nTotal\\nFee\\nAttend arbitration hearing in San\\nFrancisco and deliberations in Seattle,\\nWashington; participate in continued\\ndeliberations via telephone conference\\ncalls with fellow arbitrators; review\\nmajority opinion draft; draft and review\\n$800.00 $65,440.00\\nopinion.\\nReview of materials regarding arbitration,\\nincluding presentation and response;\\ntelephone conferen\\u00e7es with related parties.\\n69.80\\n$650.00 $45,370,00\\nTotal Hours:\\n151.60\\n$i10,810.00\\nIN/ ACCOUNT WITH\\nSixth Floor\\n1001 Pennsylvania. Ave., N.W.\\nWashington, D.C. 20004\\nPOWELL, GOLDSTEIN, FRAZER d MURPHY LLP\\nTAXPAYER'S I.D. NO. 58-0391492\\nPage 2\\nHawaii Tobacco Fee\\nArbitration Billing\\nMemorandum\\nFor Harry Huge, Esq.\\nEXPENSES\\nTelephone, Photocopying, Fax and Federal Express Charges:\\nHotels, Meals and Miscellaneous Travel Charges:\\nOther Miscellaneous expenses, including para-legal charges:\\n$ 611.01\\n$ 6,930.20\\n$ 1,166.00\\n$ 8,707.21\\n$110,810.00\\n$119,517.21\\nExpense TOTAL:\\nHours TOTAL:\\nTOTAL:\", \"task_type\": \"kile\"}\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n- `task_type` (str) - context for task type\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt, task_type\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\n{\n  \"type\": \"object\",\n  \"fields\": {\n    \"document_id\": \"string - extracted field\",\n    \"vendor_name\": \"string - extracted field\",\n    \"vendor_address\": \"string - extracted field\",\n    \"customer_name\": \"string - extracted field\",\n    \"customer_address\": \"string - extracted field\",\n    \"invoice_id\": \"string - extracted field\",\n    \"invoice_date\": \"string - extracted field\",\n    \"due_date\": \"string - extracted field\",\n    \"total_amount\": \"string - extracted field\",\n    \"tax_amount\": \"string - extracted field\",\n    \"currency\": \"string - extracted field\"\n  }\n}\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "inputs": [
+    {
+      "name": "document_text",
+      "type": "str",
+      "description": "The raw document text containing invoice/billing memorandum information with vendor details, customer name, dates, and amounts to extract",
+      "required": true
+    }
+  ],
+  "output": {
+    "type": "dict",
+    "description": "Returns extracted invoice fields. Structure: {\"document_id\": \"string - unique document identifier like taxpayer ID\", \"vendor_name\": \"string - company/firm name issuing the invoice\", \"vendor_address\": \"string - full address of the vendor\", \"customer_name\": \"string - name of the customer being billed\", \"customer_address\": \"string - address of the customer if available, empty string if not found\", \"invoice_id\": \"string - invoice or billing reference number\", \"invoice_date\": \"string - date of the invoice in original format\", \"due_date\": \"string - payment due date, empty string if not specified\", \"total_amount\": \"string - total amount due including currency symbol\", \"tax_amount\": \"string - tax amount if specified, empty string if not found\", \"currency\": \"string - currency code like USD\"}",
+    "fields": {
+      "document_id": "str",
+      "vendor_name": "str",
+      "vendor_address": "str",
+      "customer_name": "str",
+      "customer_address": "str",
+      "invoice_id": "str",
+      "invoice_date": "str",
+      "due_date": "str",
+      "total_amount": "str",
+      "tax_amount": "str",
+      "currency": "str"
+    }
+  },
+  "reference_activity": "llm_extract",
+  "workflow_spec": {
+    "workflow_id": "invoice_field_extraction",
+    "name": "Invoice Field Extraction",
+    "description": "Extract structured invoice fields from document text using LLM-based extraction. Parses vendor information, customer details, invoice metadata, and financial amounts from billing memorandum documents.",
+    "execution_pattern": "sequence"
+  }
+}

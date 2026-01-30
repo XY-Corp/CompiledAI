@@ -987,6 +987,294 @@ class SchemaEvaluator(Evaluator):
         return False
 
 
+@register_evaluator("sql_semantic")
+class SQLSemanticEvaluator(Evaluator):
+    """SQL semantic comparison evaluator using LLM.
+
+    Compares generated SQL against ground truth SQL for semantic equivalence.
+    Handles query variations (different formatting, aliases, join order, etc.)
+    while ensuring they produce the same results.
+    """
+
+    def __init__(self, model: str = "claude-3-5-haiku-latest"):
+        """Initialize SQL semantic evaluator.
+
+        Args:
+            model: Model to use for evaluation (default: haiku for speed/cost)
+        """
+        self.model = model
+        self._client = None
+
+    @property
+    def client(self):
+        """Lazy-load Anthropic client."""
+        if self._client is None:
+            import anthropic
+            self._client = anthropic.Anthropic()
+        return self._client
+
+    def evaluate(self, output: str, expected: Any, **kwargs: Any) -> EvaluationResult:
+        """Compare generated SQL against expected ground truth.
+
+        Args:
+            output: Generated SQL query or dict of {model_name: sql}
+            expected: Ground truth SQL query or dict of {model_name: sql}
+            **kwargs: Additional context
+
+        Returns:
+            EvaluationResult with semantic comparison details
+        """
+        # Handle dict format (ELT-Bench style: {model_name: sql_content})
+        if isinstance(expected, dict) and isinstance(output, str):
+            # Try to parse output as dict
+            try:
+                output = json.loads(output)
+            except json.JSONDecodeError:
+                # Assume it's a single SQL query
+                pass
+
+        if isinstance(expected, dict) and isinstance(output, dict):
+            return self._compare_sql_dict(output, expected)
+        elif isinstance(expected, dict):
+            # Single SQL output, multiple expected - try matching any
+            for model_name, exp_sql in expected.items():
+                result = self._compare_single_sql(output, exp_sql, model_name)
+                if result.success:
+                    return result
+            return EvaluationResult(
+                success=False,
+                score=0.0,
+                error="SQL did not match any expected model",
+                details={"expected_models": list(expected.keys())},
+            )
+        else:
+            # Single SQL comparison
+            return self._compare_single_sql(str(output), str(expected))
+
+    def _compare_sql_dict(
+        self, output: dict[str, str], expected: dict[str, str]
+    ) -> EvaluationResult:
+        """Compare dictionaries of SQL queries (multi-model output)."""
+        matched = 0
+        total = len(expected)
+        missing_models = []
+        results = {}
+
+        for model_name, exp_sql in expected.items():
+            if model_name not in output:
+                missing_models.append(model_name)
+                results[model_name] = {"status": "missing"}
+                continue
+
+            out_sql = output[model_name]
+            model_result = self._compare_single_sql(out_sql, exp_sql, model_name)
+            results[model_name] = {
+                "status": "matched" if model_result.success else "mismatched",
+                "score": model_result.score,
+                "details": model_result.details,
+            }
+            if model_result.success:
+                matched += 1
+
+        score = matched / total if total > 0 else 1.0
+        success = score >= 0.8  # Allow some models to fail
+
+        return EvaluationResult(
+            success=success,
+            score=score,
+            details={
+                "matched_models": matched,
+                "total_models": total,
+                "missing_models": missing_models,
+                "model_results": results,
+            },
+        )
+
+    def _compare_single_sql(
+        self, output: str, expected: str, model_name: str = "query"
+    ) -> EvaluationResult:
+        """Compare a single SQL query using LLM semantic comparison."""
+        # Clean up SQL strings
+        output_sql = self._clean_sql(output)
+        expected_sql = self._clean_sql(expected)
+
+        # Quick exact match check
+        if self._normalize_sql(output_sql) == self._normalize_sql(expected_sql):
+            return EvaluationResult(
+                success=True,
+                score=1.0,
+                details={"match_type": "exact", "model_name": model_name},
+            )
+
+        # Use LLM for semantic comparison
+        prompt = self._build_sql_prompt(output_sql, expected_sql, model_name)
+
+        try:
+            response = self.client.messages.create(
+                model=self.model,
+                max_tokens=1024,
+                messages=[{"role": "user", "content": prompt}],
+            )
+
+            result_text = response.content[0].text
+            return self._parse_sql_response(result_text, model_name)
+
+        except Exception as e:
+            return EvaluationResult(
+                success=False,
+                score=0.0,
+                error=f"SQL evaluation failed: {str(e)}",
+                details={"model_name": model_name},
+            )
+
+    def _clean_sql(self, sql: str) -> str:
+        """Clean SQL string by extracting from markdown blocks."""
+        sql = sql.strip()
+
+        # Extract from markdown code blocks
+        patterns = [
+            r"```sql\s*([\s\S]*?)\s*```",
+            r"```\s*([\s\S]*?)\s*```",
+        ]
+
+        for pattern in patterns:
+            match = re.search(pattern, sql)
+            if match:
+                return match.group(1).strip()
+
+        return sql
+
+    def _normalize_sql(self, sql: str) -> str:
+        """Normalize SQL for comparison by removing whitespace variations."""
+        # Remove comments
+        sql = re.sub(r'--.*$', '', sql, flags=re.MULTILINE)
+        sql = re.sub(r'/\*[\s\S]*?\*/', '', sql)
+
+        # Normalize whitespace
+        sql = ' '.join(sql.split())
+
+        # Lowercase keywords (but not identifiers)
+        keywords = [
+            'SELECT', 'FROM', 'WHERE', 'AND', 'OR', 'JOIN', 'LEFT', 'RIGHT',
+            'INNER', 'OUTER', 'ON', 'AS', 'GROUP', 'BY', 'ORDER', 'HAVING',
+            'LIMIT', 'OFFSET', 'UNION', 'ALL', 'DISTINCT', 'CASE', 'WHEN',
+            'THEN', 'ELSE', 'END', 'WITH', 'INSERT', 'UPDATE', 'DELETE',
+            'CREATE', 'TABLE', 'VIEW', 'INDEX', 'PRIMARY', 'KEY', 'FOREIGN',
+            'REFERENCES', 'NOT', 'NULL', 'DEFAULT', 'CONSTRAINT', 'ALTER',
+            'DROP', 'IF', 'EXISTS', 'BETWEEN', 'IN', 'LIKE', 'IS', 'TRUE',
+            'FALSE', 'SUM', 'AVG', 'COUNT', 'MIN', 'MAX', 'COALESCE', 'CAST',
+        ]
+        for kw in keywords:
+            sql = re.sub(rf'\b{kw}\b', kw.lower(), sql, flags=re.IGNORECASE)
+
+        return sql.strip()
+
+    def _build_sql_prompt(self, output: str, expected: str, model_name: str) -> str:
+        """Build the evaluation prompt for SQL comparison."""
+        return f"""Compare these two SQL queries and determine if they are semantically equivalent.
+
+EXPECTED SQL (ground truth) for model '{model_name}':
+```sql
+{expected}
+```
+
+GENERATED SQL:
+```sql
+{output}
+```
+
+Analyze the queries and determine if they would produce the same results when executed against the same database.
+
+Consider as EQUIVALENT:
+- Different table/column aliases
+- Different join order (if logically equivalent)
+- Different WHERE clause ordering (if logically equivalent)
+- Different formatting/whitespace
+- CTE vs subquery (if semantically equivalent)
+- Different aggregation expressions that produce same results
+
+Consider as NOT EQUIVALENT:
+- Different columns selected
+- Different filtering logic
+- Different join types that change results
+- Different aggregation granularity
+- Missing or extra conditions
+
+Return your evaluation as JSON:
+{{
+  "equivalent": true | false,
+  "confidence": 0.0 to 1.0,
+  "match_type": "semantic_match" | "structural_match" | "partial_match" | "no_match",
+  "differences": ["list of key differences if any"],
+  "explanation": "Brief explanation of equivalence/difference"
+}}
+
+Rules:
+- semantic_match: Queries produce identical results despite structural differences
+- structural_match: Queries have same structure but may have minor variations
+- partial_match: Queries share some logic but have meaningful differences
+- no_match: Queries are fundamentally different
+
+Return ONLY the JSON, no other text."""
+
+    def _parse_sql_response(self, response_text: str, model_name: str) -> EvaluationResult:
+        """Parse the LLM's SQL comparison response."""
+        try:
+            json_match = re.search(r'\{[\s\S]*\}', response_text)
+            if not json_match:
+                raise ValueError("No JSON found in response")
+
+            result = json.loads(json_match.group())
+
+            equivalent = result.get("equivalent", False)
+            confidence = result.get("confidence", 0.0)
+            match_type = result.get("match_type", "no_match")
+            differences = result.get("differences", [])
+            explanation = result.get("explanation", "")
+
+            # Map match type to score
+            score_map = {
+                "semantic_match": 1.0,
+                "structural_match": 1.0,
+                "partial_match": 0.5,
+                "no_match": 0.0,
+            }
+            base_score = score_map.get(match_type, 0.0)
+            final_score = base_score * confidence if base_score > 0 else 0.0
+
+            success = equivalent and confidence >= 0.7
+
+            return EvaluationResult(
+                success=success,
+                score=final_score,
+                details={
+                    "model_name": model_name,
+                    "match_type": match_type,
+                    "equivalent": equivalent,
+                    "confidence": confidence,
+                    "differences": differences,
+                    "explanation": explanation,
+                },
+            )
+
+        except (json.JSONDecodeError, ValueError) as e:
+            # Fallback to heuristic parsing
+            response_lower = response_text.lower()
+
+            if "equivalent" in response_lower and "true" in response_lower:
+                return EvaluationResult(
+                    success=True,
+                    score=0.9,
+                    details={"model_name": model_name, "match_type": "inferred_match", "raw_response": response_text[:500]},
+                )
+            else:
+                return EvaluationResult(
+                    success=False,
+                    score=0.0,
+                    details={"model_name": model_name, "match_type": "parse_failed", "parse_error": str(e)},
+                )
+
+
 @register_evaluator("llm")
 class LLMEvaluator(Evaluator):
     """LLM-based semantic evaluator using Claude haiku.

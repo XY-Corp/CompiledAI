@@ -1,0 +1,48 @@
+{
+  "step": 3,
+  "completed": 4,
+  "success_count": 0,
+  "success_rate": 0.0,
+  "elapsed_seconds": 46.90940284729004,
+  "total_tokens": 0,
+  "compilation_tokens": 0,
+  "execution_tokens": 0,
+  "instances": [
+    {
+      "instance_id": "00134dd365a24343b35b78c6_kile",
+      "success": false,
+      "latency_ms": 45359.7934160498,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "tokens": 0,
+      "match_type": "failure"
+    },
+    {
+      "instance_id": "00136a27c7774c1e8dc6b2f2_kile",
+      "success": false,
+      "latency_ms": 523.6185830435716,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "tokens": 0,
+      "match_type": "failure"
+    },
+    {
+      "instance_id": "002e3cf97973428f905671b3_kile",
+      "success": false,
+      "latency_ms": 469.25341698806733,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "tokens": 0,
+      "match_type": "failure"
+    },
+    {
+      "instance_id": "002f9b82b74f4258b3b072d0_kile",
+      "success": false,
+      "latency_ms": 487.3856659978628,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "tokens": 0,
+      "match_type": "failure"
+    }
+  ]
+}

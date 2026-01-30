@@ -1,0 +1,150 @@
+{
+  "total_failures": 3,
+  "failure_rate": 1.0,
+  "failures": [
+    {
+      "instance_id": "00134dd365a24343b35b78c6_kile",
+      "input": "{\"document_text\": \"WIRE INSTRUCTIONS:\\nNationsBank, N.A.\\nBaltimore, MD 21202\\nRouting No. 052001633\\nREMIT TO:\\nBioReliance Testing & Development, Inc.\\nMA BioServices, Inc. is acceptable)\\nNationsBank, N.A.\\nPO. Box 630312\\nBaltimore, MD. 21263-0312\\n39 163 63663\\nBIORELIANCE\\n14920 Broschart Road . Rockville, MD. 20850-3349 USA\\nPhone 301.738.1000 . Fax 301.251.0437\\nFormerly Microbiological. Associates, Inc.\\nMAI BjoServices, Inc.\\nTesting & Development, Inc.\\n100 South Charles Street (former payee designate\\nFOR THE A\\u00c7COUNT OF: BioReliance\\nACCOUNT NUMBER:\\n&\\nTesting Development,\\nLORILLARD RESEARCH CENTER\\nATTN: MS MELANEE BENNETT\\n420 ENCLISH STREET\\nCREENSBORO, NC 27405\\nNET PUE MPON RE\\u00c7EIPT.\\nCUSTOMER P.O. NUMBER\\nPLEASE REFER TO OUR INVOICE NUMBER ON\\nALL PAYMENTS AND CORRESPONDENCE\\nINVOICE NUMBER:\\nINVOICE DATE:\\n990304502\\n03/25799\\nPAYMENT\\nTERMS:\\nCUSTOMER NO.\\n032070010\\nTEST ARTICLE:\\nPACKING SLIP NO.\\n2205\\nSTUDY NUMBER\\n29350\\nQUANTITY UNIT PRODUCTI\\n01.000 EA 18-999\\nUNIT PRICE\\nEXT. PRICE\\n21,000.00\\nDESCRIPTION\\n21,000.00\\nADVANCE BILLING\\nSkin Paunding D52; D55-57 FinafRapnt\\n8\\n3N\\n3 -\\n2\\nMay 4, 1999\\nTOTAL AMOUNT DUE\\n821,000.00\\nCOMMENTS: 87CF44-47.7D82.05\\n10% ON BUBMISSION OF FINAL REPORT\\nFORM-2-NV (12-98)\\nDUPLIGATE INVOICE\\n(REMIT IN U.S. CURRENCY ONLY)\", \"task_type\": \"kile\"}",
+      "output": "",
+      "expected": {
+        "document_id": "990304502",
+        "vendor_name": "BIO RELIANCE Testing & Development, Inc.\nBioReliance Testing & Development, Inc.\nBioReliance Testing & Development, Inc.",
+        "vendor_address": "BIORELIANCE- Testing & Development, Inc.\n14920 Broschart Road \u00b7 Rockville, MD 20850-3349 USA",
+        "customer_name": "LORILLARD RESEARCH CENTER",
+        "customer_address": "LORILLARD RESEARCH CENTER\nATTN: MS MELANEE BENNETT\n420 ENGLISH STREET\nGREENSBORO, NC 27405",
+        "invoice_date": "03/25/99",
+        "total_amount": "$21,000.00",
+        "currency": "$"
+      },
+      "error": "Unknown keyword arguments: `result_type`",
+      "match_type": "failure",
+      "evaluation_score": 0.0,
+      "evaluation_details": {
+        "match_type": "failure",
+        "format_correct": false,
+        "content_correct": false,
+        "field_matches": {
+          "document_id": false,
+          "vendor_name": false,
+          "vendor_address": false,
+          "customer_name": false,
+          "customer_address": false,
+          "invoice_id": false,
+          "invoice_date": false,
+          "due_date": false,
+          "total_amount": false,
+          "tax_amount": false,
+          "currency": false
+        },
+        "explanation": "No actual output provided to compare against expected output"
+      },
+      "latency_ms": 7141.203167033382,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "tokens": {
+        "input": 0,
+        "output": 0,
+        "generation_input": null,
+        "generation_output": null,
+        "execution_input": null,
+        "execution_output": null
+      }
+    },
+    {
+      "instance_id": "00136a27c7774c1e8dc6b2f2_kile",
+      "input": "{\"document_text\": \"Please Remit To:\\nKMOZ 92.3 The Moose\\n1360 E. Sherwood Drive\\nGrand Junction, CO 81501\\n970.254.2100\\nROW CDU\\nInvoice\\n17685-2\\nInvoice Total:\\nInvoice Month: October\\nAdvertiser: Mesa County Republicans\\nAccount:\\nBilling Type: Monthly\\nSalesperson: Brenda\\nDescription: Vote Republican\\nEst. Number:\\nIDB Code:\\nDate\\n10/31/2020\\n$806.00\\nMesa County Republicans\\n920 Visa Ct.\\nGrand Junction, CO 81506\\nPayment Terms: 30 Days\\nMesa County Republicans\\nDETACH AND RETURN WITH PAYMENT\\nAdvertiser: Mesa County Republicans\\nFlight Dates: 10/1/2020\\n10/31/2020\\nDate Length\\nKMOZ-FM\\nQty\\nRate\\nTo\\nSpot Classification: CM\\nKMOZ-FM\\n10/1/2020\\n10/2/2020\\n10/3/2020\\n10/4/2020\\n10/5/2020\\n10/6/2020\\n10/7/2020\\n10/8/2020\\n10/9/2020\\n10/10/2020\\n10/11/2020\\n10/12/2020\\n10/13/2020\\n10/14/2020\\n10/15/2020\\n10/16/2020\\n10/17/2020\\n10/18/2020\\n10/19/2020\\n10/20/2020\\n10/21/2020\\n10/22/2020\\n10/23/2020\\n10/24/2020\\nCopy Name: MESA CO REPUBLICAN\\nISCI:\\n30 5:21:31 PM\\n30 3:57:34 PM\\n30 4:45:08 PM\\n30 6:42:21 PM\\n30 6:51:05 PM\\n30 10:14:36 AM\\n30 5:38:42 PM\\n30 6:23:24 PM\\n30 12:49:18 PM\\n30 8:44:24 AM\\n30 8:56:26 AM\\n30 1:54:11 PM\\n30 8:23:54 AM\\n30 1:52:47 PM\\n30 10:15:26 AM\\n30 11:50:21 AM\\n30 7:43:01 AM\\n30 5:41:59 PM\\n30 12:50:43 PM\\n30 7:21:54 AM\\n30 6:55:03 AM\\n30 3:19:03 PM\\n30 12:51:24 PM\\n30 9:19:57 AM\\nASNGBPEMBAEAEPCN\\nPARTY/2020-Vote Republican\\n26.00\\n1\\n26.00\\n1\\n26.00\\n1\\n26.00\\n1\\n26.00\\n1\\n26.00\\n1\\n26.00\\n1\\n26.00\\n1\\n26.00\\n1\\n26.00\\n1\\n26.00\\n1\\n26.00\\n1\\n26.00\\n1\\n26.00\\n1\\n26.00\\n1\\n26.00\\n1\\n26.00\\n1\\n26.00\\n1\\n26.00\\n1\\n26.00\\n1\\n26.00\\n1\\n26.00\\n1\\n26.00\\n26.00\\n26.00\\n26.00\\n26.00\\n26.00\\n26.00\\n26.00\\n26.00\\n26.00\\n26.00\\n26.00\\n26.00\\n26.00\\n26.00\\n26.00\\n26.00\\n26.00\\n26.00\\n26.00\\n26.00\\n26.00\\n26.00\\n26.00\\n26.00\\n26.00\\nPlease Remit To:\\nKMOZ 92.3 The Moose\\n1360 E. Sherwood Drive\\nGrand Junction, CO 81501\\n970.254.2100\\nROW CDU\\nInvoice\\n17685-2\\nDate\\n10/31/2020\\nMesa County Republicans\\n920 Visa Ct.\\nGrand Junction, CO 81506\\nPayment Terms: 30 Days\\nMesa County Republicans\\nDETACH AND RETURN WITH PAYMENT\\nInvoice Month: October\\nAdvertiser: Mesa County Republicans\\nAccount:\\nBilling Type: Monthly\\nSalesperson: Brenda\\nDescription: Vote Republican\\nEst. Number:\\nIDB Code:\\nAdvertiser: Mesa County Republicans\\nFlight Dates: 10/1/2020\\n10/31/2020\\nDate Length\\n10/25/2020\\n10/26/2020\\n10/27/2020\\n10/28/2020\\n10/29/2020\\n10/30/2020\\n10/31/2020\\nKMOZ-FM\\nQty\\nRate\\n1\\n26.00\\n1\\n26.00\\n1\\n26.00\\n1\\n26.00\\n1\\n26.00\\n1\\n26.00\\n1\\n26.00\\n31\\nTo\\n26\\n26.\\n26.0\\n26.00\\n26.00\\n26.00\\n26.00\\n$806.00\\n30 2:44:17 PM\\n30 1:52:28 PM\\n30 11:50:55 AM\\n30 6:24:59 AM\\n30 7:44:02 AM\\n30 9:53:06 AM\\n30 5:41:02 PM\\nSpot Summary 31 30 second spot(s) on KMOZ-FM at $26.00 each for a total of $806.00\\nTotal Spots\\n31\\nInvoice Total\\n$806.\", \"task_type\": \"kile\"}",
+      "output": "",
+      "expected": {
+        "document_id": "17685-2\n17685-2",
+        "vendor_name": "KMOZ 92.3 The Moose\nKMOZ 92.3 The Moose",
+        "vendor_address": "KMOZ 92.3 The Moose\n1360 E. Sherwood Drive\nGrand Junction, CO 81501\nKMOZ 92.3 The Moose\n1360 E. Sherwood Drive\nGrand Junction, CO 81501",
+        "customer_name": "Mesa County Republicans\nMesa County Republicans",
+        "customer_address": "Mesa County Republicans\n920 Visa Ct.\nGrand Junction, CO 81506\nMesa County Republicans\n920 Visa Ct.\nGrand Junction, CO 81506",
+        "invoice_date": "10/31/2020\n10/31/2020",
+        "total_amount": "$806.00\n$806.00",
+        "currency": "$"
+      },
+      "error": "Unknown keyword arguments: `result_type`",
+      "match_type": "failure",
+      "evaluation_score": 0.0,
+      "evaluation_details": {
+        "match_type": "failure",
+        "format_correct": false,
+        "content_correct": false,
+        "field_matches": {
+          "document_id": false,
+          "vendor_name": false,
+          "vendor_address": false,
+          "customer_name": false,
+          "customer_address": false,
+          "invoice_id": false,
+          "invoice_date": false,
+          "due_date": false,
+          "total_amount": false,
+          "tax_amount": false,
+          "currency": false
+        },
+        "explanation": "No actual output provided to compare against expected output"
+      },
+      "latency_ms": 647.9903750005178,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "tokens": {
+        "input": 0,
+        "output": 0,
+        "generation_input": null,
+        "generation_output": null,
+        "execution_input": null,
+        "execution_output": null
+      }
+    },
+    {
+      "instance_id": "002e3cf97973428f905671b3_kile",
+      "input": "{\"document_text\": \"UMI PUBLICATIONS, INC.\\nP.O.BOX 30036 (28230)\\n1135 NORTH TRYON ST.\\nCHARLOTTE, NC 28206\\no E.\\nDocument Number: 096084\\nDocument Date: 12/09/99\\nPage: 1\\nship. MR: RICK HABEGGER\\nSME/RJR;\\nMR RICH HABEGGER\\nSME/RJR\\n401N: MAIN ST. 13TH FLOOR\\nWINSTON-SALEM, NC 27102\\nTo\\n401 N: MAIN' ST.. 13TH FLOOR\\nWINSTON-SALEM, NC 27102\\nCueti.D\\nP:0. Number,. ::\\nP:0.\\\"Date. :: 12/07/99.\\nJob/Order. No.:.\\nSalespersony.\\nUnit\\nRut\\nship Via.:.\\nShip. pate: 12/07/99.\\nueDate.: 12/19/99\\narms\\n: NET 10 DAYS\\nOrdered\\nShipped\\nPrice\\n250000:0900\\nNet,\\n250000, :00\\n1.00: :\\n1:00:\\nMATERIALS CHARGE'FOR NAS\\u00c7AR.:2000\\nCOMMEMORATIVE BOOK: LAND: NASCAR 2000.\\nMINIA ABOOK PREMIUM\\\"\\nAccepted.By\\nAccepted BY/RJR/SME:\\nName\\nTREASIREA\\nTitle:\\n12.9199\\nDat\\u00e9\\nName\\nGitle\\nDate\\nREs.\\nSubtotal:\\nTax,\\na\\n250000.00\\n0.00:\\n250000.00\\n20'd\\n63LOVLEVOL 'ON X4J\\nSNOIJWOI78Ad IWA Wd 90:90 AHI 66-60-0.\", \"task_type\": \"kile\"}",
+      "output": "",
+      "expected": {
+        "document_id": "096084",
+        "vendor_name": "UMI PUBLICATIONS, INC.",
+        "vendor_address": "UMI PUBLICATIONS, INC.\nP. O. BOX 30036 (28230)\n1135 NORTH TRYON ST.\nCHARLOTTE NC 28206",
+        "customer_name": "MR. RICH HABEGGER\nSME/RJR",
+        "customer_address": "MR. RICH HABEGGER\nSME/RJR\n401 N MAIN ST. 13TH FLOOR\nWINSTON-SALEM, NC 27102",
+        "invoice_date": "12/09/99",
+        "due_date": "12/19/99",
+        "total_amount": "250000.00"
+      },
+      "error": "Unknown keyword arguments: `result_type`",
+      "match_type": "failure",
+      "evaluation_score": 0.0,
+      "evaluation_details": {
+        "match_type": "failure",
+        "format_correct": false,
+        "content_correct": false,
+        "field_matches": {
+          "document_id": false,
+          "vendor_name": false,
+          "vendor_address": false,
+          "customer_name": false,
+          "customer_address": false,
+          "invoice_id": false,
+          "invoice_date": false,
+          "due_date": false,
+          "total_amount": false,
+          "tax_amount": false,
+          "currency": false
+        },
+        "explanation": "No actual output provided to compare against expected output"
+      },
+      "latency_ms": 560.5250420048833,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "tokens": {
+        "input": 0,
+        "output": 0,
+        "generation_input": null,
+        "generation_output": null,
+        "execution_input": null,
+        "execution_output": null
+      }
+    }
+  ]
+}

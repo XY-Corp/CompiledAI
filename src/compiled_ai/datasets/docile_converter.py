@@ -119,6 +119,41 @@ class DocILEConverter(DatasetConverter):
     # Loading helpers
     # ------------------------------------------------------------------
 
+    def load_file(self, path: str) -> list[DatasetInstance]:
+        """Load a single DocILE document by annotation file path.
+
+        Args:
+            path: Path to annotation JSON file
+
+        Returns:
+            List of DatasetInstance (one per task type)
+        """
+        import json
+        from pathlib import Path
+
+        ann_path = Path(path)
+        doc_id = ann_path.stem
+
+        # Find OCR file in sibling directory
+        base_dir = ann_path.parent.parent
+        ocr_path = base_dir / "ocr" / f"{doc_id}.json"
+
+        with open(ann_path) as f:
+            annotation = json.load(f)
+
+        ocr_text = ""
+        if ocr_path.exists():
+            with open(ocr_path) as f:
+                ocr_data = json.load(f)
+            ocr_text = self._extract_ocr_text(ocr_data)
+
+        return self.convert({
+            "id": doc_id,
+            "annotation": annotation,
+            "ocr_text": ocr_text,
+            "task_type": "kile",  # Default to KILE
+        })
+
     def load_directory(
         self,
         dir_path: str,
@@ -209,7 +244,7 @@ class DocILEConverter(DatasetConverter):
         for page in ocr_data.get("pages", []):
             for block in page.get("blocks", []):
                 for line in block.get("lines", []):
-                    line_text_parts = [w.get("text", "") for w in line.get("words", [])]
+                    line_text_parts = [w.get("value", w.get("text", "")) for w in line.get("words", [])]
                     line_text = " ".join(t for t in line_text_parts if t)
                     if line_text:
                         texts.append(line_text)

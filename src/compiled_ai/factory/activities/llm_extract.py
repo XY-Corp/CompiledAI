@@ -28,11 +28,11 @@ async def llm_extract(
     class ExtractedData(BaseModel):
         data: Dict
 
-    agent = Agent(model, result_type=ExtractedData)
+    agent = Agent(model, output_type=ExtractedData)
     prompt = f"Extract the following from the text: {schema_description}\n\nText: {text}"
     result = await agent.run(prompt)
 
     return {
-        "data": result.data.data,
+        "data": result.output.data,
         "status": "success"
     }

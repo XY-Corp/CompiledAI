@@ -1,0 +1,605 @@
+{
+  "instances": [
+    {
+      "instance_id": "00134dd365a24343b35b78c6_kile",
+      "input": "{\"document_text\": \"\", \"task_type\": \"kile\"}",
+      "output": "{\"blocked\": true, \"gate\": \"input\", \"validators_run\": [\"PromptInjectionValidator\"], \"threats_detected\": [{\"validator\": \"PromptInjectionValidator\", \"score\": 0.023251056671142578, \"details\": {\"label\": \"INJECTION\", \"raw_label\": \"INJECTION\", \"raw_score\": 0.9767489433288574, \"injection_score\": 0.9767489433288574, \"safe_score\": 0.023251056671142578, \"threshold\": 0.5, \"model\": \"protectai/deberta-v3-base-prompt-injection-v2\", \"decoded_variant_index\": 0, \"decoded_variants_checked\": 1}}], \"blocked_by\": \"PromptInjectionValidator\"}",
+      "expected": {
+        "document_id": "990304502",
+        "vendor_name": "BIO RELIANCE Testing & Development, Inc.\nBioReliance Testing & Development, Inc.\nBioReliance Testing & Development, Inc.",
+        "vendor_address": "BIORELIANCE- Testing & Development, Inc.\n14920 Broschart Road \u00b7 Rockville, MD 20850-3349 USA",
+        "customer_name": "LORILLARD RESEARCH CENTER",
+        "customer_address": "LORILLARD RESEARCH CENTER\nATTN: MS MELANEE BENNETT\n420 ENGLISH STREET\nGREENSBORO, NC 27405",
+        "invoice_date": "03/25/99",
+        "total_amount": "$21,000.00",
+        "currency": "$"
+      },
+      "success": false,
+      "latency_ms": 66282.75483398465,
+      "error": null,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "generation_input_tokens": null,
+      "generation_output_tokens": null,
+      "execution_input_tokens": null,
+      "execution_output_tokens": null,
+      "match_type": "failure",
+      "evaluation_score": 0.0,
+      "evaluation_details": {
+        "raw_output": "{\"blocked\": true, \"gate\": \"input\", \"validators_run\": [\"PromptInjectionValidator\"], \"threats_detected\": [{\"validator\": \"PromptInjectionValidator\", \"score\": 0.023251056671142578, \"details\": {\"label\": \"INJECTION\", \"raw_label\": \"INJECTION\", \"raw_score\": 0.9767489433288574, \"injection_score\": 0.9767489433288574, \"safe_score\": 0.023251056671142578, \"threshold\": 0.5, \"model\": \"protectai/deberta-v3-base-prompt-injection-v2\", \"decoded_variant_index\": 0, \"decoded_variants_checked\": 1}}], \"blocked_by\": \"Pr"
+      }
+    },
+    {
+      "instance_id": "00136a27c7774c1e8dc6b2f2_kile",
+      "input": "{\"document_text\": \"\", \"task_type\": \"kile\"}",
+      "output": "{\"blocked\": true, \"gate\": \"input\", \"validators_run\": [\"PromptInjectionValidator\"], \"threats_detected\": [{\"validator\": \"PromptInjectionValidator\", \"score\": 0.023251056671142578, \"details\": {\"label\": \"INJECTION\", \"raw_label\": \"INJECTION\", \"raw_score\": 0.9767489433288574, \"injection_score\": 0.9767489433288574, \"safe_score\": 0.023251056671142578, \"threshold\": 0.5, \"model\": \"protectai/deberta-v3-base-prompt-injection-v2\", \"decoded_variant_index\": 0, \"decoded_variants_checked\": 1}}], \"blocked_by\": \"PromptInjectionValidator\"}",
+      "expected": {
+        "document_id": "17685-2\n17685-2",
+        "vendor_name": "KMOZ 92.3 The Moose\nKMOZ 92.3 The Moose",
+        "vendor_address": "KMOZ 92.3 The Moose\n1360 E. Sherwood Drive\nGrand Junction, CO 81501\nKMOZ 92.3 The Moose\n1360 E. Sherwood Drive\nGrand Junction, CO 81501",
+        "customer_name": "Mesa County Republicans\nMesa County Republicans",
+        "customer_address": "Mesa County Republicans\n920 Visa Ct.\nGrand Junction, CO 81506\nMesa County Republicans\n920 Visa Ct.\nGrand Junction, CO 81506",
+        "invoice_date": "10/31/2020\n10/31/2020",
+        "total_amount": "$806.00\n$806.00",
+        "currency": "$"
+      },
+      "success": false,
+      "latency_ms": 61.68279197299853,
+      "error": null,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "generation_input_tokens": null,
+      "generation_output_tokens": null,
+      "execution_input_tokens": null,
+      "execution_output_tokens": null,
+      "match_type": "failure",
+      "evaluation_score": 0.0,
+      "evaluation_details": {
+        "raw_output": "{\"blocked\": true, \"gate\": \"input\", \"validators_run\": [\"PromptInjectionValidator\"], \"threats_detected\": [{\"validator\": \"PromptInjectionValidator\", \"score\": 0.023251056671142578, \"details\": {\"label\": \"INJECTION\", \"raw_label\": \"INJECTION\", \"raw_score\": 0.9767489433288574, \"injection_score\": 0.9767489433288574, \"safe_score\": 0.023251056671142578, \"threshold\": 0.5, \"model\": \"protectai/deberta-v3-base-prompt-injection-v2\", \"decoded_variant_index\": 0, \"decoded_variants_checked\": 1}}], \"blocked_by\": \"Pr"
+      }
+    },
+    {
+      "instance_id": "002e3cf97973428f905671b3_kile",
+      "input": "{\"document_text\": \"\", \"task_type\": \"kile\"}",
+      "output": "{\"blocked\": true, \"gate\": \"input\", \"validators_run\": [\"PromptInjectionValidator\"], \"threats_detected\": [{\"validator\": \"PromptInjectionValidator\", \"score\": 0.023251056671142578, \"details\": {\"label\": \"INJECTION\", \"raw_label\": \"INJECTION\", \"raw_score\": 0.9767489433288574, \"injection_score\": 0.9767489433288574, \"safe_score\": 0.023251056671142578, \"threshold\": 0.5, \"model\": \"protectai/deberta-v3-base-prompt-injection-v2\", \"decoded_variant_index\": 0, \"decoded_variants_checked\": 1}}], \"blocked_by\": \"PromptInjectionValidator\"}",
+      "expected": {
+        "document_id": "096084",
+        "vendor_name": "UMI PUBLICATIONS, INC.",
+        "vendor_address": "UMI PUBLICATIONS, INC.\nP. O. BOX 30036 (28230)\n1135 NORTH TRYON ST.\nCHARLOTTE NC 28206",
+        "customer_name": "MR. RICH HABEGGER\nSME/RJR",
+        "customer_address": "MR. RICH HABEGGER\nSME/RJR\n401 N MAIN ST. 13TH FLOOR\nWINSTON-SALEM, NC 27102",
+        "invoice_date": "12/09/99",
+        "due_date": "12/19/99",
+        "total_amount": "250000.00"
+      },
+      "success": false,
+      "latency_ms": 55.802624963689595,
+      "error": null,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "generation_input_tokens": null,
+      "generation_output_tokens": null,
+      "execution_input_tokens": null,
+      "execution_output_tokens": null,
+      "match_type": "failure",
+      "evaluation_score": 0.0,
+      "evaluation_details": {
+        "raw_output": "{\"blocked\": true, \"gate\": \"input\", \"validators_run\": [\"PromptInjectionValidator\"], \"threats_detected\": [{\"validator\": \"PromptInjectionValidator\", \"score\": 0.023251056671142578, \"details\": {\"label\": \"INJECTION\", \"raw_label\": \"INJECTION\", \"raw_score\": 0.9767489433288574, \"injection_score\": 0.9767489433288574, \"safe_score\": 0.023251056671142578, \"threshold\": 0.5, \"model\": \"protectai/deberta-v3-base-prompt-injection-v2\", \"decoded_variant_index\": 0, \"decoded_variants_checked\": 1}}], \"blocked_by\": \"Pr"
+      }
+    },
+    {
+      "instance_id": "002f9b82b74f4258b3b072d0_kile",
+      "input": "{\"document_text\": \"\", \"task_type\": \"kile\"}",
+      "output": "{\"blocked\": true, \"gate\": \"input\", \"validators_run\": [\"PromptInjectionValidator\"], \"threats_detected\": [{\"validator\": \"PromptInjectionValidator\", \"score\": 0.023251056671142578, \"details\": {\"label\": \"INJECTION\", \"raw_label\": \"INJECTION\", \"raw_score\": 0.9767489433288574, \"injection_score\": 0.9767489433288574, \"safe_score\": 0.023251056671142578, \"threshold\": 0.5, \"model\": \"protectai/deberta-v3-base-prompt-injection-v2\", \"decoded_variant_index\": 0, \"decoded_variants_checked\": 1}}], \"blocked_by\": \"PromptInjectionValidator\"}",
+      "expected": {
+        "document_id": "2081683-1",
+        "vendor_name": "WZZM\nWZZM\nWZZM",
+        "vendor_address": "WZZM\n645 3 Mile Road NW\nGrand Rapids MI 49544\nWZZM\nWZZM\nPO BOX: 637386\nCincinnati OH 45263-7386",
+        "customer_name": "American Media & Advocacy Group/ POL",
+        "customer_address": "American Media & Advocacy Group/ POL\nAttention: Accounts Payable\n815 Slaters Lane\nAlexandria VA 22314",
+        "invoice_date": "09/27/20",
+        "due_date": "09/27/2020",
+        "total_amount": "$1,820.00",
+        "currency": "$"
+      },
+      "success": false,
+      "latency_ms": 55.86800002492964,
+      "error": null,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "generation_input_tokens": null,
+      "generation_output_tokens": null,
+      "execution_input_tokens": null,
+      "execution_output_tokens": null,
+      "match_type": "failure",
+      "evaluation_score": 0.0,
+      "evaluation_details": {
+        "raw_output": "{\"blocked\": true, \"gate\": \"input\", \"validators_run\": [\"PromptInjectionValidator\"], \"threats_detected\": [{\"validator\": \"PromptInjectionValidator\", \"score\": 0.023251056671142578, \"details\": {\"label\": \"INJECTION\", \"raw_label\": \"INJECTION\", \"raw_score\": 0.9767489433288574, \"injection_score\": 0.9767489433288574, \"safe_score\": 0.023251056671142578, \"threshold\": 0.5, \"model\": \"protectai/deberta-v3-base-prompt-injection-v2\", \"decoded_variant_index\": 0, \"decoded_variants_checked\": 1}}], \"blocked_by\": \"Pr"
+      }
+    },
+    {
+      "instance_id": "003568b1286f4dab953fc2d5_kile",
+      "input": "{\"document_text\": \"\", \"task_type\": \"kile\"}",
+      "output": "{\"blocked\": true, \"gate\": \"input\", \"validators_run\": [\"PromptInjectionValidator\"], \"threats_detected\": [{\"validator\": \"PromptInjectionValidator\", \"score\": 0.023251056671142578, \"details\": {\"label\": \"INJECTION\", \"raw_label\": \"INJECTION\", \"raw_score\": 0.9767489433288574, \"injection_score\": 0.9767489433288574, \"safe_score\": 0.023251056671142578, \"threshold\": 0.5, \"model\": \"protectai/deberta-v3-base-prompt-injection-v2\", \"decoded_variant_index\": 0, \"decoded_variants_checked\": 1}}], \"blocked_by\": \"PromptInjectionValidator\"}",
+      "expected": {
+        "document_id": "23299\n23299",
+        "vendor_name": "Walt Klein & Associates, Inc.",
+        "vendor_address": "Walt Klein & Associates, Inc.\n725 Highland Oaks Drivs, Suite 200\nWinston-Salem, NC 27103",
+        "customer_name": "RJR - Grassroots Tactical Actions\nR.J. Reynolds Tobacco Company",
+        "customer_address": "RJR - Grassroots Tactical Actipns\nR.J. Reynolds Tobacco Comp\u00e1ny\nP.O. Box 2959\nWinston-Salem, NC 27102",
+        "invoice_date": "05/08/01",
+        "total_amount": "200.00"
+      },
+      "success": false,
+      "latency_ms": 57.59687500540167,
+      "error": null,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "generation_input_tokens": null,
+      "generation_output_tokens": null,
+      "execution_input_tokens": null,
+      "execution_output_tokens": null,
+      "match_type": "failure",
+      "evaluation_score": 0.0,
+      "evaluation_details": {
+        "raw_output": "{\"blocked\": true, \"gate\": \"input\", \"validators_run\": [\"PromptInjectionValidator\"], \"threats_detected\": [{\"validator\": \"PromptInjectionValidator\", \"score\": 0.023251056671142578, \"details\": {\"label\": \"INJECTION\", \"raw_label\": \"INJECTION\", \"raw_score\": 0.9767489433288574, \"injection_score\": 0.9767489433288574, \"safe_score\": 0.023251056671142578, \"threshold\": 0.5, \"model\": \"protectai/deberta-v3-base-prompt-injection-v2\", \"decoded_variant_index\": 0, \"decoded_variants_checked\": 1}}], \"blocked_by\": \"Pr"
+      }
+    },
+    {
+      "instance_id": "0039ed9f32974a90afb4f8f2_kile",
+      "input": "{\"document_text\": \"\", \"task_type\": \"kile\"}",
+      "output": "{\"blocked\": true, \"gate\": \"input\", \"validators_run\": [\"PromptInjectionValidator\"], \"threats_detected\": [{\"validator\": \"PromptInjectionValidator\", \"score\": 0.023251056671142578, \"details\": {\"label\": \"INJECTION\", \"raw_label\": \"INJECTION\", \"raw_score\": 0.9767489433288574, \"injection_score\": 0.9767489433288574, \"safe_score\": 0.023251056671142578, \"threshold\": 0.5, \"model\": \"protectai/deberta-v3-base-prompt-injection-v2\", \"decoded_variant_index\": 0, \"decoded_variants_checked\": 1}}], \"blocked_by\": \"PromptInjectionValidator\"}",
+      "expected": {
+        "document_id": "20N0023494",
+        "vendor_name": "KHBM FM\nPINES BROADCASTING, INC.",
+        "vendor_address": "KHBM FM\nPINES BROADCASTING, INC.\n279 MIDWAY ROUTE\nMONTICELLO ,AR 71655",
+        "customer_name": "EDDIE CHEATHAM FOR AR STATE SENATE\nLINDA NAPPER",
+        "customer_address": "EDDIE CHEATHAM FOR AR STATE SENATE\nLINDA NAPPER\n, AR",
+        "total_amount": "$0.00",
+        "currency": "$"
+      },
+      "success": false,
+      "latency_ms": 55.91324996203184,
+      "error": null,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "generation_input_tokens": null,
+      "generation_output_tokens": null,
+      "execution_input_tokens": null,
+      "execution_output_tokens": null,
+      "match_type": "failure",
+      "evaluation_score": 0.0,
+      "evaluation_details": {
+        "raw_output": "{\"blocked\": true, \"gate\": \"input\", \"validators_run\": [\"PromptInjectionValidator\"], \"threats_detected\": [{\"validator\": \"PromptInjectionValidator\", \"score\": 0.023251056671142578, \"details\": {\"label\": \"INJECTION\", \"raw_label\": \"INJECTION\", \"raw_score\": 0.9767489433288574, \"injection_score\": 0.9767489433288574, \"safe_score\": 0.023251056671142578, \"threshold\": 0.5, \"model\": \"protectai/deberta-v3-base-prompt-injection-v2\", \"decoded_variant_index\": 0, \"decoded_variants_checked\": 1}}], \"blocked_by\": \"Pr"
+      }
+    },
+    {
+      "instance_id": "003cc91637994b7d9566ac41_kile",
+      "input": "{\"document_text\": \"\", \"task_type\": \"kile\"}",
+      "output": "{\"blocked\": true, \"gate\": \"input\", \"validators_run\": [\"PromptInjectionValidator\"], \"threats_detected\": [{\"validator\": \"PromptInjectionValidator\", \"score\": 0.023251056671142578, \"details\": {\"label\": \"INJECTION\", \"raw_label\": \"INJECTION\", \"raw_score\": 0.9767489433288574, \"injection_score\": 0.9767489433288574, \"safe_score\": 0.023251056671142578, \"threshold\": 0.5, \"model\": \"protectai/deberta-v3-base-prompt-injection-v2\", \"decoded_variant_index\": 0, \"decoded_variants_checked\": 1}}], \"blocked_by\": \"PromptInjectionValidator\"}",
+      "expected": {
+        "vendor_name": "POWELL, GOLDSTEIN, FRAZER MURPHY LLP\nPOWELL, GOLDSTEIN, FRAZER MURPHY LLP",
+        "vendor_address": "POWELL, GOLDSTEIN, FRAZER MURPHY LLP\nSixth Floor\n1001 Pennsylvania Ave., N.W.\nWashington, D.C. 20004\nPOWELL, GOLDSTEIN, FRAZER MURPHY LLP\nSixth Floor\n1001 Pennsylvania Ave., N.W.\nWashington, D.C. 20004",
+        "customer_name": "Harry Huge, Esq.",
+        "invoice_date": "September 24, 1999",
+        "total_amount": "$119,517.21"
+      },
+      "success": false,
+      "latency_ms": 56.04087503161281,
+      "error": null,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "generation_input_tokens": null,
+      "generation_output_tokens": null,
+      "execution_input_tokens": null,
+      "execution_output_tokens": null,
+      "match_type": "failure",
+      "evaluation_score": 0.0,
+      "evaluation_details": {
+        "raw_output": "{\"blocked\": true, \"gate\": \"input\", \"validators_run\": [\"PromptInjectionValidator\"], \"threats_detected\": [{\"validator\": \"PromptInjectionValidator\", \"score\": 0.023251056671142578, \"details\": {\"label\": \"INJECTION\", \"raw_label\": \"INJECTION\", \"raw_score\": 0.9767489433288574, \"injection_score\": 0.9767489433288574, \"safe_score\": 0.023251056671142578, \"threshold\": 0.5, \"model\": \"protectai/deberta-v3-base-prompt-injection-v2\", \"decoded_variant_index\": 0, \"decoded_variants_checked\": 1}}], \"blocked_by\": \"Pr"
+      }
+    },
+    {
+      "instance_id": "00405d767fb1406180d05ef2_kile",
+      "input": "{\"document_text\": \"\", \"task_type\": \"kile\"}",
+      "output": "{\"blocked\": true, \"gate\": \"input\", \"validators_run\": [\"PromptInjectionValidator\"], \"threats_detected\": [{\"validator\": \"PromptInjectionValidator\", \"score\": 0.023251056671142578, \"details\": {\"label\": \"INJECTION\", \"raw_label\": \"INJECTION\", \"raw_score\": 0.9767489433288574, \"injection_score\": 0.9767489433288574, \"safe_score\": 0.023251056671142578, \"threshold\": 0.5, \"model\": \"protectai/deberta-v3-base-prompt-injection-v2\", \"decoded_variant_index\": 0, \"decoded_variants_checked\": 1}}], \"blocked_by\": \"PromptInjectionValidator\"}",
+      "expected": {
+        "document_id": "99-D08025A",
+        "vendor_name": "Rothstein-Tauber, Incorporated",
+        "vendor_address": "Rothstein-Tauber, Incorporated\nMarket Research Services\n1351 Washington Blvd.\u2022Stamford, CT 06902",
+        "customer_name": "Lorillard Tobacco Company",
+        "customer_address": "Lorillard Tobacco Company\nPO Box 10529\nGreensboro, NC 27404-0529\nAttention: Mr. Scott Benson",
+        "invoice_date": "September 3, 1999",
+        "total_amount": "$15,800.00",
+        "currency": "$"
+      },
+      "success": false,
+      "latency_ms": 56.063958967570215,
+      "error": null,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "generation_input_tokens": null,
+      "generation_output_tokens": null,
+      "execution_input_tokens": null,
+      "execution_output_tokens": null,
+      "match_type": "failure",
+      "evaluation_score": 0.0,
+      "evaluation_details": {
+        "raw_output": "{\"blocked\": true, \"gate\": \"input\", \"validators_run\": [\"PromptInjectionValidator\"], \"threats_detected\": [{\"validator\": \"PromptInjectionValidator\", \"score\": 0.023251056671142578, \"details\": {\"label\": \"INJECTION\", \"raw_label\": \"INJECTION\", \"raw_score\": 0.9767489433288574, \"injection_score\": 0.9767489433288574, \"safe_score\": 0.023251056671142578, \"threshold\": 0.5, \"model\": \"protectai/deberta-v3-base-prompt-injection-v2\", \"decoded_variant_index\": 0, \"decoded_variants_checked\": 1}}], \"blocked_by\": \"Pr"
+      }
+    },
+    {
+      "instance_id": "004e76fe452448eebaadc53b_kile",
+      "input": "{\"document_text\": \"\", \"task_type\": \"kile\"}",
+      "output": "{\"blocked\": true, \"gate\": \"input\", \"validators_run\": [\"PromptInjectionValidator\"], \"threats_detected\": [{\"validator\": \"PromptInjectionValidator\", \"score\": 0.023251056671142578, \"details\": {\"label\": \"INJECTION\", \"raw_label\": \"INJECTION\", \"raw_score\": 0.9767489433288574, \"injection_score\": 0.9767489433288574, \"safe_score\": 0.023251056671142578, \"threshold\": 0.5, \"model\": \"protectai/deberta-v3-base-prompt-injection-v2\", \"decoded_variant_index\": 0, \"decoded_variants_checked\": 1}}], \"blocked_by\": \"PromptInjectionValidator\"}",
+      "expected": {
+        "document_id": "540975",
+        "vendor_name": "KZZL-FM\nInland Northwest Broadcasting",
+        "vendor_address": "Inland Northwest Broadcasting\nMary McCollum (mmccollum@inlandradio.com)\n1114 N Almon Street\nPO Box 8849\nMoscow, ID 83843",
+        "customer_name": "Laurene Sorenson\nLaurene Sorenson- Rizen Creative ()",
+        "total_amount": "$119.00",
+        "currency": "$"
+      },
+      "success": false,
+      "latency_ms": 56.480832980014384,
+      "error": null,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "generation_input_tokens": null,
+      "generation_output_tokens": null,
+      "execution_input_tokens": null,
+      "execution_output_tokens": null,
+      "match_type": "failure",
+      "evaluation_score": 0.0,
+      "evaluation_details": {
+        "raw_output": "{\"blocked\": true, \"gate\": \"input\", \"validators_run\": [\"PromptInjectionValidator\"], \"threats_detected\": [{\"validator\": \"PromptInjectionValidator\", \"score\": 0.023251056671142578, \"details\": {\"label\": \"INJECTION\", \"raw_label\": \"INJECTION\", \"raw_score\": 0.9767489433288574, \"injection_score\": 0.9767489433288574, \"safe_score\": 0.023251056671142578, \"threshold\": 0.5, \"model\": \"protectai/deberta-v3-base-prompt-injection-v2\", \"decoded_variant_index\": 0, \"decoded_variants_checked\": 1}}], \"blocked_by\": \"Pr"
+      }
+    },
+    {
+      "instance_id": "006835846482455e8d75f8f8_kile",
+      "input": "{\"document_text\": \"\", \"task_type\": \"kile\"}",
+      "output": "{\"blocked\": true, \"gate\": \"input\", \"validators_run\": [\"PromptInjectionValidator\"], \"threats_detected\": [{\"validator\": \"PromptInjectionValidator\", \"score\": 0.023251056671142578, \"details\": {\"label\": \"INJECTION\", \"raw_label\": \"INJECTION\", \"raw_score\": 0.9767489433288574, \"injection_score\": 0.9767489433288574, \"safe_score\": 0.023251056671142578, \"threshold\": 0.5, \"model\": \"protectai/deberta-v3-base-prompt-injection-v2\", \"decoded_variant_index\": 0, \"decoded_variants_checked\": 1}}], \"blocked_by\": \"PromptInjectionValidator\"}",
+      "expected": {
+        "document_id": "IN-11912129101\nIN-11912129101",
+        "vendor_name": "NRG Media LLC",
+        "vendor_address": "NRG Media LLC\n5011 Capitol Avenue\nOmaha, NE 68132",
+        "customer_name": "KATZ MEDIA GROUP (3RD FLR)",
+        "customer_address": "KATZ MEDIA GROUP (3RD FLR)\n125 W 55TH STREET, 3RD FLR\nNEW YORK, NY 10019",
+        "invoice_date": "12/29/2019\n12/29/2019",
+        "total_amount": "$1,660.00",
+        "currency": "$"
+      },
+      "success": false,
+      "latency_ms": 54.73350000102073,
+      "error": null,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "generation_input_tokens": null,
+      "generation_output_tokens": null,
+      "execution_input_tokens": null,
+      "execution_output_tokens": null,
+      "match_type": "failure",
+      "evaluation_score": 0.0,
+      "evaluation_details": {
+        "raw_output": "{\"blocked\": true, \"gate\": \"input\", \"validators_run\": [\"PromptInjectionValidator\"], \"threats_detected\": [{\"validator\": \"PromptInjectionValidator\", \"score\": 0.023251056671142578, \"details\": {\"label\": \"INJECTION\", \"raw_label\": \"INJECTION\", \"raw_score\": 0.9767489433288574, \"injection_score\": 0.9767489433288574, \"safe_score\": 0.023251056671142578, \"threshold\": 0.5, \"model\": \"protectai/deberta-v3-base-prompt-injection-v2\", \"decoded_variant_index\": 0, \"decoded_variants_checked\": 1}}], \"blocked_by\": \"Pr"
+      }
+    },
+    {
+      "instance_id": "0079863fa739477290959e5d_kile",
+      "input": "{\"document_text\": \"\", \"task_type\": \"kile\"}",
+      "output": "{\"blocked\": true, \"gate\": \"input\", \"validators_run\": [\"PromptInjectionValidator\"], \"threats_detected\": [{\"validator\": \"PromptInjectionValidator\", \"score\": 0.023251056671142578, \"details\": {\"label\": \"INJECTION\", \"raw_label\": \"INJECTION\", \"raw_score\": 0.9767489433288574, \"injection_score\": 0.9767489433288574, \"safe_score\": 0.023251056671142578, \"threshold\": 0.5, \"model\": \"protectai/deberta-v3-base-prompt-injection-v2\", \"decoded_variant_index\": 0, \"decoded_variants_checked\": 1}}], \"blocked_by\": \"PromptInjectionValidator\"}",
+      "expected": {
+        "document_id": "7558669",
+        "vendor_name": "Sinclair Broadcast Group Inc\nSinclair Broadcast Group",
+        "vendor_address": "Sinclair Broadcast Group Inc\nC/O WHP\nPO BOX 206270\nDALLAS TX 75320-6270\nSinclair Broadcast Group\nc/o WHP\nPO Box 206270\nDallas TX 75320-6270",
+        "customer_name": "AMPLIFY MEDIA",
+        "customer_address": "AMPLIFY MEDIA\nPO BOX 6\nFRANKLIN, IL 60131",
+        "invoice_date": "7/12/2020",
+        "due_date": "7/12/2020",
+        "total_amount": "$8,295.00",
+        "currency": "$"
+      },
+      "success": false,
+      "latency_ms": 57.01262498041615,
+      "error": null,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "generation_input_tokens": null,
+      "generation_output_tokens": null,
+      "execution_input_tokens": null,
+      "execution_output_tokens": null,
+      "match_type": "failure",
+      "evaluation_score": 0.0,
+      "evaluation_details": {
+        "raw_output": "{\"blocked\": true, \"gate\": \"input\", \"validators_run\": [\"PromptInjectionValidator\"], \"threats_detected\": [{\"validator\": \"PromptInjectionValidator\", \"score\": 0.023251056671142578, \"details\": {\"label\": \"INJECTION\", \"raw_label\": \"INJECTION\", \"raw_score\": 0.9767489433288574, \"injection_score\": 0.9767489433288574, \"safe_score\": 0.023251056671142578, \"threshold\": 0.5, \"model\": \"protectai/deberta-v3-base-prompt-injection-v2\", \"decoded_variant_index\": 0, \"decoded_variants_checked\": 1}}], \"blocked_by\": \"Pr"
+      }
+    },
+    {
+      "instance_id": "0087b1c5608a443995fe9656_kile",
+      "input": "{\"document_text\": \"\", \"task_type\": \"kile\"}",
+      "output": "{\"blocked\": true, \"gate\": \"input\", \"validators_run\": [\"PromptInjectionValidator\"], \"threats_detected\": [{\"validator\": \"PromptInjectionValidator\", \"score\": 0.023251056671142578, \"details\": {\"label\": \"INJECTION\", \"raw_label\": \"INJECTION\", \"raw_score\": 0.9767489433288574, \"injection_score\": 0.9767489433288574, \"safe_score\": 0.023251056671142578, \"threshold\": 0.5, \"model\": \"protectai/deberta-v3-base-prompt-injection-v2\", \"decoded_variant_index\": 0, \"decoded_variants_checked\": 1}}], \"blocked_by\": \"PromptInjectionValidator\"}",
+      "expected": {
+        "document_id": "2455",
+        "vendor_name": "Innovative Resource Group, Inc.\nInnovative Resouce Group, Inc.\nIRG, Inc.",
+        "vendor_address": "Innovative Resource Group, Inc.\n101 Emerson Avenue, Pittsburgh, PA 15215\nInnovative Resouce Group, Inc. 101 Emerson Ave.\n101 Emerson Ave. Pittsburgh, PA 15215",
+        "customer_name": "Mr. Jeff Falvo\nMarketing Information & Planning\nPhilip Morris USA",
+        "customer_address": "Mr. Jeff Falvo\nMarketing Information & Planning\nPhilip Morris USA\n120 Park Avenue\nNew York, NY 10017",
+        "invoice_date": "12/8/99",
+        "total_amount": "$10,471.83",
+        "currency": "$"
+      },
+      "success": false,
+      "latency_ms": 56.179707986302674,
+      "error": null,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "generation_input_tokens": null,
+      "generation_output_tokens": null,
+      "execution_input_tokens": null,
+      "execution_output_tokens": null,
+      "match_type": "failure",
+      "evaluation_score": 0.0,
+      "evaluation_details": {
+        "raw_output": "{\"blocked\": true, \"gate\": \"input\", \"validators_run\": [\"PromptInjectionValidator\"], \"threats_detected\": [{\"validator\": \"PromptInjectionValidator\", \"score\": 0.023251056671142578, \"details\": {\"label\": \"INJECTION\", \"raw_label\": \"INJECTION\", \"raw_score\": 0.9767489433288574, \"injection_score\": 0.9767489433288574, \"safe_score\": 0.023251056671142578, \"threshold\": 0.5, \"model\": \"protectai/deberta-v3-base-prompt-injection-v2\", \"decoded_variant_index\": 0, \"decoded_variants_checked\": 1}}], \"blocked_by\": \"Pr"
+      }
+    },
+    {
+      "instance_id": "008ca3c5e4024ce2aa2c77e2_kile",
+      "input": "{\"document_text\": \"\", \"task_type\": \"kile\"}",
+      "output": "{\"blocked\": true, \"gate\": \"input\", \"validators_run\": [\"PromptInjectionValidator\"], \"threats_detected\": [{\"validator\": \"PromptInjectionValidator\", \"score\": 0.023251056671142578, \"details\": {\"label\": \"INJECTION\", \"raw_label\": \"INJECTION\", \"raw_score\": 0.9767489433288574, \"injection_score\": 0.9767489433288574, \"safe_score\": 0.023251056671142578, \"threshold\": 0.5, \"model\": \"protectai/deberta-v3-base-prompt-injection-v2\", \"decoded_variant_index\": 0, \"decoded_variants_checked\": 1}}], \"blocked_by\": \"PromptInjectionValidator\"}",
+      "expected": {
+        "document_id": "DM20-267",
+        "vendor_name": "Carla Litton\nStateNets\nStateNets",
+        "vendor_address": "48 Chiswick Cir\n-\nBloomington, IL 61704\nStateNets\n2601 Northwind Drive\nRichmond, VA 23233",
+        "customer_name": "Senate Leadership Fund",
+        "customer_address": "2601 Northwind Drive\n-\nRichmond, VA 23233",
+        "invoice_date": "9/8/20"
+      },
+      "success": false,
+      "latency_ms": 55.27941696345806,
+      "error": null,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "generation_input_tokens": null,
+      "generation_output_tokens": null,
+      "execution_input_tokens": null,
+      "execution_output_tokens": null,
+      "match_type": "failure",
+      "evaluation_score": 0.0,
+      "evaluation_details": {
+        "raw_output": "{\"blocked\": true, \"gate\": \"input\", \"validators_run\": [\"PromptInjectionValidator\"], \"threats_detected\": [{\"validator\": \"PromptInjectionValidator\", \"score\": 0.023251056671142578, \"details\": {\"label\": \"INJECTION\", \"raw_label\": \"INJECTION\", \"raw_score\": 0.9767489433288574, \"injection_score\": 0.9767489433288574, \"safe_score\": 0.023251056671142578, \"threshold\": 0.5, \"model\": \"protectai/deberta-v3-base-prompt-injection-v2\", \"decoded_variant_index\": 0, \"decoded_variants_checked\": 1}}], \"blocked_by\": \"Pr"
+      }
+    },
+    {
+      "instance_id": "0091f649d0c746f8abec5e16_kile",
+      "input": "{\"document_text\": \"\", \"task_type\": \"kile\"}",
+      "output": "{\"blocked\": true, \"gate\": \"input\", \"validators_run\": [\"PromptInjectionValidator\"], \"threats_detected\": [{\"validator\": \"PromptInjectionValidator\", \"score\": 0.023251056671142578, \"details\": {\"label\": \"INJECTION\", \"raw_label\": \"INJECTION\", \"raw_score\": 0.9767489433288574, \"injection_score\": 0.9767489433288574, \"safe_score\": 0.023251056671142578, \"threshold\": 0.5, \"model\": \"protectai/deberta-v3-base-prompt-injection-v2\", \"decoded_variant_index\": 0, \"decoded_variants_checked\": 1}}], \"blocked_by\": \"PromptInjectionValidator\"}",
+      "expected": {
+        "vendor_address": "3662 ONTARIO RD., SUITE B\nKEYSVILLE, VA 23947",
+        "invoice_date": "01/17/00",
+        "total_amount": "5,454.00"
+      },
+      "success": false,
+      "latency_ms": 54.76804100908339,
+      "error": null,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "generation_input_tokens": null,
+      "generation_output_tokens": null,
+      "execution_input_tokens": null,
+      "execution_output_tokens": null,
+      "match_type": "failure",
+      "evaluation_score": 0.0,
+      "evaluation_details": {
+        "raw_output": "{\"blocked\": true, \"gate\": \"input\", \"validators_run\": [\"PromptInjectionValidator\"], \"threats_detected\": [{\"validator\": \"PromptInjectionValidator\", \"score\": 0.023251056671142578, \"details\": {\"label\": \"INJECTION\", \"raw_label\": \"INJECTION\", \"raw_score\": 0.9767489433288574, \"injection_score\": 0.9767489433288574, \"safe_score\": 0.023251056671142578, \"threshold\": 0.5, \"model\": \"protectai/deberta-v3-base-prompt-injection-v2\", \"decoded_variant_index\": 0, \"decoded_variants_checked\": 1}}], \"blocked_by\": \"Pr"
+      }
+    },
+    {
+      "instance_id": "0096d69f865b443290705bee_kile",
+      "input": "{\"document_text\": \"\", \"task_type\": \"kile\"}",
+      "output": "{\"blocked\": true, \"gate\": \"input\", \"validators_run\": [\"PromptInjectionValidator\"], \"threats_detected\": [{\"validator\": \"PromptInjectionValidator\", \"score\": 0.023251056671142578, \"details\": {\"label\": \"INJECTION\", \"raw_label\": \"INJECTION\", \"raw_score\": 0.9767489433288574, \"injection_score\": 0.9767489433288574, \"safe_score\": 0.023251056671142578, \"threshold\": 0.5, \"model\": \"protectai/deberta-v3-base-prompt-injection-v2\", \"decoded_variant_index\": 0, \"decoded_variants_checked\": 1}}], \"blocked_by\": \"PromptInjectionValidator\"}",
+      "expected": {
+        "document_id": "2525440785577",
+        "vendor_name": "Mid-West Family",
+        "vendor_address": "Mid-West Family\nP. O. BOX 107\nST. JOSEPH, Michigan 49085",
+        "customer_name": "MAIN STREET MEDIA GROUP",
+        "customer_address": "MAIN STREET MEDIA GROUP\nPO Box 25093\nAlexandria, Virginia 22314",
+        "invoice_date": "2020-08-18",
+        "total_amount": "$3,220.00\n$3,220.00\n$3,220.00",
+        "currency": "$"
+      },
+      "success": false,
+      "latency_ms": 54.61449996801093,
+      "error": null,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "generation_input_tokens": null,
+      "generation_output_tokens": null,
+      "execution_input_tokens": null,
+      "execution_output_tokens": null,
+      "match_type": "failure",
+      "evaluation_score": 0.0,
+      "evaluation_details": {
+        "raw_output": "{\"blocked\": true, \"gate\": \"input\", \"validators_run\": [\"PromptInjectionValidator\"], \"threats_detected\": [{\"validator\": \"PromptInjectionValidator\", \"score\": 0.023251056671142578, \"details\": {\"label\": \"INJECTION\", \"raw_label\": \"INJECTION\", \"raw_score\": 0.9767489433288574, \"injection_score\": 0.9767489433288574, \"safe_score\": 0.023251056671142578, \"threshold\": 0.5, \"model\": \"protectai/deberta-v3-base-prompt-injection-v2\", \"decoded_variant_index\": 0, \"decoded_variants_checked\": 1}}], \"blocked_by\": \"Pr"
+      }
+    },
+    {
+      "instance_id": "009bdcdec5c04cd3b2e31555_kile",
+      "input": "{\"document_text\": \"\", \"task_type\": \"kile\"}",
+      "output": "{\"blocked\": true, \"gate\": \"input\", \"validators_run\": [\"PromptInjectionValidator\"], \"threats_detected\": [{\"validator\": \"PromptInjectionValidator\", \"score\": 0.023251056671142578, \"details\": {\"label\": \"INJECTION\", \"raw_label\": \"INJECTION\", \"raw_score\": 0.9767489433288574, \"injection_score\": 0.9767489433288574, \"safe_score\": 0.023251056671142578, \"threshold\": 0.5, \"model\": \"protectai/deberta-v3-base-prompt-injection-v2\", \"decoded_variant_index\": 0, \"decoded_variants_checked\": 1}}], \"blocked_by\": \"PromptInjectionValidator\"}",
+      "expected": {
+        "document_id": "12256",
+        "vendor_name": "WHTH WNKO Proposal",
+        "vendor_address": "WHTH WNKO Proposal\n1000 N. 40th Street\nP.O. Box 1057\nNewark, Oh 43058-1057",
+        "customer_name": "MEDIA FANANCIAL SERVICES",
+        "customer_address": "MEDIA FANANCIAL SERVICES\nATTN: TIFFANY PEROTTE 9TH FLOOR\n1655 PALM BEACH LAKES BLVD, STE 903\nWEST PALM BEACH, FL 33401",
+        "invoice_date": "3/4/2020",
+        "total_amount": "$503.70",
+        "currency": "$"
+      },
+      "success": false,
+      "latency_ms": 54.672166996169835,
+      "error": null,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "generation_input_tokens": null,
+      "generation_output_tokens": null,
+      "execution_input_tokens": null,
+      "execution_output_tokens": null,
+      "match_type": "failure",
+      "evaluation_score": 0.0,
+      "evaluation_details": {
+        "raw_output": "{\"blocked\": true, \"gate\": \"input\", \"validators_run\": [\"PromptInjectionValidator\"], \"threats_detected\": [{\"validator\": \"PromptInjectionValidator\", \"score\": 0.023251056671142578, \"details\": {\"label\": \"INJECTION\", \"raw_label\": \"INJECTION\", \"raw_score\": 0.9767489433288574, \"injection_score\": 0.9767489433288574, \"safe_score\": 0.023251056671142578, \"threshold\": 0.5, \"model\": \"protectai/deberta-v3-base-prompt-injection-v2\", \"decoded_variant_index\": 0, \"decoded_variants_checked\": 1}}], \"blocked_by\": \"Pr"
+      }
+    },
+    {
+      "instance_id": "00a5c8697856473393f3f9e2_kile",
+      "input": "{\"document_text\": \"\", \"task_type\": \"kile\"}",
+      "output": "{\"blocked\": true, \"gate\": \"input\", \"validators_run\": [\"PromptInjectionValidator\"], \"threats_detected\": [{\"validator\": \"PromptInjectionValidator\", \"score\": 0.023251056671142578, \"details\": {\"label\": \"INJECTION\", \"raw_label\": \"INJECTION\", \"raw_score\": 0.9767489433288574, \"injection_score\": 0.9767489433288574, \"safe_score\": 0.023251056671142578, \"threshold\": 0.5, \"model\": \"protectai/deberta-v3-base-prompt-injection-v2\", \"decoded_variant_index\": 0, \"decoded_variants_checked\": 1}}], \"blocked_by\": \"PromptInjectionValidator\"}",
+      "expected": {
+        "document_id": "22334",
+        "vendor_address": "37-11 30TH STREET, LONG ISLAND CITY, N.Y. 11101",
+        "customer_name": "PHILIP MORRIS\nPHILIP MORRIS",
+        "customer_address": "PHILIP MORRIS\nPHILIP MORRIS\n120 PARK AVE / 12th FLOOR\nATTN:EVETT ROBINSON\nNEW YORK N.Y. 10017-5592",
+        "invoice_date": "06/07/99",
+        "total_amount": "1,082.50"
+      },
+      "success": false,
+      "latency_ms": 54.5787499868311,
+      "error": null,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "generation_input_tokens": null,
+      "generation_output_tokens": null,
+      "execution_input_tokens": null,
+      "execution_output_tokens": null,
+      "match_type": "failure",
+      "evaluation_score": 0.0,
+      "evaluation_details": {
+        "raw_output": "{\"blocked\": true, \"gate\": \"input\", \"validators_run\": [\"PromptInjectionValidator\"], \"threats_detected\": [{\"validator\": \"PromptInjectionValidator\", \"score\": 0.023251056671142578, \"details\": {\"label\": \"INJECTION\", \"raw_label\": \"INJECTION\", \"raw_score\": 0.9767489433288574, \"injection_score\": 0.9767489433288574, \"safe_score\": 0.023251056671142578, \"threshold\": 0.5, \"model\": \"protectai/deberta-v3-base-prompt-injection-v2\", \"decoded_variant_index\": 0, \"decoded_variants_checked\": 1}}], \"blocked_by\": \"Pr"
+      }
+    },
+    {
+      "instance_id": "00aa98164d264f4e924f55a9_kile",
+      "input": "{\"document_text\": \"\", \"task_type\": \"kile\"}",
+      "output": "{\"blocked\": true, \"gate\": \"input\", \"validators_run\": [\"PromptInjectionValidator\"], \"threats_detected\": [{\"validator\": \"PromptInjectionValidator\", \"score\": 0.023251056671142578, \"details\": {\"label\": \"INJECTION\", \"raw_label\": \"INJECTION\", \"raw_score\": 0.9767489433288574, \"injection_score\": 0.9767489433288574, \"safe_score\": 0.023251056671142578, \"threshold\": 0.5, \"model\": \"protectai/deberta-v3-base-prompt-injection-v2\", \"decoded_variant_index\": 0, \"decoded_variants_checked\": 1}}], \"blocked_by\": \"PromptInjectionValidator\"}",
+      "expected": {
+        "document_id": "2097094-1",
+        "vendor_name": "WKYC\nWKYC\nWKYC\nWKYC",
+        "vendor_address": "WKYC\n1333 Lakeside Ave\nCleveland, OH 44114\nWKYC\nWKYC\nPO BOX: 637386\nCincinnati, OH 45263-7386\nWKYC\nWKYC\nPO BOX: 637386\nCincinnati, OH 45263-7386\nWKYC\nWKYC\nPO BOX: 637386\nCincinnati, OH 45263-7386",
+        "customer_name": "SRCP Media, Inc/ POL",
+        "customer_address": "SRCP Media, Inc/ POL\nAttention: Betsy Vonderheid\n201 North Union Street, Suite 200\nAlexandria, VA 22314",
+        "invoice_date": "11/08/20\n11/08/20\n11/08/20",
+        "total_amount": "$29,350.00",
+        "currency": "$"
+      },
+      "success": false,
+      "latency_ms": 57.33491701539606,
+      "error": null,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "generation_input_tokens": null,
+      "generation_output_tokens": null,
+      "execution_input_tokens": null,
+      "execution_output_tokens": null,
+      "match_type": "failure",
+      "evaluation_score": 0.0,
+      "evaluation_details": {
+        "raw_output": "{\"blocked\": true, \"gate\": \"input\", \"validators_run\": [\"PromptInjectionValidator\"], \"threats_detected\": [{\"validator\": \"PromptInjectionValidator\", \"score\": 0.023251056671142578, \"details\": {\"label\": \"INJECTION\", \"raw_label\": \"INJECTION\", \"raw_score\": 0.9767489433288574, \"injection_score\": 0.9767489433288574, \"safe_score\": 0.023251056671142578, \"threshold\": 0.5, \"model\": \"protectai/deberta-v3-base-prompt-injection-v2\", \"decoded_variant_index\": 0, \"decoded_variants_checked\": 1}}], \"blocked_by\": \"Pr"
+      }
+    },
+    {
+      "instance_id": "00bc2d75785b4c02a3454a48_kile",
+      "input": "{\"document_text\": \"\", \"task_type\": \"kile\"}",
+      "output": "{\"blocked\": true, \"gate\": \"input\", \"validators_run\": [\"PromptInjectionValidator\"], \"threats_detected\": [{\"validator\": \"PromptInjectionValidator\", \"score\": 0.023251056671142578, \"details\": {\"label\": \"INJECTION\", \"raw_label\": \"INJECTION\", \"raw_score\": 0.9767489433288574, \"injection_score\": 0.9767489433288574, \"safe_score\": 0.023251056671142578, \"threshold\": 0.5, \"model\": \"protectai/deberta-v3-base-prompt-injection-v2\", \"decoded_variant_index\": 0, \"decoded_variants_checked\": 1}}], \"blocked_by\": \"PromptInjectionValidator\"}",
+      "expected": {
+        "document_id": "7949",
+        "vendor_name": "KGAB",
+        "customer_name": "Neighborhood Research and Media",
+        "customer_address": "Neighborhood Research and Media\nPO BOX 297\nRODANTHE, NC 27968 US",
+        "invoice_date": "05/19/2021",
+        "total_amount": "$502.80",
+        "currency": "$"
+      },
+      "success": false,
+      "latency_ms": 55.23325002286583,
+      "error": null,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "generation_input_tokens": null,
+      "generation_output_tokens": null,
+      "execution_input_tokens": null,
+      "execution_output_tokens": null,
+      "match_type": "failure",
+      "evaluation_score": 0.0,
+      "evaluation_details": {
+        "raw_output": "{\"blocked\": true, \"gate\": \"input\", \"validators_run\": [\"PromptInjectionValidator\"], \"threats_detected\": [{\"validator\": \"PromptInjectionValidator\", \"score\": 0.023251056671142578, \"details\": {\"label\": \"INJECTION\", \"raw_label\": \"INJECTION\", \"raw_score\": 0.9767489433288574, \"injection_score\": 0.9767489433288574, \"safe_score\": 0.023251056671142578, \"threshold\": 0.5, \"model\": \"protectai/deberta-v3-base-prompt-injection-v2\", \"decoded_variant_index\": 0, \"decoded_variants_checked\": 1}}], \"blocked_by\": \"Pr"
+      }
+    },
+    {
+      "instance_id": "00c26149c99647a088299e3b_kile",
+      "input": "{\"document_text\": \"\", \"task_type\": \"kile\"}",
+      "output": "{\"blocked\": true, \"gate\": \"input\", \"validators_run\": [\"PromptInjectionValidator\"], \"threats_detected\": [{\"validator\": \"PromptInjectionValidator\", \"score\": 0.023251056671142578, \"details\": {\"label\": \"INJECTION\", \"raw_label\": \"INJECTION\", \"raw_score\": 0.9767489433288574, \"injection_score\": 0.9767489433288574, \"safe_score\": 0.023251056671142578, \"threshold\": 0.5, \"model\": \"protectai/deberta-v3-base-prompt-injection-v2\", \"decoded_variant_index\": 0, \"decoded_variants_checked\": 1}}], \"blocked_by\": \"PromptInjectionValidator\"}",
+      "expected": {
+        "vendor_name": "Dr. Yoshio Harada",
+        "vendor_address": "Harada and Associates, 8-10-8 Sumiyoshi Yarnate, Higashinada-Ku, Kobe, 658 Japan",
+        "customer_name": "PHILIP MORRIS U.S.A.",
+        "invoice_date": "July 8, 1999"
+      },
+      "success": false,
+      "latency_ms": 52.755708049517125,
+      "error": null,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "generation_input_tokens": null,
+      "generation_output_tokens": null,
+      "execution_input_tokens": null,
+      "execution_output_tokens": null,
+      "match_type": "failure",
+      "evaluation_score": 0.0,
+      "evaluation_details": {
+        "raw_output": "{\"blocked\": true, \"gate\": \"input\", \"validators_run\": [\"PromptInjectionValidator\"], \"threats_detected\": [{\"validator\": \"PromptInjectionValidator\", \"score\": 0.023251056671142578, \"details\": {\"label\": \"INJECTION\", \"raw_label\": \"INJECTION\", \"raw_score\": 0.9767489433288574, \"injection_score\": 0.9767489433288574, \"safe_score\": 0.023251056671142578, \"threshold\": 0.5, \"model\": \"protectai/deberta-v3-base-prompt-injection-v2\", \"decoded_variant_index\": 0, \"decoded_variants_checked\": 1}}], \"blocked_by\": \"Pr"
+      }
+    }
+  ]
+}

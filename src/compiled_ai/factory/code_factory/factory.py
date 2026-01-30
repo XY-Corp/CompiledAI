@@ -460,7 +460,7 @@ class CodeFactory:
             plan_result = await run_agent_with_retry(planner, planner_prompt)
             latency_ms = (time.perf_counter() - start_time) * 1000
 
-            result.plan = plan_result.data
+            result.plan = plan_result.output
 
             # Track metrics for planner call
             input_tokens, output_tokens = extract_usage_from_result(plan_result)
@@ -527,7 +527,7 @@ class CodeFactory:
                 code_result = await run_agent_with_retry(coder, coder_prompt)
                 latency_ms = (time.perf_counter() - start_time) * 1000
 
-                result.generated = code_result.data
+                result.generated = code_result.output
 
                 # Use YAML from Planner (Coder only generates Python activities)
                 result.generated.workflow_yaml = result.plan.workflow_yaml or ""
@@ -769,7 +769,7 @@ class CodeFactory:
             )
             latency_ms = (time.perf_counter() - start_time) * 1000
 
-            result.generated = code_result.data
+            result.generated = code_result.output
             result.generated.workflow_yaml = workflow_yaml  # Use template YAML
             result.regeneration_count = total_regeneration_count
 
@@ -1734,7 +1734,7 @@ Please fix the issues and regenerate valid YAML.
             metrics.record(input_tokens, output_tokens, latency_ms)
 
             # Extract output
-            output: BFCLFunctionCallOutput = agent_result.data
+            output: BFCLFunctionCallOutput = agent_result.output
 
             result.success = True
             result.function_name = output.function_name

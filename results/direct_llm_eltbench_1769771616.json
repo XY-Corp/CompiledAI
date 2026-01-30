@@ -1,0 +1,37 @@
+{
+  "config": {
+    "dataset": "eltbench",
+    "baseline": "direct_llm",
+    "provider": "anthropic",
+    "max_instances": 2
+  },
+  "summary": {
+    "duration_seconds": 73.49385690689087,
+    "overall_success_rate": 0.5,
+    "total_instances": 2,
+    "successful_instances": 1,
+    "failed_instances": 1
+  },
+  "metrics": {
+    "p50_latency_ms": 37901.628124993294,
+    "p90_latency_ms": 37901.628124993294
+  },
+  "instances": [
+    {
+      "id": "address",
+      "success": true,
+      "latency_ms": 27845.83725000266,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "error": null
+    },
+    {
+      "id": "airline",
+      "success": false,
+      "latency_ms": 37901.628124993294,
+      "generation_time_ms": null,
+      "execution_time_ms": null,
+      "error": null
+    }
+  ]
+}

@@ -48,7 +48,7 @@ def create_planner_agent(
 
     agent = Agent(
         create_model(provider, model),
-        result_type=WorkflowSpec,
+        output_type=WorkflowSpec,
         system_prompt=system_prompt,
         retries=2,
     )
@@ -121,7 +121,7 @@ def create_coder_agent(
 
     return Agent(
         create_model(provider, model),
-        result_type=GeneratedFiles,
+        output_type=GeneratedFiles,
         system_prompt=system_prompt,
         retries=2,
     )
@@ -181,7 +181,7 @@ def create_bfcl_agent(
     # Use a lighter model for faster/cheaper execution
     return Agent(
         create_model(provider, model, enable_thinking=False),
-        result_type=BFCLFunctionCallOutput,
+        output_type=BFCLFunctionCallOutput,
         system_prompt=system_prompt,
         retries=2,
     )
