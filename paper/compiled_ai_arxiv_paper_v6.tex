@@ -1271,51 +1271,101 @@ Thomas~J. McCabe.
 
 \appendix
 
-\section{Example Generated Code}
+\section{Example: Prior Authorization Workflow}
 \label{app:example}
 
-\begin{lstlisting}[language=Python, caption={Generated Temporal activity (business logic only)}, basicstyle=\small\ttfamily]
-# Template: SimpleAgent | Modules: Database, HTTP
-# Generated from: eob_processing_v2.yaml
-# Validation: PASS (Security, Syntax, Execution, Accuracy)
+This example demonstrates bounded agentic invocation for healthcare prior authorization---a domain requiring strict compliance with insurance rules while handling unstructured clinical notes. The architecture ``sandwiches'' the probabilistic model between deterministic validation and decision logic.
 
-def process_business_logic(eob_data: dict) -> ProcessedEOB:
-    """Extract and validate EOB fields.
-    
-    Generated: 2025-12-15 | Tokens: 847 | LOC: 42
-    """
-    claim_id = eob_data.get("claim_id")
-    patient_id = eob_data.get("patient", {}).get("id")
-    
-    # Validate required fields
-    if not claim_id or not patient_id:
-        raise ValidationError("Missing required identifiers")
-    
-    # Extract payment information
-    payments = []
-    for line in eob_data.get("line_items", []):
-        payment = Payment(
-            service_code=line["code"],
-            billed=Decimal(line["billed_amount"]),
-            allowed=Decimal(line["allowed_amount"]),
-            paid=Decimal(line["paid_amount"]),
-            reason_code=line.get("adjustment_reason")
-        )
-        payments.append(payment)
-    
-    # Calculate totals
-    total_billed = sum(p.billed for p in payments)
-    total_paid = sum(p.paid for p in payments)
-    
-    return ProcessedEOB(
-        claim_id=claim_id,
-        patient_id=patient_id,
-        payments=payments,
-        total_billed=total_billed,
-        total_paid=total_paid,
-        processing_date=datetime.utcnow()
-    )
+\subsection{Input Specification (YAML)}
+
+\begin{lstlisting}[language=Python, caption={Workflow specification for GLP-1 medication prior authorization}, basicstyle=\small\ttfamily]
+# workflow_spec: prior_auth_glp1_v1.yaml
+metadata:
+  name: "GLP-1 Agonist Medical Necessity Review"
+  domain: "Pharmacy Benefits"
+  compliance: ["HIPAA", "CMS_Decision_Timeframes"]
+
+inputs:
+  - name: "patient_chart_summary"
+    type: "text"        # Unstructured clinical notes
+  - name: "requested_medication"
+    type: "string"      # e.g., "Semaglutide"
+
+logic_requirements:
+  - step: "extract_clinical_factors"
+    type: "bounded_invocation"  # LLM runs here
+    schema:
+      has_t2d_diagnosis: boolean
+      current_a1c: float
+      bmi: float
+      has_step_therapy_failure: boolean
+    validation:
+      - "bmi > 10 AND bmi < 100"  # Hallucination guardrail
+
+  - step: "evaluate_coverage"
+    type: "deterministic_rule"   # Code runs here
+    logic: |
+      IF has_t2d_diagnosis THEN APPROVE
+      ELSE IF (bmi >= 30) AND has_step_therapy_failure THEN APPROVE
+      ELSE DENY
 \end{lstlisting}
+
+\subsection{Generated Temporal Workflow (Python)}
+
+\begin{lstlisting}[language=Python, caption={Compiled artifact isolating probabilistic extraction from deterministic decisions}, basicstyle=\small\ttfamily]
+# Generated: pa_adjudication_workflow.py
+from temporalio import workflow
+from models import ClinicalExtractionSchema
+
+@workflow.defn
+class PriorAuthWorkflow:
+    @workflow.run
+    async def run(self, input_data: WorkflowInput) -> AuthResult:
+        # PHASE 1: BOUNDED AGENTIC INVOCATION (Probabilistic)
+        # LLM used ONLY to structure data, not to decide
+        clinical_data = await workflow.execute_activity(
+            "extract_clinical_data_activity",
+            args=[input_data.chart_text],
+            retry_policy=RetryPolicy(maximum_attempts=3)
+        )
+        
+        # PHASE 2: VALIDATION (Deterministic)
+        # Catch extraction hallucinations
+        if clinical_data.a1c and not (3.0 < clinical_data.a1c < 20.0):
+            return await self.trigger_human_review(
+                "Suspicious A1C value detected")
+        
+        # PHASE 3: DECISION LOGIC (Deterministic)
+        # 100% auditable for FDA/CMS - cannot decide on "vibes"
+        decision = "DENIED"
+        reason = "Does not meet medical necessity criteria"
+        
+        # Rule 1: Diabetes Diagnosis (Automatic Approval)
+        if clinical_data.has_t2d_diagnosis:
+            decision = "APPROVED"
+            reason = "Meets criteria: Type 2 Diabetes Diagnosis"
+        
+        # Rule 2: Obesity + Step Therapy (Conditional Approval)
+        elif (clinical_data.bmi and clinical_data.bmi >= 30.0) and \
+             clinical_data.has_step_therapy_failure:
+            decision = "APPROVED"
+            reason = "Meets criteria: BMI >= 30 w/ Step Therapy Failure"
+        
+        # PHASE 4: AUDIT TRAIL
+        await workflow.execute_activity(
+            "log_decision_event",
+            {"input": clinical_data, "decision": decision,
+             "logic_version": "v1.0"}
+        )
+        return AuthResult(status=decision, reason_code=reason)
+\end{lstlisting}
+
+\paragraph{Key Properties.} This example demonstrates three architectural advantages:
+\begin{enumerate}
+    \item \textbf{Safety Sandwich}: The probabilistic model (Phase 1) is constrained between input validation and deterministic logic (Phase 3), aligning with ``Guaranteed Safe AI'' principles.
+    \item \textbf{Auditability}: Decisions trace to specific code lines (e.g., ``Line 42: \texttt{has\_t2d\_diagnosis == True}''), achieving 100\% audit completeness vs.\ chat agents that approve based on ``the patient seems to need it.''
+    \item \textbf{Token Economics}: Insurance policy rules are compiled into Python \texttt{if/else} statements once, rather than sent into the context window per request.
+\end{enumerate}
 
 \section{Benchmark Suite Specification}
 \label{app:benchmark}
