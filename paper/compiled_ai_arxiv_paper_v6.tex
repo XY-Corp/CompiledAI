@@ -53,7 +53,7 @@
 
 We study \emph{compiled AI}, a paradigm in which large language models generate executable code artifacts during a compilation phase, after which workflows execute deterministically without further model invocation. By constraining generation to narrow business-logic functions embedded in validated templates, compiled AI trades runtime flexibility for predictability, auditability, and cost efficiency, while retaining the ability to improve artifacts through observed execution patterns.
 
-We introduce (i) a system architecture for constrained LLM-based code generation, (ii) a four-stage generation-and-validation pipeline that converts probabilistic model output into production-ready code artifacts, and (iii) an evaluation framework that measures operational metrics including token amortization, determinism, reliability, security, and cost. In preliminary evaluation on function-calling tasks (n=499 across two BFCL categories), compiled AI achieves 96\% task completion with zero execution tokens, breaking even with runtime inference at approximately 21 transactions and reducing token consumption by 47$\times$ at 1,000 transactions. Security evaluation across 135 test cases demonstrates 96.7\% accuracy on prompt injection detection and 87.5\% on static code safety analysis with zero false positives.
+We introduce (i) a system architecture for constrained LLM-based code generation, (ii) a four-stage generation-and-validation pipeline that converts probabilistic model output into production-ready code artifacts, and (iii) an evaluation framework that measures operational metrics including token amortization, determinism, reliability, security, and cost. In preliminary evaluation on function-calling tasks (n=500 across two BFCL categories), compiled AI achieves 96\% task completion with zero execution tokens, breaking even with runtime inference at approximately 9 transactions and reducing token consumption by 107$\times$ at 1,000 transactions. Security evaluation across 135 test cases demonstrates 96.7\% accuracy on prompt injection detection and 87.5\% on static code safety analysis with zero false positives.
 
 \end{abstract}
 
@@ -85,51 +85,51 @@ Compiled AI represents a trade-off between flexibility and determinism. Rather t
         \draw[gray!20] (0,\y) -- (9.5,\y);
     }
 
-    % Y-axis labels (actual token values: 0-500K)
-    \node[left, font=\scriptsize] at (0,1) {100K};
-    \node[left, font=\scriptsize] at (0,2) {200K};
-    \node[left, font=\scriptsize] at (0,3) {300K};
-    \node[left, font=\scriptsize] at (0,4) {400K};
-    \node[left, font=\scriptsize] at (0,5) {500K};
+    % Y-axis labels (actual token values: 0-1.1M, scale: 1 unit = 200K)
+    \node[left, font=\scriptsize] at (0,1) {200K};
+    \node[left, font=\scriptsize] at (0,2) {400K};
+    \node[left, font=\scriptsize] at (0,3) {600K};
+    \node[left, font=\scriptsize] at (0,4) {800K};
+    \node[left, font=\scriptsize] at (0,5) {1.0M};
 
-    % Runtime inference line (linear growth: 500 tokens/tx)
-    % At n=1000, runtime = 500K tokens = 5 units on y-axis
-    \draw[thick, red!70] (0,0) -- (9.5,4.75);
-    \node[red!70, right] at (9.5, 4.75) {\small Runtime (500/tx)};
+    % Runtime inference line (linear growth: 1,030 tokens/tx)
+    % At n=1000, runtime = 1.03M tokens = 5.15 units on y-axis (1M = 5 units)
+    \draw[thick, red!70] (0,0) -- (9.5,5.15);
+    \node[red!70, right] at (9.5, 5.15) {\small Runtime (1,030/tx)};
 
-    % Compiled AI line (flat at 11K tokens = 0.11 units on y-axis)
-    \draw[thick, blue!70] (0,0.11) -- (9.5,0.11);
-    \node[blue!70, right] at (9.5, 0.11) {\small Compiled (11K)};
+    % Compiled AI line (flat at 9.6K tokens = 0.048 units on y-axis)
+    \draw[thick, blue!70] (0,0.048) -- (9.5,0.048);
+    \node[blue!70, right] at (9.5, 0.048) {\small Compiled (9.6K)};
 
     % Generation cost annotation
-    \draw[<->, gray] (-0.5,0) -- (-0.5,0.11);
-    \node[gray, left, font=\scriptsize, align=right] at (-0.5,0.055) {11K\\gen cost};
+    \draw[<->, gray] (-0.5,0) -- (-0.5,0.048);
+    \node[gray, left, font=\scriptsize, align=right] at (-0.5,0.024) {9.6K\\gen cost};
 
-    % Break-even point at n*=21 (x=0.20 on scale where 9.5=1000)
-    % x position: 21/1000 * 9.5 = 0.20
-    \draw[dashed, gray] (0.20,0) -- (0.20,0.11);
-    \node[below, font=\scriptsize] at (0.20,-0.1) {$n^*\!=\!21$};
-    \fill[black] (0.20,0.11) circle (2pt);
-    \node[above, font=\scriptsize] at (0.5,0.3) {Break-even};
+    % Break-even point at n*=9 (x=0.086 on scale where 9.5=1000)
+    % x position: 9/1000 * 9.5 = 0.086
+    \draw[dashed, gray] (0.086,0) -- (0.086,0.048);
+    \node[below, font=\scriptsize] at (0.086,-0.1) {$n^*\!=\!9$};
+    \fill[black] (0.086,0.048) circle (2pt);
+    \node[above, font=\scriptsize] at (0.35,0.2) {Break-even};
 
     % Savings region
-    \fill[green!10] (0.20,0.11) -- (9.5,0.11) -- (9.5,4.75) -- (0.20,0.11);
-    \node[green!50!black, font=\scriptsize] at (6,2.2) {47$\times$ savings};
-    \node[green!50!black, font=\scriptsize] at (6,1.8) {at $n$=1000};
+    \fill[green!10] (0.086,0.048) -- (9.5,0.048) -- (9.5,5.15) -- (0.086,0.048);
+    \node[green!50!black, font=\scriptsize] at (6,2.4) {107$\times$ savings};
+    \node[green!50!black, font=\scriptsize] at (6,2.0) {at $n$=1000};
 
     % X-axis labels (actual transaction counts)
     \node[below, font=\scriptsize] at (0.95,0) {100};
     \node[below, font=\scriptsize] at (4.75,0) {500};
     \node[below, font=\scriptsize] at (9.5,0) {1000};
 
-    % Data points for runtime (actual measurements)
-    \fill[red!70] (0.095,0.0475) circle (1.5pt); % n=10
-    \fill[red!70] (0.19,0.095) circle (1.5pt); % n=20
-    \fill[red!70] (0.95,0.475) circle (1.5pt); % n=100
-    \fill[red!70] (9.5,4.75) circle (1.5pt); % n=1000
+    % Data points for runtime (actual measurements, scale: 1 unit = 200K)
+    \fill[red!70] (0.095,0.0515) circle (1.5pt); % n=10: 10.3K tokens
+    \fill[red!70] (0.19,0.103) circle (1.5pt); % n=20: 20.6K tokens
+    \fill[red!70] (0.95,0.515) circle (1.5pt); % n=100: 103K tokens
+    \fill[red!70] (9.5,5.15) circle (1.5pt); % n=1000: 1.03M tokens
 
 \end{tikzpicture}
-\caption{Token consumption comparison: runtime inference vs. compiled AI (preliminary data from BFCL function-calling benchmark, n=499). Runtime inference consumes 500 tokens per transaction. Compiled AI incurs a one-time $\sim$11,000 token generation cost, then executes deterministically at zero marginal token cost. Break-even occurs at $n^*\approx21$ transactions; at 1,000 transactions, compiled AI reduces token consumption by 47$\times$.}
+\caption{Token consumption comparison: runtime inference vs. compiled AI (BFCL function-calling benchmark, n=500). Runtime inference consumes 1,030 tokens per transaction. Compiled AI incurs a one-time $\sim$9,600 token generation cost, then executes deterministically at zero marginal token cost. Break-even occurs at $n^*\approx9$ transactions; at 1,000 transactions, compiled AI reduces token consumption by 107$\times$.}
 \label{fig:economics}
 \end{figure}
 
@@ -598,9 +598,9 @@ We evaluate on the Berkeley Function-Calling Leaderboard (BFCL) \citep{patil2024
 Category & Description & Instances & Evaluation \\
 \midrule
 BFCL Simple & Single-function extraction from NL queries & 400 & AST matching \\
-BFCL Exec Simple & Executable function calls with output verification & 99 & Execution \\
+BFCL Exec Simple & Executable function calls with output verification & 100 & Execution \\
 \midrule
-\textbf{Total} & & \textbf{499} & \\
+\textbf{Total} & & \textbf{500} & \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -635,37 +635,37 @@ For preliminary evaluation, we compare two approaches:
 
 \begin{table}[ht]
 \centering
-\caption{Token consumption comparison (preliminary BFCL evaluation)}
+\caption{Token consumption comparison (BFCL evaluation, n=500)}
 \label{tab:token-results}
 \begin{tabular}{lrrrrr}
 \toprule
 Method & GenTokens & RuntimeTokens/tx & Total@1K & BreakEven & CompressionRatio \\
 \midrule
-Direct LLM & 0 & 500 & 500,000 & --- & --- \\
-Compiled AI & 11,000 & 0 & 11,000 & $\sim$21 tx & $\sim$11:1 \\
+Direct LLM & 0 & 1,030 & 1,030,000 & --- & --- \\
+Compiled AI & 9,600 & 0 & 9,600 & $\sim$9 tx & $\sim$9.6:1 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-Break-even occurs at approximately 21 transactions ($n^* = 10{,}600 / 500 \approx 21$). At 100 transactions, compiled AI uses 11K tokens versus 50K for direct LLM (4.7$\times$ reduction). At 1,000 transactions, compiled AI exhibits a 47$\times$ reduction in total token consumption (11K vs 500K tokens). The compression ratio of approximately 11:1 reflects the ratio of prompt tokens to generated lines of code.
+Break-even occurs at approximately 9 transactions ($n^* = 9{,}600 / 1{,}030 \approx 9$). At 100 transactions, compiled AI uses 9.6K tokens versus 103K for direct LLM (10.7$\times$ reduction). At 1,000 transactions, compiled AI exhibits a 107$\times$ reduction in total token consumption (9.6K vs 1.03M tokens). The compression ratio of approximately 9.6:1 reflects the ratio of prompt tokens to generated lines of code.
 
 \subsection{Latency}
 
 \begin{table}[ht]
 \centering
-\caption{Latency distribution (milliseconds, preliminary BFCL evaluation)}
+\caption{Latency distribution (milliseconds, BFCL evaluation, n=500)}
 \label{tab:latency-results}
 \begin{tabular}{lrrrr}
 \toprule
 Method & P50 & P99 & Jitter & ColdStart \\
 \midrule
-Direct LLM & 3,400 & 5,000 & 1,600 & N/A \\
-Compiled AI & 3 & 12 & 9 & 29,000 \\
+Direct LLM & 4,700 & 6,500 & 1,800 & N/A \\
+Compiled AI & 4.5 & 15 & 10.5 & 22,000 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-Compiled AI execution latency is 1,000$\times$ faster than runtime inference (3ms vs 3,400ms), with near-zero jitter (9ms vs 1,600ms). The trade-off is a 29-second cold start for compilation. This latency improvement is fundamental: compiled code executes deterministically without network calls, model inference, or stochastic processing.
+Compiled AI execution latency is 1,000$\times$ faster than runtime inference (4.5ms vs 4,700ms), with near-zero jitter (10.5ms vs 1,800ms). The trade-off is a 22-second cold start for compilation. This latency improvement is fundamental: compiled code executes deterministically without network calls, model inference, or stochastic processing.
 
 \subsection{Consistency}
 
@@ -689,21 +689,21 @@ Compiled AI exhibits perfect reproducibility: identical inputs produce identical
 
 \begin{table}[ht]
 \centering
-\caption{Reliability metrics by category (preliminary BFCL evaluation)}
+\caption{Reliability metrics by category (BFCL evaluation)}
 \label{tab:reliability-results}
 \begin{tabular}{lrrr}
 \toprule
 Category & Instances & Success & Rate \\
 \midrule
 BFCL Simple (AST) & 400 & 385 & 96.2\% \\
-BFCL Exec Simple (Execution) & 99 & 95 & 95.9\% \\
+BFCL Exec Simple (Execution) & 100 & 95 & 95.0\% \\
 \midrule
-\textbf{Combined} & \textbf{499} & \textbf{480} & \textbf{96.2\%} \\
+\textbf{Combined} & \textbf{500} & \textbf{480} & \textbf{96.0\%} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-Compiled AI achieves 96\% task completion across both evaluation categories (480/499 tasks). Performance is consistent between AST-based evaluation (96.2\%) and executable evaluation (95.9\%), demonstrating that compiled workflows correctly extract parameters with sufficient precision for actual function execution. The 4\% error rate reflects compilation failures where generated code did not correctly extract parameters. These are \textit{compilation-time} failures, not execution-time failures. Once successfully compiled, workflows execute with 100\% reliability.
+Compiled AI achieves 96\% task completion across both evaluation categories (480/500 tasks). Performance is consistent between AST-based evaluation (96.2\%) and executable evaluation (95.9\%), demonstrating that compiled workflows correctly extract parameters with sufficient precision for actual function execution. The 4\% error rate reflects compilation failures where generated code did not correctly extract parameters. These are \textit{compilation-time} failures, not execution-time failures. Once successfully compiled, workflows execute with 100\% reliability.
 
 \subsection{Code Quality}
 
@@ -781,7 +781,7 @@ Overall (all stages) & 96\% \\
 \end{tabular}
 \end{table}
 
-\noindent\textit{Note:} The 96\% accuracy rate (480/499 tasks across both categories) reflects cases where generated code executed successfully but produced outputs that did not match expected function calls. These failures occur at compilation time and can be detected before deployment, unlike runtime inference errors. Function-call-specific templates and simplified prompts improved first-pass rates from approximately 80\% in earlier development versions.
+\noindent\textit{Note:} The 96\% accuracy rate (480/500 tasks across both categories) reflects cases where generated code executed successfully but produced outputs that did not match expected function calls. These failures occur at compilation time and can be detected before deployment, unlike runtime inference errors. Function-call-specific templates and simplified prompts improved first-pass rates from approximately 80\% in earlier development versions.
 
 \subsection{Cost Analysis}
 
@@ -793,13 +793,13 @@ Overall (all stages) & 96\% \\
 \toprule
 Method & Inference & Infrastructure & Total TCO & CostRatio \\
 \midrule
-Direct LLM & \$19,500 & \$500 & \$20,000 & 36$\times$ \\
+Direct LLM & \$40,170 & \$500 & \$40,670 & 73$\times$ \\
 Compiled AI & \$55 & \$500 & \$555 & 1$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\noindent\textit{Cost calculation:} Direct LLM consumes 500 tokens per transaction (300 input + 200 output), totaling 500M tokens at 1M transactions. Compiled AI incurs a one-time compilation cost of $\sim$11K tokens per workflow type; assuming 100 unique workflow types, total compilation cost is $\sim$1.1M tokens. Execution cost is zero (deterministic code). Infrastructure cost assumes equivalent compute for workflow execution.
+\noindent\textit{Cost calculation:} Direct LLM consumes 1,030 tokens per transaction (620 input + 410 output), totaling 1.03B tokens at 1M transactions. Compiled AI incurs a one-time compilation cost of $\sim$9.6K tokens per workflow type; assuming 100 unique workflow types, total compilation cost is $\sim$960K tokens. Execution cost is zero (deterministic code). Infrastructure cost assumes equivalent compute for workflow execution.
 
 \subsection{External Benchmark Comparison}
 
@@ -882,7 +882,7 @@ We argue that capability benchmarks alone are insufficient; production deploymen
 
 \textbf{Bounded applicability.} Not all workflows reduce to deterministic code. Tasks requiring genuine creativity or adaptation to novel situations may require runtime inference.
 
-\textbf{Generation failures.} Despite validation, some specifications fail to produce working code. In preliminary evaluation, 4\% of compilations (19/499) failed to produce accurate outputs, though all generated syntactically valid, executable code.
+\textbf{Generation failures.} Despite validation, some specifications fail to produce working code. In preliminary evaluation, 4\% of compilations (20/500) failed to produce accurate outputs, though all generated syntactically valid, executable code.
 
 \textbf{Model dependence.} Generated code quality depends on the underlying LLM. Model updates may change behavior, requiring re-validation.
 
@@ -901,7 +901,7 @@ We studied compiled AI as a systems design point for LLM-based workflow automati
     \item An evaluation framework measuring operational metrics: token amortization, determinism, reliability, validation effectiveness, and cost
 \end{enumerate}
 
-Preliminary evaluation on function-calling benchmarks (n=499 across two BFCL categories) demonstrates the core trade-off: compiled AI incurs substantial upfront cost ($\sim$11,000 tokens, 29 seconds) but achieves zero-cost execution with 100\% determinism for successfully compiled workflows. Break-even occurs at approximately 21 transactions; at 1,000 transactions, token consumption is reduced by 47$\times$. Execution latency improves from 3.4 seconds to 3.4 milliseconds (a 1,000$\times$ speedup). The 96\% compilation success rate, consistent across both AST-based and executable evaluation, demonstrates the viability of LLM-based code generation for production workflows, with failures detectable before deployment. Security evaluation across 135 test cases shows 96.7\% accuracy on prompt injection detection and 87.5\% on static code safety analysis, both with zero false positives, validating the security properties required for enterprise deployment.
+Preliminary evaluation on function-calling benchmarks (n=500 across two BFCL categories) demonstrates the core trade-off: compiled AI incurs substantial upfront cost ($\sim$9,600 tokens, 22 seconds) but achieves zero-cost execution with 100\% determinism for successfully compiled workflows. Break-even occurs at approximately 9 transactions; at 1,000 transactions, token consumption is reduced by 107$\times$. Execution latency improves from 4.7 seconds to 4.5 milliseconds (a 1,000$\times$ speedup). The 96\% compilation success rate, consistent across both AST-based and executable evaluation, demonstrates the viability of LLM-based code generation for production workflows, with failures detectable before deployment. Security evaluation across 135 test cases shows 96.7\% accuracy on prompt injection detection and 87.5\% on static code safety analysis, both with zero false positives, validating the security properties required for enterprise deployment.
 
 The approach trades flexibility for determinism, cost efficiency, and auditability, properties relevant for enterprise deployment in well-specified, high-volume workflow regimes. We release our evaluation framework and benchmark suite to enable systematic comparison of compiled and runtime AI approaches.
 
