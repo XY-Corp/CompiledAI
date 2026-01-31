@@ -1,0 +1,49 @@
+workflow_id: invoice_ocr_extraction
+name: Invoice OCR Data Extraction
+description: |
+  Extracts structured information from raw OCR text of invoices and receipts.
+  Uses regex patterns and string matching to identify key fields like vendor info,
+  customer info, dates, and amounts. Designed to be robust against common OCR
+  errors such as character substitution (0/O, 1/l/I) and noise characters.
+  Returns null for any field that cannot be reliably extracted.
+
+variables:
+  - name: ocr_text
+    type: str
+    description: Raw OCR text extracted from an invoice or receipt image
+    default_value: null
+    required: true
+
+activities:
+  - name: extract_invoice_fields
+    description: |
+      Parses raw OCR text to extract all invoice/receipt fields using regex patterns
+      and heuristic string matching. Handles common OCR artifacts and variations in
+      invoice formats. Each field extraction is attempted independently so partial
+      results are returned even if some fields fail. Numeric fields (total_amount,
+      tax_amount) are returned as floats with OCR digit corrections applied.
+      Date fields are normalized to ISO format (YYYY-MM-DD) when possible.
+    inputs:
+      - name: ocr_text
+        type: str
+        description: |
+          The raw OCR text to parse. May contain noise characters, line breaks,
+          inconsistent spacing, and OCR misreadings. The function handles common
+          invoice layouts including header-based and label-value pair formats.
+    output:
+      type: dict
+      description: |
+        Dictionary containing all extracted fields:
+        - document_id: str or null - Invoice/receipt number (e.g., "INV-12345")
+        - vendor_name: str or null - Name of the seller/vendor company
+        - vendor_address: str or null - Full address of vendor, newlines preserved
+        - customer_name: str or null - Name of the buyer/customer
+        - customer_address: str or null - Full address of customer, newlines preserved
+        - invoice_date: str or null - Issue date in ISO format or original if unparseable
+        - due_date: str or null - Payment due date in ISO format or original
+        - total_amount: float or null - Total amount to pay
+        - tax_amount: float or null - Tax/VAT amount if listed
+        - currency: str or null - Three-letter currency code (USD, EUR, GBP, etc.)
+    result_variable: extracted_data
+
+execution_pattern: sequence
