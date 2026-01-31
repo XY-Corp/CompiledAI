@@ -53,7 +53,7 @@ class CrushRunner:
     
     def __init__(
         self,
-        model: str = "bedrock/anthropic.claude-opus-4-5-20251101-v1:0",
+        model: str = "anthropic/claude-opus-4-5-20251101",
         working_dir: Optional[Path] = None,
         timeout: int = 180,
     ):

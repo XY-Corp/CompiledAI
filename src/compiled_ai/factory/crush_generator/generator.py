@@ -344,8 +344,8 @@ class CrushGenerator:
     
     # Model preference order (will try each until one works)
     DEFAULT_MODELS = [
-        "bedrock/anthropic.claude-opus-4-5-20251101-v1:0",
-        "bedrock/anthropic.claude-sonnet-4-5-20250929-v1:0",
+        "anthropic/claude-opus-4-5-20251101",
+        "anthropic/claude-sonnet-4-5-20250929",
         "anthropic/claude-sonnet-4-20250514",
         "gemini/gemini-2.5-pro",
     ]

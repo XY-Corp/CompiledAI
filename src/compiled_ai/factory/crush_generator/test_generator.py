@@ -17,7 +17,7 @@ Usage:
     python test_generator.py --unit-only
     
     # Test with specific model
-    python test_generator.py --model bedrock/anthropic.claude-opus-4-5-20251101-v1:0
+    python test_generator.py --model anthropic/claude-opus-4-5-20251101
 """
 
 import argparse
@@ -314,7 +314,7 @@ def test_runner_basic():
     print("=" * 60)
     
     try:
-        runner = CrushRunner(model="bedrock/anthropic.claude-sonnet-4-5-20250929-v1:0")
+        runner = CrushRunner(model="anthropic/claude-sonnet-4-5-20250929")
         print(f"✅ Runner initialized with model: {runner.model}")
         print(f"   Crush path: {runner._crush_path}")
         print(f"   Timeout: {runner.timeout}s")
