@@ -129,6 +129,7 @@ class TaskSignatureExtractor:
         - Emails → <EMAIL>
         - URLs → <URL>
         - Quoted strings → <STR>
+        - Large text blocks (>500 chars between markers) → <TEXT_BLOCK>
         - Excessive whitespace → single spaces
         - Case variations → lowercase
 
@@ -152,6 +153,22 @@ class TaskSignatureExtractor:
 
         # Lowercase for consistency
         normalized = prompt.lower()
+        
+        # NEW: Detect and normalize large text blocks (OCR, documents, etc.)
+        # Pattern: Find sections after common markers like "text:", "ocr:", "document:", "content:"
+        # and replace large blocks with <TEXT_BLOCK>
+        text_markers = [
+            (r'(ocr\s*text\s*:\s*\n?)(.{500,}?)(\n\s*json\s*:|\Z)', r'\1<TEXT_BLOCK>\3'),
+            (r'(text\s*:\s*\n?)(.{500,}?)(\n\s*(?:json|output|result)\s*:|\Z)', r'\1<TEXT_BLOCK>\3'),
+            (r'(content\s*:\s*\n?)(.{500,}?)(\n\s*(?:json|output|result)\s*:|\Z)', r'\1<TEXT_BLOCK>\3'),
+            (r'(document\s*:\s*\n?)(.{500,}?)(\n\s*(?:json|output|result)\s*:|\Z)', r'\1<TEXT_BLOCK>\3'),
+        ]
+        for pattern, replacement in text_markers:
+            normalized = re.sub(pattern, replacement, normalized, flags=re.DOTALL | re.IGNORECASE)
+        
+        # Fallback: Any continuous block of >1000 chars without common structure = <TEXT_BLOCK>
+        # This catches OCR dumps that don't follow the marker pattern
+        normalized = re.sub(r'(\S.{1000,}?\S)(?=\s|\Z)', '<TEXT_BLOCK>', normalized, flags=re.DOTALL)
 
         # Remove common variable patterns
         normalized = re.sub(r"\b\d+\b", "<NUM>", normalized)  # Numbers

@@ -1,0 +1,186 @@
+{
+  "timestamp": "20260131_094500",
+  "samples": [
+    {
+      "id": "009bdcdec5c04cd3b2e31555",
+      "accuracy": 0.5714285714285714,
+      "used_llm": true,
+      "llm_fields": [
+        "document_id",
+        "total_amount"
+      ],
+      "total_time_ms": 2197.859292034991
+    },
+    {
+      "id": "00a5c8697856473393f3f9e2",
+      "accuracy": 0.3333333333333333,
+      "used_llm": false,
+      "llm_fields": [],
+      "total_time_ms": 2.0854159956797957
+    },
+    {
+      "id": "00c87916e4a44197b45b0f8b",
+      "accuracy": 0.3333333333333333,
+      "used_llm": true,
+      "llm_fields": [
+        "document_id"
+      ],
+      "total_time_ms": 1841.873166966252
+    },
+    {
+      "id": "01628ff7c56f4b1995c3048e",
+      "accuracy": 0.25,
+      "used_llm": true,
+      "llm_fields": [
+        "document_id"
+      ],
+      "total_time_ms": 1882.7632920001633
+    },
+    {
+      "id": "016985e27277483dbc599e9b",
+      "accuracy": 0.6,
+      "used_llm": false,
+      "llm_fields": [],
+      "total_time_ms": 1.2058750144205987
+    },
+    {
+      "id": "0178861dd64f4c58bbd4367a",
+      "accuracy": 0.14285714285714285,
+      "used_llm": true,
+      "llm_fields": [
+        "document_id",
+        "total_amount"
+      ],
+      "total_time_ms": 1972.5940409698524
+    },
+    {
+      "id": "01a13a4f5d2748d6a57e9a67",
+      "accuracy": 0.5,
+      "used_llm": true,
+      "llm_fields": [
+        "total_amount"
+      ],
+      "total_time_ms": 2615.3608739259653
+    },
+    {
+      "id": "01cfcdac81ae44e8a06440ad",
+      "accuracy": 0.14285714285714285,
+      "used_llm": true,
+      "llm_fields": [
+        "total_amount"
+      ],
+      "total_time_ms": 1857.2149169631302
+    },
+    {
+      "id": "02074e661462419cb309bd7e",
+      "accuracy": 0.625,
+      "used_llm": true,
+      "llm_fields": [
+        "total_amount"
+      ],
+      "total_time_ms": 1808.8355410145596
+    },
+    {
+      "id": "0219aad7064d4ba1a88f428f",
+      "accuracy": 0.16666666666666666,
+      "used_llm": true,
+      "llm_fields": [
+        "document_id",
+        "total_amount"
+      ],
+      "total_time_ms": 1829.3820000835694
+    },
+    {
+      "id": "02a5c4103d8a487c847c415f",
+      "accuracy": 0.5,
+      "used_llm": false,
+      "llm_fields": [],
+      "total_time_ms": 0.9071659878827631
+    },
+    {
+      "id": "036f86baa0874467908a999d",
+      "accuracy": 0.2857142857142857,
+      "used_llm": true,
+      "llm_fields": [
+        "document_id",
+        "total_amount"
+      ],
+      "total_time_ms": 1838.9451669645496
+    },
+    {
+      "id": "04345516ddca4de2a96a22b5",
+      "accuracy": 0.14285714285714285,
+      "used_llm": true,
+      "llm_fields": [
+        "document_id"
+      ],
+      "total_time_ms": 1855.1652510650456
+    },
+    {
+      "id": "06c76cf7636f44f69320c117",
+      "accuracy": 0.42857142857142855,
+      "used_llm": true,
+      "llm_fields": [
+        "document_id"
+      ],
+      "total_time_ms": 4015.4480010387488
+    },
+    {
+      "id": "07214b89d1bd407b829a7847",
+      "accuracy": 0.3333333333333333,
+      "used_llm": true,
+      "llm_fields": [
+        "total_amount"
+      ],
+      "total_time_ms": 2208.0192909925245
+    }
+  ],
+  "field_results": {
+    "document_id": {
+      "correct": 10,
+      "total": 14
+    },
+    "vendor_name": {
+      "correct": 5,
+      "total": 13
+    },
+    "vendor_address": {
+      "correct": 1,
+      "total": 13
+    },
+    "customer_name": {
+      "correct": 6,
+      "total": 15
+    },
+    "customer_address": {
+      "correct": 2,
+      "total": 15
+    },
+    "invoice_date": {
+      "correct": 2,
+      "total": 14
+    },
+    "due_date": {
+      "correct": 0,
+      "total": 2
+    },
+    "total_amount": {
+      "correct": 9,
+      "total": 13
+    },
+    "tax_amount": {
+      "correct": 0,
+      "total": 0
+    },
+    "currency": {
+      "correct": 0,
+      "total": 0
+    }
+  },
+  "summary": {
+    "overall_accuracy": 0.35353535353535354,
+    "samples_with_llm": 12,
+    "avg_latency_ms": 1728.5106194011557,
+    "total_tokens": 7784
+  }
+}

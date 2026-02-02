@@ -37,7 +37,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from compiled_ai.datasets import BFCLConverter
 from compiled_ai.datasets.bfcl_tools import build_tools_from_functions
-from compiled_ai.factory.crush_generator import CrushGenerator, GenerationResult
+from compiled_ai.factory.code_generator import CodeGenerator, GenerationResult
 
 
 console = Console()
@@ -222,7 +222,7 @@ def load_bfcl_tasks(
 
 def run_benchmark(
     tasks: list[dict],
-    generator: CrushGenerator,
+    generator: CodeGenerator,
     output_dir: Path,
     verbose: bool = False,
 ) -> BenchmarkResult:
@@ -432,7 +432,7 @@ def main():
     
     # Initialize generator
     try:
-        generator = CrushGenerator(
+        generator = CodeGenerator(
             model=args.model,
             max_iterations=args.max_iterations,
             timeout_per_step=180,

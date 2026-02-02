@@ -1,0 +1,48 @@
+workflow_id: dice_binomial_probability
+name: Dice Roll Binomial Probability Calculator
+description: |
+  Calculates the probability of rolling a specific number (e.g., 6) exactly k times
+  in n dice rolls using the binomial probability formula.
+  
+  For this specific request: calculates probability of getting exactly 5 sixes
+  in 20 dice rolls, where each roll has a 1/6 chance of being a 6.
+
+variables:
+  - name: num_trials
+    type: int
+    description: The number of dice rolls (trials)
+    default_value: 20
+    required: true
+  - name: num_successes
+    type: int
+    description: The desired number of times to land on the target number (successes)
+    default_value: 5
+    required: true
+  - name: success_probability
+    type: float
+    description: The probability of rolling the target number on a single roll (1/6 for a six on a standard die)
+    default_value: 0.16666666666666666
+    required: true
+
+activities:
+  - name: calc_binomial_probability
+    description: |
+      Calculates the binomial probability of getting exactly k successes in n trials,
+      where each trial has probability p of success. Uses the formula:
+      P(X=k) = C(n,k) * p^k * (1-p)^(n-k)
+    inputs:
+      - name: n
+        type: int
+        description: The number of trials (dice rolls)
+      - name: k
+        type: int
+        description: The number of successes (times landing on 6)
+      - name: p
+        type: float
+        description: The probability of success on each trial (1/6 for rolling a 6)
+    output:
+      type: float
+      description: The probability of getting exactly k successes in n trials
+    result_variable: binomial_probability_result
+
+execution_pattern: sequence

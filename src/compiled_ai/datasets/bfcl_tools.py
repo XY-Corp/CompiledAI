@@ -30,15 +30,17 @@ def fix_json_schema(schema: dict) -> dict:
     if not isinstance(schema, dict):
         return schema
 
+    type_mapping = {
+        "dict": "object",
+        "float": "number",
+        "list": "array",
+        "int": "integer",
+    }
+
     result: dict[str, Any] = {}
     for key, value in schema.items():
-        if key == "type":
-            type_mapping = {
-                "dict": "object",
-                "float": "number",
-                "list": "array",
-                "int": "integer",
-            }
+        if key == "type" and isinstance(value, str):
+            # Only map string types, not complex type schemas
             result[key] = type_mapping.get(value, value)
         elif isinstance(value, dict):
             result[key] = fix_json_schema(value)

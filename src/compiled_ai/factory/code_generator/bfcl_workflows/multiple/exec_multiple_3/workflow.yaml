@@ -1,0 +1,45 @@
+workflow_id: calculate_object_displacement
+name: Calculate Object Displacement
+description: |
+  Calculates the displacement of an object undergoing constant acceleration.
+  Uses the kinematic equation: d = v₀t + ½at²
+  where d is displacement, v₀ is initial velocity, a is acceleration, and t is time.
+
+variables:
+  - name: initial_velocity
+    type: float
+    description: The initial velocity of the object in meters per second (m/s)
+    default_value: 15.0
+    required: true
+
+  - name: acceleration
+    type: float
+    description: The acceleration of the object in meters per second squared (m/s²)
+    default_value: 9.8
+    required: true
+
+  - name: time
+    type: float
+    description: The time duration the object has been moving in seconds
+    default_value: 10.0
+    required: true
+
+activities:
+  - name: calculate_displacement
+    description: Calculates the displacement of an object given initial velocity, acceleration, and time
+    inputs:
+      - name: initial_velocity
+        type: float
+        description: The initial velocity of the object, in meters per second
+      - name: acceleration
+        type: float
+        description: The acceleration of the object, in meters per second squared
+      - name: time
+        type: float
+        description: The time the object has been moving, in seconds
+    output:
+      type: float
+      description: The calculated displacement of the object in meters
+    result_variable: displacement_result
+
+execution_pattern: sequence

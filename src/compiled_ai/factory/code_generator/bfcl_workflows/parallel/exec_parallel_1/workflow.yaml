@@ -1,0 +1,37 @@
+workflow_id: calculate_vector_cosine_similarities
+name: Calculate Vector Cosine Similarities
+description: |
+  Calculates cosine similarity for multiple pairs of vectors in parallel.
+  Used for comparing vector similarity in machine learning model refinement.
+  Each pair is processed independently, making parallel execution efficient.
+
+variables:
+  - name: vector_pairs
+    type: list
+    description: List of vector pairs to compare, each pair containing vectorA and vectorB
+    default_value:
+      - vectorA: [0.5, 0.7, 0.2, 0.9, 0.1]
+        vectorB: [0.3, 0.6, 0.2, 0.8, 0.1]
+      - vectorA: [0.2, 0.4, 0.6, 0.8, 1.0]
+        vectorB: [1.0, 0.8, 0.6, 0.4, 0.2]
+      - vectorA: [0.1, 0.2, 0.3, 0.4, 0.5]
+        vectorB: [0.5, 0.4, 0.3, 0.2, 0.1]
+    required: true
+
+activities:
+  - name: calculate_cosine_similarity
+    description: Calculates the cosine similarity between two vectors. Returns a value between -1 and 1, where 1 indicates identical direction, 0 indicates orthogonality, and -1 indicates opposite directions.
+    inputs:
+      - name: vectorA
+        type: list
+        description: The first vector as a list of float values
+      - name: vectorB
+        type: list
+        description: The second vector as a list of float values (must have same length as vectorA)
+    output:
+      type: float
+      description: The cosine similarity value between the two vectors
+    result_variable: similarity_result
+
+execution_pattern: parallel
+foreach_variable: vector_pairs

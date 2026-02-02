@@ -1,0 +1,40 @@
+workflow_id: cosine_similarity_calculation
+name: Cosine Similarity Calculation
+description: |
+  Calculates the cosine similarity between two numerical vectors representing
+  entity attributes. Cosine similarity measures the cosine of the angle between
+  two vectors, providing a similarity score between -1 and 1, where 1 indicates
+  identical direction, 0 indicates orthogonality, and -1 indicates opposite direction.
+
+# Input variables for the workflow
+variables:
+  - name: vector_a
+    type: list
+    description: The first vector of numerical attributes representing the first entity
+    default_value: [0.3, 0.8, 0.1, 0.6, 0.2]
+    required: true
+
+  - name: vector_b
+    type: list
+    description: The second vector of numerical attributes representing the second entity
+    default_value: [0.5, 0.7, 0.4, 0.9, 0.3]
+    required: true
+
+# Activities that make up the workflow
+activities:
+  - name: calculate_cosine_similarity
+    description: Calculates the cosine similarity between two vectors by computing the dot product divided by the product of their magnitudes
+    inputs:
+      - name: vectorA
+        type: list
+        description: The first vector of float values
+      - name: vectorB
+        type: list
+        description: The second vector of float values
+    output:
+      type: float
+      description: The cosine similarity score between the two vectors, ranging from -1 to 1
+    result_variable: similarity_score
+
+# How activities are executed
+execution_pattern: sequence

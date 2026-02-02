@@ -1,71 +1,71 @@
 {
   "version": "1.0",
-  "last_updated": "2026-01-30T11:53:29.342411",
+  "last_updated": "2026-01-31T15:00:47.544928",
   "workflows": {
-    "kile_invoice_extraction": {
-      "workflow_id": "kile_invoice_extraction",
-      "category": "00134dd365a24343b35b78c6",
-      "usage_count": 7,
-      "success_count": 7,
+    "ocr_invoice_field_extractor": {
+      "workflow_id": "ocr_invoice_field_extractor",
+      "category": "docile",
+      "usage_count": 33,
+      "success_count": 33,
       "failure_count": 0,
       "success_rate": 1.0,
-      "last_used": "2026-01-30T11:51:14.368240",
-      "created_at": "2026-01-30T11:16:16.494577",
+      "last_used": "2026-01-31T14:41:17.771915",
+      "created_at": "2026-01-31T14:38:46.006377",
       "recent_failures": []
     },
-    "invoice_field_extraction": {
-      "workflow_id": "invoice_field_extraction",
-      "category": "00136a27c7774c1e8dc6b2f2",
-      "usage_count": 4,
-      "success_count": 4,
-      "failure_count": 0,
-      "success_rate": 1.0,
-      "last_used": "2026-01-30T11:53:29.342343",
-      "created_at": "2026-01-30T11:17:35.691133",
-      "recent_failures": []
-    },
-    "invoice_data_extraction": {
-      "workflow_id": "invoice_data_extraction",
-      "category": "002f9b82b74f4258b3b072d0",
-      "usage_count": 5,
-      "success_count": 5,
-      "failure_count": 0,
-      "success_rate": 1.0,
-      "last_used": "2026-01-30T11:47:45.178309",
-      "created_at": "2026-01-30T11:19:50.375516",
-      "recent_failures": []
-    },
-    "invoice_document_extraction": {
-      "workflow_id": "invoice_document_extraction",
-      "category": "00134dd365a24343b35b78c6",
-      "usage_count": 3,
-      "success_count": 3,
-      "failure_count": 0,
-      "success_rate": 1.0,
-      "last_used": "2026-01-30T11:46:44.989522",
-      "created_at": "2026-01-30T11:32:28.557435",
-      "recent_failures": []
-    },
-    "kile_document_extraction": {
-      "workflow_id": "kile_document_extraction",
-      "category": "002e3cf97973428f905671b3",
-      "usage_count": 3,
-      "success_count": 3,
-      "failure_count": 0,
-      "success_rate": 1.0,
-      "last_used": "2026-01-30T11:48:54.715663",
-      "created_at": "2026-01-30T11:34:51.176929",
-      "recent_failures": []
-    },
-    "invoice_extraction_workflow": {
-      "workflow_id": "invoice_extraction_workflow",
-      "category": "0039ed9f32974a90afb4f8f2",
+    "ocr_invoice_extraction": {
+      "workflow_id": "ocr_invoice_extraction",
+      "category": "docile",
       "usage_count": 1,
       "success_count": 1,
       "failure_count": 0,
       "success_rate": 1.0,
-      "last_used": "2026-01-30T11:38:22.940993",
-      "created_at": "2026-01-30T11:38:20.023920",
+      "last_used": "2026-01-31T14:40:14.996404",
+      "created_at": "2026-01-31T14:40:12.091156",
+      "recent_failures": []
+    },
+    "ocr_invoice_line_items_extraction": {
+      "workflow_id": "ocr_invoice_line_items_extraction",
+      "category": "docile",
+      "usage_count": 92,
+      "success_count": 92,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-31T15:00:47.544907",
+      "created_at": "2026-01-31T14:42:50.903189",
+      "recent_failures": []
+    },
+    "extract_invoice_line_items": {
+      "workflow_id": "extract_invoice_line_items",
+      "category": "docile",
+      "usage_count": 2,
+      "success_count": 2,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-31T14:50:38.605018",
+      "created_at": "2026-01-31T14:46:03.817842",
+      "recent_failures": []
+    },
+    "ocr_invoice_line_item_extraction": {
+      "workflow_id": "ocr_invoice_line_item_extraction",
+      "category": "docile",
+      "usage_count": 5,
+      "success_count": 5,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-31T15:00:33.553282",
+      "created_at": "2026-01-31T14:48:48.144321",
+      "recent_failures": []
+    },
+    "ocr_invoice_line_item_extractor": {
+      "workflow_id": "ocr_invoice_line_item_extractor",
+      "category": "docile",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "last_used": "2026-01-31T14:57:40.639876",
+      "created_at": "2026-01-31T14:57:37.953640",
       "recent_failures": []
     }
   }

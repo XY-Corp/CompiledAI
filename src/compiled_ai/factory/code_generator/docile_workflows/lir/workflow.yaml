@@ -1,0 +1,21 @@
+name: line_item_recognition
+version: "1.0"
+description: Extract line items from invoice/receipt OCR text
+
+inputs:
+  - name: ocr_text
+    type: string
+    description: Raw OCR text from invoice/receipt
+
+outputs:
+  - name: line_items
+    type: list
+    description: List of extracted line items with description, quantity, unit_price, total_price
+
+activities:
+  - name: extract_line_items
+    description: Parse OCR text to extract all line items from the invoice table
+    inputs:
+      - ocr_text
+    outputs:
+      - line_items

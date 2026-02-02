@@ -1,0 +1,95 @@
+workflow_id: electrostatic_potential_energy_analysis
+name: Electrostatic Potential Energy Analysis
+description: |
+  Calculates the electrostatic potential energy for multiple particles
+  (proton, electron, and neutron) in different voltage fields.
+  Uses the formula U = q * V where q is charge and V is voltage.
+  Runs calculations in parallel since they are independent of each other.
+
+variables:
+  - name: proton_charge
+    type: float
+    description: The charge of a proton in Coulombs
+    default_value: 1.6e-19
+    required: true
+
+  - name: proton_voltage
+    type: float
+    description: The voltage field for the proton in Volts
+    default_value: 500
+    required: true
+
+  - name: electron_charge
+    type: float
+    description: The charge of an electron in Coulombs (negative)
+    default_value: -1.6e-19
+    required: true
+
+  - name: electron_voltage
+    type: float
+    description: The voltage field for the electron in Volts
+    default_value: 1000
+    required: true
+
+  - name: neutron_charge
+    type: float
+    description: The charge of a neutron in Coulombs (zero)
+    default_value: 0.0
+    required: true
+
+  - name: neutron_voltage
+    type: float
+    description: The voltage field for the neutron in Volts
+    default_value: 2000
+    required: true
+
+activities:
+  - name: calculate_electrostatic_potential_energy
+    description: Calculates electrostatic potential energy for the proton
+    inputs:
+      - name: charge
+        type: float
+        description: The charge of the proton in Coulombs (1.6e-19 C)
+        value: proton_charge
+      - name: voltage
+        type: float
+        description: The voltage field for the proton in Volts (500 V)
+        value: proton_voltage
+    output:
+      type: float
+      description: The electrostatic potential energy of the proton in Joules
+    result_variable: proton_potential_energy
+
+  - name: calculate_electrostatic_potential_energy
+    description: Calculates electrostatic potential energy for the electron
+    inputs:
+      - name: charge
+        type: float
+        description: The charge of the electron in Coulombs (-1.6e-19 C)
+        value: electron_charge
+      - name: voltage
+        type: float
+        description: The voltage field for the electron in Volts (1000 V)
+        value: electron_voltage
+    output:
+      type: float
+      description: The electrostatic potential energy of the electron in Joules
+    result_variable: electron_potential_energy
+
+  - name: calculate_electrostatic_potential_energy
+    description: Calculates electrostatic potential energy for the neutron
+    inputs:
+      - name: charge
+        type: float
+        description: The charge of the neutron in Coulombs (0 C)
+        value: neutron_charge
+      - name: voltage
+        type: float
+        description: The voltage field for the neutron in Volts (2000 V)
+        value: neutron_voltage
+    output:
+      type: float
+      description: The electrostatic potential energy of the neutron in Joules (will be 0)
+    result_variable: neutron_potential_energy
+
+execution_pattern: parallel

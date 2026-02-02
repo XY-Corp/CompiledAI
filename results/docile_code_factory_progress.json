@@ -1,0 +1,609 @@
+{
+  "started": "2026-01-31T14:37:10+01:00",
+  "completed": {
+    "009bdcdec5c04cd3b2e31555": {
+      "success": true,
+      "latency_s": 57.75729322433472,
+      "output": "{\"document_id\": \"3171526\", \"vendor_name\": \"WHTH WNKO\", \"customer_name\": \"MEDIA FINANCIAL SERVICES\", \"invoice_date\": \"3/4/2020\", \"due_date\": null, \"total_amount\": 503.7, \"tax_amount\": null, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "00a5c8697856473393f3f9e2": {
+      "success": true,
+      "latency_s": 2.345449924468994,
+      "output": "{\"document_id\": \"22334\", \"vendor_name\": null, \"customer_name\": \"PHILIP MORRIS\", \"invoice_date\": \"06/12/99\", \"due_date\": \"UPON RECEIPT\", \"total_amount\": 1082.5, \"tax_amount\": 82.5, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "00c87916e4a44197b45b0f8b": {
+      "success": true,
+      "latency_s": 2.795220136642456,
+      "output": "{\"document_id\": \"33124966\", \"vendor_name\": \"Cumulus-Lake Charles KYKZ-FM\", \"customer_name\": \"Katz Media Group\", \"invoice_date\": \"08/05/19\", \"due_date\": null, \"total_amount\": 1360.0, \"tax_amount\": null, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "01628ff7c56f4b1995c3048e": {
+      "success": true,
+      "latency_s": 2.6160809993743896,
+      "output": "{\"document_id\": \"PR12-018795\", \"vendor_name\": \"Bozell Worldwide, Inc.\", \"customer_name\": \"Lorillard Tobacco Company Inc.\", \"invoice_date\": \"DEC11/01\", \"due_date\": \"DEC31/01\", \"total_amount\": 1726.73, \"tax_amount\": null, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "016985e27277483dbc599e9b": {
+      "success": true,
+      "latency_s": 2.6060659885406494,
+      "output": "{\"document_id\": \"3137038\", \"vendor_name\": \"WXME-AM \\\"The Talk of the County\\\"\", \"customer_name\": \"Red Eagle Media Group\", \"invoice_date\": \"8/30/16\", \"due_date\": null, \"total_amount\": 120.0, \"tax_amount\": null, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "0178861dd64f4c58bbd4367a": {
+      "success": true,
+      "latency_s": 3.322481870651245,
+      "output": "{\"document_id\": \"AuUL 041\", \"vendor_name\": \"MANAGEMENT SCIENCE ASSOCIATES, INC.\", \"customer_name\": \"LORILLARD TOBACCO COMPANY\", \"invoice_date\": \"June 7, 1999\", \"due_date\": null, \"total_amount\": 1024.0, \"tax_amount\": null, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "01a13a4f5d2748d6a57e9a67": {
+      "success": true,
+      "latency_s": 3.0354506969451904,
+      "output": "{\"document_id\": \"22165\", \"vendor_name\": null, \"customer_name\": \"PHILIP MORRIS\", \"invoice_date\": \"04/25/99\", \"due_date\": \"UPON RECEIPT\", \"total_amount\": 400.0, \"tax_amount\": 0.0, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "01cfcdac81ae44e8a06440ad": {
+      "success": true,
+      "latency_s": 2.864326000213623,
+      "output": "{\"document_id\": \"210-084552\", \"vendor_name\": \"CARTER CO. BRDCSTNG CO, INC\", \"customer_name\": \"R.D. PORTER FOR SHERIFF\", \"invoice_date\": \"10/28/2018\", \"due_date\": null, \"total_amount\": 22.0, \"tax_amount\": null, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "02074e661462419cb309bd7e": {
+      "success": true,
+      "latency_s": 2.681311845779419,
+      "output": "{\"document_id\": \"PM07-021693\", \"vendor_name\": \"Bozell Worldwide, Inc.\", \"customer_name\": \"Lorillard Tobacco Company Inc.\", \"invoice_date\": \"JUL10/02\", \"due_date\": \"JUL20/02\", \"total_amount\": 93750.0, \"tax_amount\": null, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "0219aad7064d4ba1a88f428f": {
+      "success": true,
+      "latency_s": 2.8678371906280518,
+      "output": "{\"document_id\": \"PM/LD3-98\", \"vendor_name\": \"Spencer Sports Media, Inc\", \"customer_name\": \"Philip Morris U.S.A.\", \"invoice_date\": \"MARCH 9, 1999\", \"due_date\": \"NET 30\", \"total_amount\": 750.0, \"tax_amount\": null, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "02a5c4103d8a487c847c415f": {
+      "success": true,
+      "latency_s": 60.70511221885681,
+      "output": "{\"document_id\": \"16-10-052\", \"vendor_name\": \"WYQE\", \"customer_name\": \"COMITE AMIGOS DE MIKE\", \"invoice_date\": \"10/31/2016\", \"due_date\": null, \"total_amount\": 250.0, \"tax_amount\": null, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "036f86baa0874467908a999d": {
+      "success": true,
+      "latency_s": 2.6067399978637695,
+      "output": "{\"document_id\": \"065063010A\", \"vendor_name\": \"The University of Kentucky Research Foundation\", \"customer_name\": \"Philip Morris USA\", \"invoice_date\": \"December 3, 2003\", \"due_date\": null, \"total_amount\": 41483.7, \"tax_amount\": null, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "04345516ddca4de2a96a22b5": {
+      "success": true,
+      "latency_s": 2.6565446853637695,
+      "output": "{\"document_id\": \"4856-004\", \"vendor_name\": \"WCKR-FM / RADIO STATION WCKR FUN92.1 FM\", \"customer_name\": \"BUTLER/TILL, INC.\", \"invoice_date\": \"12/10/2021\", \"due_date\": null, \"total_amount\": 336.19, \"tax_amount\": null, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "06c76cf7636f44f69320c117": {
+      "success": true,
+      "latency_s": 2.588198184967041,
+      "output": "{\"document_id\": \"10234\", \"vendor_name\": \"Larsen Interactive, Inc.\", \"customer_name\": \"Weber Shandwick - 2Take10\", \"invoice_date\": \"5/15/02\", \"due_date\": null, \"total_amount\": 1350.0, \"tax_amount\": null, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "07214b89d1bd407b829a7847": {
+      "success": true,
+      "latency_s": 2.628427028656006,
+      "output": "{\"document_id\": \"43164\", \"vendor_name\": \"CADDO BROADCASTING COMPANY\", \"customer_name\": \"BRUCE WESTERMAN\", \"invoice_date\": \"10-31-20\", \"due_date\": null, \"total_amount\": 184.0, \"tax_amount\": null, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "0771232167ca4babb5bd0b10": {
+      "success": true,
+      "latency_s": 3.5040411949157715,
+      "output": "{\"document_id\": \"PR05015316\", \"vendor_name\": \"The CPS Group\", \"customer_name\": \"Lorillard Tobacco Co. Inc.\", \"invoice_date\": \"5/28/02\", \"due_date\": null, \"total_amount\": 485.67, \"tax_amount\": null, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "077e1dfa5d0c4c58bef7b272": {
+      "success": true,
+      "latency_s": 2.7388551235198975,
+      "output": "{\"document_id\": \"9543\", \"vendor_name\": \"KSVT\", \"customer_name\": \"Paulette for Senate\", \"invoice_date\": \"10/21/2020\", \"due_date\": null, \"total_amount\": 25.0, \"tax_amount\": null, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "07f1cdc6b0384ebaa9c73e1d": {
+      "success": true,
+      "latency_s": 2.9870400428771973,
+      "output": "{\"document_id\": \"9832146G\", \"vendor_name\": \"BioReliance Testing & Development, Inc.\", \"customer_name\": \"Lorillard Tobacco Company\", \"invoice_date\": \"07-APR-1999\", \"due_date\": \"07-MAY-1999\", \"total_amount\": 220000.0, \"tax_amount\": 0.0, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "092d50e934b94b7181a00d32": {
+      "success": true,
+      "latency_s": 2.4475080966949463,
+      "output": "{\"document_id\": \"JCW1999-1\", \"vendor_name\": \"Wells & Company\", \"customer_name\": null, \"invoice_date\": \"January 5, 2001\", \"due_date\": null, \"total_amount\": 63380.04, \"tax_amount\": null, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "0995d33bb6d144408e61b2b3": {
+      "success": true,
+      "latency_s": 2.5290961265563965,
+      "output": "{\"document_id\": \"27979\", \"vendor_name\": \"FORT LEE FILM STORAGE & SERVICE CO., INC.\", \"customer_name\": \"GCI\", \"invoice_date\": \"09/01/2009\", \"due_date\": null, \"total_amount\": 90.0, \"tax_amount\": null, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "0a5a2f1f177f4e8790484374": {
+      "success": true,
+      "latency_s": 2.654326915740967,
+      "output": "{\"document_id\": \"18386\", \"vendor_name\": \"Learfield\", \"customer_name\": \"StateNets Platinum\", \"invoice_date\": \"9/21/20-9/26/20\", \"due_date\": null, \"total_amount\": 8250.0, \"tax_amount\": null, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "0ab6de24957a4d18b4960506": {
+      "success": true,
+      "latency_s": 3.0375359058380127,
+      "output": "{\"document_id\": \"1-99\", \"vendor_name\": \"HMS GROUP LLC\", \"customer_name\": \"Philip Morris USA, Research & Development\", \"invoice_date\": \"February 18, 1999\", \"due_date\": null, \"total_amount\": 10903.74, \"tax_amount\": null, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "0af50d0b47ba428e857d88bd": {
+      "success": true,
+      "latency_s": 2.61152982711792,
+      "output": "{\"document_id\": \"7751175\", \"vendor_name\": \"Sinclair Broadcast Group\", \"customer_name\": \"Strategic Media Placement\", \"invoice_date\": \"10/11/2020\", \"due_date\": null, \"total_amount\": 510.0, \"tax_amount\": null, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "0b47fcdc5caf4dd9a1c26ee5": {
+      "success": true,
+      "latency_s": 2.825028896331787,
+      "output": "{\"document_id\": \"99999999\", \"vendor_name\": \"Philip Morris Incorporated\", \"customer_name\": \"Philip Morris Valued Customer\", \"invoice_date\": \"12 04 00\", \"due_date\": \"12/04/00\", \"total_amount\": 1323.84, \"tax_amount\": null, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "0c0b7d2c4ce74a74ac4ca19c": {
+      "success": true,
+      "latency_s": 2.740898609161377,
+      "output": "{\"document_id\": \"229923B\", \"vendor_name\": \"HILTON PHOENIX/CHANDLER\", \"customer_name\": \"CHEN, YIBIN ALBERT\", \"invoice_date\": \"6/3/2016\", \"due_date\": null, \"total_amount\": 243.44, \"tax_amount\": 25.44, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "0cbf6366d4de4df5972ef977": {
+      "success": true,
+      "latency_s": 2.817636728286743,
+      "output": "{\"document_id\": \"4590609\", \"vendor_name\": \"KATZ TELEVISION GROUP\", \"customer_name\": \"Grassroots Media LLC\", \"invoice_date\": \"10/30/2020\", \"due_date\": null, \"total_amount\": 22850.0, \"tax_amount\": null, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "0cfdc8b6d1d04849b34026ba": {
+      "success": true,
+      "latency_s": 2.5955700874328613,
+      "output": "{\"document_id\": \"32816474\", \"vendor_name\": \"Cumulus-Green Bay WOGB-FM\", \"customer_name\": \"Donald Trump for President\", \"invoice_date\": \"04/19/19\", \"due_date\": null, \"total_amount\": 879.75, \"tax_amount\": null, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "0d0ecd36877b4b8cba6bc9d3": {
+      "success": true,
+      "latency_s": 2.872781991958618,
+      "output": "{\"document_id\": \"RF 11 13000001\", \"vendor_name\": \"The Florida State University Research Foundation, Inc.\", \"customer_name\": \"Philip Morris Research Center\", \"invoice_date\": \"12/27/01\", \"due_date\": null, \"total_amount\": 29212.99, \"tax_amount\": null, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "0e184a6f51274438b8176ade": {
+      "success": true,
+      "latency_s": 2.8001489639282227,
+      "output": "{\"document_id\": \"ORDER-3174387\", \"vendor_name\": \"WYXI Radio\", \"customer_name\": \"Bill Hagerty for US Senate / Team Hagerty\", \"invoice_date\": \"2020-07-16\", \"due_date\": null, \"total_amount\": 150.0, \"tax_amount\": null, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "0e6f403e8b1e469ca4afac6e": {
+      "success": true,
+      "latency_s": 2.5772080421447754,
+      "output": "{\"document_id\": \"26830056\", \"vendor_name\": \"KATZ TELEVISION GROUP\", \"customer_name\": \"STRATEGIC MEDIA SERVICES\", \"invoice_date\": \"03/18/2020\", \"due_date\": null, \"total_amount\": 300.0, \"tax_amount\": null, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "0e9fa414a3054e839c72685a": {
+      "success": true,
+      "latency_s": 2.6133830547332764,
+      "output": "{\"document_id\": \"20021302\", \"vendor_name\": \"T-Shirt Express\", \"customer_name\": \"HEALTHY FAMILIES CHICAGO\", \"invoice_date\": \"10/9/2002\", \"due_date\": \"10/11/2002\", \"total_amount\": 455.0, \"tax_amount\": 0.0, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "0f5a51c1316c4855981b362e": {
+      "success": true,
+      "latency_s": 2.694363832473755,
+      "output": "{\"document_id\": \"065063001A\", \"vendor_name\": \"The University of Kentucky Research Foundation\", \"customer_name\": \"Philip Morris USA\", \"invoice_date\": \"November 16, 2001\", \"due_date\": \"12/5/01\", \"total_amount\": 13415.08, \"tax_amount\": null, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "0ff66169f4f0404ab9378e8c": {
+      "success": true,
+      "latency_s": 2.5427019596099854,
+      "output": "{\"document_id\": \"302361\", \"vendor_name\": \"DISPLAY TECHNOLOGIES LLC\", \"customer_name\": \"MADDEN SERVICES INC\", \"invoice_date\": \"05/19/1997\", \"due_date\": null, \"total_amount\": 7727.4, \"tax_amount\": 0.0, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "10067f2d14c54f45b4d11675": {
+      "success": true,
+      "latency_s": 2.4600839614868164,
+      "output": "{\"document_id\": \"28N0021748\", \"vendor_name\": \"PINES BROADCASTING, INC.\", \"customer_name\": \"ROBERT AKIN FOR DREW COUNTY JUDGE\", \"invoice_date\": \"11/8/2018\", \"due_date\": null, \"total_amount\": 756.0, \"tax_amount\": null, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "10192f39d556412aaa280155": {
+      "success": true,
+      "latency_s": 62.26253414154053,
+      "output": "{\"document_id\": \"10-19-576\", \"vendor_name\": \"RADIIO 156\", \"customer_name\": \"HON. JENNIFER GONZALEZ COLON\", \"invoice_date\": \"11/09/2020\", \"due_date\": null, \"total_amount\": 760.0, \"tax_amount\": null, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "103e0f9064074f65bd9990a6": {
+      "success": true,
+      "latency_s": 2.517648935317993,
+      "output": "{\"document_id\": \"93R\", \"vendor_name\": \"Seven Ranges Radio, Inc.\", \"customer_name\": \"Phillip Wiley For House Of Delegates\", \"invoice_date\": \"10-12-18\", \"due_date\": null, \"total_amount\": 200.0, \"tax_amount\": null, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "10656e2770df4b1ab81f5bca": {
+      "success": true,
+      "latency_s": 2.8508338928222656,
+      "output": "{\"document_id\": \"9023194\", \"vendor_name\": \"Metromail/Experian\", \"customer_name\": \"LORILLARD TOBACCO COMPANY\", \"invoice_date\": \"2/18/99\", \"due_date\": null, \"total_amount\": 1485.8, \"tax_amount\": null, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "107692682aea4ac3bc3405d2": {
+      "success": true,
+      "latency_s": 2.794635057449341,
+      "output": "{\"document_id\": null, \"vendor_name\": \"WXME-AM \\\"The Talk of the County\\\"\", \"customer_name\": \"National Republican Congressional Committee\", \"invoice_date\": null, \"due_date\": null, \"total_amount\": 200.0, \"tax_amount\": null, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "1098def593334dbca76c62a6": {
+      "success": true,
+      "latency_s": 2.673858165740967,
+      "output": "{\"document_id\": \"16275\", \"vendor_name\": \"Learfield\", \"customer_name\": \"CGMEDIA, LLC\", \"invoice_date\": \"10/29/18- 11/3/18\", \"due_date\": null, \"total_amount\": 4662.0, \"tax_amount\": null, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "1141b304c74042f1970279ae": {
+      "success": true,
+      "latency_s": 2.471497058868408,
+      "output": "{\"document_id\": \"9900460-IN\", \"vendor_name\": \"Tobacco Merchants Association, Inc.\", \"customer_name\": \"Philip Morris U.S.A.\", \"invoice_date\": \"07/01/99\", \"due_date\": null, \"total_amount\": 75000.0, \"tax_amount\": 0.0, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "116cc87fc5d04806818b5a4f": {
+      "success": true,
+      "latency_s": 75.49817895889282,
+      "output": "{\"document_id\": \"#3514\", \"vendor_name\": \"WINIFRED E. MEAHL\", \"customer_name\": \"Lorillard, Inc.\", \"invoice_date\": \"February 18, 2000\", \"due_date\": null, \"total_amount\": 275.0, \"tax_amount\": null, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "1203b6c41035495bbc412de6": {
+      "success": true,
+      "latency_s": 2.5068349838256836,
+      "output": "{\"document_id\": \"77133-001-7\", \"vendor_name\": \"PricewaterhouseCoopers LLP\", \"customer_name\": \"Lorillard Tobacco Company\", \"invoice_date\": \"September 30, 1999\", \"due_date\": null, \"total_amount\": 8634.75, \"tax_amount\": null, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "12b756f12979456c9a4d4f05": {
+      "success": true,
+      "latency_s": 3.6694540977478027,
+      "output": "{\"document_id\": \"433974\", \"vendor_name\": \"Virginia Polytechnic Institute and State University\", \"customer_name\": \"Philip Morris USA\", \"invoice_date\": \"October 18, 2001\", \"due_date\": null, \"total_amount\": 77846.62, \"tax_amount\": null, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "142a75a41495449aa6c9ab95": {
+      "success": true,
+      "latency_s": 59.64581489562988,
+      "output": "{\"document_id\": \"2069556909\", \"vendor_name\": null, \"customer_name\": \"Philip Morris Inc.\", \"invoice_date\": \"February 2, 1999\", \"due_date\": null, \"total_amount\": 6200.0, \"tax_amount\": null, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "15dd967792504e9e9aa4ba99": {
+      "success": true,
+      "latency_s": 2.335763931274414,
+      "output": "{\"document_id\": \"55258\", \"vendor_name\": \"Community Broadcasting Service\", \"customer_name\": \"Mentzer Media Services\", \"invoice_date\": \"07/27/14\", \"due_date\": null, \"total_amount\": 4200.0, \"tax_amount\": null, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "1697dd014ff44b67b059713c": {
+      "success": true,
+      "latency_s": 3.109793186187744,
+      "output": "{\"document_id\": \"26809\", \"vendor_name\": \"GREAT CIRCLE MEDIA / KMGN FM\", \"customer_name\": \"MAIN STREET MEDIA GROUP/DEFEND AZ\", \"invoice_date\": \"07/21/2020\", \"due_date\": null, \"total_amount\": 743.33, \"tax_amount\": 16.58, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "176a5f827a2943a0b1f5d5f3": {
+      "success": true,
+      "latency_s": 2.8380870819091797,
+      "output": "{\"document_id\": \"045-8686200\", \"vendor_name\": \"ELLER MEDIA COMPANY\", \"customer_name\": \"LEO BURNETT USA\", \"invoice_date\": \"01/31/99\", \"due_date\": null, \"total_amount\": 2834.89, \"tax_amount\": null, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "183b1a67b9a9413583eb2dcf": {
+      "success": true,
+      "latency_s": 2.6547770500183105,
+      "output": "{\"document_id\": \"729578\", \"vendor_name\": \"Kennedy Covington Lobdell & Hickman, L.L.P.\", \"customer_name\": \"Salomon Smith Barney Inc.\", \"invoice_date\": \"01/15/01\", \"due_date\": \"Upon Receipt\", \"total_amount\": 4673.75, \"tax_amount\": null, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "188b78406d3549539c193acb": {
+      "success": true,
+      "latency_s": 3.1738390922546387,
+      "output": "{\"document_id\": \"1174548\", \"vendor_name\": \"WTTG DC (FOX)\", \"customer_name\": \"American Cancer Society\", \"invoice_date\": \"05/11/22\", \"due_date\": null, \"total_amount\": 18700.0, \"tax_amount\": null, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "1925d1e1a8114287905a7864": {
+      "success": true,
+      "latency_s": 2.6378679275512695,
+      "output": "{\"document_id\": \"WOC13617453\", \"vendor_name\": \"KGMB TV\", \"customer_name\": \"CCIA\", \"invoice_date\": \"5/26/22\", \"due_date\": null, \"total_amount\": 55380.0, \"tax_amount\": null, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "19dc3f5dafe54b4cabfdaf10": {
+      "success": true,
+      "latency_s": 2.7956461906433105,
+      "output": "{\"document_id\": \"1095/22\", \"vendor_name\": \"Opportunity Media Advertising\", \"customer_name\": \"Scott Janowitz For Circuit Court Judge\", \"invoice_date\": \"06/16/22\", \"due_date\": null, \"total_amount\": 850.0, \"tax_amount\": null, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "1a61c8ea461740e1b2a52fe2": {
+      "success": true,
+      "latency_s": 50.62895917892456,
+      "output": "{\"document_id\": \"28305\", \"vendor_name\": \"FORT LEE FILM STORAGE & SERVICE CO., INC.\", \"customer_name\": \"GCI\", \"invoice_date\": \"11-10-2000\", \"due_date\": null, \"total_amount\": 90.0, \"tax_amount\": null, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "1ab29ec9fa8f4a1cbf1a7b90": {
+      "success": true,
+      "latency_s": 2.861968994140625,
+      "output": "{\"document_id\": \"MG12-018801\", \"vendor_name\": \"Bozell Worldwide, Inc.\", \"customer_name\": \"Lorillard Tobacco Company Inc.\", \"invoice_date\": \"DEC11/01\", \"due_date\": \"DEC21/01\", \"total_amount\": 25976.85, \"tax_amount\": null, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "1ac88b2f43e5490584a3b864": {
+      "success": true,
+      "latency_s": 2.4401328563690186,
+      "output": "{\"document_id\": \"729864-1\", \"vendor_name\": \"Cox Radio, Inc.\", \"customer_name\": \"National Media Research Planning & Placement LLC\", \"invoice_date\": \"10/11/20\", \"due_date\": null, \"total_amount\": null, \"tax_amount\": null, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "1adbb4c130754e8483d2172c": {
+      "success": true,
+      "latency_s": 2.554324150085449,
+      "output": "{\"document_id\": \"2\", \"vendor_name\": \"NEW YORK MEDICAL COLLEGE\", \"customer_name\": \"Philip Morris USA\", \"invoice_date\": \"December 4, 2001\", \"due_date\": null, \"total_amount\": 91024.43, \"tax_amount\": null, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "1b0216e4b0f74158829fa36e": {
+      "success": true,
+      "latency_s": 3.2156388759613037,
+      "output": "{\"document_id\": \"181222\", \"vendor_name\": \"BSMG Worldwide, Inc.\", \"customer_name\": \"LORILLARD\", \"invoice_date\": \"March 31, 2000\", \"due_date\": \"upon receipt\", \"total_amount\": 33344.6, \"tax_amount\": null, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "1b1c545aa8f244059e4302bf": {
+      "success": true,
+      "latency_s": 2.7215449810028076,
+      "output": "{\"document_id\": \"272-07\", \"vendor_name\": \"Stewart Media Group\", \"customer_name\": \"Don H. Combs Campaign for Court Of Appeals Judge\", \"invoice_date\": \"May 12, 2018\", \"due_date\": null, \"total_amount\": 643.5, \"tax_amount\": null, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "1c3e403b844147708a1a3a7d": {
+      "success": true,
+      "latency_s": 2.6165199279785156,
+      "output": "{\"document_id\": null, \"vendor_name\": \"The Cromwell Group Inc. of Illinois\", \"customer_name\": \"Kara Metzger for Vandalia City Clerk\", \"invoice_date\": \"2-26-21\", \"due_date\": null, \"total_amount\": 53.0, \"tax_amount\": null, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "1c438464a34c45b19bd60662": {
+      "success": true,
+      "latency_s": 2.6703240871429443,
+      "output": "{\"document_id\": \"2030611\", \"vendor_name\": \"WXII-TV\", \"customer_name\": \"Trump\", \"invoice_date\": \"9/17/2020\", \"due_date\": null, \"total_amount\": 2169.0, \"tax_amount\": null, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "1c7199f3cdbb4a70a0d05c0a": {
+      "success": true,
+      "latency_s": 2.6642329692840576,
+      "output": "{\"document_id\": null, \"vendor_name\": \"Larsen Interactive, Inc.\", \"customer_name\": \"Weber Shandwick - ButtOutNow\", \"invoice_date\": \"10/1/02\", \"due_date\": null, \"total_amount\": 2110.0, \"tax_amount\": null, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "1d0f71e98d9043cf864c96c1": {
+      "success": true,
+      "latency_s": 2.5431716442108154,
+      "output": "{\"document_id\": \"70537\", \"vendor_name\": \"SAUL, EWING & REMICK & SAUL LLP\", \"customer_name\": \"PHILIP MORRIS MANAGEMENT CORP.\", \"invoice_date\": \"02/23/00\", \"due_date\": null, \"total_amount\": 80.99, \"tax_amount\": null, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "1d65eee843dd4a64ab149d69": {
+      "success": true,
+      "latency_s": 2.605489730834961,
+      "output": "{\"document_id\": \"06593\", \"vendor_name\": \"Durand Broadcasting, LLC\", \"customer_name\": \"Ron Johnson For Senate\", \"invoice_date\": \"08/28/2022\", \"due_date\": \"09/02/2022\", \"total_amount\": 93.24, \"tax_amount\": null, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "1dfb38d0f9f148d8a0f0b120": {
+      "success": true,
+      "latency_s": 2.682807207107544,
+      "output": "{\"document_id\": \"15551\", \"vendor_name\": \"Learfield\", \"customer_name\": \"STRATEGIC. AMERICA\", \"invoice_date\": \"4/23/18-4/28/18\", \"due_date\": null, \"total_amount\": 7320.0, \"tax_amount\": null, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "1f30ee50ea86473894d6620e": {
+      "success": true,
+      "latency_s": 2.7275309562683105,
+      "output": "{\"document_id\": \"PR12-018798\", \"vendor_name\": \"Bozell Worldwide, Inc.\", \"customer_name\": \"Lorillard Tobacco Company Inc.\", \"invoice_date\": \"DEC11/01\", \"due_date\": \"DEC31/01\", \"total_amount\": 2151.69, \"tax_amount\": null, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "212a7679341445bfb7b007ce": {
+      "success": true,
+      "latency_s": 2.695295810699463,
+      "output": "{\"document_id\": \"BATA 014\", \"vendor_name\": null, \"customer_name\": \"BAT Area Ltd\", \"invoice_date\": \"15th August 2012\", \"due_date\": null, \"total_amount\": 3473758.5, \"tax_amount\": 20190.0, \"currency\": \"KES\"}",
+      "error": null
+    },
+    "2173166e2bd547aa83806e3e": {
+      "success": true,
+      "latency_s": 2.670584201812744,
+      "output": "{\"document_id\": \"12057\", \"vendor_name\": \"KUTV Channel 2\", \"customer_name\": \"MATHESON FOR CONGRESS\", \"invoice_date\": \"10/16/2012\", \"due_date\": null, \"total_amount\": null, \"tax_amount\": null, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "21aeefeaae054f4cbeaa3ae3": {
+      "success": true,
+      "latency_s": 2.8171191215515137,
+      "output": "{\"document_id\": \"246268\", \"vendor_name\": \"THE TACHER COMPANY\", \"customer_name\": \"GREER MARGOLIS MITCHELL BURNS & ASSOCIATES\", \"invoice_date\": \"SEP21/18\", \"due_date\": null, \"total_amount\": 585.84, \"tax_amount\": null, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "226875479d0f40caa4b714da": {
+      "success": true,
+      "latency_s": 3.4969489574432373,
+      "output": "{\"document_id\": \"33197787\", \"vendor_name\": \"Cumulus-Shreveport KMJJ-FM\", \"customer_name\": \"Katz Media Group\", \"invoice_date\": \"08/30/19\", \"due_date\": null, \"total_amount\": 141.1, \"tax_amount\": null, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "230fccbafe7b468e82dd3881": {
+      "success": true,
+      "latency_s": 2.4473328590393066,
+      "output": "{\"document_id\": \"283666B-1\", \"vendor_name\": \"Alpha Media\", \"customer_name\": \"Leila Wise and Associates\", \"invoice_date\": \"03/25/18\", \"due_date\": null, \"total_amount\": null, \"tax_amount\": null, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "2317da5362164021a7053d6a": {
+      "success": true,
+      "latency_s": 2.366724967956543,
+      "output": "{\"document_id\": \"5667\", \"vendor_name\": \"OHANA MEDIA GROUP\", \"customer_name\": \"OPTIMA PUBLIC RELATIONS\", \"invoice_date\": \"Nov. 29, 2020\", \"due_date\": null, \"total_amount\": 357.0, \"tax_amount\": null, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "237f71477e504a598ba1aa40": {
+      "success": true,
+      "latency_s": 2.714927911758423,
+      "output": "{\"document_id\": \"4784016\", \"vendor_name\": \"iHeartMEDIA\", \"customer_name\": \"Tim Aalders for US Senate\", \"invoice_date\": \"08/27/2018\", \"due_date\": \"09/03/2018\", \"total_amount\": 2000.0, \"tax_amount\": null, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "250d4fdc5b114f379d1d2c22": {
+      "success": true,
+      "latency_s": 183.06576204299927,
+      "output": "{\"document_id\": \"2232-002068-2\", \"vendor_name\": null, \"customer_name\": \"Lorillard Tobacco Company\", \"invoice_date\": \"June 16, 1999\", \"due_date\": null, \"total_amount\": 8974.5, \"tax_amount\": null, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "2579d3d430de44e688877d66": {
+      "success": true,
+      "latency_s": 3.276508331298828,
+      "output": "{\"document_id\": \"723571\", \"vendor_name\": \"Lorillard Tobacco Company\", \"customer_name\": \"McDermott, Will & Emery\", \"invoice_date\": \"06/18/01\", \"due_date\": null, \"total_amount\": 8563.24, \"tax_amount\": null, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "2680d38513584971aa49b18a": {
+      "success": true,
+      "latency_s": 2.881566047668457,
+      "output": "{\"document_id\": null, \"vendor_name\": \"GLOBAL EVENTS GROUP\", \"customer_name\": \"Philip Morris USA\", \"invoice_date\": \"July 14, 1999\", \"due_date\": \"upon receipt\", \"total_amount\": 1968.5, \"tax_amount\": null, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "268c5c1982f44d79be102236": {
+      "success": true,
+      "latency_s": 2.5515859127044678,
+      "output": "{\"document_id\": \"PM/SF3-98\", \"vendor_name\": \"Spencer Sports Media, Inc.\", \"customer_name\": \"Philip Morris U.S.A.\", \"invoice_date\": \"MARCH 3, 1999\", \"due_date\": \"NET 30\", \"total_amount\": 8000.0, \"tax_amount\": null, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "274933edf13e455a92f2b5c5": {
+      "success": true,
+      "latency_s": 2.494163990020752,
+      "output": "{\"document_id\": \"49387\", \"vendor_name\": \"KATZ MEDIA GROUP\", \"customer_name\": \"MICHAEL BLOOMBERG FOR PRES\", \"invoice_date\": \"02/12/20\", \"due_date\": null, \"total_amount\": 10330.0, \"tax_amount\": null, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "2795a84e8d6f496784c54ac3": {
+      "success": true,
+      "latency_s": 2.708610773086548,
+      "output": "{\"document_id\": \"305023\", \"vendor_name\": \"MANAGEMENT SCIENCE ASSOCIATES, INC.\", \"customer_name\": \"LORILLARD TOBACCO COMPANY\", \"invoice_date\": \"May 6, 1999\", \"due_date\": null, \"total_amount\": 5060.0, \"tax_amount\": null, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "2861b195ec0947659c933c33": {
+      "success": true,
+      "latency_s": 2.7040820121765137,
+      "output": "{\"document_id\": \"#4775\", \"vendor_name\": \"Burt Broadcasting, Inc\", \"customer_name\": \"Yvette Herrell for Congress\", \"invoice_date\": \"June 2020\", \"due_date\": null, \"total_amount\": 47.6, \"tax_amount\": null, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "28c621ed554848f0a21ee45a": {
+      "success": true,
+      "latency_s": 2.6951189041137695,
+      "output": "{\"document_id\": \"PAGAAOCT2N2DNOV2IAO\", \"vendor_name\": \"Waterfront Strategies\", \"customer_name\": \"Katz Media Group\", \"invoice_date\": \"Oct/23/2020\", \"due_date\": \"Oct/26/2020\", \"total_amount\": 278502.5, \"tax_amount\": null, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "290620bace424639ae3277eb": {
+      "success": true,
+      "latency_s": 2.962570905685425,
+      "output": "{\"document_id\": \"2514952837\", \"vendor_name\": \"iHeartMedia\", \"customer_name\": \"Business Roundtable\", \"invoice_date\": \"10/22/19\", \"due_date\": \"12/06/19\", \"total_amount\": 2584.0, \"tax_amount\": 0.0, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "291e40bfed8846308d695883": {
+      "success": true,
+      "latency_s": 93.87567281723022,
+      "output": "{\"document_id\": \"ARG#II7-3-99-LTC#5543-899\", \"vendor_name\": \"WINIFRED E. MEAHL\", \"customer_name\": \"Lorillard, Inc.\", \"invoice_date\": \"March 23, 2000\", \"due_date\": null, \"total_amount\": 400.0, \"tax_amount\": null, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "2ac945dcfdad41ada6ccc94d": {
+      "success": true,
+      "latency_s": 2.596339225769043,
+      "output": "{\"document_id\": \"CON-NOR-CS-3526\", \"vendor_name\": \"KATZ MEDIA GROUP\", \"customer_name\": \"JENNIFER KIGGANSI FOR CONGRESS\", \"invoice_date\": \"05-16-2022\", \"due_date\": null, \"total_amount\": 1560.6, \"tax_amount\": null, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "2af423e41c0d44ebb797e2d3": {
+      "success": true,
+      "latency_s": 3.3723227977752686,
+      "output": "{\"document_id\": \"1036\", \"vendor_name\": \"Star News Digital Media, Inc.\", \"customer_name\": \"Karen Moore for State Executive Committee\", \"invoice_date\": \"July 2, 2022\", \"due_date\": null, \"total_amount\": 2041.0, \"tax_amount\": null, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "2ca9a9e76ce546f498be428e": {
+      "success": true,
+      "latency_s": 2.4764468669891357,
+      "output": "{\"document_id\": \"8269\", \"vendor_name\": \"Pontiac Silverdome\", \"customer_name\": \"Philip Morris USA\", \"invoice_date\": \"May 26, 1999\", \"due_date\": \"August 1, 1999\", \"total_amount\": 200000.0, \"tax_amount\": null, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "2d47414fbcc148ea9fd93397": {
+      "success": true,
+      "latency_s": 3.4479947090148926,
+      "output": "{\"document_id\": \"4241563\", \"vendor_name\": \"WTVX\", \"customer_name\": \"MIKE BLOOMBERG FOR PRESIDENT\", \"invoice_date\": \"02/12/20\", \"due_date\": null, \"total_amount\": 175.0, \"tax_amount\": null, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "2e26414a266a429a8ea5ac74": {
+      "success": true,
+      "latency_s": 3.764857053756714,
+      "output": "{\"document_id\": \"7273064886\", \"vendor_name\": \"AIRBORNE EXPRESS\", \"customer_name\": \"DUKE UNIV\", \"invoice_date\": \"5/26/99\", \"due_date\": \"6/10/99\", \"total_amount\": 38.0, \"tax_amount\": null, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "2e3c61fb2b5a4191bf430e33": {
+      "success": true,
+      "latency_s": 2.6497690677642822,
+      "output": "{\"document_id\": \"8661\", \"vendor_name\": \"Glades Media Radio Group\", \"customer_name\": \"Deborah M Hooker For County Court Judge\", \"invoice_date\": \"10-9-18\", \"due_date\": null, \"total_amount\": 2098.0, \"tax_amount\": null, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "2e9d2485019f410a8ffd4daf": {
+      "success": true,
+      "latency_s": 2.6729838848114014,
+      "output": "{\"document_id\": \"JB22-083\", \"vendor_name\": \"StateNets\", \"customer_name\": \"RGA Nevada PAC\", \"invoice_date\": \"8/16/22\", \"due_date\": null, \"total_amount\": 1020.0, \"tax_amount\": null, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "2f53eac84e0d4bf8aa42ed2b": {
+      "success": true,
+      "latency_s": 2.6213390827178955,
+      "output": "{\"document_id\": \"SLFLG PMG Maui May 22\", \"vendor_name\": \"Olomana Loomis ISC\", \"customer_name\": \"Pacific Media Group Maui\", \"invoice_date\": \"4/29/2022\", \"due_date\": null, \"total_amount\": 5250.0, \"tax_amount\": null, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "2f6c06757cee4088a5a1f42a": {
+      "success": true,
+      "latency_s": 2.57820725440979,
+      "output": "{\"document_id\": \"92220-6\", \"vendor_name\": \"Katz Communications . Katz Media Group Inc\", \"customer_name\": \"Converging Media\", \"invoice_date\": \"9/22/2020\", \"due_date\": null, \"total_amount\": 572757.87, \"tax_amount\": 0.0, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "2f8b7bac093b410e97862e1d": {
+      "success": true,
+      "latency_s": 2.5448477268218994,
+      "output": "{\"document_id\": \"28N0021692\", \"vendor_name\": \"PINES BROADCASTING, INC.\", \"customer_name\": \"LESLIE RUTLEDGE FOR ATTORNEY GENERAL\", \"invoice_date\": \"11/8/2018\", \"due_date\": null, \"total_amount\": 21.25, \"tax_amount\": null, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "30928d0830cd4334ba1a8361": {
+      "success": true,
+      "latency_s": 49.0064582824707,
+      "output": "{\"document_id\": \"3511\", \"vendor_name\": \"WINIFRED E. MEAHL\", \"customer_name\": \"Lorillard, Inc.\", \"invoice_date\": \"January 4, 2000\", \"due_date\": null, \"total_amount\": 1475.0, \"tax_amount\": null, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "31064f4b7e794e8a91d2ecee": {
+      "success": true,
+      "latency_s": 2.5915911197662354,
+      "output": "{\"document_id\": \"31973606\", \"vendor_name\": \"Cumulus-Pensacola WCOA-AM\", \"customer_name\": \"Multi Media Services\", \"invoice_date\": \"07/09/18\", \"due_date\": null, \"total_amount\": 321.3, \"tax_amount\": null, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "32d90b37433546a298c9f047": {
+      "success": true,
+      "latency_s": 2.4918110370635986,
+      "output": "{\"document_id\": \"7800993\", \"vendor_name\": \"WXME-AM\", \"customer_name\": \"CIO Mainers for Healthcare\", \"invoice_date\": null, \"due_date\": null, \"total_amount\": 380.0, \"tax_amount\": null, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "33e6566390d24c2a95ed976c": {
+      "success": true,
+      "latency_s": 3.017336845397949,
+      "output": "{\"document_id\": \"WOC12594617\", \"vendor_name\": \"KVLY TV\", \"customer_name\": \"Noel Collis for Congress\", \"invoice_date\": \"7/06/20\", \"due_date\": null, \"total_amount\": 2675.0, \"tax_amount\": null, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "342baca5549841e484529ff0": {
+      "success": true,
+      "latency_s": 2.620042085647583,
+      "output": "{\"document_id\": \"9930351\", \"vendor_name\": \"WLTV-TV\", \"customer_name\": \"SMART MEDIA GROUP\", \"invoice_date\": \"SEP25/20\", \"due_date\": null, \"total_amount\": 9875.0, \"tax_amount\": null, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "35bf18b0c11e4c98ad2402c8": {
+      "success": true,
+      "latency_s": 86.01716995239258,
+      "output": "{\"document_id\": \"212994\", \"vendor_name\": \"LORILLARD YOUTH SMOKING PREVENTION PROGRAM\", \"customer_name\": null, \"invoice_date\": null, \"due_date\": null, \"total_amount\": 14792.3, \"tax_amount\": null, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "36c8a4c1eb604a4798cea4bc": {
+      "success": true,
+      "latency_s": 2.5892269611358643,
+      "output": "{\"document_id\": \"EK0009\", \"vendor_name\": \"Media Analysis, Inc.\", \"customer_name\": \"Eileen Kiely for Oregon\", \"invoice_date\": \"10/7/2020\", \"due_date\": null, \"total_amount\": 1317.5, \"tax_amount\": null, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "374c924c3c804f6193234bd7": {
+      "success": true,
+      "latency_s": 2.6511361598968506,
+      "output": "{\"document_id\": \"99999999\", \"vendor_name\": \"Philip Morris Incorporated\", \"customer_name\": \"Philip Morris Valued Customer\", \"invoice_date\": \"12 04 00\", \"due_date\": \"12/04/00\", \"total_amount\": 1337.72, \"tax_amount\": null, \"currency\": \"USD\"}",
+      "error": null
+    },
+    "3754150084d64de3bcfd2cbe": {
+      "success": true,
+      "latency_s": 2.7169888019561768,
+      "output": "{\"document_id\": \"451141440U3977008\", \"vendor_name\": \"KYKD\", \"customer_name\": \"William McEntee\", \"invoice_date\": \"August 28, 2020\", \"due_date\": null, \"total_amount\": 215.13, \"tax_amount\": 0.0, \"currency\": \"USD\"}",
+      "error": null
+    }
+  },
+  "failed": {},
+  "stats": {
+    "total_time": 1027.2210857868195
+  }
+}

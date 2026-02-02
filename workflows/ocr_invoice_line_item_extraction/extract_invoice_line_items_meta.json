@@ -1,0 +1,31 @@
+{
+  "activity_name": "extract_invoice_line_items",
+  "description": "Extracts line items from noisy OCR invoice text using LLM semantic understanding. The LLM analyzes the OCR text to identify and extract line items despite scanning artifacts, typos, and formatting inconsistencies.",
+  "task_id": "docile_lir_35bf18b0c11e4c98ad2402c8",
+  "task_description": "Extract line items from this noisy OCR-scanned invoice document.\n\nIMPORTANT: This OCR text contains scanning artifacts, typos, and inconsistent formatting.\nYou MUST use LLM-based semantic understanding to extract line items accurately.\nRegex/pattern matching will NOT work due to OCR noise.\n\nExtract line items as a JSON array. Each line item should have:\n- description: Item/service description\n- quantity: Number of units (number or null)\n- unit_price: Price per unit (number or null)  \n- total_price: Line total (number or null)\n\nReturn empty array [] if no line items can be confidently extracted.\n\nOCR Text:\nLORILLARD YOUTH SMOKING PREVENTION PROGRAM\nACTIVITY REPORT\nAccount: 08846\nInvoice #: 212994\nTeen Program\nScholarships\nTotal Staff Time:\nTotal Out-of-Pocket:\nTOTAL INVOICE:\n$42.00\n$42.00\n$14,750.30\n$14,792.30\nCoordinated distribution of scholarships to winners\n5\n-\n\nJSON:\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\njson\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "inputs": [
+    {
+      "name": "ocr_text",
+      "type": "str",
+      "description": "The raw OCR text from a scanned invoice document that may contain scanning artifacts, typos, and inconsistent formatting",
+      "required": true
+    }
+  ],
+  "output": {
+    "type": "list",
+    "description": "Returns a JSON array of line item objects extracted from the invoice. Each line item has: description (string - item/service description), quantity (number or null - number of units), unit_price (number or null - price per unit), total_price (number or null - line total). Returns empty array [] if no line items can be confidently extracted. Example structure: [{\"description\": \"string\", \"quantity\": number|null, \"unit_price\": number|null, \"total_price\": number|null}]",
+    "fields": {
+      "description": "str",
+      "quantity": "float | None",
+      "unit_price": "float | None",
+      "total_price": "float | None"
+    }
+  },
+  "reference_activity": "llm_extract",
+  "workflow_spec": {
+    "workflow_id": "ocr_invoice_line_item_extraction",
+    "name": "OCR Invoice Line Item Extraction",
+    "description": "Extracts line items from noisy OCR-scanned invoice documents using LLM-based semantic understanding. Handles scanning artifacts, typos, and inconsistent formatting to produce structured JSON array of line items.",
+    "execution_pattern": "sequence"
+  }
+}

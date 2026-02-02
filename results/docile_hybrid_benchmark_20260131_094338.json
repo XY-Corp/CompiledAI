@@ -1,0 +1,183 @@
+{
+  "timestamp": "20260131_094338",
+  "samples": [
+    {
+      "id": "00134dd365a24343b35b78c6",
+      "accuracy": 0.14285714285714285,
+      "used_llm": true,
+      "llm_fields": [
+        "document_id"
+      ],
+      "total_time_ms": 2338.5161670157686
+    },
+    {
+      "id": "00136a27c7774c1e8dc6b2f2",
+      "accuracy": 0.42857142857142855,
+      "used_llm": false,
+      "llm_fields": [],
+      "total_time_ms": 7.424291979987174
+    },
+    {
+      "id": "002e3cf97973428f905671b3",
+      "accuracy": 0.5,
+      "used_llm": true,
+      "llm_fields": [
+        "document_id",
+        "total_amount"
+      ],
+      "total_time_ms": 1858.286999980919
+    },
+    {
+      "id": "002f9b82b74f4258b3b072d0",
+      "accuracy": 0.375,
+      "used_llm": true,
+      "llm_fields": [
+        "total_amount"
+      ],
+      "total_time_ms": 1790.5895410222001
+    },
+    {
+      "id": "003568b1286f4dab953fc2d5",
+      "accuracy": 0.2857142857142857,
+      "used_llm": true,
+      "llm_fields": [
+        "document_id",
+        "total_amount"
+      ],
+      "total_time_ms": 1831.0431669815443
+    },
+    {
+      "id": "0039ed9f32974a90afb4f8f2",
+      "accuracy": 0.3333333333333333,
+      "used_llm": false,
+      "llm_fields": [],
+      "total_time_ms": 2.3077079677022994
+    },
+    {
+      "id": "003cc91637994b7d9566ac41",
+      "accuracy": 0.2,
+      "used_llm": true,
+      "llm_fields": [
+        "total_amount"
+      ],
+      "total_time_ms": 2011.082707962487
+    },
+    {
+      "id": "00405d767fb1406180d05ef2",
+      "accuracy": 0.2857142857142857,
+      "used_llm": true,
+      "llm_fields": [
+        "total_amount"
+      ],
+      "total_time_ms": 1980.6961659924127
+    },
+    {
+      "id": "004e76fe452448eebaadc53b",
+      "accuracy": 0.2,
+      "used_llm": true,
+      "llm_fields": [
+        "document_id"
+      ],
+      "total_time_ms": 1826.7819579923525
+    },
+    {
+      "id": "006835846482455e8d75f8f8",
+      "accuracy": 0.14285714285714285,
+      "used_llm": true,
+      "llm_fields": [
+        "document_id"
+      ],
+      "total_time_ms": 1824.9682920286432
+    },
+    {
+      "id": "0079863fa739477290959e5d",
+      "accuracy": 0.375,
+      "used_llm": true,
+      "llm_fields": [
+        "document_id"
+      ],
+      "total_time_ms": 1810.1278329850174
+    },
+    {
+      "id": "0087b1c5608a443995fe9656",
+      "accuracy": 0.7142857142857143,
+      "used_llm": true,
+      "llm_fields": [
+        "document_id"
+      ],
+      "total_time_ms": 1993.2865840382874
+    },
+    {
+      "id": "008ca3c5e4024ce2aa2c77e2",
+      "accuracy": 0.3333333333333333,
+      "used_llm": false,
+      "llm_fields": [],
+      "total_time_ms": 9.537292004097253
+    },
+    {
+      "id": "0091f649d0c746f8abec5e16",
+      "accuracy": 0.0,
+      "used_llm": false,
+      "llm_fields": [],
+      "total_time_ms": 1771.8496659654193
+    },
+    {
+      "id": "0096d69f865b443290705bee",
+      "accuracy": 0.2857142857142857,
+      "used_llm": true,
+      "llm_fields": [
+        "document_id",
+        "total_amount"
+      ],
+      "total_time_ms": 1925.9907920495607
+    }
+  ],
+  "field_results": {
+    "document_id": {
+      "correct": 13,
+      "total": 13
+    },
+    "vendor_name": {
+      "correct": 4,
+      "total": 14
+    },
+    "vendor_address": {
+      "correct": 1,
+      "total": 15
+    },
+    "customer_name": {
+      "correct": 0,
+      "total": 14
+    },
+    "customer_address": {
+      "correct": 1,
+      "total": 12
+    },
+    "invoice_date": {
+      "correct": 5,
+      "total": 13
+    },
+    "due_date": {
+      "correct": 1,
+      "total": 3
+    },
+    "total_amount": {
+      "correct": 7,
+      "total": 14
+    },
+    "tax_amount": {
+      "correct": 0,
+      "total": 0
+    },
+    "currency": {
+      "correct": 0,
+      "total": 0
+    }
+  },
+  "summary": {
+    "overall_accuracy": 0.32653061224489793,
+    "samples_with_llm": 11,
+    "avg_latency_ms": 1532.1659443977599,
+    "total_tokens": 11296
+  }
+}
