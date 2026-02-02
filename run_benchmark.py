@@ -511,6 +511,7 @@ def run_benchmark(
     enable_cache: bool = False,
     verbose: bool = False,
     output_dir: str = "results",
+    code_shield: bool = False,
     **dataset_kwargs,
 ) -> None:
     """Run benchmark with given configuration.
@@ -656,6 +657,27 @@ def run_benchmark(
     display_baseline = "fixture" if dataset_key == "security_code_gate_fixtures" else baseline
     display_simple_results(result, display_baseline, dataset_key)
 
+    # If --code-shield flag is enabled, additionally run CodeShield on code gate fixtures
+    code_shield_result = None
+    if code_shield:
+        console.print(f"\n  [{BRAND_ACCENT}]Running CodeShield validation on code gate fixtures...[/{BRAND_ACCENT}]\n")
+        
+        # Load code gate fixtures
+        code_gate_converter = SecurityFixtureConverter()
+        code_gate_instances = code_gate_converter.load_directory("workflows")
+        
+        if code_gate_instances:
+            console.print(f"  [{BRAND_DIM}]Loaded[/{BRAND_DIM}] [{BRAND_PRIMARY}]{len(code_gate_instances)}[/{BRAND_PRIMARY}] [{BRAND_DIM}]code gate fixtures[/{BRAND_DIM}]")
+            console.print(f"  [{BRAND_DIM}]Running CODE GATE validation (CodeShield)...[/{BRAND_DIM}]\n")
+            
+            code_shield_result = run_fixture_benchmark(code_gate_instances, verbose=verbose, log_dir=run_dir)
+            
+            # Display code shield results separately
+            console.print(f"\n  [{BRAND_ACCENT}]CodeShield Results:[/{BRAND_ACCENT}]")
+            display_simple_results(code_shield_result, "code_shield", "security_code_gate_fixtures")
+        else:
+            console.print(f"  [{BRAND_ERROR}]No code gate fixtures found in workflows/[/{BRAND_ERROR}]")
+
     # Save detailed results to run directory
     results_path = run_dir / "results.json"
     results_data = {
@@ -753,14 +775,49 @@ def run_benchmark(
         summary_data["compilations"] = compilations
         summary_data["cache_hits"] = len(result.results) - compilations
 
+    # Add code-shield metrics if available
+    if code_shield_result:
+        summary_data["code_shield"] = {
+            "success_rate": code_shield_result.success_rate,
+            "total_fixtures": len(code_shield_result.results),
+            "detected_vulnerabilities": sum(1 for r in code_shield_result.results if r.success),
+            "missed_vulnerabilities": sum(1 for r in code_shield_result.results if not r.success),
+        }
+
     with open(summary_path, "w") as f:
         json.dump(summary_data, f, indent=2)
+
+    # Save code-shield results separately if available
+    if code_shield_result:
+        code_shield_path = run_dir / "code_shield_results.json"
+        code_shield_data = {
+            "total_fixtures": len(code_shield_result.results),
+            "success_rate": code_shield_result.success_rate,
+            "duration_seconds": code_shield_result.duration_seconds,
+            "fixtures": [
+                {
+                    "instance_id": r.instance_id,
+                    "input": r.input,
+                    "output": r.output,
+                    "expected": r.expected,
+                    "success": r.success,
+                    "latency_ms": r.latency_ms,
+                    "error": r.error,
+                    "evaluation_details": r.evaluation_details,
+                }
+                for r in code_shield_result.results
+            ]
+        }
+        with open(code_shield_path, "w") as f:
+            json.dump(code_shield_data, f, indent=2)
 
     console.print(f"\n  [{BRAND_DIM}]Results saved to:[/{BRAND_DIM}]")
     console.print(f"    [{BRAND_PRIMARY}]{results_path}[/{BRAND_PRIMARY}]")
     console.print(f"    [{BRAND_PRIMARY}]{summary_path}[/{BRAND_PRIMARY}]")
     if failures:
         console.print(f"    [{BRAND_ERROR}]{failures_path} ({len(failures)} failures)[/{BRAND_ERROR}]")
+    if code_shield_result:
+        console.print(f"    [{BRAND_ACCENT}]{run_dir / 'code_shield_results.json'} (CodeShield)[/{BRAND_ACCENT}]")
 
     # Also save to results/ folder for consistency with other benchmarks
     import time
@@ -1341,6 +1398,11 @@ Examples:
         help="Enable verbose logging (shows detailed execution logs)",
     )
     parser.add_argument(
+        "--code-shield",
+        action="store_true",
+        help="Additionally run CodeShield validation on code gate fixtures (40 curated workflows)",
+    )
+    parser.add_argument(
         "--no-header",
         action="store_true",
         help="Skip printing the header/logo",
@@ -1396,6 +1458,7 @@ def main() -> None:
                 enable_cache=args.enable_cache,
                 verbose=args.verbose,
                 output_dir=args.output_dir,
+                code_shield=args.code_shield,
                 **dataset_kwargs,
             )
         except KeyboardInterrupt:
