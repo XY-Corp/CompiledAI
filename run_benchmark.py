@@ -3,12 +3,14 @@
 
 Usage:
     # Interactive mode
-    python run_benchmark.py
+    uv run run_benchmark.py
 
     # Direct mode with parameters
-    python run_benchmark.py --dataset xy_benchmark --provider anthropic
-    python run_benchmark.py --dataset bfcl --categories simple multiple --max-instances 10
-    python run_benchmark.py --dataset agentbench --environments os --split dev
+    uv run run_benchmark.py --dataset xy_benchmark --provider anthropic
+    uv run run_benchmark.py --dataset bfcl --categories simple multiple --max-instances 10
+    uv run run_benchmark.py --dataset agentbench --environments os --split dev
+    uv run run_benchmark.py --code-gate --no-header
+    uv run run_benchmark.py --dataset security_output_gate --baseline code_factory --code-gate
 """
 
 import argparse
@@ -1341,6 +1343,11 @@ Examples:
         help="Enable verbose logging (shows detailed execution logs)",
     )
     parser.add_argument(
+        "--code-gate",
+        action="store_true",
+        help="Run CODE GATE security validation (40 curated workflows: 20 vulnerable + 20 benign)",
+    )
+    parser.add_argument(
         "--no-header",
         action="store_true",
         help="Skip printing the header/logo",
@@ -1357,6 +1364,31 @@ def main() -> None:
         print_header()
         list_datasets()
         console.print()
+        return
+
+    # Handle --code-gate flag standalone (no dataset specified)
+    if args.code_gate and not args.dataset:
+        if not args.no_header:
+            print_header()
+        
+        # Import and run the same code_tests function from run_security_benchmark.py
+        import sys as _sys
+        _sys.path.insert(0, str(Path(__file__).parent / "scripts"))
+        from run_security_benchmark import run_code_tests, load_dataset, print_results, save_results
+        
+        console.print(f"[{BRAND_ACCENT}]Running CODE GATE security validation...[/{BRAND_ACCENT}]\n")
+        
+        # Load the code_safety dataset (40 instances: 20 vulnerable + 20 benign)
+        data = load_dataset("code_safety")
+        instances = data.get("instances", [])
+        console.print(f"  [{BRAND_DIM}]Loaded[/{BRAND_DIM}] [{BRAND_PRIMARY}]{len(instances)}[/{BRAND_PRIMARY}] [{BRAND_DIM}]code gate instances[/{BRAND_DIM}]\n")
+        
+        # Run CodeShield validation
+        result = run_code_tests(instances)
+        
+        # Print and save results (same format as run_security_benchmark.py)
+        print_results({"code_safety": result})
+        save_results({"code_safety": result})
         return
 
     if args.dataset:
@@ -1398,6 +1430,23 @@ def main() -> None:
                 output_dir=args.output_dir,
                 **dataset_kwargs,
             )
+            
+            # If --code-gate is also specified, run it after the dataset benchmark
+            if args.code_gate:
+                import sys as _sys
+                _sys.path.insert(0, str(Path(__file__).parent / "scripts"))
+                from run_security_benchmark import run_code_tests, load_dataset, print_results, save_results
+                
+                console.print(f"\n[{BRAND_ACCENT}]Running CODE GATE security validation...[/{BRAND_ACCENT}]\n")
+                
+                data = load_dataset("code_safety")
+                code_gate_instances = data.get("instances", [])
+                console.print(f"  [{BRAND_DIM}]Loaded[/{BRAND_DIM}] [{BRAND_PRIMARY}]{len(code_gate_instances)}[/{BRAND_PRIMARY}] [{BRAND_DIM}]code gate instances[/{BRAND_DIM}]\n")
+                
+                code_gate_result = run_code_tests(code_gate_instances)
+                print_results({"code_safety": code_gate_result})
+                save_results({"code_safety": code_gate_result})
+                
         except KeyboardInterrupt:
             console.print(f"\n[{BRAND_ACCENT}]Interrupted.[/{BRAND_ACCENT}]")
             sys.exit(1)
