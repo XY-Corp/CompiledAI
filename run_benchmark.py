@@ -3,12 +3,14 @@
 
 Usage:
     # Interactive mode
-    python run_benchmark.py
+    uv run run_benchmark.py
 
     # Direct mode with parameters
-    python run_benchmark.py --dataset xy_benchmark --provider anthropic
-    python run_benchmark.py --dataset bfcl --categories simple multiple --max-instances 10
-    python run_benchmark.py --dataset agentbench --environments os --split dev
+    uv run run_benchmark.py --dataset xy_benchmark --provider anthropic
+    uv run run_benchmark.py --dataset bfcl --categories simple multiple --max-instances 10
+    uv run run_benchmark.py --dataset agentbench --environments os --split dev
+    uv run run_benchmark.py --code-gate --no-header
+    uv run run_benchmark.py --dataset security_output_gate --baseline code_factory --code-gate
 """
 
 import argparse
@@ -753,49 +755,14 @@ def run_benchmark(
         summary_data["compilations"] = compilations
         summary_data["cache_hits"] = len(result.results) - compilations
 
-    # Add code-shield metrics if available
-    if code_shield_result:
-        summary_data["code_shield"] = {
-            "success_rate": code_shield_result.success_rate,
-            "total_fixtures": len(code_shield_result.results),
-            "detected_vulnerabilities": sum(1 for r in code_shield_result.results if r.success),
-            "missed_vulnerabilities": sum(1 for r in code_shield_result.results if not r.success),
-        }
-
     with open(summary_path, "w") as f:
         json.dump(summary_data, f, indent=2)
-
-    # Save code-shield results separately if available
-    if code_shield_result:
-        code_shield_path = run_dir / "code_shield_results.json"
-        code_shield_data = {
-            "total_fixtures": len(code_shield_result.results),
-            "success_rate": code_shield_result.success_rate,
-            "duration_seconds": code_shield_result.duration_seconds,
-            "fixtures": [
-                {
-                    "instance_id": r.instance_id,
-                    "input": r.input,
-                    "output": r.output,
-                    "expected": r.expected,
-                    "success": r.success,
-                    "latency_ms": r.latency_ms,
-                    "error": r.error,
-                    "evaluation_details": r.evaluation_details,
-                }
-                for r in code_shield_result.results
-            ]
-        }
-        with open(code_shield_path, "w") as f:
-            json.dump(code_shield_data, f, indent=2)
 
     console.print(f"\n  [{BRAND_DIM}]Results saved to:[/{BRAND_DIM}]")
     console.print(f"    [{BRAND_PRIMARY}]{results_path}[/{BRAND_PRIMARY}]")
     console.print(f"    [{BRAND_PRIMARY}]{summary_path}[/{BRAND_PRIMARY}]")
     if failures:
         console.print(f"    [{BRAND_ERROR}]{failures_path} ({len(failures)} failures)[/{BRAND_ERROR}]")
-    if code_shield_result:
-        console.print(f"    [{BRAND_ACCENT}]{run_dir / 'code_shield_results.json'} (CodeShield)[/{BRAND_ACCENT}]")
 
     # Also save to results/ folder for consistency with other benchmarks
     import time
@@ -1399,8 +1366,8 @@ def main() -> None:
         console.print()
         return
 
-    # Handle --code-gate flag (standalone, no dataset required)
-    if args.code_gate:
+    # Handle --code-gate flag standalone (no dataset specified)
+    if args.code_gate and not args.dataset:
         if not args.no_header:
             print_header()
         
@@ -1463,6 +1430,23 @@ def main() -> None:
                 output_dir=args.output_dir,
                 **dataset_kwargs,
             )
+            
+            # If --code-gate is also specified, run it after the dataset benchmark
+            if args.code_gate:
+                import sys as _sys
+                _sys.path.insert(0, str(Path(__file__).parent / "scripts"))
+                from run_security_benchmark import run_code_tests, load_dataset, print_results, save_results
+                
+                console.print(f"\n[{BRAND_ACCENT}]Running CODE GATE security validation...[/{BRAND_ACCENT}]\n")
+                
+                data = load_dataset("code_safety")
+                code_gate_instances = data.get("instances", [])
+                console.print(f"  [{BRAND_DIM}]Loaded[/{BRAND_DIM}] [{BRAND_PRIMARY}]{len(code_gate_instances)}[/{BRAND_PRIMARY}] [{BRAND_DIM}]code gate instances[/{BRAND_DIM}]\n")
+                
+                code_gate_result = run_code_tests(code_gate_instances)
+                print_results({"code_safety": code_gate_result})
+                save_results({"code_safety": code_gate_result})
+                
         except KeyboardInterrupt:
             console.print(f"\n[{BRAND_ACCENT}]Interrupted.[/{BRAND_ACCENT}]")
             sys.exit(1)
