@@ -511,7 +511,6 @@ def run_benchmark(
     enable_cache: bool = False,
     verbose: bool = False,
     output_dir: str = "results",
-    code_shield: bool = False,
     **dataset_kwargs,
 ) -> None:
     """Run benchmark with given configuration.
@@ -656,27 +655,6 @@ def run_benchmark(
     # Display results using simple format
     display_baseline = "fixture" if dataset_key == "security_code_gate_fixtures" else baseline
     display_simple_results(result, display_baseline, dataset_key)
-
-    # If --code-shield flag is enabled, additionally run CodeShield on code gate fixtures
-    code_shield_result = None
-    if code_shield:
-        console.print(f"\n  [{BRAND_ACCENT}]Running CodeShield validation on code gate fixtures...[/{BRAND_ACCENT}]\n")
-        
-        # Load code gate fixtures
-        code_gate_converter = SecurityFixtureConverter()
-        code_gate_instances = code_gate_converter.load_directory("workflows")
-        
-        if code_gate_instances:
-            console.print(f"  [{BRAND_DIM}]Loaded[/{BRAND_DIM}] [{BRAND_PRIMARY}]{len(code_gate_instances)}[/{BRAND_PRIMARY}] [{BRAND_DIM}]code gate fixtures[/{BRAND_DIM}]")
-            console.print(f"  [{BRAND_DIM}]Running CODE GATE validation (CodeShield)...[/{BRAND_DIM}]\n")
-            
-            code_shield_result = run_fixture_benchmark(code_gate_instances, verbose=verbose, log_dir=run_dir)
-            
-            # Display code shield results separately
-            console.print(f"\n  [{BRAND_ACCENT}]CodeShield Results:[/{BRAND_ACCENT}]")
-            display_simple_results(code_shield_result, "code_shield", "security_code_gate_fixtures")
-        else:
-            console.print(f"  [{BRAND_ERROR}]No code gate fixtures found in workflows/[/{BRAND_ERROR}]")
 
     # Save detailed results to run directory
     results_path = run_dir / "results.json"
@@ -1398,9 +1376,9 @@ Examples:
         help="Enable verbose logging (shows detailed execution logs)",
     )
     parser.add_argument(
-        "--code-shield",
+        "--code-gate",
         action="store_true",
-        help="Additionally run CodeShield validation on code gate fixtures (40 curated workflows)",
+        help="Run CODE GATE security validation (40 curated workflows: 20 vulnerable + 20 benign)",
     )
     parser.add_argument(
         "--no-header",
@@ -1419,6 +1397,31 @@ def main() -> None:
         print_header()
         list_datasets()
         console.print()
+        return
+
+    # Handle --code-gate flag (standalone, no dataset required)
+    if args.code_gate:
+        if not args.no_header:
+            print_header()
+        
+        # Import and run the same code_tests function from run_security_benchmark.py
+        import sys as _sys
+        _sys.path.insert(0, str(Path(__file__).parent / "scripts"))
+        from run_security_benchmark import run_code_tests, load_dataset, print_results, save_results
+        
+        console.print(f"[{BRAND_ACCENT}]Running CODE GATE security validation...[/{BRAND_ACCENT}]\n")
+        
+        # Load the code_safety dataset (40 instances: 20 vulnerable + 20 benign)
+        data = load_dataset("code_safety")
+        instances = data.get("instances", [])
+        console.print(f"  [{BRAND_DIM}]Loaded[/{BRAND_DIM}] [{BRAND_PRIMARY}]{len(instances)}[/{BRAND_PRIMARY}] [{BRAND_DIM}]code gate instances[/{BRAND_DIM}]\n")
+        
+        # Run CodeShield validation
+        result = run_code_tests(instances)
+        
+        # Print and save results (same format as run_security_benchmark.py)
+        print_results({"code_safety": result})
+        save_results({"code_safety": result})
         return
 
     if args.dataset:
@@ -1458,7 +1461,6 @@ def main() -> None:
                 enable_cache=args.enable_cache,
                 verbose=args.verbose,
                 output_dir=args.output_dir,
-                code_shield=args.code_shield,
                 **dataset_kwargs,
             )
         except KeyboardInterrupt:
