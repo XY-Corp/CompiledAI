@@ -1,0 +1,35 @@
+workflow_id: calculate_object_density
+name: Calculate Object Density
+description: |
+  Calculates the density of an object given its mass and volume.
+  Uses the formula: density = mass / volume.
+  Returns the density in kilograms per cubic meter (kg/m³).
+
+variables:
+  - name: mass
+    type: float
+    description: The mass of the object in kilograms
+    default_value: 50.0
+    required: true
+  - name: volume
+    type: float
+    description: The volume of the object in cubic meters
+    default_value: 10.0
+    required: true
+
+activities:
+  - name: calculate_density
+    description: Calculates the density of an object by dividing mass by volume
+    inputs:
+      - name: mass
+        type: float
+        description: The mass of the object, in kilograms
+      - name: volume
+        type: float
+        description: The volume of the object, in cubic meters
+    output:
+      type: float
+      description: The calculated density in kilograms per cubic meter (kg/m³)
+    result_variable: density_result
+
+execution_pattern: sequence

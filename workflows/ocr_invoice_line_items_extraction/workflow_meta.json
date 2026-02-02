@@ -1,0 +1,22 @@
+{
+  "workflow_id": "ocr_invoice_line_items_extraction",
+  "name": "OCR Invoice Line Items Extractor",
+  "description": "Extracts line items from noisy OCR-scanned invoice documents using LLM-based semantic understanding. Returns a JSON array of line items with description, quantity, unit_price, and total_price fields.",
+  "task_id": "docile_lir_009bdcdec5c04cd3b2e31555",
+  "task_description": "Extract line items from this noisy OCR-scanned invoice document.\n\nIMPORTANT: This OCR text contains scanning artifacts, typos, and inconsistent formatting.\nYou MUST use LLM-based semantic understanding to extract line items accurately.\nRegex/pattern matching will NOT work due to OCR noise.\n\nExtract line items as a JSON array. Each line item should have:\n- description: Item/service description\n- quantity: Number of units (number or null)\n- unit_price: Price per unit (number or null)  \n- total_price: Line total (number or null)\n\nReturn empty array [] if no line items can be confidently extracted.\n\nOCR Text:\nWHTH WNKO Proposal\n1000 N. 40th Street\nP.O. Box 1057\nNewark, Oh 43058-1057\nPhone : 7405228171\nDate : 3/4/2020\nPag\nClient:\nMEDIA FANANCIAL SERVICES\nATTN: TIFFANY PEROTTE 9TH FLOOR\n1655 PALM BEACH LAKES BLVD, STE 903\nWEST PALM BEACH, FL 33401\nOrder Information\nStart Date : 03/05/20\nEnd Date : 03/17/20\nDate Sold : 03/04/20\nOrder Desc: ANNOUNCEMENTS\nEst Num :3171526\nOrder\nComments :\nWNKO-WHTH radio advertisin\ncontracts do not discriminate\nthe basis of race or ethnicity.\nCampaign : HOUSE REPUBLICAN CAMPAIGN CMTE\nBilling Instruction END OF FLIGHTIAGENCY TM\nQuan : 47 Total Investment : $503.70\nSchedule\nStation Week of\nWHTH 03/02/20\nWHTH 03/02/20\nWHTH 03/02/20\nWHTH 03/09/20\nWHTH 03/09/20\nWHTH 03/09/20\nWHTH 03/16/20\nWHTH 03/16/20\nWHTH 03/16/20\nM T W T F S S Type Len\nRatel Schedule\n$11.50 06:00:00A-10.00.00A\n$9.20 10:00,00A-03.00.00P\n$11.50 03,00,00P-O7,00OOP\n$11.50 06:00:00A-10.00.00A\n$9.20 10,00,00A-03:00COF\n$11.50 03:00:00P-07:00.00P\n$11.50 06,0,00A-10,0000A\n$9.20 10:00:00A-03.00.00P\n$11.50 03:00:00P-07:00.00P\n2 2\n2 2\n2 2\nCM\nCM\nCM\nCM\nCM\nCM\nCM\nCM\nCM\n60\n60\n60\n60\n60\n60\n60\n60\n60\n2 2 2 2 2\n2 2 2 2 2\n2 2 2 2 2\n1 1\n2\n1\nAccepted by\nAccepted by\n(For Client)\n(For Station)\n\nJSON:\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\njson\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "activities": [
+    "extract_invoice_line_items"
+  ],
+  "variables": [
+    {
+      "name": "prompt",
+      "default": null
+    }
+  ],
+  "execution_pattern": "sequence",
+  "reasoning": "This task explicitly requires LLM-based semantic understanding due to OCR noise, artifacts, and inconsistent formatting. Regex/pattern matching will not work reliably as stated in the task requirements. The OCR text contains:\n1. Scanning artifacts (e.g., \"WHTH WNKO\", \"FANANCIAL\" instead of \"FINANCIAL\")\n2. Inconsistent formatting (mixed date formats, irregular spacing)\n3. Complex tabular data rendered as text with alignment issues\n4. Numbers that may be corrupted or have artifacts\n\nI designed a single activity that uses LLM to:\n1. Parse the noisy OCR text semantically\n2. Identify the schedule/rate table section\n3. Extract line items with description, quantity, unit_price, and total_price\n4. Handle null values for fields that cannot be confidently extracted\n\nThe output returns line_items as an array to match the expected JSON format. This is one of the legitimate use cases for LLM at runtime since OCR noise makes deterministic parsing unreliable.",
+  "metrics": {
+    "total_tokens": 31892,
+    "regeneration_count": 0
+  }
+}

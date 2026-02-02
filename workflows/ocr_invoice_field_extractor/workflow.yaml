@@ -1,0 +1,16 @@
+workflow_id: ocr_invoice_field_extractor
+name: OCR Invoice Field Extractor
+description: |
+  Extracts structured invoice fields from noisy OCR-scanned document text using 
+  LLM-based semantic understanding. Handles scanning artifacts, typos, and 
+  inconsistent formatting that would break regex patterns.
+variables:
+  prompt: null
+root:
+  sequence:
+    elements:
+      - activity:
+          name: extract_invoice_fields
+          params:
+            ocr_text: ${{ prompt }}
+          result: invoice_data

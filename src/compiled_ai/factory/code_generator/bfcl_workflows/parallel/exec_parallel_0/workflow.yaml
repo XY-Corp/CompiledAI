@@ -1,0 +1,44 @@
+workflow_id: binomial_probability_calculation
+name: Binomial Probability Calculator
+description: |
+  Calculates binomial probabilities for multiple scenarios in parallel.
+  Given a win probability per round, computes the probability of winning
+  exactly k rounds out of n total rounds for multiple combinations.
+
+variables:
+  - name: win_probability
+    type: float
+    description: The probability of winning a single round (between 0 and 1)
+    default_value: 0.3
+    required: true
+  - name: scenarios
+    type: list
+    description: List of scenarios, each containing n (trials) and k (successes)
+    default_value:
+      - n: 10
+        k: 3
+      - n: 15
+        k: 5
+      - n: 20
+        k: 7
+    required: true
+
+activities:
+  - name: calc_binomial_probability
+    description: Calculates the probability of getting exactly k successes in n trials using the binomial distribution formula
+    inputs:
+      - name: n
+        type: int
+        description: The number of trials (total rounds played)
+      - name: k
+        type: int
+        description: The number of successes (wins) desired
+      - name: p
+        type: float
+        description: The probability of success on each trial (win probability per round)
+    output:
+      type: float
+      description: The probability of getting exactly k successes in n trials
+    result_variable: probability_result
+
+execution_pattern: parallel

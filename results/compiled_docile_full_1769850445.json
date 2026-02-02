@@ -1,0 +1,115 @@
+{
+  "timestamp": "2026-01-31 10:07:25",
+  "kile": {
+    "task": "KILE",
+    "total_documents": 5680,
+    "successful_extractions": 5680,
+    "failed_extractions": 0,
+    "overall_accuracy": 0.2026318211097819,
+    "avg_latency_ms": 0.6407088853527864,
+    "min_latency_ms": 0.0927499495446682,
+    "max_latency_ms": 7.118457986507565,
+    "field_accuracies": {
+      "document_id": {
+        "correct": 2061,
+        "incorrect": 2506,
+        "missing_prediction": 144,
+        "accuracy": 0.4374867331776693
+      },
+      "vendor_name": {
+        "correct": 1235,
+        "incorrect": 3733,
+        "missing_prediction": 0,
+        "accuracy": 0.24859098228663445
+      },
+      "customer_name": {
+        "correct": 553,
+        "incorrect": 1785,
+        "missing_prediction": 3150,
+        "accuracy": 0.10076530612244898
+      },
+      "invoice_date": {
+        "correct": 858,
+        "incorrect": 1306,
+        "missing_prediction": 2849,
+        "accuracy": 0.17115499700777978
+      },
+      "due_date": {
+        "correct": 112,
+        "incorrect": 199,
+        "missing_prediction": 431,
+        "accuracy": 0.1509433962264151
+      },
+      "total_amount": {
+        "correct": 1166,
+        "incorrect": 1168,
+        "missing_prediction": 3055,
+        "accuracy": 0.21636667285210615
+      },
+      "tax_amount": {
+        "correct": 96,
+        "incorrect": 72,
+        "missing_prediction": 442,
+        "accuracy": 0.15737704918032788
+      },
+      "currency": {
+        "correct": 525,
+        "incorrect": 4113,
+        "missing_prediction": 1042,
+        "accuracy": 0.09242957746478873
+      }
+    }
+  },
+  "lir": {
+    "task": "LIR",
+    "total_documents": 5680,
+    "successful_extractions": 5680,
+    "failed_extractions": 0,
+    "overall_accuracy": 0.5974396953025815,
+    "avg_latency_ms": 0.3487245806059997,
+    "min_latency_ms": 0.04833302227780223,
+    "max_latency_ms": 3.092708997428417,
+    "field_accuracies": {
+      "description": {
+        "correct": 0,
+        "incorrect": 0,
+        "missing_prediction": 0,
+        "accuracy": 0.0
+      },
+      "quantity": {
+        "correct": 0,
+        "incorrect": 0,
+        "missing_prediction": 0,
+        "accuracy": 0.0
+      },
+      "unit_price": {
+        "correct": 0,
+        "incorrect": 0,
+        "missing_prediction": 0,
+        "accuracy": 0.0
+      },
+      "total_price": {
+        "correct": 0,
+        "incorrect": 0,
+        "missing_prediction": 0,
+        "accuracy": 0.0
+      }
+    }
+  },
+  "comparison": {
+    "kile": {
+      "compiled_accuracy": 0.2026318211097819,
+      "llm_accuracy": 1.0,
+      "compiled_latency_ms": 0.6407088853527864,
+      "llm_latency_ms": 3149,
+      "speedup": 4914.868627529804
+    },
+    "lir": {
+      "compiled_accuracy": 0.5974396953025815,
+      "llm_accuracy": 0.93,
+      "compiled_latency_ms": 0.3487245806059997,
+      "llm_latency_ms": 7268,
+      "speedup": 20841.66245857966
+    }
+  }
+}

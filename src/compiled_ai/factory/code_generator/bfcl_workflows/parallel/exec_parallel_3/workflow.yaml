@@ -1,0 +1,104 @@
+workflow_id: projectile_displacement_calculation
+name: Projectile Displacement Calculation
+description: |
+  Calculates the displacement of multiple projectiles launched from a catapult.
+  Uses the kinematic equation: displacement = initial_velocity * time + 0.5 * acceleration * time²
+  Each object (stone, rubber ball, metal ball) is processed in parallel with the same
+  acceleration (-9.8 m/s²) and time (5 seconds) but different initial velocities.
+
+variables:
+  - name: stone_initial_velocity
+    type: float
+    description: Initial velocity of the stone in meters per second
+    default_value: 20.0
+    required: true
+
+  - name: rubber_ball_initial_velocity
+    type: float
+    description: Initial velocity of the rubber ball in meters per second
+    default_value: 30.0
+    required: true
+
+  - name: metal_ball_initial_velocity
+    type: float
+    description: Initial velocity of the metal ball in meters per second
+    default_value: 25.0
+    required: true
+
+  - name: acceleration
+    type: float
+    description: Acceleration due to gravity in meters per second squared (negative for downward)
+    default_value: -9.8
+    required: true
+
+  - name: time
+    type: float
+    description: Duration of motion in seconds
+    default_value: 5.0
+    required: true
+
+activities:
+  - name: calculate_displacement
+    description: Calculates the displacement of the stone after the given time period
+    inputs:
+      - name: initial_velocity
+        type: float
+        description: The initial velocity of the stone (20 m/s)
+      - name: acceleration
+        type: float
+        description: The acceleration of the stone (-9.8 m/s²)
+      - name: time
+        type: float
+        description: The time the stone has been moving (5 seconds)
+    output:
+      type: float
+      description: The displacement of the stone in meters
+    result_variable: stone_displacement
+    input_values:
+      initial_velocity: "${stone_initial_velocity}"
+      acceleration: "${acceleration}"
+      time: "${time}"
+
+  - name: calculate_displacement
+    description: Calculates the displacement of the rubber ball after the given time period
+    inputs:
+      - name: initial_velocity
+        type: float
+        description: The initial velocity of the rubber ball (30 m/s)
+      - name: acceleration
+        type: float
+        description: The acceleration of the rubber ball (-9.8 m/s²)
+      - name: time
+        type: float
+        description: The time the rubber ball has been moving (5 seconds)
+    output:
+      type: float
+      description: The displacement of the rubber ball in meters
+    result_variable: rubber_ball_displacement
+    input_values:
+      initial_velocity: "${rubber_ball_initial_velocity}"
+      acceleration: "${acceleration}"
+      time: "${time}"
+
+  - name: calculate_displacement
+    description: Calculates the displacement of the metal ball after the given time period
+    inputs:
+      - name: initial_velocity
+        type: float
+        description: The initial velocity of the metal ball (25 m/s)
+      - name: acceleration
+        type: float
+        description: The acceleration of the metal ball (-9.8 m/s²)
+      - name: time
+        type: float
+        description: The time the metal ball has been moving (5 seconds)
+    output:
+      type: float
+      description: The displacement of the metal ball in meters
+    result_variable: metal_ball_displacement
+    input_values:
+      initial_velocity: "${metal_ball_initial_velocity}"
+      acceleration: "${acceleration}"
+      time: "${time}"
+
+execution_pattern: parallel

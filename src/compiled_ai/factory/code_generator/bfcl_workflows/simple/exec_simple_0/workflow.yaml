@@ -1,0 +1,43 @@
+workflow_id: calculate_binomial_probability_dice
+name: Calculate Binomial Probability for Dice Rolls
+description: |
+  Calculates the probability of rolling exactly a specific number of sixes
+  in a given number of dice rolls, where the probability of rolling a six
+  on each roll is known (in this case, 60%).
+
+variables:
+  - name: num_trials
+    type: int
+    description: The total number of dice rolls (trials)
+    default_value: 20
+    required: true
+  - name: num_successes
+    type: int
+    description: The desired number of sixes (successes)
+    default_value: 5
+    required: true
+  - name: success_probability
+    type: float
+    description: The probability of rolling a six on a single roll
+    default_value: 0.6
+    required: true
+
+activities:
+  - name: calc_binomial_probability
+    description: Calculates the probability of getting k successes in n trials using the binomial distribution formula.
+    inputs:
+      - name: n
+        type: int
+        description: The number of trials (dice rolls)
+      - name: k
+        type: int
+        description: The number of successes (sixes) desired
+      - name: p
+        type: float
+        description: The probability of success (rolling a six) on each trial
+    output:
+      type: float
+      description: The probability of getting exactly k successes in n trials
+    result_variable: binomial_probability_result
+
+execution_pattern: sequence

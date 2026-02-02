@@ -1,0 +1,28 @@
+{
+  "activity_name": "extract_invoice_line_items",
+  "description": "Use LLM to extract line items from noisy OCR invoice text. The LLM performs semantic understanding to handle OCR artifacts, typos, and inconsistent formatting that would break regex patterns. Returns a JSON array of line items with description, quantity, unit_price, and total_price fields.",
+  "task_id": "docile_lir_291e40bfed8846308d695883",
+  "task_description": "Extract line items from this noisy OCR-scanned invoice document.\n\nIMPORTANT: This OCR text contains scanning artifacts, typos, and inconsistent formatting.\nYou MUST use LLM-based semantic understanding to extract line items accurately.\nRegex/pattern matching will NOT work due to OCR noise.\n\nExtract line items as a JSON array. Each line item should have:\n- description: Item/service description\n- quantity: Number of units (number or null)\n- unit_price: Price per unit (number or null)  \n- total_price: Line total (number or null)\n\nReturn empty array [] if no line items can be confidently extracted.\n\nOCR Text:\nWINIFRED E. MEAHL\n236 East 36th Street\nNew York, New York 10016\n212-532-8892\nMarch 23, 2000\nScott Benson\nLorillard, Inc.\n714 Green\nGreensboro, NC27408\nU\n3-2 29\nMesBASPAlaT\nValley Road\n#3519\n4pL\nFOR PROFESSIONAL SERVICES RENDERED:\nVALIDATION:\nARG#II7-3-99-LTC#5543-899\nNewport Non-menthol Study (N=401).\n$400.00\nal\n\nJSON:\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\njson\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "inputs": [
+    {
+      "name": "ocr_text",
+      "type": "str",
+      "description": "The raw OCR-scanned invoice text containing potential line items with scanning artifacts, typos, and inconsistent formatting",
+      "required": true
+    }
+  ],
+  "output": {
+    "type": "dict",
+    "description": "Returns extracted line items as a JSON structure. The 'line_items' field contains an array where each item has: description (string - item/service description), quantity (number or null - units), unit_price (number or null - price per unit), total_price (number or null - line total). Returns empty array [] if no line items can be confidently extracted. Example: {\"line_items\": [{\"description\": \"Newport Non-menthol Study (N=401)\", \"quantity\": null, \"unit_price\": null, \"total_price\": 400.00}]}",
+    "fields": {
+      "line_items": "List[Dict] - array of line item objects with description, quantity, unit_price, total_price"
+    }
+  },
+  "reference_activity": "llm_extract",
+  "workflow_spec": {
+    "workflow_id": "ocr_invoice_line_item_extractor",
+    "name": "OCR Invoice Line Item Extractor",
+    "description": "Extracts line items from noisy OCR-scanned invoice documents using LLM-based semantic understanding. Returns structured JSON array with description, quantity, unit_price, and total_price fields for each line item.",
+    "execution_pattern": "sequence"
+  }
+}

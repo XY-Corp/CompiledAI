@@ -1,0 +1,22 @@
+{
+  "workflow_id": "ocr_invoice_field_extractor",
+  "name": "OCR Invoice Field Extractor",
+  "description": "Extracts structured invoice fields from noisy OCR-scanned document text using LLM-based semantic understanding. Handles scanning artifacts, typos, and inconsistent formatting that would break regex patterns.",
+  "task_id": "docile_kile_10192f39d556412aaa280155",
+  "task_description": "Extract invoice fields from this noisy OCR-scanned document text.\n\nIMPORTANT: This OCR text contains scanning artifacts, typos, and inconsistent formatting.\nYou MUST use LLM-based semantic understanding to extract fields accurately.\nRegex/pattern matching will NOT work due to OCR noise.\n\nExtract these fields as JSON:\n- document_id: Invoice/receipt number\n- vendor_name: Seller/vendor company name\n- customer_name: Buyer/customer name  \n- invoice_date: Invoice date (any format found)\n- due_date: Payment due date (any format found)\n- total_amount: Total amount as number\n- tax_amount: Tax amount as number\n- currency: Currency code (USD, EUR, etc.)\n\nReturn null for fields that cannot be confidently extracted.\n\nOCR Text:\nFEDERAL ELECTIONS REPORT (RESIDENT COMMISSIONER: HON. JENNIFER GONZALEZ COLON)\nTERM: OCTOBER/2020 (2020 ELECTIONS)\nInvoice: 10-19-576 date: 11/09/2020\nContract: 201306289 RADIIO 156\n20SPOTS/30SECS.\nOctober 29- Nov2/2020\n$760.00\n\nJSON:\n\n**IMPORTANT: The task provides these input variables:**\n- `prompt` (string) - **THE RAW INPUT DATA** that varies per instance. Your activity MUST parse and process this!\n\n**CRITICAL:** Your workflow MUST use `prompt` as the input variable. The prompt contains the raw data to process.\nAvailable variables: prompt\n\n**OUTPUT FORMAT (STRUCTURE DESCRIPTION - NO HARDCODED VALUES!):**\nYour activity must return data matching this structure:\n```json\njson\n```\n\n**CRITICAL RULES:**\n- The format above describes FIELD NAMES and TYPES only\n- Extract ACTUAL values from the `prompt` variable at runtime\n- Do NOT hardcode any values from examples\n- Do NOT add extra fields\n- Match field names EXACTLY as specified",
+  "activities": [
+    "extract_invoice_fields"
+  ],
+  "variables": [
+    {
+      "name": "prompt",
+      "default": null
+    }
+  ],
+  "execution_pattern": "sequence",
+  "reasoning": "This task explicitly requires LLM-based semantic understanding due to OCR noise that makes regex/pattern matching unreliable. The task states: 'You MUST use LLM-based semantic understanding to extract fields accurately. Regex/pattern matching will NOT work due to OCR noise.'\n\nI designed a single activity that uses LLM to semantically understand the noisy OCR text and extract the 8 specified invoice fields. The LLM approach is ideal here because:\n1. OCR artifacts create unpredictable text corruption (e.g., 'RADIIO' instead of 'RADIO')\n2. Field formats vary (dates, amounts, identifiers)\n3. Context understanding is needed to identify vendor vs customer, different date fields, etc.\n4. Some fields may be missing or unrecognizable, requiring confidence-based null returns\n\nThe activity uses the llm_extract template as inspiration but is customized with a specific invoice field schema. The output directly returns the extracted fields without a wrapper status field to match the expected JSON output format.",
+  "metrics": {
+    "total_tokens": 32408,
+    "regeneration_count": 0
+  }
+}

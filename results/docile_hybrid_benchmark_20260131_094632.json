@@ -1,0 +1,174 @@
+{
+  "timestamp": "20260131_094632",
+  "samples": [
+    {
+      "id": "009bdcdec5c04cd3b2e31555",
+      "accuracy": 0.5714285714285714,
+      "used_llm": true,
+      "llm_fields": [
+        "total_amount"
+      ],
+      "total_time_ms": 2601.34112497326
+    },
+    {
+      "id": "00a5c8697856473393f3f9e2",
+      "accuracy": 0.3333333333333333,
+      "used_llm": false,
+      "llm_fields": [],
+      "total_time_ms": 2.1160829928703606
+    },
+    {
+      "id": "00c87916e4a44197b45b0f8b",
+      "accuracy": 0.16666666666666666,
+      "used_llm": false,
+      "llm_fields": [],
+      "total_time_ms": 8.68654198711738
+    },
+    {
+      "id": "01628ff7c56f4b1995c3048e",
+      "accuracy": 0.125,
+      "used_llm": false,
+      "llm_fields": [],
+      "total_time_ms": 0.9810419869609177
+    },
+    {
+      "id": "016985e27277483dbc599e9b",
+      "accuracy": 0.6,
+      "used_llm": false,
+      "llm_fields": [],
+      "total_time_ms": 0.4671660135500133
+    },
+    {
+      "id": "0178861dd64f4c58bbd4367a",
+      "accuracy": 0.14285714285714285,
+      "used_llm": true,
+      "llm_fields": [
+        "total_amount"
+      ],
+      "total_time_ms": 2263.319708989002
+    },
+    {
+      "id": "01a13a4f5d2748d6a57e9a67",
+      "accuracy": 0.5,
+      "used_llm": true,
+      "llm_fields": [
+        "total_amount"
+      ],
+      "total_time_ms": 1808.5297499783337
+    },
+    {
+      "id": "01cfcdac81ae44e8a06440ad",
+      "accuracy": 0.14285714285714285,
+      "used_llm": true,
+      "llm_fields": [
+        "total_amount"
+      ],
+      "total_time_ms": 1909.2489589820616
+    },
+    {
+      "id": "02074e661462419cb309bd7e",
+      "accuracy": 0.625,
+      "used_llm": true,
+      "llm_fields": [
+        "total_amount"
+      ],
+      "total_time_ms": 2098.5967500018887
+    },
+    {
+      "id": "0219aad7064d4ba1a88f428f",
+      "accuracy": 0.0,
+      "used_llm": true,
+      "llm_fields": [
+        "total_amount"
+      ],
+      "total_time_ms": 1864.8529999190941
+    },
+    {
+      "id": "02a5c4103d8a487c847c415f",
+      "accuracy": 0.5,
+      "used_llm": false,
+      "llm_fields": [],
+      "total_time_ms": 0.630541006103158
+    },
+    {
+      "id": "036f86baa0874467908a999d",
+      "accuracy": 0.14285714285714285,
+      "used_llm": true,
+      "llm_fields": [
+        "total_amount"
+      ],
+      "total_time_ms": 1960.8077490702271
+    },
+    {
+      "id": "04345516ddca4de2a96a22b5",
+      "accuracy": 0.0,
+      "used_llm": false,
+      "llm_fields": [],
+      "total_time_ms": 1.6608340083621442
+    },
+    {
+      "id": "06c76cf7636f44f69320c117",
+      "accuracy": 0.2857142857142857,
+      "used_llm": false,
+      "llm_fields": [],
+      "total_time_ms": 1.3933330192230642
+    },
+    {
+      "id": "07214b89d1bd407b829a7847",
+      "accuracy": 0.3333333333333333,
+      "used_llm": true,
+      "llm_fields": [
+        "total_amount"
+      ],
+      "total_time_ms": 1809.4580000033602
+    }
+  ],
+  "field_results": {
+    "document_id": {
+      "correct": 4,
+      "total": 14
+    },
+    "vendor_name": {
+      "correct": 5,
+      "total": 13
+    },
+    "vendor_address": {
+      "correct": 1,
+      "total": 13
+    },
+    "customer_name": {
+      "correct": 6,
+      "total": 15
+    },
+    "customer_address": {
+      "correct": 2,
+      "total": 15
+    },
+    "invoice_date": {
+      "correct": 2,
+      "total": 14
+    },
+    "due_date": {
+      "correct": 0,
+      "total": 2
+    },
+    "total_amount": {
+      "correct": 9,
+      "total": 13
+    },
+    "tax_amount": {
+      "correct": 0,
+      "total": 0
+    },
+    "currency": {
+      "correct": 0,
+      "total": 0
+    }
+  },
+  "summary": {
+    "overall_accuracy": 0.29292929292929293,
+    "samples_with_llm": 8,
+    "avg_latency_ms": 1088.8060388620943,
+    "total_tokens": 3823
+  }
+}

@@ -1,0 +1,39 @@
+workflow_id: calculate_electrostatic_potential_energy_workflow
+name: Electrostatic Potential Energy Calculator
+description: |
+  Calculates the electrostatic potential energy for a charged particle
+  in an electric field. Uses the formula U = q * V where q is the charge
+  in coulombs and V is the voltage (potential difference) in volts.
+
+# Input variables for the workflow
+variables:
+  - name: charge
+    type: float
+    description: The charge of the particle in coulombs
+    default_value: null
+    required: true
+
+  - name: voltage
+    type: float
+    description: The potential difference (voltage) of the electric field in volts
+    default_value: null
+    required: true
+
+# Activities that make up the workflow
+activities:
+  - name: calculate_electrostatic_potential_energy
+    description: Calculates the electrostatic potential energy using U = charge * voltage
+    inputs:
+      - name: charge
+        type: float
+        description: The charge of the object, in coulombs
+      - name: voltage
+        type: float
+        description: The voltage of the object, in volts
+    output:
+      type: float
+      description: The electrostatic potential energy in joules
+    result_variable: potential_energy
+
+# How activities are executed
+execution_pattern: sequence

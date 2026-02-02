@@ -1,0 +1,45 @@
+workflow_id: calculate_object_densities
+name: Calculate Object Densities
+description: |
+  Calculates the density of multiple objects in parallel.
+  Takes mass (in grams) and volume (in cubic centimeters) for each object,
+  converts to SI units (kg and cubic meters), and computes density.
+
+variables:
+  - name: objects
+    type: list
+    description: List of objects with their mass (grams) and volume (cc)
+    default_value:
+      - name: metal_cube
+        mass_grams: 500
+        volume_cc: 100
+      - name: plastic_sphere
+        mass_grams: 200
+        volume_cc: 50
+      - name: wooden_block
+        mass_grams: 300
+        volume_cc: 75
+      - name: glass_cylinder
+        mass_grams: 400
+        volume_cc: 80
+    required: true
+
+activities:
+  - name: calculate_density
+    description: |
+      Calculates the density of an object given its mass and volume.
+      Mass must be provided in kilograms, volume in cubic meters.
+      Returns density in kg/m³.
+    inputs:
+      - name: mass
+        type: float
+        description: The mass of the object in kilograms
+      - name: volume
+        type: float
+        description: The volume of the object in cubic meters
+    output:
+      type: float
+      description: The density of the object in kg/m³
+    result_variable: density_result
+
+execution_pattern: parallel

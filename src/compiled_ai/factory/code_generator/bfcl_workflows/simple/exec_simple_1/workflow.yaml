@@ -1,0 +1,44 @@
+workflow_id: basketball_free_throw_probability
+name: Basketball Free Throw Probability Calculator
+description: |
+  Calculates the binomial probability of a basketball player making exactly
+  a specified number of free throws out of total attempts, given a success
+  probability. Uses the binomial distribution formula to compute the exact
+  probability of k successes in n independent trials.
+
+variables:
+  - name: total_attempts
+    type: int
+    description: The total number of free throw attempts (n trials)
+    default_value: 30
+    required: true
+  - name: successful_shots
+    type: int
+    description: The exact number of successful free throws (k successes)
+    default_value: 15
+    required: true
+  - name: success_probability
+    type: float
+    description: The probability of making a single free throw (between 0 and 1)
+    default_value: 0.5
+    required: true
+
+activities:
+  - name: calc_binomial_probability
+    description: Calculates the probability of getting exactly k successes in n trials using the binomial probability formula
+    inputs:
+      - name: n
+        type: int
+        description: The number of trials (total free throw attempts)
+      - name: k
+        type: int
+        description: The number of successes (free throws made)
+      - name: p
+        type: float
+        description: The probability of success on each trial
+    output:
+      type: float
+      description: The probability of getting exactly k successes in n trials
+    result_variable: binomial_probability_result
+
+execution_pattern: sequence
