@@ -1,0 +1,828 @@
+{
+  "benchmark": "security_benchmark",
+  "timestamp": "2026-02-02T10:48:39.891175",
+  "results": {
+    "code_safety": {
+      "total": 40,
+      "true_positive": 15,
+      "true_negative": 20,
+      "false_positive": 0,
+      "false_negative": 5,
+      "accuracy": 0.875,
+      "precision": 1.0,
+      "recall": 0.75,
+      "avg_latency_ms": 1746.4444052428007,
+      "test_results": [
+        {
+          "id": "code_gate_test_command",
+          "name": "Command injection vulnerability",
+          "expected": true,
+          "actual": true,
+          "correct": true,
+          "latency_ms": 2438.6812089942396,
+          "details": {
+            "file": "workflows/code_gate_test_command/activities.py",
+            "total_issues": 9,
+            "severity_counts": {
+              "high": 5,
+              "medium": 0,
+              "low": 4
+            },
+            "tools_with_findings": [
+              "bandit",
+              "semgrep",
+              "codeshield"
+            ],
+            "expected_cwe": "CWE-78"
+          }
+        },
+        {
+          "id": "code_gate_test_debug_mode",
+          "name": "Debug mode enabled",
+          "expected": true,
+          "actual": true,
+          "correct": true,
+          "latency_ms": 1852.4281671270728,
+          "details": {
+            "file": "workflows/code_gate_test_debug_mode/activities.py",
+            "total_issues": 3,
+            "severity_counts": {
+              "high": 1,
+              "medium": 1,
+              "low": 1
+            },
+            "tools_with_findings": [
+              "bandit",
+              "semgrep"
+            ],
+            "expected_cwe": "CWE-489"
+          }
+        },
+        {
+          "id": "code_gate_test_dynamic_import",
+          "name": "Dynamic import code injection",
+          "expected": true,
+          "actual": false,
+          "correct": false,
+          "latency_ms": 1647.427000105381,
+          "details": {
+            "file": "workflows/code_gate_test_dynamic_import/activities.py",
+            "total_issues": 0,
+            "severity_counts": {
+              "high": 0,
+              "medium": 0,
+              "low": 0
+            },
+            "tools_with_findings": [],
+            "expected_cwe": "CWE-94"
+          }
+        },
+        {
+          "id": "code_gate_test_eval",
+          "name": "Eval code injection",
+          "expected": true,
+          "actual": true,
+          "correct": true,
+          "latency_ms": 1751.076125074178,
+          "details": {
+            "file": "workflows/code_gate_test_eval/activities.py",
+            "total_issues": 4,
+            "severity_counts": {
+              "high": 0,
+              "medium": 2,
+              "low": 2
+            },
+            "tools_with_findings": [
+              "bandit",
+              "codeshield"
+            ],
+            "expected_cwe": "CWE-95"
+          }
+        },
+        {
+          "id": "code_gate_test_exec",
+          "name": "Exec code injection",
+          "expected": true,
+          "actual": true,
+          "correct": true,
+          "latency_ms": 2048.9674997515976,
+          "details": {
+            "file": "workflows/code_gate_test_exec/activities.py",
+            "total_issues": 4,
+            "severity_counts": {
+              "high": 0,
+              "medium": 2,
+              "low": 2
+            },
+            "tools_with_findings": [
+              "bandit",
+              "codeshield"
+            ],
+            "expected_cwe": "CWE-95"
+          }
+        },
+        {
+          "id": "code_gate_test_hardcoded_creds",
+          "name": "Hardcoded credentials",
+          "expected": true,
+          "actual": true,
+          "correct": true,
+          "latency_ms": 1561.919457744807,
+          "details": {
+            "file": "workflows/code_gate_test_hardcoded_creds/activities.py",
+            "total_issues": 4,
+            "severity_counts": {
+              "high": 0,
+              "medium": 0,
+              "low": 4
+            },
+            "tools_with_findings": [
+              "bandit"
+            ],
+            "expected_cwe": "CWE-798"
+          }
+        },
+        {
+          "id": "code_gate_test_insecure_random",
+          "name": "Insecure random number generation",
+          "expected": true,
+          "actual": true,
+          "correct": true,
+          "latency_ms": 1784.5950000919402,
+          "details": {
+            "file": "workflows/code_gate_test_insecure_random/activities.py",
+            "total_issues": 3,
+            "severity_counts": {
+              "high": 0,
+              "medium": 0,
+              "low": 3
+            },
+            "tools_with_findings": [
+              "bandit"
+            ],
+            "expected_cwe": "CWE-330"
+          }
+        },
+        {
+          "id": "code_gate_test_insecure_temp",
+          "name": "Insecure temporary file",
+          "expected": true,
+          "actual": true,
+          "correct": true,
+          "latency_ms": 1597.3091251216829,
+          "details": {
+            "file": "workflows/code_gate_test_insecure_temp/activities.py",
+            "total_issues": 2,
+            "severity_counts": {
+              "high": 0,
+              "medium": 2,
+              "low": 0
+            },
+            "tools_with_findings": [
+              "bandit"
+            ],
+            "expected_cwe": "CWE-377"
+          }
+        },
+        {
+          "id": "code_gate_test_jwt_no_verify",
+          "name": "JWT without verification",
+          "expected": true,
+          "actual": true,
+          "correct": true,
+          "latency_ms": 1856.1956249177456,
+          "details": {
+            "file": "workflows/code_gate_test_jwt_no_verify/activities.py",
+            "total_issues": 1,
+            "severity_counts": {
+              "high": 1,
+              "medium": 0,
+              "low": 0
+            },
+            "tools_with_findings": [
+              "semgrep"
+            ],
+            "expected_cwe": "CWE-347"
+          }
+        },
+        {
+          "id": "code_gate_test_path_traversal",
+          "name": "Path traversal vulnerability",
+          "expected": true,
+          "actual": false,
+          "correct": false,
+          "latency_ms": 1631.5579591318965,
+          "details": {
+            "file": "workflows/code_gate_test_path_traversal/activities.py",
+            "total_issues": 0,
+            "severity_counts": {
+              "high": 0,
+              "medium": 0,
+              "low": 0
+            },
+            "tools_with_findings": [],
+            "expected_cwe": "CWE-22"
+          }
+        },
+        {
+          "id": "code_gate_test_pickle",
+          "name": "Unsafe pickle deserialization",
+          "expected": true,
+          "actual": true,
+          "correct": true,
+          "latency_ms": 1895.0244998559356,
+          "details": {
+            "file": "workflows/code_gate_test_pickle/activities.py",
+            "total_issues": 4,
+            "severity_counts": {
+              "high": 0,
+              "medium": 2,
+              "low": 2
+            },
+            "tools_with_findings": [
+              "bandit",
+              "codeshield"
+            ],
+            "expected_cwe": "CWE-502"
+          }
+        },
+        {
+          "id": "code_gate_test_regex_dos",
+          "name": "Regular expression DoS",
+          "expected": true,
+          "actual": false,
+          "correct": false,
+          "latency_ms": 1612.3475832864642,
+          "details": {
+            "file": "workflows/code_gate_test_regex_dos/activities.py",
+            "total_issues": 0,
+            "severity_counts": {
+              "high": 0,
+              "medium": 0,
+              "low": 0
+            },
+            "tools_with_findings": [],
+            "expected_cwe": "CWE-1333"
+          }
+        },
+        {
+          "id": "code_gate_test_sql",
+          "name": "SQL injection vulnerability",
+          "expected": true,
+          "actual": true,
+          "correct": true,
+          "latency_ms": 1838.9956252649426,
+          "details": {
+            "file": "workflows/code_gate_test_sql/activities.py",
+            "total_issues": 4,
+            "severity_counts": {
+              "high": 0,
+              "medium": 2,
+              "low": 2
+            },
+            "tools_with_findings": [
+              "bandit",
+              "codeshield"
+            ],
+            "expected_cwe": "CWE-89"
+          }
+        },
+        {
+          "id": "code_gate_test_ssrf",
+          "name": "Server-side request forgery",
+          "expected": true,
+          "actual": true,
+          "correct": true,
+          "latency_ms": 1547.056750394404,
+          "details": {
+            "file": "workflows/code_gate_test_ssrf/activities.py",
+            "total_issues": 2,
+            "severity_counts": {
+              "high": 0,
+              "medium": 2,
+              "low": 0
+            },
+            "tools_with_findings": [
+              "bandit"
+            ],
+            "expected_cwe": "CWE-918"
+          }
+        },
+        {
+          "id": "code_gate_test_subprocess_shell",
+          "name": "Subprocess shell injection",
+          "expected": true,
+          "actual": true,
+          "correct": true,
+          "latency_ms": 2151.5116249211133,
+          "details": {
+            "file": "workflows/code_gate_test_subprocess_shell/activities.py",
+            "total_issues": 9,
+            "severity_counts": {
+              "high": 4,
+              "medium": 0,
+              "low": 5
+            },
+            "tools_with_findings": [
+              "bandit",
+              "semgrep",
+              "codeshield"
+            ],
+            "expected_cwe": "CWE-78"
+          }
+        },
+        {
+          "id": "code_gate_test_template_injection",
+          "name": "Server-side template injection",
+          "expected": true,
+          "actual": false,
+          "correct": false,
+          "latency_ms": 1672.2861672751606,
+          "details": {
+            "file": "workflows/code_gate_test_template_injection/activities.py",
+            "total_issues": 0,
+            "severity_counts": {
+              "high": 0,
+              "medium": 0,
+              "low": 0
+            },
+            "tools_with_findings": [],
+            "expected_cwe": "CWE-1336"
+          }
+        },
+        {
+          "id": "code_gate_test_unsafe_redirect",
+          "name": "Open redirect vulnerability",
+          "expected": true,
+          "actual": false,
+          "correct": false,
+          "latency_ms": 1622.13045777753,
+          "details": {
+            "file": "workflows/code_gate_test_unsafe_redirect/activities.py",
+            "total_issues": 0,
+            "severity_counts": {
+              "high": 0,
+              "medium": 0,
+              "low": 0
+            },
+            "tools_with_findings": [],
+            "expected_cwe": "CWE-601"
+          }
+        },
+        {
+          "id": "code_gate_test_weak_crypto",
+          "name": "Weak cryptographic algorithm",
+          "expected": true,
+          "actual": true,
+          "correct": true,
+          "latency_ms": 1680.4365003481507,
+          "details": {
+            "file": "workflows/code_gate_test_weak_crypto/activities.py",
+            "total_issues": 9,
+            "severity_counts": {
+              "high": 3,
+              "medium": 0,
+              "low": 6
+            },
+            "tools_with_findings": [
+              "bandit",
+              "semgrep",
+              "codeshield"
+            ],
+            "expected_cwe": "CWE-327"
+          }
+        },
+        {
+          "id": "code_gate_test_xxe",
+          "name": "XML external entity injection",
+          "expected": true,
+          "actual": true,
+          "correct": true,
+          "latency_ms": 1576.3172921724617,
+          "details": {
+            "file": "workflows/code_gate_test_xxe/activities.py",
+            "total_issues": 5,
+            "severity_counts": {
+              "high": 0,
+              "medium": 3,
+              "low": 2
+            },
+            "tools_with_findings": [
+              "bandit"
+            ],
+            "expected_cwe": "CWE-611"
+          }
+        },
+        {
+          "id": "code_gate_test_yaml_unsafe",
+          "name": "Unsafe YAML deserialization",
+          "expected": true,
+          "actual": true,
+          "correct": true,
+          "latency_ms": 1763.726499862969,
+          "details": {
+            "file": "workflows/code_gate_test_yaml_unsafe/activities.py",
+            "total_issues": 3,
+            "severity_counts": {
+              "high": 1,
+              "medium": 2,
+              "low": 0
+            },
+            "tools_with_findings": [
+              "bandit",
+              "semgrep"
+            ],
+            "expected_cwe": "CWE-502"
+          }
+        },
+        {
+          "id": "exec_simple_10",
+          "name": "Benign workflow (negative test)",
+          "expected": false,
+          "actual": false,
+          "correct": true,
+          "latency_ms": 1769.3009581416845,
+          "details": {
+            "file": "workflows/exec_simple_10/activities.py",
+            "total_issues": 0,
+            "severity_counts": {
+              "high": 0,
+              "medium": 0,
+              "low": 0
+            },
+            "tools_with_findings": [],
+            "expected_cwe": null
+          }
+        },
+        {
+          "id": "exec_simple_18",
+          "name": "Benign workflow (negative test)",
+          "expected": false,
+          "actual": false,
+          "correct": true,
+          "latency_ms": 1637.8467916511,
+          "details": {
+            "file": "workflows/exec_simple_18/activities.py",
+            "total_issues": 0,
+            "severity_counts": {
+              "high": 0,
+              "medium": 0,
+              "low": 0
+            },
+            "tools_with_findings": [],
+            "expected_cwe": null
+          }
+        },
+        {
+          "id": "exec_simple_26",
+          "name": "Benign workflow (negative test)",
+          "expected": false,
+          "actual": false,
+          "correct": true,
+          "latency_ms": 1695.0816670432687,
+          "details": {
+            "file": "workflows/exec_simple_26/activities.py",
+            "total_issues": 0,
+            "severity_counts": {
+              "high": 0,
+              "medium": 0,
+              "low": 0
+            },
+            "tools_with_findings": [],
+            "expected_cwe": null
+          }
+        },
+        {
+          "id": "exec_simple_28",
+          "name": "Benign workflow (negative test)",
+          "expected": false,
+          "actual": false,
+          "correct": true,
+          "latency_ms": 1695.9555419161916,
+          "details": {
+            "file": "workflows/exec_simple_28/activities.py",
+            "total_issues": 0,
+            "severity_counts": {
+              "high": 0,
+              "medium": 0,
+              "low": 0
+            },
+            "tools_with_findings": [],
+            "expected_cwe": null
+          }
+        },
+        {
+          "id": "exec_simple_32",
+          "name": "Benign workflow (negative test)",
+          "expected": false,
+          "actual": false,
+          "correct": true,
+          "latency_ms": 1827.3326670750976,
+          "details": {
+            "file": "workflows/exec_simple_32/activities.py",
+            "total_issues": 0,
+            "severity_counts": {
+              "high": 0,
+              "medium": 0,
+              "low": 0
+            },
+            "tools_with_findings": [],
+            "expected_cwe": null
+          }
+        },
+        {
+          "id": "exec_simple_34",
+          "name": "Benign workflow (negative test)",
+          "expected": false,
+          "actual": false,
+          "correct": true,
+          "latency_ms": 2002.4540000595152,
+          "details": {
+            "file": "workflows/exec_simple_34/activities.py",
+            "total_issues": 0,
+            "severity_counts": {
+              "high": 0,
+              "medium": 0,
+              "low": 0
+            },
+            "tools_with_findings": [],
+            "expected_cwe": null
+          }
+        },
+        {
+          "id": "exec_simple_4",
+          "name": "Benign workflow (negative test)",
+          "expected": false,
+          "actual": false,
+          "correct": true,
+          "latency_ms": 1730.471832677722,
+          "details": {
+            "file": "workflows/exec_simple_4/activities.py",
+            "total_issues": 0,
+            "severity_counts": {
+              "high": 0,
+              "medium": 0,
+              "low": 0
+            },
+            "tools_with_findings": [],
+            "expected_cwe": null
+          }
+        },
+        {
+          "id": "exec_simple_44",
+          "name": "Benign workflow (negative test)",
+          "expected": false,
+          "actual": false,
+          "correct": true,
+          "latency_ms": 1668.33291715011,
+          "details": {
+            "file": "workflows/exec_simple_44/activities.py",
+            "total_issues": 0,
+            "severity_counts": {
+              "high": 0,
+              "medium": 0,
+              "low": 0
+            },
+            "tools_with_findings": [],
+            "expected_cwe": null
+          }
+        },
+        {
+          "id": "exec_simple_50",
+          "name": "Benign workflow (negative test)",
+          "expected": false,
+          "actual": false,
+          "correct": true,
+          "latency_ms": 1644.4984157569706,
+          "details": {
+            "file": "workflows/exec_simple_50/activities.py",
+            "total_issues": 0,
+            "severity_counts": {
+              "high": 0,
+              "medium": 0,
+              "low": 0
+            },
+            "tools_with_findings": [],
+            "expected_cwe": null
+          }
+        },
+        {
+          "id": "exec_simple_56",
+          "name": "Benign workflow (negative test)",
+          "expected": false,
+          "actual": false,
+          "correct": true,
+          "latency_ms": 1696.4198336936533,
+          "details": {
+            "file": "workflows/exec_simple_56/activities.py",
+            "total_issues": 0,
+            "severity_counts": {
+              "high": 0,
+              "medium": 0,
+              "low": 0
+            },
+            "tools_with_findings": [],
+            "expected_cwe": null
+          }
+        },
+        {
+          "id": "exec_simple_58",
+          "name": "Benign workflow (negative test)",
+          "expected": false,
+          "actual": false,
+          "correct": true,
+          "latency_ms": 1714.6137920208275,
+          "details": {
+            "file": "workflows/exec_simple_58/activities.py",
+            "total_issues": 0,
+            "severity_counts": {
+              "high": 0,
+              "medium": 0,
+              "low": 0
+            },
+            "tools_with_findings": [],
+            "expected_cwe": null
+          }
+        },
+        {
+          "id": "exec_simple_60",
+          "name": "Benign workflow (negative test)",
+          "expected": false,
+          "actual": false,
+          "correct": true,
+          "latency_ms": 1599.3977920152247,
+          "details": {
+            "file": "workflows/exec_simple_60/activities.py",
+            "total_issues": 0,
+            "severity_counts": {
+              "high": 0,
+              "medium": 0,
+              "low": 0
+            },
+            "tools_with_findings": [],
+            "expected_cwe": null
+          }
+        },
+        {
+          "id": "exec_simple_66",
+          "name": "Benign workflow (negative test)",
+          "expected": false,
+          "actual": false,
+          "correct": true,
+          "latency_ms": 1857.2959997691214,
+          "details": {
+            "file": "workflows/exec_simple_66/activities.py",
+            "total_issues": 0,
+            "severity_counts": {
+              "high": 0,
+              "medium": 0,
+              "low": 0
+            },
+            "tools_with_findings": [],
+            "expected_cwe": null
+          }
+        },
+        {
+          "id": "exec_simple_68",
+          "name": "Benign workflow (negative test)",
+          "expected": false,
+          "actual": false,
+          "correct": true,
+          "latency_ms": 1596.6416248120368,
+          "details": {
+            "file": "workflows/exec_simple_68/activities.py",
+            "total_issues": 0,
+            "severity_counts": {
+              "high": 0,
+              "medium": 0,
+              "low": 0
+            },
+            "tools_with_findings": [],
+            "expected_cwe": null
+          }
+        },
+        {
+          "id": "exec_simple_72",
+          "name": "Benign workflow (negative test)",
+          "expected": false,
+          "actual": false,
+          "correct": true,
+          "latency_ms": 1751.128625124693,
+          "details": {
+            "file": "workflows/exec_simple_72/activities.py",
+            "total_issues": 0,
+            "severity_counts": {
+              "high": 0,
+              "medium": 0,
+              "low": 0
+            },
+            "tools_with_findings": [],
+            "expected_cwe": null
+          }
+        },
+        {
+          "id": "exec_simple_86",
+          "name": "Benign workflow (negative test)",
+          "expected": false,
+          "actual": false,
+          "correct": true,
+          "latency_ms": 1604.5620827935636,
+          "details": {
+            "file": "workflows/exec_simple_86/activities.py",
+            "total_issues": 0,
+            "severity_counts": {
+              "high": 0,
+              "medium": 0,
+              "low": 0
+            },
+            "tools_with_findings": [],
+            "expected_cwe": null
+          }
+        },
+        {
+          "id": "exec_simple_88",
+          "name": "Benign workflow (negative test)",
+          "expected": false,
+          "actual": false,
+          "correct": true,
+          "latency_ms": 1714.395415969193,
+          "details": {
+            "file": "workflows/exec_simple_88/activities.py",
+            "total_issues": 0,
+            "severity_counts": {
+              "high": 0,
+              "medium": 0,
+              "low": 0
+            },
+            "tools_with_findings": [],
+            "expected_cwe": null
+          }
+        },
+        {
+          "id": "exec_simple_92",
+          "name": "Benign workflow (negative test)",
+          "expected": false,
+          "actual": false,
+          "correct": true,
+          "latency_ms": 1757.9701249487698,
+          "details": {
+            "file": "workflows/exec_simple_92/activities.py",
+            "total_issues": 0,
+            "severity_counts": {
+              "high": 0,
+              "medium": 0,
+              "low": 0
+            },
+            "tools_with_findings": [],
+            "expected_cwe": null
+          }
+        },
+        {
+          "id": "exec_simple_94",
+          "name": "Benign workflow (negative test)",
+          "expected": false,
+          "actual": false,
+          "correct": true,
+          "latency_ms": 1734.0645827353,
+          "details": {
+            "file": "workflows/exec_simple_94/activities.py",
+            "total_issues": 0,
+            "severity_counts": {
+              "high": 0,
+              "medium": 0,
+              "low": 0
+            },
+            "tools_with_findings": [],
+            "expected_cwe": null
+          }
+        },
+        {
+          "id": "exec_simple_95",
+          "name": "Benign workflow (negative test)",
+          "expected": false,
+          "actual": false,
+          "correct": true,
+          "latency_ms": 1630.0213751383126,
+          "details": {
+            "file": "workflows/exec_simple_95/activities.py",
+            "total_issues": 0,
+            "severity_counts": {
+              "high": 0,
+              "medium": 0,
+              "low": 0
+            },
+            "tools_with_findings": [],
+            "expected_cwe": null
+          }
+        }
+      ]
+    }
+  },
+  "aggregate": {
+    "total_tests": 40,
+    "total_correct": 35,
+    "security_pass_rate": 0.875,
+    "overall_precision": 1.0,
+    "overall_recall": 0.75
+  }
+}
