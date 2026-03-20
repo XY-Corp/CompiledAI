@@ -1,0 +1,77 @@
+extends: substitution
+message: "'%s' is an AI-overused word. Consider '%s' instead."
+level: warning
+ignorecase: true
+swap:
+  utilize: use
+  utilized: used
+  utilizing: using
+  utilization: use
+  leverage: use
+  leveraging: using
+  leveraged: used
+  furthermore: also|and
+  moreover: also|and
+  notably: note that
+  importantly: note that
+  aforementioned: previous|earlier
+  aforementioned: this|that
+  comprehensive: thorough|full
+  robust: strong|reliable
+  seamless: smooth|easy
+  seamlessly: smoothly|easily
+  cutting-edge: recent|modern
+  groundbreaking: new|important
+  pivotal: key|central
+  crucial: key|important
+  indispensable: essential|necessary
+  multifaceted: complex|varied
+  myriad: many
+  plethora: many|range of
+  holistic: complete|whole
+  synergy: cooperation|combined effect
+  facilitate: help|support
+  facilitates: helps|supports
+  facilitated: helped|supported
+  facilitating: helping|supporting
+  harness: use|apply
+  harnessing: using|applying
+  underscore: stress|show
+  underscores: stresses|shows
+  underscored: stressed|showed
+  elucidate: explain|clarify
+  elucidates: explains|clarifies
+  encompasses: includes|covers
+  encompassing: including|covering
+  revolutionize: change|transform
+  revolutionizes: changes|transforms
+  fosters: supports|encourages
+  foster: support|encourage
+  realm: area|field
+  landscape: field|area
+  delve: explore|examine
+  delves: explores|examines
+  showcases: shows|presents
+  showcase: show|present
+  underpin: support|form the basis of
+  underpins: supports|forms the basis of
+  underpinning: supporting|underlying
+  spearhead: lead
+  spearheading: leading
+  bolster: strengthen|support
+  bolstering: strengthening|supporting
+  overarching: broad|main
+  intricate: detailed|complex
+  intricacies: details|complexities
+  tapestry: mix|combination
+  embark: begin|start
+  embarking: beginning|starting
+  navigate: handle|manage
+  navigating: handling|managing
+  meticulous: careful|thorough
+  meticulously: carefully|thoroughly
+  commendable: good|praiseworthy
+  testament: proof|evidence
+  cornerstone: foundation|basis
+  endeavor: effort|attempt
+  endeavors: efforts|attempts

@@ -1,0 +1,61 @@
+extends: existence
+message: "'%s' is commonly overused in AI-generated text."
+level: warning
+ignorecase: true
+tokens:
+  - paramount
+  - comprehensive
+  - robust
+  - furthermore
+  - moreover
+  - notably
+  - importantly
+  - utilize
+  - utilizing
+  - utilized
+  - leverage
+  - leveraging
+  - leveraged
+  - facilitate
+  - facilitates
+  - encompass
+  - encompasses
+  - encompassing
+  - seamless
+  - seamlessly
+  - showcase
+  - showcases
+  - underscore
+  - underscores
+  - elucidate
+  - pivotal
+  - crucial
+  - holistic
+  - multifaceted
+  - myriad
+  - plethora
+  - delve
+  - landscape
+  - realm
+  - foster
+  - fosters
+  - harness
+  - harnessing
+  - cornerstone
+  - testament
+  - meticulous
+  - meticulously
+  - intricate
+  - intricacies
+  - overarching
+  - bolster
+  - spearhead
+  - tapestry
+  - embark
+  - endeavor
+  - commendable
+  - groundbreaking
+  - cutting-edge
+  - indispensable
+  - aforementioned
+  - revolutionize
