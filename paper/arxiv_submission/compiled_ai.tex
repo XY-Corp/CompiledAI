@@ -83,16 +83,19 @@ Empirical studies reveal persistent reliability challenges in runtime agent syst
 This paper investigates compiled AI as a design point optimized for well-specified, high-volume, compliance-sensitive workflows. The key observation is that many enterprise workflows require intelligence to \emph{design} but not to \emph{execute} repeatedly. Once business logic is specified and validated, repeated execution can be handled by conventional software infrastructure---with full observability enabling targeted refinement of compiled artifacts over time. Rather than interpreting natural language at runtime, an LLM is constrained to generate narrow business-logic functions within pre-validated templates. These artifacts pass a multi-stage validation pipeline (security analysis, syntactic verification, execution testing, output accuracy) before deployment as static code with predictable latency, zero stochasticity, and near-zero marginal inference cost.
 
 \begin{center}
-\colorbox{blue!6}{\begin{minipage}{0.92\linewidth}\vspace{4pt}
+\begin{minipage}{0.95\linewidth}
+\noindent\rule{\linewidth}{0.6pt}
+\vspace{4pt}
+
 \textbf{Definition (Compiled AI).} A workflow system satisfying three properties:
 \begin{enumerate}
   \item \textbf{One-time LLM invocation} --- the model runs once at generation time, not at transaction time.
   \item \textbf{Zero-token deterministic execution} --- deployed workflows run as static code with no further model calls.
   \item \textbf{Mandatory multi-stage validation} --- every artifact passes security, syntax, execution, and accuracy checks before deployment.
 \end{enumerate}
-\vspace{4pt}
+
 \begin{center}
-\begin{tabular}{lccc}
+{\small\begin{tabular}{lccc}
 \toprule
 \textbf{System} & \textbf{Runtime LLM?} & \textbf{Deterministic?} & \textbf{Validation required?} \\
 \midrule
@@ -100,10 +103,12 @@ Agents (AutoGen, LangChain) & Yes & No  & No \\
 DSPy                        & Partial & Partial & No \\
 \textbf{Compiled AI}        & \textbf{No} & \textbf{Yes} & \textbf{Yes} \\
 \bottomrule
-\end{tabular}
+\end{tabular}}
 \end{center}
+
 \vspace{2pt}
-\end{minipage}}
+\noindent\rule{\linewidth}{0.6pt}
+\end{minipage}
 \end{center}
 
 \begin{figure}[ht]
@@ -363,9 +368,8 @@ Code Factory bridges this gap by compiling task-specific LLM calls as code artif
   & LangChain  & 80.0\% & 75.6\% & 6,207 ms & Per-request \\
   & AutoGen    & 77.8\% & 78.9\% & 13,742 ms & Per-request \\
 \bottomrule
+\multicolumn{6}{l}{\footnotesize $^\dagger$Median latency; mean 10,263 ms due to 10\% retry outliers (max 183s). First compile: 57s.} \\
 \end{tabular}
-\vspace{0.5em}
-\small{$^\dagger$Median latency; mean 10,263 ms due to 10\% retry outliers (max 183s). First compile: 57s.}
 \end{table}
 
 Together, the two task types span the spectrum from fully structured to highly noisy semantic inputs. BFCL represents the structured end: inputs are well-typed function signatures with unambiguous correct outputs, making pure deterministic compilation feasible. DocILE represents the semantic end: invoice documents vary in layout, language, and field placement, requiring contextual understanding that a regex-based approach cannot provide. That compiled AI generalizes across both extremes---achieving competitive accuracy on function-calling and matching Direct LLM on document intelligence---suggests the architecture is not overfit to a single input modality. The Code Factory variant provides a principled path for the semantic end of this spectrum: bounded LLM invocation as compiled code rather than ad-hoc runtime prompting.
