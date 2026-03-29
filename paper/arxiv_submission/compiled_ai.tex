@@ -82,6 +82,30 @@ Empirical studies reveal persistent reliability challenges in runtime agent syst
 
 This paper investigates compiled AI as a design point optimized for well-specified, high-volume, compliance-sensitive workflows. The key observation is that many enterprise workflows require intelligence to \emph{design} but not to \emph{execute} repeatedly. Once business logic is specified and validated, repeated execution can be handled by conventional software infrastructure---with full observability enabling targeted refinement of compiled artifacts over time. Rather than interpreting natural language at runtime, an LLM is constrained to generate narrow business-logic functions within pre-validated templates. These artifacts pass a multi-stage validation pipeline (security analysis, syntactic verification, execution testing, output accuracy) before deployment as static code with predictable latency, zero stochasticity, and near-zero marginal inference cost.
 
+\begin{center}
+\colorbox{blue!6}{\begin{minipage}{0.92\linewidth}\vspace{4pt}
+\textbf{Definition (Compiled AI).} A workflow system satisfying three properties:
+\begin{enumerate}
+  \item \textbf{One-time LLM invocation} --- the model runs once at generation time, not at transaction time.
+  \item \textbf{Zero-token deterministic execution} --- deployed workflows run as static code with no further model calls.
+  \item \textbf{Mandatory multi-stage validation} --- every artifact passes security, syntax, execution, and accuracy checks before deployment.
+\end{enumerate}
+\vspace{4pt}
+\begin{center}
+\begin{tabular}{lccc}
+\toprule
+\textbf{System} & \textbf{Runtime LLM?} & \textbf{Deterministic?} & \textbf{Validation required?} \\
+\midrule
+Agents (AutoGen, LangChain) & Yes & No  & No \\
+DSPy                        & Partial & Partial & No \\
+\textbf{Compiled AI}        & \textbf{No} & \textbf{Yes} & \textbf{Yes} \\
+\bottomrule
+\end{tabular}
+\end{center}
+\vspace{2pt}
+\end{minipage}}
+\end{center}
+
 \begin{figure}[ht]
 \centering
 \begin{tikzpicture}[scale=1.1]
@@ -161,7 +185,7 @@ The gap between benchmark performance and production viability is well-documente
 
 The compiled AI architecture is motivated by a fundamental asymmetry in enterprise workflow automation: generating correct business logic benefits from LLM reasoning, but executing that logic thousands of times per day does not. Runtime agent systems conflate these two phases, invoking an LLM at every transaction. Our architecture separates them, confining LLM invocation to a one-time compilation step and deploying validated, static code for all subsequent execution.
 
-This separation yields several benefits. Deterministic execution eliminates output variance and enables 100\% audit completeness---every decision traces to a specific line of code, a property essential for CMS compliance in prior authorization and for FDA audit readiness in AI-enabled medical workflows \citep{fda2025}. Static code can be subjected to established software engineering tooling: static analysis, type checking, security scanning, and regression testing. And because the LLM exits the execution loop, the attack surface for prompt injection shrinks---from one LLM call per transaction to one call per workflow type compiled.
+This separation yields several benefits. Deterministic execution eliminates output variance and enables full auditability under this architecture---every decision traces to a specific line of code, a property essential for CMS compliance in prior authorization and for FDA audit readiness in AI-enabled medical workflows \citep{fda2025}. Static code can be subjected to established software engineering tooling: static analysis, type checking, security scanning, and regression testing. And because the LLM exits the execution loop, the attack surface for prompt injection shrinks---from one LLM call per transaction to one call per workflow type compiled.
 
 \paragraph{Design Principles.} Four principles shape the architecture. \textbf{Constrained Generation} limits LLM output to narrow, well-defined functions (20--50 lines); templates provide infrastructure, bounding the output space and reducing hallucination risk. \textbf{Compilation over Interpretation} means generated code is validated, tested, and deployed as static artifacts---the LLM exits the execution loop entirely. \textbf{Validation as Requirement} means every artifact passes a four-stage pipeline before deployment, feasible precisely because we generate code rather than interpret configurations. \textbf{Compliance by Construction} encodes regulatory constraints (HIPAA, PCI-DSS, SOC 2) directly in templates and prompt blocks, ensuring generated code inherits compliance properties by default.
 
@@ -238,7 +262,7 @@ This separation yields several benefits. Deterministic execution eliminates outp
 
 \paragraph{Validation Pipeline.} The four stages serve distinct purposes. \textbf{Security} applies static analysis (Bandit, Semgrep, custom rules) checking for SQL injection, command injection, path traversal, and secrets exposure. \textbf{Syntax} performs AST parsing, type checking (mypy), and linting (ruff). \textbf{Execution} runs sandboxed execution against test fixtures verifying successful completion, error handling, and output structure. \textbf{Accuracy} compares outputs against golden datasets using task-specific thresholds.
 
-\paragraph{Bounded Agentic Invocation and Security Architecture.} Some workflow steps require runtime judgment that cannot be fully precompiled. Our architecture supports \textit{bounded agentic invocation}: generated code may call LLMs for specific, narrow subtasks (e.g., extracting structured fields from an ambiguous clinical note) while maintaining deterministic overall flow, operating under defined schemas, fallback logic, drift monitoring, and human escalation thresholds. Beyond correctness validation, a three-gate security pipeline protects against OWASP LLM Top 10 vulnerabilities: an \textbf{Input Gate} (DeBERTa-v3 prompt injection detection + Presidio PII scanning), a \textbf{Code Gate} (static analysis for CWE-94, CWE-89, CWE-502, CWE-78, CWE-328), and an \textbf{Output Gate} (cryptographic canary token injection for prompt leakage detection). A Dual LLM pattern separates privileged and quarantined model instances. Compiled AI reduces runtime LLM invocations from one-per-transaction to zero, making deployed workflows immune to prompt-based attacks.
+\paragraph{Bounded Agentic Invocation and Security Architecture.} Some workflow steps require runtime judgment that cannot be fully precompiled. Our architecture supports \textit{bounded agentic invocation}: generated code may call LLMs for specific, narrow subtasks (e.g., extracting structured fields from an ambiguous clinical note) while maintaining deterministic overall flow, operating under defined schemas, fallback logic, drift monitoring, and human escalation thresholds. Beyond correctness validation, a three-gate security pipeline protects against OWASP LLM Top 10 vulnerabilities: an \textbf{Input Gate} (DeBERTa-v3 prompt injection detection + Presidio PII scanning), a \textbf{Code Gate} (static analysis for CWE-94, CWE-89, CWE-502, CWE-78, CWE-328), and an \textbf{Output Gate} (cryptographic canary token injection for prompt leakage detection). A Dual LLM pattern separates privileged and quarantined model instances. Compiled AI reduces runtime LLM invocations from one-per-transaction to zero, effectively eliminating prompt-based attack surface in the execution path.
 
 % ============================================================================
 \section{Evaluation Framework}
@@ -308,11 +332,11 @@ Compiled AI & \$55 & \$500 & \$555 & 1$\times$ \\
 \end{tabular}
 \end{table}
 
-\paragraph{Latency and consistency.} Compiled AI executes at 4.5ms P50 (vs.\ 2,004ms for direct LLM, a 450$\times$ improvement) with near-zero jitter (10.5ms vs.\ 1,123ms). It exhibits perfect reproducibility (100\%) and zero output entropy; runtime inference shows 95\% reproducibility due to model variance at temperature=0, consistent with \citet{atil2024nondeterminism}.
+\paragraph{Latency and consistency.} Compiled AI executes at 4.5ms P50 (vs.\ 2,004ms for direct LLM, a 450$\times$ improvement) with near-zero jitter (10.5ms vs.\ 1,123ms). It empirically achieves 100\% reproducibility and zero output entropy; runtime inference shows 95\% reproducibility due to model variance at temperature=0, consistent with \citet{atil2024nondeterminism}.
 
-\paragraph{Reliability and validation.} Task completion is 96\% (384/400). All 16 failures are compilation-time failures---once successfully compiled, workflows execute with 100\% reliability. Validation pipeline first-pass rates are 100\% through syntax and execution stages; 96\% at the accuracy gate reflects cases where generated code executed correctly but did not match expected outputs. These failures are detectable before deployment, unlike runtime inference errors.
+\paragraph{Reliability and validation.} Task completion is 96\% (384/400). All 16 failures are compilation-time failures---once successfully compiled, workflows execute with 100\% reliability. Validation pipeline first-pass rates are 100\% through syntax and execution stages; 96\% at the accuracy gate reflects cases where generated code executed correctly but did not match expected outputs. These failures are detectable before deployment, unlike runtime inference errors. This compile-time detection is meaningful: without the accuracy validation gate, the 4\% of semantically-incorrect workflows would deploy as artifacts with 100\% execution success but wrong outputs---silent failures invisible to operators. Multi-stage validation converts these into detectable compile-time failures, achieving 100\% deployed-workflow reliability at the cost of a 4\% compilation failure rate (simulated ablation).
 
-\paragraph{Security.} The prompt injection validator achieves 95.8\% recall with 100\% precision (zero false positives) across 30 adversarial inputs. The code safety gate achieves 75\% recall on 20 vulnerable code fixtures with 100\% precision (zero false positives on 20 benign workflows). Output gate canary detection is 12.5\% recall in simulation-based testing, reflecting methodology rather than production performance. Overall precision across 135 security test cases is 96.1\%.
+\paragraph{Security.} The prompt injection validator achieves 95.8\% recall with 100\% precision (zero false positives) across 30 adversarial inputs. The code safety gate achieves 75\% recall on 20 vulnerable code fixtures with 100\% precision (zero false positives on 20 benign workflows). Output gate canary detection is 12.5\% recall in simulation-based testing, reflecting methodology rather than production performance. Overall precision across 135 security test cases is 96.1\%. Output gate canary recall (12.5\%) reflects the simulation methodology: canary tokens trigger only when the prompt leaks into the LLM's generation context, a condition that requires specific attacker access patterns not fully represented in our synthetic test set; production red-teaming against real attack corpora would provide a more complete picture.
 
 \paragraph{Code quality.} Compiled artifacts achieve 99\% type coverage and 96\% test pass rate. Cyclomatic complexity averages 23.8 vs.\ 8 for human code, a known characteristic of LLM-generated switch-case structures \citep{gitclear2025} and an area for template refinement.
 
@@ -344,7 +368,7 @@ Code Factory bridges this gap by compiling task-specific LLM calls as code artif
 \small{$^\dagger$Median latency; mean 10,263 ms due to 10\% retry outliers (max 183s). First compile: 57s.}
 \end{table}
 
-Together, the two task evaluations show that compiled AI generalizes across input modalities---from clean structured function-calling to noisy semantic document extraction---and that the Code Factory variant provides a principled path when pure deterministic approaches are insufficient.
+Together, the two task types span the spectrum from fully structured to highly noisy semantic inputs. BFCL represents the structured end: inputs are well-typed function signatures with unambiguous correct outputs, making pure deterministic compilation feasible. DocILE represents the semantic end: invoice documents vary in layout, language, and field placement, requiring contextual understanding that a regex-based approach cannot provide. That compiled AI generalizes across both extremes---achieving competitive accuracy on function-calling and matching Direct LLM on document intelligence---suggests the architecture is not overfit to a single input modality. The Code Factory variant provides a principled path for the semantic end of this spectrum: bounded LLM invocation as compiled code rather than ad-hoc runtime prompting.
 
 % ============================================================================
 \section{Discussion}
@@ -356,6 +380,8 @@ Compiled AI is not a general replacement for runtime inference. Our results sugg
 Healthcare administrative workflows exemplify the regime where compiled AI excels. Prior authorization, billing reconciliation, and clinical document processing are high-volume, well-specified by regulation, compliance-sensitive, latency-sensitive, and demand full auditability. \citet{qiu2024healthcare} identify administrative workflow automation as a candidate application for LLM-based systems, and regulatory frameworks increasingly emphasize auditability \citep{fda2025}. Our prior authorization example (Appendix~\ref{app:example}) shows how compiled AI encodes insurance coverage rules as deterministic code, confining LLM invocation to the narrow step of extracting structured clinical factors from unstructured notes.
 
 Constraining generation improves reliability by bounding the error space: the model cannot hallucinate incorrect API calls or database schemas since these come from pre-tested templates. Deterministic execution also yields full observability---when accuracy degrades, we can pinpoint which code segment underperformed and trigger targeted regeneration. This positions compiled AI not as a one-shot process but as an \emph{evolutionary system}: deterministic execution with adaptive improvement, where production metrics continuously inform artifact refinement.
+
+There is also an economic timing argument. LLM inference costs have fallen roughly 10$\times$ per year, but enterprise deployment volumes are growing faster still---driving total inference spend upward even as per-token costs decline \citep{openai2026pricing}. Architectures that amortize inference across transactions, rather than invoking a model per request, become economically compelling at scale. Compiled AI is one such architecture: generation cost is fixed at compile time, and execution cost is zero regardless of transaction volume. As LLM costs come to dominate enterprise operating budgets, compile-once-run-many approaches are not merely convenient---they are likely to become the default deployment pattern for well-specified, high-volume workflows.
 
 % ============================================================================
 \section{Limitations}
@@ -457,6 +483,9 @@ METR. Measuring the Impact of Early-2025 AI Models on Developer Productivity. Te
 
 \bibitem[M\"{u}ndler et al.(2025)]{mundler2025typeconstrained}
 Niels M\"{u}ndler et al. Type-Constrained Code Generation. In \emph{PLDI}, 2025.
+
+\bibitem[OpenAI(2026)]{openai2026pricing}
+OpenAI (2026). \textit{API Pricing}. Retrieved 2026. \url{https://openai.com/api/pricing}
 
 \bibitem[Neupane et al.(2025)]{neupane2025hipaa}
 Adarsh Neupane et al. Towards a HIPAA Compliant Agentic AI System. \emph{arXiv:2504.17669}, April 2025.
@@ -584,7 +613,7 @@ class PriorAuthWorkflow:
         return AuthResult(status=decision, reason_code=reason)
 \end{lstlisting}
 
-This example demonstrates three properties: (1) \textbf{Safety Sandwich}---the probabilistic model is constrained between input validation and deterministic logic \citep{dalrymple2024guaranteed}; (2) \textbf{Auditability}---decisions trace to specific code lines, achieving 100\% audit completeness; (3) \textbf{Token Economics}---coverage rules are compiled once rather than sent per-request.
+This example demonstrates three properties: (1) \textbf{Safety Sandwich}---the probabilistic model is constrained between input validation and deterministic logic \citep{dalrymple2024guaranteed}; (2) \textbf{Auditability}---decisions trace to specific code lines, enabling full auditability under this architecture; (3) \textbf{Token Economics}---coverage rules are compiled once rather than sent per-request.
 
 \section{Benchmark Suite}
 \label{app:benchmark}
