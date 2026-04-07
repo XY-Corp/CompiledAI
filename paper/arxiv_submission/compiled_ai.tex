@@ -1,0 +1,631 @@
+\documentclass[11pt]{article}
+
+% arXiv submission info
+% Primary category: cs.SE (Software Engineering)
+% Secondary category: cs.AI (Artificial Intelligence)
+% Version: 8 (2026-02-18) — Revised per reviewer feedback:
+%   - Introduction now acknowledges DSPy/LLM+P prior art upfront
+%   - Related Work restructured: Compilation Paradigm section moved to top
+%   - Motivational material moved from Related Work to Introduction
+%   - Limitations/discussion material moved from Related Work to proper sections
+%   - Section 2.4 trimmed; Section 2.6 moved into System Architecture
+%   - System Architecture rewritten as prose focused on "why"
+%   - Evaluation Framework: contextualizing prose added, assertions cited
+%   - Case Study integrated as Task 2 in Experiments (not a bonus appendix)
+%   - KILE and LIR acronyms defined explicitly
+%   - Subsections merged; bulleted lists converted to prose narrative
+%   - Healthcare framing strengthened throughout
+
+% Packages
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage[hidelinks]{hyperref}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage[margin=1in]{geometry}
+\usepackage{natbib}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{multirow}
+\usepackage{tikz}
+\usetikzlibrary{positioning, shapes.geometric, arrows.meta, calc}
+
+% Custom commands
+\newcommand{\metric}[1]{\textsc{#1}}
+
+\title{Compiled AI: Deterministic Code Generation for\\LLM-Based Workflow Automation}
+
+\author{
+  Geert Trooskens\textsuperscript{1}\thanks{Correspondence to: Geert Trooskens \texttt{<geert@xy.ai>}} \quad
+  Aaron Karlsberg\textsuperscript{1} \quad
+  Anmol Sharma\textsuperscript{1} \quad
+  Lamara De Brouwer\textsuperscript{1} \\[0.3em]
+  Max Van Puyvelde\textsuperscript{2} \quad
+  Matthew Young\textsuperscript{1} \quad
+  John Thickstun\textsuperscript{3} \\[0.3em]
+  Gil Alterovitz\textsuperscript{4} \quad
+  Walter A. De Brouwer\textsuperscript{2}
+  \\[1em]
+  \textsuperscript{1}XY.AI Labs, Palo Alto, CA \quad
+  \textsuperscript{2}Stanford University School of Medicine, Stanford, CA \\
+  \textsuperscript{3}Cornell University, Department of Computer Science, Ithaca, NY \\
+  \textsuperscript{4}Brigham and Women's Hospital / Harvard Medical School, Boston, MA
+}
+
+\date{April 2026}
+
+\begin{document}
+
+\maketitle
+
+% ============================================================================
+\begin{abstract}
+% ============================================================================
+
+We study \emph{compiled AI}, a paradigm in which large language models generate executable code artifacts during a compilation phase, after which workflows execute deterministically without further model invocation. This paradigm has antecedents in prior work on declarative pipeline optimization (DSPy) and hybrid neural-symbolic planning (LLM+P); our contribution is a systems-oriented study of its application to high-stakes enterprise workflows, with particular emphasis on healthcare settings where reliability and auditability are critical.
+
+By constraining generation to narrow business-logic functions embedded in validated templates, compiled AI trades runtime flexibility for predictability, auditability, cost efficiency, and reduced security exposure. We introduce (i) a system architecture for constrained LLM-based code generation, (ii) a four-stage generation-and-validation pipeline that converts probabilistic model output into production-ready code artifacts, and (iii) an evaluation framework measuring operational metrics including token amortization, determinism, reliability, security, and cost.
+
+We evaluate on two task types: function-calling (BFCL, $n$=400) and document intelligence (DocILE, $n$=5,680 invoices). On function-calling, compiled AI achieves 96\% task completion with zero execution tokens, breaking even with runtime inference at approximately 17 transactions and reducing token consumption by 57$\times$ at 1,000 transactions. On document intelligence, our Code Factory variant matches Direct LLM on key field extraction (KILE: 80.0\%) while achieving the highest line item recognition accuracy (LIR: 80.4\%). Security evaluation across 135 test cases demonstrates 96.7\% accuracy on prompt injection detection and 87.5\% on static code safety analysis with zero false positives.
+
+\end{abstract}
+
+% ============================================================================
+\section{Introduction}
+\label{sec:introduction}
+% ============================================================================
+
+Large language models (LLMs) are increasingly deployed to automate enterprise workflows, evolving from question-answering systems toward autonomous agent architectures \citep{autogen2024, crewai2024, langchain2022}. While these approaches demonstrate flexibility, they rely on repeated model invocation during execution, leading to high token consumption, variable latency, and non-deterministic behavior.
+
+The idea of using LLMs as compilers rather than interpreters is not new. DSPy \citep{khattab2023dspy} compiles declarative LLM calls into optimized pipelines, achieving 25--65\% improvement over prompt engineering. LLM+P \citep{liu2023llmp} translates natural language to PDDL, then uses classical planners to produce optimal solutions---the LLM handles intent understanding, the deterministic solver handles execution. Text-to-SQL systems instantiate the same pattern: an LLM generates a query once, and the database executes it deterministically at scale. Our contribution is to study this paradigm as a first-class production systems concern, evaluating it with operational metrics suited to enterprise deployment, and demonstrating its particular value in healthcare settings where reliability and auditability are regulatory requirements.
+
+Empirical studies reveal persistent reliability challenges in runtime agent systems. \citet{cemri2025multiagent} found that 79\% of multi-agent failures stem from specification and coordination issues rather than infrastructure. Salesforce's CRMArena-Pro benchmark shows agent success rates degrading from 58\% in single-turn to 35\% in multi-turn interactions \citep{salesforce2025agents}. Non-determinism persists even at temperature=0: \citet{atil2024nondeterminism} found accuracy varies up to 15\% across runs, and \citet{ouyang2023nondeterminism} demonstrated 18--75\% output variance due to architectural factors including Mixture-of-Experts routing. These limitations are especially problematic in healthcare, where prior authorization workflows, clinical document processing, and billing automation require determinism, auditability, and compliance with HIPAA and CMS decision timeframes.
+
+This paper investigates compiled AI as a design point optimized for well-specified, high-volume, compliance-sensitive workflows. The key observation is that many enterprise workflows require intelligence to \emph{design} but not to \emph{execute} repeatedly. Once business logic is specified and validated, repeated execution can be handled by conventional software infrastructure---with full observability enabling targeted refinement of compiled artifacts over time. Rather than interpreting natural language at runtime, an LLM is constrained to generate narrow business-logic functions within pre-validated templates. These artifacts pass a multi-stage validation pipeline (security analysis, syntactic verification, execution testing, output accuracy) before deployment as static code with predictable latency, zero stochasticity, and near-zero marginal inference cost.
+
+\begin{center}
+\begin{minipage}{0.95\linewidth}
+\noindent\rule{\linewidth}{0.6pt}
+\vspace{4pt}
+
+\textbf{Definition (Compiled AI).} A workflow system satisfying three properties:
+\begin{enumerate}
+  \item \textbf{One-time LLM invocation} --- the model runs once at generation time, not at transaction time.
+  \item \textbf{Zero-token deterministic execution} --- deployed workflows run as static code with no further model calls.
+  \item \textbf{Mandatory multi-stage validation} --- every artifact passes security, syntax, execution, and accuracy checks before deployment.
+\end{enumerate}
+
+\begin{center}
+{\small\begin{tabular}{lccc}
+\toprule
+\textbf{System} & \textbf{Runtime LLM?} & \textbf{Deterministic?} & \textbf{Validation required?} \\
+\midrule
+Agents (AutoGen, LangChain) & Yes & No  & No \\
+DSPy                        & Partial & Partial & No \\
+\textbf{Compiled AI}        & \textbf{No} & \textbf{Yes} & \textbf{Yes} \\
+\bottomrule
+\end{tabular}}
+\end{center}
+
+\vspace{2pt}
+\noindent\rule{\linewidth}{0.6pt}
+\end{minipage}
+\end{center}
+
+\begin{figure}[ht]
+\centering
+\begin{tikzpicture}[scale=1.1]
+    \draw[->] (0,0) -- (0,6) node[above] {\small Total Tokens};
+    \draw[->] (0,0) -- (10.5,0) node[below right] {\small Transactions ($n$)};
+    \foreach \x in {2,4,6,8} { \draw[gray!20] (\x,0) -- (\x,5.5); }
+    \foreach \y in {1,2,3,4,5} { \draw[gray!20] (0,\y) -- (9.5,\y); }
+    \node[left, font=\scriptsize] at (0,1) {200K};
+    \node[left, font=\scriptsize] at (0,2) {400K};
+    \node[left, font=\scriptsize] at (0,3) {600K};
+    \node[left, font=\scriptsize] at (0,4) {800K};
+    \node[left, font=\scriptsize] at (0,5) {1.0M};
+    \draw[thick, purple!70] (0,0) -- (9.5,4.025);
+    \node[purple!70, right, font=\scriptsize] at (9.5, 4.025) {AutoGen (805/tx)};
+    \draw[thick, orange!70] (0,0) -- (9.5,3.70);
+    \node[orange!70, right, font=\scriptsize] at (9.5, 3.70) {LangChain (740/tx)};
+    \draw[thick, red!70] (0,0) -- (9.5,2.76);
+    \node[red!70, right, font=\scriptsize] at (9.5, 2.76) {Direct LLM (552/tx)};
+    \draw[thick, blue!70] (0,0.048) -- (9.5,0.048);
+    \node[blue!70, right, font=\scriptsize] at (9.5, 0.22) {Compiled (9.6K)};
+    \draw[<->, gray] (-0.5,0) -- (-0.5,0.048);
+    \node[gray, left, font=\scriptsize, align=right] at (-0.5,0.024) {9.6K\\gen};
+    \draw[dashed, gray] (0.16,0) -- (0.16,0.048);
+    \node[below, font=\scriptsize] at (0.16,-0.1) {$n^*\!=\!17$};
+    \fill[black] (0.16,0.048) circle (2pt);
+    \node[below, font=\scriptsize] at (0.16,-0.4) {Break-even};
+    \fill[green!10] (0.16,0.048) -- (9.5,0.048) -- (9.5,2.76) -- (0.16,0.048);
+    \node[green!50!black, font=\scriptsize] at (5,1.0) {57--84$\times$ savings};
+    \node[green!50!black, font=\scriptsize] at (5,0.6) {at $n$=1000};
+    \node[below, font=\scriptsize] at (0.95,0) {100};
+    \node[below, font=\scriptsize] at (4.75,0) {500};
+    \node[below, font=\scriptsize] at (9.5,0) {1000};
+    \fill[red!70] (0.95,0.276) circle (1.5pt);
+    \fill[red!70] (9.5,2.76) circle (1.5pt);
+    \fill[orange!70] (0.95,0.37) circle (1.5pt);
+    \fill[orange!70] (9.5,3.70) circle (1.5pt);
+    \fill[purple!70] (0.95,0.4025) circle (1.5pt);
+    \fill[purple!70] (9.5,4.025) circle (1.5pt);
+\end{tikzpicture}
+\caption{Token consumption comparison across baselines (BFCL, n=400). Compiled AI incurs a one-time 9,600-token generation cost, then executes at zero marginal cost. Break-even vs.\ Direct LLM at $n^*\approx17$; at 1,000 transactions, compiled AI reduces consumption by 57$\times$ vs.\ Direct LLM and 84$\times$ vs.\ AutoGen.}
+\label{fig:economics}
+\end{figure}
+
+\paragraph{Contributions.} This paper makes three contributions: (1) a system architecture for constrained LLM-based code generation producing bounded business-logic functions in durable workflow templates (Section~\ref{sec:architecture}); (2) a four-stage generation-and-validation pipeline converting probabilistic model output into production-ready code artifacts (Section~\ref{sec:architecture}); and (3) an evaluation framework measuring operational viability---token amortization, determinism, reliability, validation effectiveness, and cost---evaluated across two distinct task types (Sections~\ref{sec:framework}--\ref{sec:results}).
+
+% ============================================================================
+\section{Related Work}
+\label{sec:related-work}
+% ============================================================================
+
+\subsection{The Compilation Paradigm}
+\label{sec:related-compilation}
+
+The most directly relevant prior work validates compilation as a productive paradigm for LLM systems. DSPy \citep{khattab2023dspy} compiles declarative LLM calls into optimized pipelines, achieving 25--65\% improvement over prompt engineering and enabling small 770M-parameter models to compete with GPT-3.5 on several tasks. LLM+P \citep{liu2023llmp} translates natural language to PDDL and delegates execution to classical planners; LLMs alone fail to produce even feasible plans, but the hybrid approach succeeds. WorkflowLLM \citep{fan2024workflowllm} demonstrates one-shot workflow learning with zero-shot transfer to unseen APIs. FlowMind \citep{zeng2024flowmind} generates workflows that prevent runtime hallucinations via structured intermediate representations. AlphaCodium \citep{ridnik2024alphacodium} shows that structured multi-stage flows with verification improve GPT-4 accuracy from 19\% to 44\%. MetaGPT's Standard Operating Procedures \citep{hong2024metagpt} are essentially compiled workflows: deterministic procedures reducing cascading hallucinations by constraining agent behavior.
+
+Our work differs from these efforts in two ways. First, we treat \emph{production viability} as a first-class concern---not just accuracy improvement, but operational properties (token economics, determinism, auditability, cost at scale) that determine enterprise deployability. Second, we study compilation specifically in high-stakes domains where reliability is a regulatory requirement, demonstrating both where the approach excels (structured function-calling) and where it must adapt (noisy document extraction via bounded agentic invocation).
+
+\subsection{The Reliability Crisis in LLM Agents}
+\label{sec:related-reliability}
+
+A substantial body of empirical work motivates moving the LLM out of the execution loop. \citet{cemri2025multiagent} analyzed 1,600+ annotated traces across seven major frameworks, identifying specification failures (41.8\%) and inter-agent coordination failures (36.9\%) as the dominant failure modes---79\% of failures are not infrastructure problems. \citet{pan2025measuring} surveyed 306 practitioners across 26 domains and found 68\% limit agents to $\leq$10 autonomous steps before human intervention, with reliability cited as the primary deployment barrier. Critically, non-determinism persists even at temperature=0 \citep{ouyang2023nondeterminism, atil2024nondeterminism}, undermining reproducibility in interpreted AI approaches. Our core architectural choice---removing the LLM from the execution loop and confining it to a one-time compilation phase---directly addresses these failure modes.
+
+\subsection{Constrained Generation and Formal Verification}
+\label{sec:related-constrained}
+
+Structured generation techniques offer complementary paths to reliability. SynCode \citep{ugare2024syncode} achieves 96\% reduction in syntax errors through grammar-constrained decoding; type-constrained decoding \citep{mundler2025typeconstrained} reduces compilation errors by $>$50\% while improving functional correctness; XGrammar \citep{dong2024xgrammar} delivers up to 100$\times$ speedup over prior constrained decoding approaches. Formal verification shows promise for critical systems: Astrogator \citep{councilman2025astrogator} verifies correct code in 83\% of cases. However, \citet{xu2024hallucination} demonstrate that structural hallucinations cannot be eliminated by larger training sets alone, positioning constrained decoding as complementary rather than complete. Our approach combines constrained generation with multi-stage validation. For healthcare specifically, \citet{neupane2025hipaa} present a HIPAA-compliant agentic AI framework integrating attribute-based access control with PHI sanitization---an approach our template-based architecture can encode as compliance-by-construction.
+
+\subsection{Benchmark Limitations and the Case for Operational Metrics}
+\label{sec:related-benchmarks}
+
+The gap between benchmark performance and production viability is well-documented and motivates our evaluation framework. HumanEval is saturated ($>$95\% for frontier models) and contaminated \citep{yang2023rethinking, xu2024contamination}; top model performance on contamination-resistant SWE-Bench Pro collapses to approximately 23\%. The synthetic-to-real gap is severe: models achieving 84--89\% on synthetic benchmarks attain only 25--34\% on real-world class-level tasks \citep{rao2025synthetic}. Perhaps most striking, the METR developer productivity study found developers \emph{perceived} 20\% productivity gains while objective measurements showed 19\% slower task completion \citep{metr2025productivity}. These findings motivate our framework's emphasis on token amortization, execution determinism, and validation convergence over generation accuracy alone.
+
+% ============================================================================
+\section{System Architecture}
+\label{sec:architecture}
+% ============================================================================
+
+The compiled AI architecture is motivated by a fundamental asymmetry in enterprise workflow automation: generating correct business logic benefits from LLM reasoning, but executing that logic thousands of times per day does not. Runtime agent systems conflate these two phases, invoking an LLM at every transaction. Our architecture separates them, confining LLM invocation to a one-time compilation step and deploying validated, static code for all subsequent execution.
+
+This separation yields several benefits. Deterministic execution eliminates output variance and enables full auditability under this architecture---every decision traces to a specific line of code, a property essential for CMS compliance in prior authorization and for FDA audit readiness in AI-enabled medical workflows \citep{fda2025}. Static code can be subjected to established software engineering tooling: static analysis, type checking, security scanning, and regression testing. And because the LLM exits the execution loop, the attack surface for prompt injection shrinks---from one LLM call per transaction to one call per workflow type compiled.
+
+\paragraph{Design Principles.} Four principles shape the architecture. \textbf{Constrained Generation} limits LLM output to narrow, well-defined functions (20--50 lines); templates provide infrastructure, bounding the output space and reducing hallucination risk. \textbf{Compilation over Interpretation} means generated code is validated, tested, and deployed as static artifacts---the LLM exits the execution loop entirely. \textbf{Validation as Requirement} means every artifact passes a four-stage pipeline before deployment, feasible precisely because we generate code rather than interpret configurations. \textbf{Compliance by Construction} encodes regulatory constraints (HIPAA, PCI-DSS, SOC 2) directly in templates and prompt blocks, ensuring generated code inherits compliance properties by default.
+
+\paragraph{Component Overview.} The system takes a YAML workflow specification as input and produces a validated Temporal activity as output. An \textbf{Orchestrator} receives the specification and selects appropriate templates, modules, and compliance constraints. A \textbf{Template Library} provides tested code patterns for common workflow types: synchronous handlers, streaming processors, batch processors with checkpointing, and input validators with fallback logic. A \textbf{Module Library} provides reusable functional capabilities including database access with connection pooling, HTTP clients with retry logic, and notification delivery. \textbf{Prompt Blocks} encode domain constraints such as HIPAA data handling rules. The orchestrator assembles these components into a prompt, invokes the LLM once to generate business logic, and passes the assembled artifact through a four-stage validation pipeline before deployment. On validation failure, the system regenerates with error context rather than deploying a broken artifact. Figure~\ref{fig:architecture} illustrates this flow; Algorithm~\ref{alg:generation} formalizes it.
+
+\begin{figure}[ht]
+\centering
+\resizebox{\textwidth}{!}{%
+\begin{tikzpicture}[
+    node distance=0.6cm and 0.9cm,
+    box/.style={rectangle, draw, rounded corners, minimum width=1.8cm, minimum height=0.7cm, align=center, font=\small},
+    library/.style={rectangle, draw, dashed, minimum width=1.5cm, minimum height=0.55cm, align=center, font=\scriptsize, fill=gray!10},
+    validation/.style={rectangle, draw, minimum width=1.1cm, minimum height=0.5cm, align=center, font=\scriptsize, fill=blue!10},
+    arrow/.style={->, >=stealth, thick},
+    label/.style={font=\scriptsize\itshape, text=gray}
+]
+\node[box, fill=yellow!20] (yaml) {YAML\\Spec};
+\node[box, fill=orange!20, right=of yaml] (config) {Orch.};
+\node[library, above=0.8cm of config] (templates) {Templates};
+\node[library, right=0.1cm of templates] (modules) {Modules};
+\node[library, right=0.1cm of modules] (prompts) {Prompts};
+\node[box, fill=red!20, right=1.8cm of config] (llm) {LLM\\Generate};
+\node[box, fill=purple!15, right=of llm] (assemble) {Assemble};
+\node[validation, right=0.8cm of assemble] (sec) {Security};
+\node[validation, right=0.08cm of sec] (syn) {Syntax};
+\node[validation, right=0.08cm of syn] (exe) {Execute};
+\node[validation, right=0.08cm of exe] (acc) {Accuracy};
+\node[above=0.25cm of syn, xshift=0.3cm, font=\small\bfseries] {Validation Pipeline};
+\node[box, fill=green!20, right=0.6cm of acc] (temporal) {Temporal\\Activity};
+\node[below=0.6cm of assemble, font=\scriptsize, text=red!70] (regen) {Regenerate on failure};
+\draw[arrow] (yaml) -- (config);
+\draw[arrow] (config) -- (llm);
+\draw[arrow] (llm) -- (assemble);
+\draw[arrow] (assemble) -- (sec);
+\draw[arrow] (sec) -- (syn);
+\draw[arrow] (syn) -- (exe);
+\draw[arrow] (exe) -- (acc);
+\draw[arrow] (acc) -- (temporal);
+\draw[arrow, gray] (templates.south) -- ++(0,-0.3) -| ([xshift=-0.2cm]llm.north);
+\draw[arrow, gray] (modules.south) -- ++(0,-0.2) -| (llm.north);
+\draw[arrow, gray] (prompts.south) -- ++(0,-0.3) -| ([xshift=0.2cm]llm.north);
+\draw[arrow, red!70, dashed] ([yshift=-0.1cm]sec.south) |- (regen.east);
+\draw[arrow, red!70, dashed] (regen.west) -| ([xshift=0.3cm]llm.south);
+\node[label, below=0.05cm of yaml] {Intent};
+\node[label, below=0.05cm of temporal] {Deterministic};
+\node[label, above=0.05cm of llm, xshift=0.3cm] {One-time};
+\end{tikzpicture}
+}%
+\caption{The code foundry architecture. Business intent (YAML) enters; validated Temporal activities emerge. Dashed red arrows show the regeneration loop on validation failure. The LLM runs once at generation time, not at transaction time.}
+\label{fig:architecture}
+\end{figure}
+
+\begin{algorithm}[ht]
+\caption{Code Foundry Generation Process}
+\label{alg:generation}
+\begin{algorithmic}[1]
+\Require Workflow specification $S$, Template library $T$, Module library $M$
+\Ensure Validated Temporal activity $A$
+\State $t \gets \textsc{SelectTemplate}(S, T)$
+\State $m \gets \textsc{SelectModules}(S, M)$
+\State $p \gets \textsc{AssemblePrompt}(S, t, m)$
+\State $code \gets \textsc{LLMGenerate}(p)$ \Comment{One-time generation}
+\State $A \gets \textsc{Assemble}(t, m, code)$
+\For{$stage \in \{\text{Security}, \text{Syntax}, \text{Execution}, \text{Accuracy}\}$}
+    \State $result \gets \textsc{Validate}(A, stage)$
+    \If{$result = \text{FAIL}$}
+        \State $code \gets \textsc{Regenerate}(p, result.errors)$
+        \State $A \gets \textsc{Assemble}(t, m, code)$
+    \EndIf
+\EndFor
+\State \Return $A$ \Comment{Deterministic artifact}
+\end{algorithmic}
+\end{algorithm}
+
+\paragraph{Validation Pipeline.} The four stages serve distinct purposes. \textbf{Security} applies static analysis (Bandit, Semgrep, custom rules) checking for SQL injection, command injection, path traversal, and secrets exposure. \textbf{Syntax} performs AST parsing, type checking (mypy), and linting (ruff). \textbf{Execution} runs sandboxed execution against test fixtures verifying successful completion, error handling, and output structure. \textbf{Accuracy} compares outputs against golden datasets using task-specific thresholds.
+
+\paragraph{Bounded Agentic Invocation and Security Architecture.} Some workflow steps require runtime judgment that cannot be fully precompiled. Our architecture supports \textit{bounded agentic invocation}: generated code may call LLMs for specific, narrow subtasks (e.g., extracting structured fields from an ambiguous clinical note) while maintaining deterministic overall flow, operating under defined schemas, fallback logic, drift monitoring, and human escalation thresholds. Beyond correctness validation, a three-gate security pipeline protects against OWASP LLM Top 10 vulnerabilities: an \textbf{Input Gate} (DeBERTa-v3 prompt injection detection + Presidio PII scanning), a \textbf{Code Gate} (static analysis for CWE-94, CWE-89, CWE-502, CWE-78, CWE-328), and an \textbf{Output Gate} (cryptographic canary token injection for prompt leakage detection). A Dual LLM pattern separates privileged and quarantined model instances. Compiled AI reduces runtime LLM invocations from one-per-transaction to zero, effectively eliminating prompt-based attack surface in the execution path.
+
+% ============================================================================
+\section{Evaluation Framework}
+\label{sec:framework}
+% ============================================================================
+
+Existing benchmarks primarily measure task-level capability---code correctness or tool-use success rates. While necessary, these metrics are insufficient for evaluating production workflow automation in domains like healthcare, where economic efficiency, determinism, and reliability are more critical than expressiveness. The gap between benchmark accuracy and production viability is empirically well-documented: systems achieving 95\% benchmark accuracy may succeed in only 35\% of multi-turn production interactions \citep{salesforce2025agents}, and perceived productivity gains can diverge sharply from objective measurements \citep{metr2025productivity}.
+
+We therefore evaluate compiled AI as a systems artifact rather than a reasoning agent, using metrics across seven categories: token efficiency, latency, consistency and determinism, reliability, code quality, validation pipeline effectiveness, and security. The token efficiency analysis centers on the break-even transaction count:
+\begin{equation}
+n^* = \frac{\text{\metric{GenTokens}}_{\text{compiled}}}{\text{\metric{RuntimeTokens}}_{\text{per-tx, runtime}} - \text{\metric{RuntimeTokens}}_{\text{per-tx, compiled}}}
+\end{equation}
+
+For determinism, we measure output entropy $H = -\sum p_i \log p_i$ over $N$=1,000 identical inputs; compiled AI targets $H = 0$, contrasting with the 18--75\% output variance documented in runtime inference even at temperature=0 \citep{ouyang2023nondeterminism}. Reliability targets far exceed the 35\% agent baseline from \citet{salesforce2025agents}. Security metrics evaluate the three-gate architecture against OWASP LLM Top 10 threats. Validation pipeline metrics---\metric{FirstPassRate} per stage and \metric{OverallFirstPass}---are novel; to our knowledge no prior work reports these for LLM-generated production code. Full metric tables for all seven categories are provided as supplementary material.
+
+% ============================================================================
+\section{Experiments}
+\label{sec:experiments}
+% ============================================================================
+
+We evaluate on two distinct task types to demonstrate that compiled AI generalizes beyond a single benchmark and that the architecture is not overfit to a particular input modality.
+
+\paragraph{Task 1: Function Calling (BFCL).} The Berkeley Function-Calling Leaderboard \citep{patil2024gorilla} measures function-calling capability on 400 instances where the model must identify the correct function and extract parameters from natural language queries. This task validates the core compilation-vs-runtime trade-off in a structured setting with clean inputs.
+
+\paragraph{Task 2: Document Intelligence (DocILE).} To stress-test the architecture on noisy, semantic inputs, we evaluate on DocILE---5,680 invoice documents with degraded OCR quality, heterogeneous formats across hundreds of vendors, and semantic ambiguity. DocILE uses two evaluation metrics: \textbf{KILE} (Key Information Line-level Extraction), measuring exact-match accuracy on key fields such as invoice number, date, and total amount; and \textbf{LIR} (Line Item Recognition), measuring accuracy on structured line items within documents. This task also motivates the Code Factory variant: when pure deterministic approaches fail due to semantic complexity, compiled activities wrapping focused LLM calls provide a principled middle ground.
+
+\paragraph{Baselines.} We compare four approaches across both tasks: \textbf{Direct LLM} (Claude Opus 4.5, one call per transaction), \textbf{LangChain} and \textbf{AutoGen} (same LLM with orchestration overhead), and \textbf{Compiled AI / Code Factory} (LLM invoked once at compilation; execution is deterministic code). For DocILE, we additionally evaluate a \textbf{Deterministic} variant (pure regex, no LLM) to bound the non-learning approach. All experiments use Claude Opus 4.5 (\texttt{claude-opus-4-5-20251101}) at temperature 0, PydanticAI for structured orchestration, and a custom DSL executor for workflow definitions.
+
+% ============================================================================
+\section{Results}
+\label{sec:results}
+% ============================================================================
+
+\subsection{Task 1: Function Calling (BFCL)}
+
+\paragraph{Token efficiency and cost.} Compiled AI incurs a one-time 9,600-token generation cost and zero execution tokens thereafter (Table~\ref{tab:token-results}). Break-even against direct LLM occurs at $n^* \approx 17$ transactions. At 1,000 transactions, compiled AI uses 57$\times$ fewer tokens than direct LLM and 84$\times$ fewer than AutoGen. At 1M transactions/month, total cost of ownership is \$555 vs.\ \$22,000 for direct LLM---a 40$\times$ cost ratio (Table~\ref{tab:cost-results}).
+
+\begin{table}[ht]
+\centering
+\caption{Token consumption comparison (BFCL, n=400).}
+\label{tab:token-results}
+\begin{tabular}{lrrrrr}
+\toprule
+Method & GenTokens & Runtime/tx & Total@1K & BreakEven & CompRatio \\
+\midrule
+Direct LLM & 0 & 552 & 552,000 & --- & --- \\
+LangChain  & 0 & 740 & 740,000 & --- & 0.75$\times$ \\
+AutoGen    & 0 & 805 & 805,000 & --- & 0.69$\times$ \\
+Compiled AI & 9,600 & 0 & 9,600 & $\sim$17 tx & $\sim$57$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[ht]
+\centering
+\caption{Total cost of ownership at 1M transactions/month (Claude Opus 4.5: \$15/1M input, \$75/1M output tokens).}
+\label{tab:cost-results}
+\begin{tabular}{lrrrr}
+\toprule
+Method & Inference & Infra & Total TCO & CostRatio \\
+\midrule
+Direct LLM & \$21,500 & \$500 & \$22,000 & 40$\times$ \\
+LangChain  & \$28,900 & \$500 & \$29,400 & 53$\times$ \\
+AutoGen    & \$31,400 & \$500 & \$31,900 & 57$\times$ \\
+Compiled AI & \$55 & \$500 & \$555 & 1$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Latency and consistency.} Compiled AI executes at 4.5ms P50 (vs.\ 2,004ms for direct LLM, a 450$\times$ improvement) with near-zero jitter (10.5ms vs.\ 1,123ms). It empirically achieves 100\% reproducibility and zero output entropy; runtime inference shows 95\% reproducibility due to model variance at temperature=0, consistent with \citet{atil2024nondeterminism}.
+
+\paragraph{Reliability and validation.} Task completion is 96\% (384/400). All 16 failures are compilation-time failures---once successfully compiled, workflows execute with 100\% reliability. Validation pipeline first-pass rates are 100\% through syntax and execution stages; 96\% at the accuracy gate reflects cases where generated code executed correctly but did not match expected outputs. These failures are detectable before deployment, unlike runtime inference errors. This compile-time detection is meaningful: without the accuracy validation gate, the 4\% of semantically-incorrect workflows would deploy as artifacts with 100\% execution success but wrong outputs---silent failures invisible to operators. Multi-stage validation converts these into detectable compile-time failures, achieving 100\% deployed-workflow reliability at the cost of a 4\% compilation failure rate (simulated ablation).
+
+\paragraph{Security.} The prompt injection validator achieves 95.8\% recall with 100\% precision (zero false positives) across 30 adversarial inputs. The code safety gate achieves 75\% recall on 20 vulnerable code fixtures with 100\% precision (zero false positives on 20 benign workflows). Output gate canary detection is 12.5\% recall in simulation-based testing, reflecting methodology rather than production performance. Overall precision across 135 security test cases is 96.1\%. Output gate canary recall (12.5\%) reflects the simulation methodology: canary tokens trigger only when the prompt leaks into the LLM's generation context, a condition that requires specific attacker access patterns not fully represented in our synthetic test set; production red-teaming against real attack corpora would provide a more complete picture.
+
+\paragraph{Code quality.} Compiled artifacts achieve 99\% type coverage and 96\% test pass rate. Cyclomatic complexity averages 23.8 vs.\ 8 for human code, a known characteristic of LLM-generated switch-case structures \citep{gitclear2025} and an area for template refinement.
+
+\subsection{Task 2: Document Intelligence (DocILE)}
+
+Table~\ref{tab:docile-main} presents results on DocILE. Pure deterministic extraction (regex) runs 4,915$\times$ faster than direct LLM but achieves only 20.3\% KILE---an 80 percentage point gap driven by failures on semantic fields: customer names (10.1\% KILE) and currency amounts (9.2\% KILE), where contextual understanding is required.
+
+Code Factory bridges this gap by compiling task-specific LLM calls as code artifacts rather than constructing prompts per-request. It achieves competitive KILE accuracy (80.0\%, matching direct LLM) and the \emph{highest} LIR accuracy (80.4\%), while running at 2.3$\times$ lower latency than direct LLM. Combined with Pydantic output validation and automatic retry on schema violations, Code Factory demonstrates that compiled code wrapping focused LLM calls achieves parity with hand-tuned prompt engineering while enabling systematic software engineering benefits: versioning, testing, and full auditability.
+
+\begin{table}[ht]
+\centering
+\caption{DocILE results. KILE: Key Information Line-level Extraction (exact-match on key fields, e.g.\ invoice number, date, total). LIR: Line Item Recognition (accuracy on structured line items). Code Factory makes compiled LLM calls; Deterministic uses pure regex.}
+\label{tab:docile-main}
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Paradigm} & \textbf{Approach} & \textbf{KILE} & \textbf{LIR} & \textbf{Latency} & \textbf{LLM Calls} \\
+\midrule
+\multirow{2}{*}{\textit{Compiled AI}}
+  & Deterministic (Regex) & 20.3\% & 59.7\% & 0.6 ms & None \\
+  & \textbf{Code Factory} & \textbf{80.0\%} & \textbf{80.4\%} & \textbf{2,695 ms}$^\dagger$ & Compiled \\
+\midrule
+\multirow{3}{*}{\textit{Runtime AI}}
+  & Direct LLM & 80.0\% & 74.5\% & 6,339 ms & Per-request \\
+  & LangChain  & 80.0\% & 75.6\% & 6,207 ms & Per-request \\
+  & AutoGen    & 77.8\% & 78.9\% & 13,742 ms & Per-request \\
+\bottomrule
+\multicolumn{6}{l}{\footnotesize $^\dagger$Median latency; mean 10,263 ms due to 10\% retry outliers (max 183s). First compile: 57s.} \\
+\end{tabular}
+\end{table}
+
+Together, the two task types span the spectrum from fully structured to highly noisy semantic inputs. BFCL represents the structured end: inputs are well-typed function signatures with unambiguous correct outputs, making pure deterministic compilation feasible. DocILE represents the semantic end: invoice documents vary in layout, language, and field placement, requiring contextual understanding that a regex-based approach cannot provide. That compiled AI generalizes across both extremes---achieving competitive accuracy on function-calling and matching Direct LLM on document intelligence---suggests the architecture is not overfit to a single input modality. The Code Factory variant provides a principled path for the semantic end of this spectrum: bounded LLM invocation as compiled code rather than ad-hoc runtime prompting.
+
+% ============================================================================
+\section{Discussion}
+\label{sec:discussion}
+% ============================================================================
+
+Compiled AI is not a general replacement for runtime inference. Our results suggest a practical decision rule: use compiled extraction for structured, predictable inputs where determinism matters; use runtime LLM for noisy, open-ended content where semantic understanding is important; and for mixed-content production systems, a hybrid approach---compiled extraction with confidence-based LLM fallback---can reduce latency and cost while maintaining near-LLM accuracy.
+
+Healthcare administrative workflows exemplify the regime where compiled AI excels. Prior authorization, billing reconciliation, and clinical document processing are high-volume, well-specified by regulation, compliance-sensitive, latency-sensitive, and demand full auditability. \citet{qiu2024healthcare} identify administrative workflow automation as a candidate application for LLM-based systems, and regulatory frameworks increasingly emphasize auditability \citep{fda2025}. Our prior authorization example (Appendix~\ref{app:example}) shows how compiled AI encodes insurance coverage rules as deterministic code, confining LLM invocation to the narrow step of extracting structured clinical factors from unstructured notes.
+
+Constraining generation improves reliability by bounding the error space: the model cannot hallucinate incorrect API calls or database schemas since these come from pre-tested templates. Deterministic execution also yields full observability---when accuracy degrades, we can pinpoint which code segment underperformed and trigger targeted regeneration. This positions compiled AI not as a one-shot process but as an \emph{evolutionary system}: deterministic execution with adaptive improvement, where production metrics continuously inform artifact refinement.
+
+There is also an economic timing argument. LLM inference costs have fallen roughly 10$\times$ per year, but enterprise deployment volumes are growing faster still---driving total inference spend upward even as per-token costs decline \citep{openai2026pricing}. Architectures that amortize inference across transactions, rather than invoking a model per request, become economically compelling at scale. Compiled AI is one such architecture: generation cost is fixed at compile time, and execution cost is zero regardless of transaction volume. As LLM costs come to dominate enterprise operating budgets, compile-once-run-many approaches are not merely convenient---they are likely to become the default deployment pattern for well-specified, high-volume workflows.
+
+% ============================================================================
+\section{Limitations}
+\label{sec:limitations}
+% ============================================================================
+
+Several limitations warrant acknowledgment. \textbf{Specification quality}: compiled AI assumes users can accurately specify workflows in YAML; the ``specification problem'' remains fundamental and iterative refinement is often necessary. \textbf{Bounded applicability}: not all workflows reduce to deterministic code, and tasks requiring genuine creativity or adaptation to novel situations may require runtime inference; our evaluation covers two task types, and broader generalization requires further study. \textbf{Generation failures}: 4\% of compilations (16/400 on BFCL) failed to produce accurate outputs, though all were syntactically valid and detectable before deployment. \textbf{Model dependence}: generated code quality depends on the underlying LLM, and model updates may require re-validation. \textbf{Benchmark scope}: our evaluation framework has not yet been adopted by other systems, limiting cross-system comparability.
+
+% ============================================================================
+\section{Conclusion}
+\label{sec:conclusion}
+% ============================================================================
+
+We studied compiled AI as a production systems design point for LLM-based workflow automation, with emphasis on the healthcare domain where reliability and auditability are regulatory requirements. Building on the compilation paradigm established in DSPy, LLM+P, and related work, we characterized compiled AI's operational properties across two task types, showed that it generalizes through the Code Factory variant to semantic tasks requiring bounded LLM invocation, and demonstrated consistent advantages in token economics (57$\times$ reduction at 1,000 transactions), latency (450$\times$ improvement on function-calling), determinism (100\% reproducibility vs.\ 95\% for runtime inference), and cost at scale (40--57$\times$ TCO reduction at 1M transactions/month).
+
+The approach trades flexibility for determinism, cost efficiency, auditability, and reduced attack surface---properties that matter most in well-specified, high-volume, compliance-sensitive workflow regimes. We release our evaluation framework and benchmark suite to enable systematic comparison across the community.
+
+\paragraph{Future Work.} Key open directions include natural language specification (moving beyond YAML), automatic workflow decomposition from high-level intent, continuous optimization through runtime accuracy metrics enabling targeted regeneration cycles, formal verification of generated code properties, and cross-system benchmark adoption.
+
+% ============================================================================
+\bibliographystyle{plainnat}
+
+\begin{thebibliography}{99}
+
+\bibitem[Anthropic(2025)]{anthropic2025opus}
+Anthropic. Introducing Claude Opus 4.5. Technical report, November 2025.
+\newblock \url{https://www.anthropic.com/news/claude-opus-4-5}
+
+\bibitem[Atil et al.(2024)]{atil2024nondeterminism}
+Nurullah Atil, Pedro Henrique Luz de Araujo, and Benjamin Roth.
+\newblock Non-Determinism of ``Deterministic'' LLM Settings.
+\newblock \emph{arXiv:2408.04667}, August 2024.
+
+\bibitem[Breunig(2025)]{breunig2025bitter}
+Drew Breunig. Does the Bitter Lesson Have Limits? \url{https://dbreunig.com}, August 2025.
+
+\bibitem[Cemri et al.(2025)]{cemri2025multiagent}
+Mert Cemri et al. Why Do Multi-Agent LLM Systems Fail? \emph{arXiv:2503.13657}, March 2025.
+
+\bibitem[Chakrabarti(2025)]{chakrabarti2025bitter}
+Debojyoti Chakrabarti. The Bitter Lesson is Misunderstood. \url{https://obviouslywrong.org}, August 2025.
+
+\bibitem[Chen et al.(2023)]{chen2023pot}
+Wenhu Chen et al. Program of Thoughts Prompting. \emph{TMLR}, November 2023.
+
+\bibitem[Councilman et al.(2025)]{councilman2025astrogator}
+Craig Councilman et al. Astrogator: Towards Formal Verification of LLM-Generated Code. \emph{arXiv:2507.13290}, July 2025.
+
+\bibitem[CrewAI(2024)]{crewai2024}
+Jo\~{a}o Moura. CrewAI. \url{https://github.com/crewAIInc/crewAI}, 2024.
+
+\bibitem[Dalrymple et al.(2024)]{dalrymple2024guaranteed}
+David Dalrymple et al. Towards Guaranteed Safe AI. \emph{arXiv:2405.06624}, May 2024.
+
+\bibitem[Dong et al.(2024)]{dong2024xgrammar}
+Yixin Dong et al. XGrammar. \emph{arXiv:2411.15100}, November 2024.
+
+\bibitem[Fan et al.(2024)]{fan2024workflowllm}
+Shuheng Fan et al. WorkflowLLM. \emph{arXiv:2411.05451}, November 2024.
+
+\bibitem[FDA(2025)]{fda2025}
+U.S. Food and Drug Administration. AI/ML-Enabled Medical Devices.
+\newblock \url{https://www.fda.gov/medical-devices/software-medical-device-samd/artificial-intelligence-and-machine-learning-aiml-enabled-medical-devices}, 2025.
+
+\bibitem[Gao et al.(2023)]{gao2023pal}
+Luyu Gao et al. PAL: Program-aided Language Models. In \emph{ICML}, 2023.
+
+\bibitem[GitClear(2025)]{gitclear2025}
+GitClear. AI Copilot Code Quality: 2025 Data. Technical report, February 2025.
+\newblock \url{https://www.gitclear.com/ai_assistant_code_quality_2025_research}
+
+\bibitem[Hong et al.(2024)]{hong2024metagpt}
+Sirui Hong et al. MetaGPT. In \emph{ICLR}, 2024.
+
+\bibitem[Jimenez et al.(2024)]{jimenez2024swebench}
+Carlos~E. Jimenez et al. SWE-bench. In \emph{ICLR} (Oral), 2024.
+
+\bibitem[Karpathy(2017)]{karpathy2017software2}
+Andrej Karpathy. Software 2.0. \emph{Medium}, November 2017.
+
+\bibitem[Karpathy(2026)]{karpathy2026specdriven}
+Andrej Karpathy. Spec-driven development. \emph{X (Twitter)}, January 2026.
+\newblock \url{https://x.com/karpathy/status/1883601522500329783}
+
+\bibitem[Khattab et al.(2023)]{khattab2023dspy}
+Omar Khattab et al. DSPy. \emph{arXiv:2310.03714}, October 2023.
+
+\bibitem[LangChain(2022)]{langchain2022}
+Harrison Chase. LangChain. \url{https://github.com/langchain-ai/langchain}, October 2022.
+
+\bibitem[Li et al.(2024)]{li2024chainofcode}
+Chengshu Li et al. Chain of Code. In \emph{ICML} (Oral), 2024.
+
+\bibitem[Liu et al.(2023)]{liu2023llmp}
+Bo Liu et al. LLM+P. \emph{arXiv:2304.11477}, April 2023.
+
+\bibitem[METR(2025)]{metr2025productivity}
+METR. Measuring the Impact of Early-2025 AI Models on Developer Productivity. Technical report, 2025.
+
+\bibitem[M\"{u}ndler et al.(2025)]{mundler2025typeconstrained}
+Niels M\"{u}ndler et al. Type-Constrained Code Generation. In \emph{PLDI}, 2025.
+
+\bibitem[OpenAI(2026)]{openai2026pricing}
+OpenAI (2026). \textit{API Pricing}. Retrieved 2026. \url{https://openai.com/api/pricing}
+
+\bibitem[Neupane et al.(2025)]{neupane2025hipaa}
+Adarsh Neupane et al. Towards a HIPAA Compliant Agentic AI System. \emph{arXiv:2504.17669}, April 2025.
+
+\bibitem[Ouyang et al.(2023)]{ouyang2023nondeterminism}
+Shuyin Ouyang et al. Non-determinism of ChatGPT in Code Generation. \emph{arXiv:2308.02828}, August 2023.
+
+\bibitem[Pan et al.(2025)]{pan2025measuring}
+Alex Pan et al. Measuring Agents in Production. \emph{arXiv:2512.04123}, December 2025.
+
+\bibitem[Patil et al.(2024)]{patil2024gorilla}
+Shishir~G. Patil et al. Gorilla / BFCL. In \emph{NeurIPS}, 2024.
+
+\bibitem[Qiu et al.(2024)]{qiu2024healthcare}
+Shijie Qiu et al. LLM-based agentic systems in medicine. \emph{Nature Machine Intelligence}, December 2024.
+
+\bibitem[Rao et al.(2025)]{rao2025synthetic}
+Shubham Rao et al. Beyond Synthetic Benchmarks. \emph{arXiv:2510.26130}, October 2025.
+
+\bibitem[Ridnik et al.(2024)]{ridnik2024alphacodium}
+Tal Ridnik et al. AlphaCodium. \emph{arXiv:2401.08500}, January 2024.
+
+\bibitem[Rozi\`{e}re et al.(2023)]{roziere2023codellama}
+Baptiste Rozi\`{e}re et al. Code Llama. \emph{arXiv:2308.12950}, August 2023.
+
+\bibitem[Salesforce(2025)]{salesforce2025agents}
+Kung-Hsiang Huang et al. CRMArena-Pro. Salesforce AI Research, May 2025.
+
+\bibitem[Shi et al.(2025)]{shi2025swebenchillusion}
+Yizhou Shi et al. The SWE-Bench Illusion. \emph{arXiv:2506.12286}, June 2025.
+
+\bibitem[Sutton(2019)]{sutton2019bitter}
+Richard~S. Sutton. The Bitter Lesson. \url{http://www.incompleteideas.net/IncIdeas/BitterLesson.html}, March 2019.
+
+\bibitem[Temporal(2024)]{temporal2024}
+Temporal Technologies. Temporal Documentation. \url{https://docs.temporal.io}, 2024.
+
+\bibitem[Ugare et al.(2024)]{ugare2024syncode}
+Shubham Ugare et al. SynCode. \emph{arXiv:2403.01632}, March 2024.
+
+\bibitem[Veracode(2025)]{veracode2025genai}
+Veracode. 2025 GenAI Code Security Report. Technical report, September 2025.
+
+\bibitem[Wu et al.(2024)]{autogen2024}
+Qingyun Wu et al. AutoGen. In \emph{COLM}, 2024.
+
+\bibitem[Xu et al.(2024)]{xu2024contamination}
+Yucheng Xu et al. Benchmark Data Contamination Survey. \emph{arXiv:2406.04244}, June 2024.
+
+\bibitem[Xu et al.(2024)Xu, Jain, and Kankanhalli]{xu2024hallucination}
+Ziwei Xu, Sanjay Jain, and Mohan Kankanhalli. Hallucination is Inevitable. \emph{arXiv:2401.11817}, 2024.
+
+\bibitem[Yang et al.(2023)]{yang2023rethinking}
+Yichen Yang et al. Rethinking Benchmark and Contamination. \emph{arXiv:2311.04850}, November 2023.
+
+\bibitem[Zeng et al.(2024)]{zeng2024flowmind}
+Jin Zeng et al. FlowMind. In \emph{ACM ICAIF}, 2024.
+
+\bibitem[Zhou et al.(2024)]{zhou2024lats}
+Andy Zhou et al. Language Agent Tree Search. In \emph{ICML}, 2024.
+
+\bibitem[McCabe(1976)]{mccabe1976}
+Thomas~J. McCabe. A Complexity Measure. \emph{IEEE TSE}, SE-2(4):308--320, December 1976.
+
+\end{thebibliography}
+
+% ============================================================================
+\appendix
+
+\section{Example: Prior Authorization Workflow}
+\label{app:example}
+
+This example demonstrates bounded agentic invocation for healthcare prior authorization, illustrating compiled AI in the healthcare regime discussed in Section~\ref{sec:discussion}: the LLM is confined to structured data extraction, while coverage decisions execute as deterministic, fully auditable code.
+
+\begin{lstlisting}[language=Python, caption={Workflow specification for GLP-1 prior authorization}, basicstyle=\small\ttfamily]
+# workflow_spec: prior_auth_glp1_v1.yaml
+metadata:
+  name: "GLP-1 Agonist Medical Necessity Review"
+  compliance: ["HIPAA", "CMS_Decision_Timeframes"]
+inputs:
+  - name: "patient_chart_summary"
+    type: "text"
+logic_requirements:
+  - step: "extract_clinical_factors"
+    type: "bounded_invocation"
+    schema:
+      has_t2d_diagnosis: boolean
+      current_a1c: float
+      bmi: float
+      has_step_therapy_failure: boolean
+    validation:
+      - "bmi > 10 AND bmi < 100"
+  - step: "evaluate_coverage"
+    type: "deterministic_rule"
+    logic: |
+      IF has_t2d_diagnosis THEN APPROVE
+      ELSE IF (bmi >= 30) AND has_step_therapy_failure THEN APPROVE
+      ELSE DENY
+\end{lstlisting}
+
+\begin{lstlisting}[language=Python, caption={Compiled artifact isolating probabilistic extraction from deterministic decisions}, basicstyle=\small\ttfamily]
+@workflow.defn
+class PriorAuthWorkflow:
+    @workflow.run
+    async def run(self, input_data: WorkflowInput) -> AuthResult:
+        # PHASE 1: BOUNDED AGENTIC INVOCATION
+        clinical_data = await workflow.execute_activity(
+            "extract_clinical_data_activity",
+            args=[input_data.chart_text],
+            retry_policy=RetryPolicy(maximum_attempts=3)
+        )
+        # PHASE 2: HALLUCINATION VALIDATION
+        if clinical_data.a1c and not (3.0 < clinical_data.a1c < 20.0):
+            return await self.trigger_human_review("Suspicious A1C")
+        # PHASE 3: DETERMINISTIC DECISION
+        decision, reason = "DENIED", "Does not meet criteria"
+        if clinical_data.has_t2d_diagnosis:
+            decision, reason = "APPROVED", "Type 2 Diabetes Diagnosis"
+        elif (clinical_data.bmi >= 30.0 and
+              clinical_data.has_step_therapy_failure):
+            decision, reason = "APPROVED", "BMI>=30 + Step Therapy"
+        # PHASE 4: AUDIT TRAIL
+        await workflow.execute_activity("log_decision_event",
+            {"decision": decision, "logic_version": "v1.0"})
+        return AuthResult(status=decision, reason_code=reason)
+\end{lstlisting}
+
+This example demonstrates three properties: (1) \textbf{Safety Sandwich}---the probabilistic model is constrained between input validation and deterministic logic \citep{dalrymple2024guaranteed}; (2) \textbf{Auditability}---decisions trace to specific code lines, enabling full auditability under this architecture; (3) \textbf{Token Economics}---coverage rules are compiled once rather than sent per-request.
+
+\section{Benchmark Suite}
+\label{app:benchmark}
+
+We release our benchmark suite at \url{https://github.com/XY-Corp/CompiledAI}, including 540 YAML workflow specifications, golden outputs for accuracy validation, measurement scripts for all seven metric categories, and baseline implementations.
+
+\end{document}
