@@ -37,7 +37,7 @@ authors:
     given-names: "Walter A."
     affiliation: "Stanford University School of Medicine, Stanford, CA"
 repository-code: "https://github.com/XY-Corp/CompiledAI"
-url: "https://arxiv.org/abs/PLACEHOLDER"
+url: "https://services.arxiv.org/html/submission/7435705/view"
 license: MIT
 date-released: "2026-04-07"
 keywords:
@@ -71,4 +71,4 @@ preferred-citation:
       given-names: "Walter A."
   journal: "arXiv preprint"
   year: 2026
-  url: "https://arxiv.org/abs/PLACEHOLDER"
+  url: "https://services.arxiv.org/html/submission/7435705/view"

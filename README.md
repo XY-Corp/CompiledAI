@@ -1,6 +1,6 @@
 # Compiled AI
 
-**Paper:** [Compiled AI: Deterministic Code Generation for LLM-Based Workflow Automation](https://arxiv.org/abs/PLACEHOLDER) (arXiv 2026)
+**Paper:** [Compiled AI: Deterministic Code Generation for LLM-Based Workflow Automation](https://services.arxiv.org/html/submission/7435705/view) (arXiv 2026)
 
 > This repository contains the code, benchmark suite, and evaluation framework accompanying the paper.
 
@@ -315,7 +315,7 @@ If you use this work, please cite:
   author={Trooskens, Geert and Karlsberg, Aaron and Sharma, Anmol and De Brouwer, Lamara
           and Van Puyvelde, Max and Young, Matthew and Thickstun, John
           and Alterovitz, Gil and De Brouwer, Walter A.},
-  journal={arXiv preprint arXiv:PLACEHOLDER},
+  journal={arXiv preprint},
   year={2026}
 }
 ```
