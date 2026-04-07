@@ -199,10 +199,21 @@ cython_debug/
 datasets/bfcl_v4/
 datasets/agentbench/
 datasets/docile/
+datasets/benchmarks/
+datasets/workflowbench/
+datasets/toolbench/
+datasets/swebench/
 
 # Keep internal benchmark tracked
 !datasets/xy_benchmark/
 
 # GCP Cred File
 google_cred_key.json
-/datasets/benchmarks/DocILE
+
+# Generated at runtime — not source code
+results/
+logs/
+workflows/
+
+# Dev/temp artifacts
+.pr-review-temp/
