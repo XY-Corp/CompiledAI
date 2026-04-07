@@ -1,0 +1,74 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+type: software
+title: "Compiled AI: Deterministic Code Generation for LLM-Based Workflow Automation"
+abstract: >
+  Compiled AI is a paradigm in which large language models generate executable code
+  artifacts during a compilation phase, after which workflows execute deterministically
+  without further model invocation. This repository contains the code, benchmark suite,
+  and evaluation framework accompanying the arXiv paper.
+authors:
+  - family-names: Trooskens
+    given-names: Geert
+    affiliation: "XY.AI Labs, Palo Alto, CA"
+    email: geert@xy.ai
+  - family-names: Karlsberg
+    given-names: Aaron
+    affiliation: "XY.AI Labs, Palo Alto, CA"
+  - family-names: Sharma
+    given-names: Anmol
+    affiliation: "XY.AI Labs, Palo Alto, CA"
+  - family-names: De Brouwer
+    given-names: Lamara
+    affiliation: "XY.AI Labs, Palo Alto, CA"
+  - family-names: Van Puyvelde
+    given-names: Max
+    affiliation: "Stanford University School of Medicine, Stanford, CA"
+  - family-names: Young
+    given-names: Matthew
+    affiliation: "XY.AI Labs, Palo Alto, CA"
+  - family-names: Thickstun
+    given-names: John
+    affiliation: "Cornell University, Department of Computer Science, Ithaca, NY"
+  - family-names: Alterovitz
+    given-names: Gil
+    affiliation: "Brigham and Women's Hospital / Harvard Medical School, Boston, MA"
+  - family-names: De Brouwer
+    given-names: "Walter A."
+    affiliation: "Stanford University School of Medicine, Stanford, CA"
+repository-code: "https://github.com/XY-Corp/CompiledAI"
+url: "https://arxiv.org/abs/PLACEHOLDER"
+license: MIT
+date-released: "2026-04-07"
+keywords:
+  - "compiled AI"
+  - "LLM"
+  - "deterministic execution"
+  - "workflow automation"
+  - "code generation"
+  - "healthcare AI"
+preferred-citation:
+  type: article
+  title: "Compiled AI: Deterministic Code Generation for LLM-Based Workflow Automation"
+  authors:
+    - family-names: Trooskens
+      given-names: Geert
+    - family-names: Karlsberg
+      given-names: Aaron
+    - family-names: Sharma
+      given-names: Anmol
+    - family-names: De Brouwer
+      given-names: Lamara
+    - family-names: Van Puyvelde
+      given-names: Max
+    - family-names: Young
+      given-names: Matthew
+    - family-names: Thickstun
+      given-names: John
+    - family-names: Alterovitz
+      given-names: Gil
+    - family-names: De Brouwer
+      given-names: "Walter A."
+  journal: "arXiv preprint"
+  year: 2026
+  url: "https://arxiv.org/abs/PLACEHOLDER"

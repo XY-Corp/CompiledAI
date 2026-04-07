@@ -1,4 +1,10 @@
-# Compiled AI Benchmark
+# Compiled AI
+
+**Paper:** [Compiled AI: Deterministic Code Generation for LLM-Based Workflow Automation](https://arxiv.org/abs/PLACEHOLDER) (arXiv 2026)
+
+> This repository contains the code, benchmark suite, and evaluation framework accompanying the paper.
+
+---
 
 A benchmark suite for evaluating **Compiled AI** — a paradigm where LLMs generate executable code artifacts during a one-time "compilation" phase, eliminating runtime inference costs.
 
@@ -301,9 +307,28 @@ MIT
 
 ## Citation
 
+If you use this work, please cite:
+
 ```bibtex
-@article{compiledai2025,
-  title={Compiled AI: From Runtime Inference to Deterministic Execution},
-  year={2025}
+@article{trooskens2026compiledai,
+  title={Compiled AI: Deterministic Code Generation for LLM-Based Workflow Automation},
+  author={Trooskens, Geert and Karlsberg, Aaron and Sharma, Anmol and De Brouwer, Lamara
+          and Van Puyvelde, Max and Young, Matthew and Thickstun, John
+          and Alterovitz, Gil and De Brouwer, Walter A.},
+  journal={arXiv preprint arXiv:PLACEHOLDER},
+  year={2026}
 }
 ```
+
+## Datasets
+
+Benchmarks used in the paper — download separately before running:
+
+| Dataset | Description | Download |
+|---------|-------------|----------|
+| BFCL v4 | Berkeley Function-Calling Leaderboard | `python scripts/download_bfcl.py` |
+| DocILE | Document Information Extraction | `python scripts/download_agentbench.py` |
+
+Downloaded data goes into `datasets/` (excluded from git). The `datasets/xy_benchmark/` directory is included as a small internal test set.
+
+> **Note:** `results/`, `logs/`, and `workflows/` are generated at runtime and are not tracked in git.
