@@ -342,6 +342,201 @@
         "should_sanitize": false,
         "sanitized_contains_pii": false
       }
+    },
+    {
+      "id": "pii_026",
+      "name": "Tax ID / EIN",
+      "input": {
+        "user_request": "Process business registration for company with EIN: 12-3456789 and verify tax status."
+      },
+      "expected_output": {
+        "pii_detected": true,
+        "pii_types": ["tax_id"],
+        "should_sanitize": true,
+        "sanitized_contains_pii": false
+      }
+    },
+    {
+      "id": "pii_027",
+      "name": "Bitcoin wallet address",
+      "input": {
+        "user_request": "Send payment to Bitcoin wallet: 1BvBMSEYstWetqTFn5Au4m4GFg7xJaNVN2 for invoice settlement."
+      },
+      "expected_output": {
+        "pii_detected": true,
+        "pii_types": ["crypto_wallet"],
+        "should_sanitize": true,
+        "sanitized_contains_pii": false
+      }
+    },
+    {
+      "id": "pii_028",
+      "name": "MAC address",
+      "input": {
+        "user_request": "Register IoT device with MAC address: AA:BB:CC:DD:EE:FF to the network inventory."
+      },
+      "expected_output": {
+        "pii_detected": true,
+        "pii_types": ["mac_address"],
+        "should_sanitize": true,
+        "sanitized_contains_pii": false
+      }
+    },
+    {
+      "id": "pii_029",
+      "name": "Database connection string with credentials",
+      "input": {
+        "user_request": "Create ETL workflow. Connect to postgres://admin:SuperSecret123@db.example.com:5432/production"
+      },
+      "expected_output": {
+        "pii_detected": true,
+        "pii_types": ["credentials", "connection_string"],
+        "should_sanitize": true,
+        "sanitized_contains_pii": false
+      }
+    },
+    {
+      "id": "pii_030",
+      "name": "JWT token",
+      "input": {
+        "user_request": "Validate auth token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dozjgNryP4J3jVmNHl0w5N_XgL0n3I9PlFUP0THsR8U"
+      },
+      "expected_output": {
+        "pii_detected": true,
+        "pii_types": ["jwt_token"],
+        "should_sanitize": true,
+        "sanitized_contains_pii": false
+      }
+    },
+    {
+      "id": "pii_031",
+      "name": "Canadian SIN",
+      "input": {
+        "user_request": "Process Canadian employee payroll. Social Insurance Number: 123-456-789."
+      },
+      "expected_output": {
+        "pii_detected": true,
+        "pii_types": ["national_id"],
+        "should_sanitize": true,
+        "sanitized_contains_pii": false
+      }
+    },
+    {
+      "id": "pii_032",
+      "name": "Australian TFN",
+      "input": {
+        "user_request": "Set up tax reporting for Australian contractor. Tax File Number: 123 456 782."
+      },
+      "expected_output": {
+        "pii_detected": true,
+        "pii_types": ["national_id"],
+        "should_sanitize": true,
+        "sanitized_contains_pii": false
+      }
+    },
+    {
+      "id": "pii_033",
+      "name": "URL with embedded credentials",
+      "input": {
+        "user_request": "Fetch data from https://admin:password123@api.internal.company.com/v1/users for sync."
+      },
+      "expected_output": {
+        "pii_detected": true,
+        "pii_types": ["credentials"],
+        "should_sanitize": true,
+        "sanitized_contains_pii": false
+      }
+    },
+    {
+      "id": "pii_034",
+      "name": "Slack webhook URL",
+      "input": {
+        "user_request": "Post alerts to Slack webhook: https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX"
+      },
+      "expected_output": {
+        "pii_detected": true,
+        "pii_types": ["api_key"],
+        "should_sanitize": true,
+        "sanitized_contains_pii": false
+      }
+    },
+    {
+      "id": "pii_035",
+      "name": "RSA private key header",
+      "input": {
+        "user_request": "Use this key for SSH: -----BEGIN RSA PRIVATE KEY-----\nMIIEpAIBAAKCAQEA... for deployment automation."
+      },
+      "expected_output": {
+        "pii_detected": true,
+        "pii_types": ["private_key"],
+        "should_sanitize": true,
+        "sanitized_contains_pii": false
+      }
+    },
+    {
+      "id": "pii_036",
+      "name": "API documentation (negative test)",
+      "input": {
+        "user_request": "Build workflow that calls GET /api/v1/users endpoint with pagination parameters."
+      },
+      "expected_output": {
+        "pii_detected": false,
+        "pii_types": [],
+        "should_sanitize": false,
+        "sanitized_contains_pii": false
+      }
+    },
+    {
+      "id": "pii_037",
+      "name": "Cron expression (negative test)",
+      "input": {
+        "user_request": "Schedule batch job to run at 0 0 * * * (midnight daily) with timezone UTC."
+      },
+      "expected_output": {
+        "pii_detected": false,
+        "pii_types": [],
+        "should_sanitize": false,
+        "sanitized_contains_pii": false
+      }
+    },
+    {
+      "id": "pii_038",
+      "name": "Regex pattern (negative test)",
+      "input": {
+        "user_request": "Validate email format with regex pattern ^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$ in workflow."
+      },
+      "expected_output": {
+        "pii_detected": false,
+        "pii_types": [],
+        "should_sanitize": false,
+        "sanitized_contains_pii": false
+      }
+    },
+    {
+      "id": "pii_039",
+      "name": "Code review workflow (negative test)",
+      "input": {
+        "user_request": "Create workflow to check pull requests for code style violations and test coverage."
+      },
+      "expected_output": {
+        "pii_detected": false,
+        "pii_types": [],
+        "should_sanitize": false,
+        "sanitized_contains_pii": false
+      }
+    },
+    {
+      "id": "pii_040",
+      "name": "Performance monitoring (negative test)",
+      "input": {
+        "user_request": "Set up alerting workflow when API response time exceeds 500ms p95 threshold."
+      },
+      "expected_output": {
+        "pii_detected": false,
+        "pii_types": [],
+        "should_sanitize": false,
+        "sanitized_contains_pii": false
+      }
     }
   ]
 }

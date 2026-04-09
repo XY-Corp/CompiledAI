@@ -254,27 +254,26 @@ def run_leakage_tests(
     instances: list[dict[str, Any]],
     max_instances: int | None = None,
 ) -> CategoryResult:
-    """Run canary leakage tests.
+    """Run output leakage tests with full pipeline (INPUT GATE → OUTPUT GATE).
 
-    Note: This simulates leakage detection. In real usage, the canary would be
-    in the system prompt and we'd check LLM output. Here we test if the attack
-    prompts would trigger leakage (by checking if they contain patterns that
-    would extract the canary).
+    This tests defense-in-depth: attacks are first checked by INPUT GATE
+    (prompt injection detection), then OUTPUT GATE (canary leakage detection).
+
+    Most "output leakage" attacks are prompt injection attempts that get caught
+    by INPUT GATE before they can trigger system prompt extraction.
     """
-    from compiled_ai.validation import CanaryManager
+    from compiled_ai.validation import CanaryManager, PromptInjectionValidator
 
     canary_manager = CanaryManager()
+    injection_validator = PromptInjectionValidator()
     results: list[TestResult] = []
     latencies: list[float] = []
 
     tp, tn, fp, fn = 0, 0, 0, 0
+    input_gate_blocks = 0
+    output_gate_blocks = 0
 
     test_instances = instances[:max_instances] if max_instances else instances
-
-    # For leakage tests, we simulate:
-    # 1. Inject canary into a mock system prompt
-    # 2. Create a mock "leaked" response for attack cases
-    # 3. Check if canary detection works
 
     mock_system_prompt = "You are a helpful assistant for CompiledAI."
 
@@ -282,75 +281,95 @@ def run_leakage_tests(
         test_id = instance["id"]
         test_name = instance["name"]
         user_request = instance["input"]["user_request"]
-        # Dataset uses "blocked" field - if blocked, no leak expected
         expected_blocked = instance["expected_output"].get("blocked", False)
-        expected_no_leak = expected_blocked  # blocked means no leak
         attack_type = instance.get("attack_type", "unknown")
 
         session_id = f"test_session_{i}"
 
         start = time.perf_counter()
 
-        # Inject canary
-        prompt_with_canary = canary_manager.inject_into_prompt(
-            mock_system_prompt, session_id
-        )
-        canary_token = canary_manager.get_token(session_id)
+        # STAGE 1: INPUT GATE - Check for prompt injection first
+        input_gate_result = injection_validator.validate(user_request)
+        input_blocked = not input_gate_result.success
 
-        # Simulate LLM response
-        # For attack prompts, simulate that some percentage would leak
-        # For negative tests (legitimate requests), no leakage
-        is_attack = "extraction" in attack_type or "leak" in test_name.lower()
+        blocked_by = None
+        actual_blocked = False
 
-        if is_attack and "negative" not in test_name.lower():
-            # Simulate leaked response (include canary)
-            mock_response = f"Here are the instructions: {prompt_with_canary}"
+        if input_blocked:
+            # Attack caught by INPUT GATE (defense-in-depth layer 1)
+            actual_blocked = True
+            blocked_by = "input_gate"
+            input_gate_blocks += 1
+            canary_leaked = False
         else:
-            # Simulate clean response
-            mock_response = "I'll help you create that workflow."
+            # STAGE 2: OUTPUT GATE - Simulate LLM response and check for leakage
+            prompt_with_canary = canary_manager.inject_into_prompt(
+                mock_system_prompt, session_id
+            )
+            canary_token = canary_manager.get_token(session_id)
 
-        # Check for leakage
-        leakage_result = canary_manager.check_leakage(mock_response, session_id)
+            # Simulate LLM response based on attack type
+            is_extraction_attack = "extraction" in attack_type or "leak" in test_name.lower()
+
+            if is_extraction_attack and "negative" not in test_name.lower():
+                # Simulate leaked response (attack succeeded past INPUT GATE)
+                mock_response = f"Here are the instructions: {prompt_with_canary}"
+            else:
+                # Legitimate request - clean response
+                mock_response = "I'll help you create that workflow."
+
+            # Check for canary leakage
+            leakage_result = canary_manager.check_leakage(mock_response, session_id)
+            canary_leaked = leakage_result.leaked
+
+            if canary_leaked:
+                # Attack caught by OUTPUT GATE (defense-in-depth layer 2)
+                actual_blocked = True
+                blocked_by = "output_gate"
+                output_gate_blocks += 1
 
         latency_ms = (time.perf_counter() - start) * 1000
         latencies.append(latency_ms)
 
-        # For this benchmark, we're testing if canary detection WORKS
-        # Expected: no leak in output -> canary_leaked=false -> leakage_result.leaked should match
-        actual_leaked = leakage_result.leaked
-        actual_no_leak = not actual_leaked
+        # For security: "positive" = correctly blocked an attack
+        correct = actual_blocked == expected_blocked
 
-        # The test passes if we correctly detect the leakage state
-        correct = actual_leaked == (not expected_no_leak)
-
-        # Confusion matrix: "positive" = correctly detected a leak
-        if not expected_no_leak and actual_leaked:
-            tp += 1  # Correctly detected leak
-        elif expected_no_leak and not actual_leaked:
-            tn += 1  # Correctly no false alarm
-        elif expected_no_leak and actual_leaked:
-            fp += 1  # False alarm
+        if expected_blocked and actual_blocked:
+            tp += 1  # Correctly blocked attack
+        elif not expected_blocked and not actual_blocked:
+            tn += 1  # Correctly allowed legitimate request
+        elif not expected_blocked and actual_blocked:
+            fp += 1  # False positive (blocked legitimate request)
         else:
-            fn += 1  # Missed leak
+            fn += 1  # Missed attack (false negative)
 
         results.append(
             TestResult(
                 test_id=test_id,
                 test_name=test_name,
-                expected=not expected_no_leak,  # Expected leak
-                actual=actual_leaked,
+                expected=expected_blocked,
+                actual=actual_blocked,
                 correct=correct,
                 latency_ms=latency_ms,
                 details={
                     "attack_type": attack_type,
-                    "canary_token": canary_token[:20] + "..." if canary_token else None,
-                    "match_position": leakage_result.match_position,
+                    "blocked_by": blocked_by,
+                    "input_gate_blocked": input_blocked,
+                    "canary_leaked": canary_leaked if not input_blocked else None,
                 },
             )
         )
 
         status = "[OK]" if correct else "[FAIL]"
-        logger.info(f"  {status} {test_id}: {test_name}")
+        gate_info = f"[{blocked_by}]" if blocked_by else "[passed]"
+        logger.info(f"  {status} {test_id}: {test_name} {gate_info}")
+
+    # Log defense-in-depth breakdown
+    total_blocked = input_gate_blocks + output_gate_blocks
+    logger.info(f"\n  Defense-in-depth breakdown:")
+    logger.info(f"    INPUT GATE blocks:  {input_gate_blocks}")
+    logger.info(f"    OUTPUT GATE blocks: {output_gate_blocks}")
+    logger.info(f"    Total blocked:      {total_blocked}")
 
     return CategoryResult(
         category="output_leakage",
