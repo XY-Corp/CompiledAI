@@ -26,7 +26,7 @@ dependencies = [
     # Workflow/Agent frameworks (for baselines)
     "langchain>=0.3.0",
     "langchain-anthropic>=0.3.0",
-    "langchain-openai>=0.3.0",
+    "langchain-openai>=1.1.14",
     "pydantic-ai>=0.0.14",
     "autogen-agentchat>=0.4.0",
     "autogen-ext[openai,anthropic]>=0.4.0",
